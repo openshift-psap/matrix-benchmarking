@@ -40,6 +40,12 @@ one_test() {
 	mkdir -p $DIR
 	cd $DIR
 
+	# copy this script just to save the details
+	cp ../benchmark .
+	rpm -qa > rpm_qa.txt
+	lspci -vv > lspci_vv.txt
+	lspci -n > lspci_n.txt
+
 	# set our parameters
 	ssh_vm 'cat > /etc/sysconfig/spice-streaming-agent' << EOF
 SPICE_STREAMING_EXTRA_ARGS=-l /tmp/streaming.log --no-log-frames $*
