@@ -81,12 +81,17 @@ EOF
 	cd ..
 }
 
-for frames in 30 20 10; do
-	for rates in constqp vbr cbr 2passq 2passf 2passi; do
-		for dwqp in 26 5 10 20 30 40 51; do
+main() {
+	for dwqp in 26 5 10 20 30 40 51; do
+		for rates in constqp vbr cbr 2passq 2passf 2passi; do
 			for profile in 77 66 100; do
-				one_test -c framerate=$frames -c ratecontrol=$rates -c dwqp=$dwqp -c profile=$profile
+				for frames in 30 20 10; do
+					one_test -c framerate=$frames -c ratecontrol=$rates -c dwqp=$dwqp -c profile=$profile
+				done
 			done
 		done
 	done
-done
+	exit 0
+}
+
+main
