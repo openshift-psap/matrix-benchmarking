@@ -86,7 +86,9 @@ main() {
 		for rates in constqp vbr cbr 2passq 2passf 2passi; do
 			for profile in 77 66 100; do
 				for frames in 30 20 10; do
-					one_test -c framerate=$frames -c ratecontrol=$rates -c dwqp=$dwqp -c profile=$profile
+					if test $rates = constqp -o $dwqp = 26; then
+						one_test -c framerate=$frames -c ratecontrol=$rates -c dwqp=$dwqp -c profile=$profile
+					fi
 				done
 			done
 		done
