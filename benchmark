@@ -46,6 +46,14 @@ one_test() {
 	lspci -vv > lspci_vv.txt
 	lspci -n > lspci_n.txt
 
+	touch remote_viewer.txt
+	cat > xx_remote << EOF
+#!/bin/bash
+exec > remote_viewer.txt 2>&1
+exec su -l freddy -c "GST_DEBUG_DUMP_DOT_DIR=$PWD DISPLAY=$DISPLAY XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR $HOME/install/bin/remote-viewer spice://m2000-server:5900"
+EOF
+	chmod +x xx_remote
+
 	# set our parameters
 	ssh_vm 'cat > /etc/sysconfig/spice-streaming-agent' << EOF
 SPICE_STREAMING_EXTRA_ARGS=-l /tmp/streaming.log --no-log-frames $*
@@ -66,14 +74,17 @@ kill $nvidia_pid
 EOF
 
 	log "Launch remote viewer"
-	~/install/bin/remote-viewer spice://m2000-server:5900 &
+	# NOTE configure sudo to not ask password here
+	sudo /usr/bin/intel_gpu_time ./xx_remote > timings.txt &
 	pid=$!
 	sleep 1
 	ssh_vm 'bash xx_test'
-	kill $pid
+	killall remote-viewer
 
 	ssh_vm 'cat /tmp/streaming.log' > streaming.log
 	ssh_vm 'cat nvidia_stats.txt' > nvidia_stats.txt
+
+	rm -f xx_remote
 
 	cd ..
 }
