@@ -60,10 +60,7 @@ EOF
 nvidia-smi stats > nvidia_stats.txt &
 nvidia_pid=$!
 
-XAUTHORITY=/run/user/1000/gdm/Xauthority DISPLAY=:0 glxgears -fullscreen &
-pid=$!
-sleep 3
-kill $pid
+XAUTHORITY=/run/user/1000/gdm/Xauthority DISPLAY=:0 glmark2 --fullscreen
 
 kill $nvidia_pid
 EOF
