@@ -67,7 +67,7 @@ for line in open('remote_viewer.txt'):
     if m:
         frames[n].decode = float(m.group(1))
         frames[n].render = float(m.group(2))
-    n += 1
+        n += 1
 
 
 # normalize time for Nvidia stats
