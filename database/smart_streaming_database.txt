@@ -1,0 +1,34 @@
+How experiments are stored
+==========================
+
+A database format was choosen.
+
+A database allows quick filtering on data in multiple ways.
+
+Postgres was choosen for the easy availability on Linux and as it's pretty powerful,
+also is already used in RedMine, allowing to share the knowledge.
+
+I'd try to stick to standard SQL features although the DDL (Data Definition Language)
+will be pretty dependent on the database chosed.
+The DDL, so the structure of the database is specified in a SQL script file,
+and documented there with comments.
+Although recent databases allows to store data in XML or JSON format I decided to
+stick to a more "classic" structured way that allows database to quick manage data
+and prevent user to insert into the database any possible combination of imaginable
+format keeping data more consistent.
+
+The various logs will be parsed and inserted in the database.
+This will prevent keeping different kind of log and make sure data are consistent.
+Potentially I see Python scripts doing the parsing and inserting of the
+data into the database, this to allows flexibility (logs tends to quickly
+evolve and we don't need performance).
+
+Each experiments can have attached data to it to better represent the experiment.
+For instance output of command like "rpm -qa" can be kept for future reference.
+
+For consistency with timing you are supposed to save logs with clock time (in
+unix gettimeofday or clock_gettime(CLOCK_REALTIME)). You are however not
+supposed to sync the time between the machines in an absolute precision,
+I expect second precision so keep in mind setting machines and doing
+computations (difference between a server time and a guest or client time
+is not expected to have much meaning, surely not sub-second precision).
