@@ -93,11 +93,11 @@ CREATE TABLE public.guest_stats
   time DOUBLE PRECISION NOT NULL,
   /* GPU memory used in MB */
   gpu_memory INT NULL,
-  /* GPU usage, percentuage */
+  /* GPU usage, percentage */
   gpu_usage FLOAT NULL,
-  /* encoding usage, percentuage */
+  /* encoding usage, percentage */
   encoding_usage FLOAT NULL,
-  /* decoding usage, percentuage */
+  /* decoding usage, percentage */
   decoding_usage FLOAT NULL
 );
 COMMENT ON TABLE public.guest_stats IS 'Holds information about guest statistics';
@@ -108,7 +108,7 @@ CREATE TABLE public.host_stats
   /* experiment this parameter referes to */
   id_experiment INT REFERENCES experiments(id) ON UPDATE CASCADE,
   time DOUBLE PRECISION NOT NULL,
-  /* CPU usage, percentuage */
+  /* CPU usage, percentage */
   cpu_usage FLOAT NULL
 );
 COMMENT ON TABLE public.host_stats IS 'Holds information about host statistics';
@@ -119,13 +119,13 @@ CREATE TABLE public.client_stats
   /* experiment this parameter referes to */
   id_experiment INT REFERENCES experiments(id) ON UPDATE CASCADE,
   time DOUBLE PRECISION NOT NULL,
-  /* total GPU usage, percentuage */
+  /* total GPU usage, percentage */
   gpu_usage FLOAT NULL,
-  /* application GPU usage, percentuage */
+  /* application GPU usage, percentage */
   app_gpu_usage FLOAT NULL,
-  /* total CPU usage, percentuage */
+  /* total CPU usage, percentage */
   cpu_usage FLOAT NULL,
-  /* application CPU usage, percentuage */
+  /* application CPU usage, percentage */
   app_cpu_usage FLOAT NULL
 );
 COMMENT ON TABLE public.host_stats IS 'Holds information about host statistics';
