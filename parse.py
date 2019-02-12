@@ -21,24 +21,25 @@ max_time = 0
 frames = []
 for line in open('streaming.log'):
     m = line_re.match(line)
-    if m:
-        time = int(m.group(1))
+    if not m:
+        continue
+    time = int(m.group(1))
+    max_time = max(max_time, time)
+    verb = m.group(2)
+    if verb == 'Capturing':
         min_time = min(min_time, time)
-        max_time = max(max_time, time)
-        verb = m.group(2)
-        if verb == 'Capturing':
-            frame = Frame(time)
-        elif verb == 'Captured':
-            frame.captured = time
-        elif verb == 'Sent':
-            frame.sent = time
-            frames.append(frame)
-            del frame
-        elif verb == 'Frame':
-            m = bytes_re.match(m.group(3))
-            frame.bytes = int(m.group(1))
-        else:
-            print line
+        frame = Frame(time)
+    elif verb == 'Captured':
+        frame.captured = time
+    elif verb == 'Sent':
+        frame.sent = time
+        frames.append(frame)
+        del frame
+    elif verb == 'Frame':
+        m = bytes_re.match(m.group(3))
+        frame.bytes = int(m.group(1))
+    else:
+        print line
 
 # parse nvidia log
 line_re = \
