@@ -102,7 +102,7 @@ for nvidia_stat in nvidia_stats:
     time = nvidia_stat[1]
     rows[time][nvidia_stat[0]] = nvidia_stat[2]
 
-f = open('out.cvs', 'w')
+f = open('out.csv', 'w')
 f.write('time,' + ','.join(row_keys) + '\n')
 for row in sorted(rows.iterkeys()):
     f.write('%d,%s\n' % (row, rows[row]))
