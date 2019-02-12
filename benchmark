@@ -1,9 +1,12 @@
 #!/bin/bash
 
+# NOTE configure client to avoid screen saver or lock
+
 # server that host VM
 SERVER=m2000-server
 # VM where tests are executed
-# VM should be set with autologin
+# VM should be set with autologin, for GDM see
+# https://help.gnome.org/admin/system-admin-guide/stable/login-automatic.html.en
 VM=fedora25
 
 # function to run commands on server
