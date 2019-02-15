@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import time
+import importlib
+import re
 import yaml
 import measurement
 import database
@@ -12,11 +14,14 @@ with open("benchmark.yaml", 'r') as f:
 # TODO pass configuration
 database = database.Database()
 
-# load and initialize measurement
-
-# TODO load dynamically
-import measurement.test
-measurements = [measurement.test.Test()]
+# load and initialize measurements
+measurements = []
+name_re = re.compile(r'^[a-z_][a-z0-9_]*$', re.I)
+for m in cfg['measurements']:
+    if not name_re.match(m):
+        raise Exception('Invalid module name %s' % m)
+    mod = importlib.import_module('measurement.' + m.lower())
+    measurements.append(getattr(mod, m)())
 
 for m in measurements:
     m.setup()
