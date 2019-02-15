@@ -14,6 +14,6 @@ class Test(measurement.Measurement):
         self.vmstat.terminate()
         self.vmstat.wait()
     def collect(self):
-        # TODO parse log and save a table of something
+        # TODO parse log and save a table or something
         os.system("cat %s" % self.log)
         os.unlink(self.log)
