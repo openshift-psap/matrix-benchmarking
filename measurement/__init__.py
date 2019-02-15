@@ -1,4 +1,3 @@
-import test
 
 class Measurement:
     """This class represent a measurement

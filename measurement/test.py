@@ -5,8 +5,10 @@ import measurement
 class Test(measurement.Measurement):
     def start(self):
         self.log = 'vmstat.log'
-        try: os.unlink(self.log)
-        except: pass
+        try:
+            os.unlink(self.log)
+        except FileNotFoundError:
+            pass
         # start vmstat
         out = open(self.log, 'w')
         self.vmstat = subprocess.Popen('vmstat -t 1'.split(), stdout=out, close_fds=True)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-import measurement
-import yaml
 import time
+import yaml
+import measurement
 
 # load configuration file
 # TODO pass somehow to measurement. Global??
