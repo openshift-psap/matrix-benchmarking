@@ -5,7 +5,7 @@ class Measurement:
     A measurement can be for instance how much CPU or memory is
     consumed.
     """
-    def __init__(self):
+    def __init__(self, **kargs):
         """Initialization and possible initial base checks.
         If you need more expensive setup you probably should write it
         in setup() so to allow user to have a faster feedback before

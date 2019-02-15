@@ -18,10 +18,16 @@ database = database.Database()
 measurements = []
 name_re = re.compile(r'^[a-z_][a-z0-9_]*$', re.I)
 for m in cfg['measurements']:
-    if not name_re.match(m):
+    cfg = None
+    if type(m) == dict:
+        l = list(m.keys())
+        assert len(l) == 1, 'Invalid measurement specification %s' % m
+        cfg = m[l[0]]
+        m = l[0]
+    if type(m) != str or not name_re.match(m):
         raise Exception('Invalid module name %s' % m)
     mod = importlib.import_module('measurement.' + m.lower())
-    measurements.append(getattr(mod, m)())
+    measurements.append(getattr(mod, m)(cfg=cfg))
 
 for m in measurements:
     m.setup()

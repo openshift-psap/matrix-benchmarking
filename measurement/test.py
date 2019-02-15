@@ -4,8 +4,8 @@ import datetime
 import measurement
 
 class Test(measurement.Measurement):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, cfg=None, **kargs):
+        super().__init__(**kargs)
         self.log = 'vmstat.log'
         self.vmstat = None
         # verify we have the command we need
