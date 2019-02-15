@@ -5,6 +5,12 @@ class Measurement:
     A measurement can be for instance how much CPU or memory is
     consumed.
     """
+    def __init__(self):
+        """Initialization and possible initial base checks.
+        If you need more expensive setup you probably should write it
+        in setup() so to allow user to have a faster feedback before
+        leaving the keyboard"""
+        pass
     def setup(self):
         """Setup the measurement
         In this step you should launch any tool needed (like a CPU

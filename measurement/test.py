@@ -4,8 +4,14 @@ import datetime
 import measurement
 
 class Test(measurement.Measurement):
-    def start(self):
+    def __init__(self):
+        super().__init__()
         self.log = 'vmstat.log'
+        self.vmstat = None
+        # verify we have the command we need
+        subprocess.check_call('vmstat --version'.split(),
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    def start(self):
         try:
             os.unlink(self.log)
         except FileNotFoundError:
