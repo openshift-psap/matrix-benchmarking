@@ -71,15 +71,15 @@ CREATE TABLE public.frames
   /* multimedia time, as defined by SPICE, provided by server Here a NUMERIC is used as the number is unsigned */
   mm_time NUMERIC(9) NULL,
   /* time to capture by the guest, in seconds */
-  capture_time DOUBLE PRECISION NULL,
+  capture_duration DOUBLE PRECISION NULL,
   /* time to encode by the guest, in seconds */
-  encoding_time DOUBLE PRECISION NULL,
+  encode_duration DOUBLE PRECISION NULL,
   /* time to send by the guest, in seconds */
-  send_time DOUBLE PRECISION NOT NULL,
+  send_duration DOUBLE PRECISION NOT NULL,
   /* time client received */
   client_time DOUBLE PRECISION NULL,
   /* time frame took to be decoded by the client, in seconds */
-  decode_time DOUBLE PRECISION NULL,
+  decode_duration DOUBLE PRECISION NULL,
   /* queue size on the client, taken when frame was decoded, in number of frames */
   queue_size INT NULL
 );
@@ -95,10 +95,10 @@ CREATE TABLE public.guest_stats
   gpu_memory INT NULL,
   /* GPU usage, percentage */
   gpu_usage FLOAT NULL,
-  /* encoding usage, percentage */
-  encoding_usage FLOAT NULL,
-  /* decoding usage, percentage */
-  decoding_usage FLOAT NULL
+  /* encode usage, percentage */
+  encode_usage FLOAT NULL,
+  /* decode usage, percentage */
+  decode_usage FLOAT NULL
 );
 COMMENT ON TABLE public.guest_stats IS 'Holds information about guest statistics';
 
