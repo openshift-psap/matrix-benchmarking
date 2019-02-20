@@ -10,7 +10,7 @@ class Measurement:
         If you need more expensive setup you probably should write it
         in setup() so to allow user to have a faster feedback before
         leaving the keyboard"""
-        pass
+        self.experiment = kargs['experiment']
     def setup(self):
         """Setup the measurement
         In this step you should launch any tool needed (like a CPU
