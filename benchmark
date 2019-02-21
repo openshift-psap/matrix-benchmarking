@@ -2,11 +2,15 @@
 import time
 import yaml
 import measurement
+import database
 
 # load configuration file
 # TODO pass somehow to measurement. Global??
 with open("benchmark.yaml", 'r') as f:
     cfg = yaml.safe_load(f)
+
+# TODO pass configuration
+database = database.Database()
 
 # load and initialize measurement
 
