@@ -15,13 +15,14 @@ DROP TABLE public.client_stats;
 DROP TABLE public.host_stats;
 DROP TABLE public.guest_stats;
 DROP TABLE public.frames;
-DROP TABLE public.parameters;
 DROP TABLE public.experiments;
 */
 
 /* This table holds information for each experiments done.
  * This table is then linked with other tables to provide information
  * for frames, parameters and so on.
+ * Most of the parameters are optional.
+ * See also Redmine #47.
  */
 CREATE TABLE public.experiments
 (
@@ -30,17 +31,8 @@ CREATE TABLE public.experiments
   /* time the experiment was taken */
   time TIMESTAMP NOT NULL DEFAULT now(),
   /* optional description */
-  description TEXT NULL
-);
-COMMENT ON TABLE public.experiments IS 'Holds information about experiments';
-COMMENT ON COLUMN public.experiments.id IS 'id of the experiment';
+  description TEXT NULL,
 
-/* This table holds information for the experiment parameters.
- * Most of the parameters are optional.
- * See also Redmine #47.
- */
-CREATE TABLE public.parameters
-(
   /* experiment this parameter referes to */
   id_experiment INT REFERENCES experiments(id) ON UPDATE CASCADE,
   /* frames per second */
@@ -56,7 +48,8 @@ CREATE TABLE public.parameters
   num_ref_frames INT NULL
   /* TODO quality, GOP pattern */
 );
-COMMENT ON TABLE public.parameters IS 'Holds information about experiment parameters';
+COMMENT ON TABLE public.experiments IS 'Holds information about experiments';
+COMMENT ON COLUMN public.experiments.id IS 'id of the experiment';
 
 /* This table holds information on the frames during the experiment.
  */
