@@ -11,6 +11,8 @@ class Test(measurement.Measurement):
         # verify we have the command we need
         subprocess.check_call('vmstat --version'.split(),
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.table = self.experiment.create_table(['time', 'client.cpu'])
+
     def start(self):
         try:
             os.unlink(self.log)
@@ -38,6 +40,5 @@ class Test(measurement.Measurement):
                 cpu = 100 - int(fields[idle_idx])
                 time = ' '.join(fields[-2:])
                 time = int(datetime.datetime.strptime(time, '%Y-%m-%d %H:%M:%S').timestamp())
-                # TODO save a table
-                print(time, cpu)
+                self.table.add(time, cpu)
         os.unlink(self.log)
