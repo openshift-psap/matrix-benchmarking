@@ -16,6 +16,15 @@ CREATE TABLE IF NOT EXISTS experiments
   imported BOOLEAN NOT NULL DEFAULT(0)
 );
 
+CREATE TABLE IF NOT EXISTS attachments
+(
+  id_experiment INTEGER,
+  name VARCHAR(100) NOT NULL,
+  content TEXT NOT NULL,
+  CONSTRAINT con_primary_name PRIMARY KEY(id_experiment, name)
+  FOREIGN KEY (id_experiment) REFERENCES experiments
+);
+
 CREATE TABLE IF NOT EXISTS frames
 (
   id_experiment INTEGER,

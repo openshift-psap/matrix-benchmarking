@@ -53,6 +53,19 @@ CREATE TABLE public.experiments
 COMMENT ON TABLE public.experiments IS 'Holds information about experiments';
 COMMENT ON COLUMN public.experiments.id IS 'id of the experiment';
 
+/* This table holds generic information on the experiment.
+ */
+CREATE TABLE public.attachments
+(
+  /* experiment this parameter refers to */
+  id_experiment INT REFERENCES experiments(id) ON UPDATE CASCADE,
+  /* name to distinguish like "client rpm -qa", can be anything
+   * textual */
+  name VARCHAR(100) NOT NULL,
+  /* content of the attachment */
+  content TEXT NOT NULL
+);
+
 /* This table holds information on the frames during the experiment.
  */
 CREATE TABLE public.frames
