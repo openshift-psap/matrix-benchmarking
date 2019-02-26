@@ -10,7 +10,10 @@ CREATE TABLE IF NOT EXISTS experiments
   height INT NULL,
   GOP INT NULL,
   bitrate INT NULL,
-  num_ref_frames INT NULL
+  num_ref_frames INT NULL,
+
+  uuid VARCHAR(40),
+  imported BOOLEAN NOT NULL DEFAULT(0)
 );
 
 CREATE TABLE IF NOT EXISTS frames

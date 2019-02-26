@@ -45,8 +45,10 @@ CREATE TABLE public.experiments
   /* bits per seconds */
   bitrate INT NULL,
   /* number of reference frames */
-  num_ref_frames INT NULL
+  num_ref_frames INT NULL,
   /* TODO quality, GOP pattern */
+  /* UUID of the imported experiment */
+  uuid VARCHAR(40) NULL
 );
 COMMENT ON TABLE public.experiments IS 'Holds information about experiments';
 COMMENT ON COLUMN public.experiments.id IS 'id of the experiment';
