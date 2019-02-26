@@ -121,4 +121,4 @@ CREATE TABLE public.client_stats
   /* application CPU usage, percentage */
   app_cpu_usage FLOAT NULL
 );
-COMMENT ON TABLE public.host_stats IS 'Holds information about host statistics';
+COMMENT ON TABLE public.client_stats IS 'Holds information about client statistics';
