@@ -33,7 +33,7 @@ CREATE TABLE public.experiments
   /* optional description */
   description TEXT NULL,
 
-  /* experiment this parameter referes to */
+  /* experiment this parameter refers to */
   id_experiment INT REFERENCES experiments(id) ON UPDATE CASCADE,
   /* frames per second */
   FPS INT NULL,
@@ -57,7 +57,7 @@ COMMENT ON COLUMN public.experiments.id IS 'id of the experiment';
  */
 CREATE TABLE public.frames
 (
-  /* experiment this parameter referes to */
+  /* experiment this parameter refers to */
   id_experiment INT REFERENCES experiments(id) ON UPDATE CASCADE,
   /* time before starting capturing on the guest */
   agent_time DOUBLE PRECISION,
@@ -83,7 +83,7 @@ COMMENT ON TABLE public.frames IS 'Holds information about experiment frames';
 /* This table holds information about guest statistics */
 CREATE TABLE public.guest_stats
 (
-  /* experiment this parameter referes to */
+  /* experiment this parameter refers to */
   id_experiment INT REFERENCES experiments(id) ON UPDATE CASCADE,
   time DOUBLE PRECISION NOT NULL,
   /* GPU memory used in MB */
@@ -100,7 +100,7 @@ COMMENT ON TABLE public.guest_stats IS 'Holds information about guest statistics
 /* This table holds information about host statistics */
 CREATE TABLE public.host_stats
 (
-  /* experiment this parameter referes to */
+  /* experiment this parameter refers to */
   id_experiment INT REFERENCES experiments(id) ON UPDATE CASCADE,
   time DOUBLE PRECISION NOT NULL,
   /* CPU usage, percentage */
@@ -111,7 +111,7 @@ COMMENT ON TABLE public.host_stats IS 'Holds information about host statistics';
 /* This table holds information about client statistics */
 CREATE TABLE public.client_stats
 (
-  /* experiment this parameter referes to */
+  /* experiment this parameter refers to */
   id_experiment INT REFERENCES experiments(id) ON UPDATE CASCADE,
   time DOUBLE PRECISION NOT NULL,
   /* total GPU usage, percentage */
