@@ -1,3 +1,5 @@
+# These are the measurement take
+# Each measurement can have options
 measurements:
 - Test
 - GPU
