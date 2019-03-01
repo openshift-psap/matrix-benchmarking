@@ -3,6 +3,7 @@
 measurements:
 - Test
 - GPU
+- StreamingAgent
 
 # machine to connect to, currently only local and
 # accessible through ssh (remote)
