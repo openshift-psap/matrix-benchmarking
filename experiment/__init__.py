@@ -65,6 +65,41 @@ class Table:
         assert len(args) == len(self.fields)
         self.rows.append(tuple(args))
 
+def collapse_tables_time(tables):
+    time = all_fields['time']
+    fields = [time]
+    for table in tables:
+        assert time in table.fields
+        for field in table.fields:
+            if field == time:
+                continue
+            assert not field in fields, "Field %s fields %s" % (field, fields)
+            fields.append(field)
+    new_table = Table([f.name for f in fields])
+    rows = {}
+    empty = []
+    for table in tables:
+        idx = table.fields.index(time)
+        for row in table.rows:
+            row = list(row)
+            t = row.pop(idx)
+            if t in rows:
+                rows[t] += row
+            else:
+                rows[t] = empty + row
+        empty += [None] * (len(table.fields)-1)
+    for t in sorted(rows):
+        row = [t] + rows[t] + empty
+        row = row[:len(empty)+1]
+        new_table.add(*row)
+    new_table.fields[0] = Field('time', new_table.table_name, 'time')
+    return new_table
+
+def collapse_tables(tables):
+    if tables[0].table_name != 'frames':
+        return collapse_tables_time(tables)
+    raise NotImplementedError("Frames table collapsing")
+
 class Experiment:
     def __init__(self, database):
         self.database = database
@@ -101,7 +136,7 @@ class Experiment:
             if len(tables) == 1:
                 new_tables.append(tables[0])
             else:
-                raise NotImplementedError("Table collapsing")
+                new_tables.append(collapse_tables(tables))
         self.tables = new_tables
         # Collapse information for frames matching mm_time and size
         # - agent (size) must match with host (size), check sequence,
