@@ -98,6 +98,30 @@ def collapse_tables_time(tables):
     new_table.fields[0] = Field('time', new_table.table_name, 'time')
     return new_table
 
+def fix_table_time(table):
+    if not all_fields['time'] in table.fields:
+        return
+    idx = table.fields.index(all_fields['time'])
+
+    # TODO hacky
+    if table.table_name != 'frames':
+        table.fields[idx] = Field('time', table.table_name, 'time')
+        return
+
+    # complex case, frames
+    parts = set()
+    for f in table.fields:
+        if f.name != 'time':
+            parts.add(f.name.split('.',1)[0])
+    assert len(parts) == 1, "Too complex table"
+    # TODO host, no current field in the database
+    names = {
+        'guest': 'agent_time',
+        'client': 'client_time',
+    }
+    name = names[parts.pop()]
+    table.fields[idx] = Field(name, table.table_name, name)
+
 def collapse_tables(tables):
     if tables[0].table_name != 'frames':
         return collapse_tables_time(tables)
@@ -172,10 +196,7 @@ class Experiment:
         # Save attachments
         self.database.save_table('attachments', ['name', 'content'], self.attachments.items())
         for table in self.tables:
-            # TODO hacky
-            if table.table_name != 'frames' and \
-                all_fields['time'] in table.fields:
-                table.fields[0] = Field('time', table.table_name, 'time')
+            fix_table_time(table)
             self.database.save_table(table.table_name, [f.field_name for f in table.fields], table.rows)
         # If something goes wrong dump all tables so we can debug
         self.database.commit()
