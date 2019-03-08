@@ -5,17 +5,33 @@ import re
 from measurement import Measurement
 
 class NvidiaTool:
-    def __init__(self, experiment):
-        self.cmd = 'nvidia-smi stats'
+    def __init__(self, experiment, machine):
         self.kinds = {
             'memUtil': 'guest.gpu_memory',
             'gpuUtil': 'guest.gpu',
             'encUtil': 'guest.encode',
             'decUtil': 'guest.decode'
         }
+        self.machine = machine
         self.tables = {}
         for kind, field in self.kinds.items():
             self.tables[kind] = experiment.create_table(['time', field])
+        machine.run(['rm', '-f', '/tmp/nvidia_stats.log'])
+
+    def start(self):
+        cmd = 'nvidia-smi stats > /tmp/nvidia_stats.log'
+        self.process = self.machine.Process(cmd)
+
+    def stop(self):
+        self.process.terminate()
+        del self.process
+
+    def collect(self, log):
+        # retrieve
+        self.machine.download('/tmp/nvidia_stats.log', log)
+        self.machine.run(['rm', '-f', '/tmp/nvidia_stats.log'])
+
+        self.parse_log(log)
 
     def parse_log(self, log):
         line_re = re.compile(r'^\d+,\s*(pwrDraw|decUtil|encUtil|gpuUtil|temp|memUtil'
@@ -32,10 +48,17 @@ class NvidiaTool:
                 self.tables[kind].add(time / 1000000, value)
 
 class IntelTool:
-    def __init__(self):
+    def __init__(self, experiment, machine):
         # TODO write our own with timing!
         self.cmd = 'intel_gpu_time sleep 80000'
-    def parse_log(self, log):
+    def start(self):
+        # TODO
+        pass
+    def stop(self):
+        # TODO
+        pass
+    def collect(self, log):
+        # TODO
         pass
 
 class GPU(Measurement):
@@ -43,32 +66,19 @@ class GPU(Measurement):
     def __init__(self, cfg=None, **kargs):
         Measurement.__init__(self, **kargs)
         self.log = 'gpu_stats.txt'
-        self.cmd = None
         # TODO check the type of card (Intel/Nvidia/Others)
         # check commands (intel_gpu_time for Intel, nvidia-smi for
         # Nvidia. Use glxinfo or others to detect the card
-        self.tool = NvidiaTool(self.experiment)
+        # TODO should be configurable
+        self.guest = self.experiment.machines['guest']
+        self.tool = NvidiaTool(self.experiment, self.guest)
 
     def start(self):
-        # TODO maybe write an utility
-        try:
-            os.unlink(self.log)
-        except FileNotFoundError:
-            pass
-        # TODO launch the utility
-        out = open(self.log, 'w')
-        cmd = self.tool.cmd.split()
-        #self.cmd = subprocess.Popen(cmd, stdout=out, close_fds=True)
+        self.tool.start()
 
     def stop(self):
-        # TODO stop utility
-        if self.cmd is not None:
-            self.cmd.terminate()
-            self.cmd.wait()
+        self.tool.stop()
 
     def collect(self):
-        # TODO I really should this about: 1) remote 2) table output!
-        cur_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-        self.log = os.path.join(cur_dir, '..', 'nvidia_example.txt')
-        self.tool.parse_log(self.log)
-        #os.unlink(self.log)
+        self.tool.collect(self.log)
+        os.unlink(self.log)
