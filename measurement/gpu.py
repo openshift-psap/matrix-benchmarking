@@ -29,7 +29,7 @@ class NvidiaTool:
             time = int(m.group(2))
             value = int(m.group(3))
             if kind in kinds:
-                self.tables[kind].add(time, value)
+                self.tables[kind].add(time / 1000000, value)
 
 class IntelTool:
     def __init__(self):
