@@ -37,6 +37,9 @@ class Test(measurement.Measurement):
                 raise Exception('Timestamp not at the end')
             for line in f:
                 fields = line.split()
+                if line.find('timestamp') > 0:
+                    f.readline()
+                    continue
                 cpu = 100 - int(fields[idle_idx])
                 time = ' '.join(fields[-2:])
                 time = int(datetime.datetime.strptime(time, '%Y-%m-%d %H:%M:%S').timestamp())
