@@ -12,6 +12,7 @@ class Test(measurement.Measurement):
         subprocess.check_call('vmstat --version'.split(),
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.table = self.experiment.create_table(['time', 'client.cpu'])
+        subprocess.call('killall vmstat 2> /dev/null; rm -f %s' % self.log, shell=True)
 
     def start(self):
         try:
