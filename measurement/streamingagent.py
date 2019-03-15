@@ -6,9 +6,7 @@ import measurement
 class StreamingAgent(measurement.Measurement):
     def __init__(self, cfg=None, **kargs):
         super().__init__(**kargs)
-        # TODO final file
-        cur_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-        self.log = os.path.join(cur_dir, '..', 'streaming.log')
+        self.log = 'streaming.log'
         self.table = self.experiment.create_table([
             'time',
             'guest.frame_size',
@@ -16,17 +14,36 @@ class StreamingAgent(measurement.Measurement):
             'guest.encode_duration',
             'guest.send_duration',
         ])
+        self.guest = self.experiment.machines['guest']
+        cur_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+        exe = os.path.join(cur_dir, '..', 'utils', 'execover')
+        self.guest.upload(exe, '/usr/local/bin/execover')
+        self.guest.run('chmod +x /usr/local/bin/execover && restorecon -Fv /usr/local/bin/execover')
+        self.guest.run(['rm', '-f', '/tmp/streaming.log'])
 
     def start(self):
-        # TODO
-        pass
+        # run streaming agent with log
+        out = self.guest.run('pidof spice-streaming-agent')
+        pid = -1
+        for row in [row for row in out.split('\n') if row]:
+            try:
+                pid = int(row)
+            except:
+                pass
+        assert pid > 0, "Process not found"
+        # TODO parameters !!
+        cmd = '/usr/bin/spice-streaming-agent -l /tmp/streaming.log'
+        cmd = '/usr/local/bin/execover %d %s' % (pid, cmd)
+        self.guest.run(cmd)
 
     def stop(self):
-        # TODO
         pass
 
     def collect(self):
-        # TODO retrieve
+        # retrieve
+        self.guest.download('/tmp/streaming.log', self.log)
+        self.guest.run(['rm', '-f', '/tmp/streaming.log'])
+
         # parse log
         line_re = re.compile(r'^(\d+): (\w+)(.*)')
         bytes_re = re.compile(r' of (\d+) ')
@@ -62,4 +79,4 @@ class StreamingAgent(measurement.Measurement):
                     self.experiment.set_param('width', m.group(1))
                     self.experiment.set_param('height', m.group(2))
 
-        # os.unlink(self.log)
+        os.unlink(self.log)
