@@ -90,3 +90,12 @@ class RemoteMachine(Machine):
     def _remote(self, path):
         '''Canonize remote path'''
         return self.hostname + ':' + path
+
+# factory
+def create_machine(cfg):
+    if cfg is None or cfg['type'] == 'local':
+        return LocalMachine()
+    if cfg['type'] == 'remote':
+        return RemoteMachine(cfg['host'])
+    raise NotImplemented("Attempting to create machine from %s" % cfg)
+    return None

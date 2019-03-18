@@ -1,4 +1,5 @@
 import database
+import machine
 
 class Field:
     def __init__(self, name, table_name, field_name):
@@ -108,6 +109,17 @@ class Experiment:
         self.database = database.Database()
         self.tables = []
         self.attachments = {}
+        self.machines = {}
+        for m in cfg.get('machines', []):
+            c = None
+            if type(m) == dict:
+                l = list(m.keys())
+                assert len(l) == 1, 'Invalid machine specification %s' % m
+                c = m[l[0]]
+                m = l[0]
+            if type(m) != str:
+                raise Exception('Invalid machine name %s' % m)
+            self.machines[m] = machine.create_machine(c)
 
     def create_table(self, fields):
         '''Create a table based on fields passed.
