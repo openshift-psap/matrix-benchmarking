@@ -73,3 +73,16 @@ values.
 [NOTE]
 Many todos, one missing part is utilities to manage remote machine and
 their configuration.
+
+SSH configuration
+-----------------
+Current code managng remote machines is using heavily `ssh` command.
+You should configure `ssh` to not require password.
+Also ssh should be configured to work pretty fast.
+There are some caveats that could make `ssh` slower:
+
+ * authentication. If the authentication requires some external
+   communication this could take some time. Check with `ssh -v`.
+ * connection. If connection is slow try to use `ControlMaster`,
+   `ControlPath` and `ControlPersist` options. They allow to reuse
+   connections.
