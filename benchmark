@@ -4,7 +4,6 @@ import importlib
 import re
 import yaml
 import measurement
-import database
 import experiment
 
 # load configuration file
@@ -12,10 +11,7 @@ import experiment
 with open("benchmark.yaml", 'r') as f:
     cfg = yaml.safe_load(f)
 
-# TODO pass configuration
-database = database.Database()
-
-experiment = experiment.Experiment(database)
+experiment = experiment.Experiment(cfg)
 
 # load and initialize measurements
 measurements = []

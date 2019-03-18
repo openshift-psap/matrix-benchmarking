@@ -1,3 +1,5 @@
+import database
+
 class Field:
     def __init__(self, name, table_name, field_name):
         self.name = name
@@ -101,8 +103,9 @@ def collapse_tables(tables):
     raise NotImplementedError("Frames table collapsing")
 
 class Experiment:
-    def __init__(self, database):
-        self.database = database
+    def __init__(self, cfg):
+        # TODO pass configuration
+        self.database = database.Database()
         self.tables = []
         self.attachments = {}
 
