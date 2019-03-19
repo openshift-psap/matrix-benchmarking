@@ -30,6 +30,7 @@ class StreamingAgent(measurement.Measurement):
         # parse log
         line_re = re.compile(r'^(\d+): (\w+)(.*)')
         bytes_re = re.compile(r' of (\d+) ')
+        new_stream_re = re.compile(r' new stream wXh (\d+)X(\d+) ')
         for line in open(self.log):
             m = line_re.match(line)
             if not m:
@@ -51,5 +52,10 @@ class StreamingAgent(measurement.Measurement):
                 self.table.add(start / 1000000, frame_bytes,
                                (captured - start) / 1000000,
                                (sent - captured) / 1000000)
+            elif verb == 'Started':
+                m = new_stream_re.match(m.group(3))
+                if m:
+                    self.experiment.set_param('width', m.group(1))
+                    self.experiment.set_param('height', m.group(2))
 
         # os.unlink(self.log)
