@@ -33,8 +33,6 @@ CREATE TABLE public.experiments
   /* optional description */
   description TEXT NULL,
 
-  /* experiment this parameter refers to */
-  id_experiment INT REFERENCES experiments(id) ON UPDATE CASCADE,
   /* frames per second */
   FPS INT NULL,
   /* resolution width and height */
