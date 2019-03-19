@@ -109,6 +109,7 @@ class Experiment:
         self.database = database.Database()
         self.tables = []
         self.attachments = {}
+        self.parameters = {}
         self.machines = {}
         for m in cfg.get('machines', []):
             c = None
@@ -138,6 +139,12 @@ class Experiment:
             raise Exception("Attempting to set duplicate attachment %s" % name)
         self.attachments[name] = content
 
+    def set_param(self, name, value):
+        '''Set a parameter'''
+        if name in self.parameters and self.parameters[name] != value:
+            raise Exception("Attempting to set duplicate parameter %s" % name)
+        self.parameters[name] = value
+
     def save(self):
         '''Save the experiment to the database.'''
         # TODO
@@ -160,8 +167,8 @@ class Experiment:
         # - host (size, mm_time) must match with client (size,
         #   mm_time)
         # Create experiments row
-        # TODO parameters, time, description
-        self.database.new_experiment()
+        # TODO time, description
+        self.database.new_experiment(self.parameters)
         # Save attachments
         self.database.save_table('attachments', ['name', 'content'], self.attachments.items())
         for table in self.tables:

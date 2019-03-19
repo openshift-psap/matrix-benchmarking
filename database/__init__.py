@@ -1,5 +1,6 @@
 import inspect
 import os
+import copy
 import sqlite3
 import uuid
 
@@ -19,11 +20,17 @@ class Database:
         self.db = db
         self.id_experiment = None
 
-    # TODO parameters
-    def new_experiment(self):
+    def new_experiment(self, parameters):
         '''Create a new experiment, will be used for other tables'''
         cursor = self.db.cursor()
-        cursor.execute('insert into experiments(uuid, imported) values(?, 0)', (str(uuid.uuid4()),))
+        fields = copy.deepcopy(parameters)
+        fields['uuid'] = str(uuid.uuid4())
+        fields['imported'] = 0
+        field_list = ', '.join(fields.keys())
+        placeholders = ','.join(['?' for _ in fields.keys()])
+        sql = ('insert into experiments(%s) values(%s)' %
+               (field_list, placeholders))
+        cursor.execute(sql, tuple(fields.values()))
         self.id_experiment = cursor.lastrowid
 
     def save_table(self, table_name, field_names, row_generator):
