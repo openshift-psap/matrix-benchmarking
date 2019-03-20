@@ -4,14 +4,14 @@ import importlib
 import re
 import yaml
 import measurement
-import experiment
+from experiment import Experiment
 
 # load configuration file
 # TODO pass somehow to measurement. Global??
 with open("benchmark.yaml", 'r') as f:
     cfg = yaml.safe_load(f)
 
-experiment = experiment.Experiment(cfg)
+experiment = Experiment(cfg)
 
 # load and initialize measurements
 measurements = []

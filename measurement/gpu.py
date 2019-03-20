@@ -2,7 +2,7 @@ import os
 import subprocess
 import inspect
 import re
-import measurement
+from measurement import Measurement
 
 class NvidiaTool:
     def __init__(self, experiment):
@@ -38,7 +38,7 @@ class IntelTool:
     def parse_log(self, log):
         pass
 
-class GPU(measurement.Measurement):
+class GPU(Measurement):
     # TODO accept a machine ??
     def __init__(self, cfg=None, **kargs):
         super().__init__(**kargs)

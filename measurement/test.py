@@ -1,9 +1,9 @@
 import os
 import subprocess
-import datetime
-import measurement
+from datetime import datetime
+from measurement import Measurement
 
-class Test(measurement.Measurement):
+class Test(Measurement):
     def __init__(self, cfg=None, **kargs):
         super().__init__(**kargs)
         self.log = 'vmstat.log'
@@ -43,6 +43,6 @@ class Test(measurement.Measurement):
                     continue
                 cpu = 100 - int(fields[idle_idx])
                 time = ' '.join(fields[-2:])
-                time = int(datetime.datetime.strptime(time, '%Y-%m-%d %H:%M:%S').timestamp())
+                time = int(datetime.strptime(time, '%Y-%m-%d %H:%M:%S').timestamp())
                 self.table.add(time, cpu)
         os.unlink(self.log)

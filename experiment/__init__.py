@@ -1,4 +1,4 @@
-import database
+from database import Database
 import machine
 
 class Field:
@@ -130,7 +130,7 @@ def collapse_tables(tables):
 class Experiment:
     def __init__(self, cfg):
         # TODO pass configuration
-        self.database = database.Database()
+        self.database = Database()
         self.tables = []
         self.attachments = {}
         self.parameters = {}
