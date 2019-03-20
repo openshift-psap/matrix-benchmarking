@@ -26,7 +26,7 @@ for m in cfg['measurements']:
     if type(m) != str or not name_re.match(m):
         raise Exception('Invalid module name %s' % m)
     mod = importlib.import_module('measurement.' + m.lower())
-    measurements.append(getattr(mod, m)(cfg=cfg, experiment=experiment))
+    measurements.append(getattr(mod, m)(cfg, experiment))
 
 for m in measurements:
     m.setup()

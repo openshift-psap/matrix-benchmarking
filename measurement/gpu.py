@@ -63,8 +63,8 @@ class IntelTool:
 
 class GPU(Measurement):
     # TODO accept a machine ??
-    def __init__(self, cfg=None, **kargs):
-        Measurement.__init__(self, **kargs)
+    def __init__(self, cfg, experiment):
+        Measurement.__init__(self, experiment)
         self.log = 'gpu_stats.txt'
         # TODO check the type of card (Intel/Nvidia/Others)
         # check commands (intel_gpu_time for Intel, nvidia-smi for

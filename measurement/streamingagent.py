@@ -1,11 +1,11 @@
 import os
 import inspect
 import re
-import measurement
+from measurement import Measurement
 
-class StreamingAgent(measurement.Measurement):
-    def __init__(self, cfg=None, **kargs):
-        super().__init__(**kargs)
+class StreamingAgent(Measurement):
+    def __init__(self, cfg, experiment):
+        Measurement.__init__(self, experiment)
         self.log = 'streaming.log'
         self.table = self.experiment.create_table([
             'time',
