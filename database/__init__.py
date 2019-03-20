@@ -5,7 +5,7 @@ import sqlite3
 import uuid
 
 class Database:
-    def __init__(self, cfg=None):
+    def __init__(self):
         db = sqlite3.connect('benchmark.db')
 
         cur_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
