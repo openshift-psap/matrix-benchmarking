@@ -5,7 +5,7 @@ from measurement import Measurement
 
 class Test(Measurement):
     def __init__(self, cfg=None, **kargs):
-        super().__init__(**kargs)
+        Measurement.__init__(self, **kargs)
         self.log = 'vmstat.log'
         self.vmstat = None
         # verify we have the command we need

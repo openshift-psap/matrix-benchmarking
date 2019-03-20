@@ -41,7 +41,7 @@ class IntelTool:
 class GPU(Measurement):
     # TODO accept a machine ??
     def __init__(self, cfg=None, **kargs):
-        super().__init__(**kargs)
+        Measurement.__init__(self, **kargs)
         self.log = 'gpu_stats.txt'
         self.cmd = None
         # TODO check the type of card (Intel/Nvidia/Others)
