@@ -14,6 +14,7 @@ class StreamingAgent(measurement.Measurement):
             'time',
             'guest.frame_size',
             'guest.capture_duration',
+            'guest.encode_duration',
             'guest.send_duration',
         ])
 
@@ -44,14 +45,18 @@ class StreamingAgent(measurement.Measurement):
                 frame_bytes = None
             elif verb == 'Captured':
                 captured = time
+                encoded = time # old logs do not have encoding
+            elif verb == 'Encoded':
+                encoded = time
             elif verb == 'Frame':
                 m = bytes_re.match(m.group(3))
                 frame_bytes = int(m.group(1))
             elif verb == 'Sent':
-                sent = time # TODO encode_duration
+                sent = time
                 self.table.add(start / 1000000, frame_bytes,
                                (captured - start) / 1000000,
-                               (sent - captured) / 1000000)
+                               (encoded - captured) / 1000000,
+                               (sent - encoded) / 1000000)
             elif verb == 'Started':
                 m = new_stream_re.match(m.group(3))
                 if m:
