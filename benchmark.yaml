@@ -3,7 +3,8 @@
 measurements:
 - Test
 - GPU
-- StreamingAgent
+- StreamingAgent:
+   FPS: 10
 
 # machine to connect to, currently only local and
 # accessible through ssh (remote)

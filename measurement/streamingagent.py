@@ -14,6 +14,13 @@ class StreamingAgent(measurement.Measurement):
             'guest.encode_duration',
             'guest.send_duration',
         ])
+        self.params = {}
+        if cfg:
+            if 'FPS' in cfg:
+                fps = int(cfg['FPS'])
+                self.experiment.set_param('FPS', fps)
+                self.params['framerate'] = fps
+            # TODO other parameters
         self.guest = self.experiment.machines['guest']
         cur_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
         exe = os.path.join(cur_dir, '..', 'utils', 'execover')
@@ -31,8 +38,9 @@ class StreamingAgent(measurement.Measurement):
             except:
                 pass
         assert pid > 0, "Process not found"
-        # TODO parameters !!
-        cmd = '/usr/bin/spice-streaming-agent -l /tmp/streaming.log'
+        params = ['-c %s=%s' % (k, v) for k, v in self.params.items()]
+        params = ' '.join(params)
+        cmd = '/usr/bin/spice-streaming-agent -l /tmp/streaming.log %s' % params
         cmd = '/usr/local/bin/execover %d %s' % (pid, cmd)
         self.guest.run(cmd)
 
