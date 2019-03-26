@@ -83,7 +83,7 @@ class RemoteMachine(Machine):
 
     def _local(self, path):
         '''Canonize local path'''
-        if path[0:1] != '/' or path[0:1] != '.':
+        if path[0:1] != '/' and path[0:1] != '.':
             return './' + path
         return path
 
