@@ -33,7 +33,7 @@ class Test(Measurement):
                 raise Exception('Wrong vmstat header: ' + header)
             header = f.readline().split()
             idle_idx = header.index('id') # extract IDLE column
-            time_idx = header.index('GMT') # extract TIMESTAMP column
+            time_idx = header.index('st') + 1 # extract TIMESTAMP column
             if len(header) != time_idx + 1:
                 raise Exception('Timestamp not at the end')
             for line in f:
