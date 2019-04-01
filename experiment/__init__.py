@@ -1,4 +1,5 @@
 from database import Database
+from collections import defaultdict
 import machine
 
 class Field:
@@ -174,9 +175,9 @@ class Experiment:
         # TODO
         # We should group informations on multiple tables that goes to
         # same physical table
-        table_groups = {}
+        table_groups = defaultdict(list)
         for table in self.tables:
-            table_groups.setdefault(table.table_name, []).append(table)
+            table_groups[table.table_name].append(table)
         new_tables = []
         for name, tables in table_groups.items():
             if len(tables) == 1:
