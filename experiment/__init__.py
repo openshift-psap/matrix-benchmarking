@@ -129,9 +129,45 @@ def fix_table_time(table):
     name = names[part]
     table.fields[idx] = Field(name, table.table_name, name)
 
+def collapse_frames_guest_host(guest_table, host_table):
+    '''Collapse guest and host frame information using frame_size'''
+    size = len(guest_table.rows)
+    assert len(host_table.rows) >= size, "Not enough frames on host"
+    idx_frame_guest = guest_table.fields.index(all_fields['guest.frame_size'])
+    idx_frame_host = host_table.fields.index(all_fields['host.frame_size'])
+    def match(start):
+        for i in range(0, size):
+            if (guest_table.rows[i][idx_frame_guest] !=
+                    host_table.rows[i+start][idx_frame_host]):
+                return False
+        return True
+    for start in range(len(host_table.rows) - size, 0, -1):
+        if not match(start):
+            continue
+        # found a match
+        fields = [f.name for f in guest_table.fields]
+        fields += [f.name for f in host_table.fields if f.name != 'host.frame_size']
+        new_table = Table(fields)
+        idx = guest_table.fields.index(all_fields['time'])
+        # XXX HACK
+        new_table.fields[idx] = Field('agent_time', guest_table.table_name, 'agent_time')
+        for g_row, h_row in zip(guest_table.rows, host_table.rows[start:]):
+            row = g_row + h_row[0:idx_frame_host] + h_row[idx_frame_host+1:]
+            new_table.add(*row)
+        return new_table
+    assert False, "Cannot find guest frames in host ones"
+
 def collapse_tables(tables):
     if tables[0].table_name != 'frames':
         return collapse_tables_time(tables)
+    parts = {}
+    for table in tables:
+        parts[frames_table_part(table)] = table
+    if 'client' in parts:
+        raise NotImplementedError("collapsing client informations")
+    if 'guest' in parts:
+        assert 'host' in parts, "Cannot bind guest and client frame information directly"
+        return collapse_frames_guest_host(parts['guest'], parts['host'])
     raise NotImplementedError("Frames table collapsing")
 
 class Experiment:
