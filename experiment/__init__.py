@@ -99,6 +99,16 @@ def collapse_tables_time(tables):
     new_table.fields[0] = Field('time', new_table.table_name, 'time')
     return new_table
 
+def frames_table_part(table):
+    '''Get which part of frames virtual table (guest/host/client) is'''
+    assert table.table_name == 'frames', "frames_table_part called with wrong table!"
+    parts = set()
+    for f in table.fields:
+        if f.name != 'time':
+            parts.add(f.name.split('.', 1)[0])
+    assert len(parts) == 1, "Too complex table"
+    return parts.pop()
+
 def fix_table_time(table):
     if not all_fields['time'] in table.fields:
         return
@@ -110,17 +120,13 @@ def fix_table_time(table):
         return
 
     # complex case, frames
-    parts = set()
-    for f in table.fields:
-        if f.name != 'time':
-            parts.add(f.name.split('.',1)[0])
-    assert len(parts) == 1, "Too complex table"
+    part = frames_table_part(table)
     # TODO host, no current field in the database
     names = {
         'guest': 'agent_time',
         'client': 'client_time',
     }
-    name = names[parts.pop()]
+    name = names[part]
     table.fields[idx] = Field(name, table.table_name, name)
 
 def collapse_tables(tables):
