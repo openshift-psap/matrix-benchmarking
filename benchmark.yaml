@@ -7,6 +7,9 @@ measurements:
    FPS: 10
 - SpiceServer:
    log: /tmp/recorder.txt
+- RemoteViewer:
+   executable: /home/fziglio/install/bin/remote-viewer
+   URL: spice://m2000-server:5900
 
 # machine to connect to, currently only local and
 # accessible through ssh (remote)
