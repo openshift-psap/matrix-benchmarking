@@ -1,5 +1,5 @@
-from database import Database
 from collections import defaultdict
+from database import Database
 import machine
 
 class Field:
@@ -138,12 +138,12 @@ class Experiment:
         self.machines = {}
         for m in cfg.get('machines', []):
             c = None
-            if type(m) == dict:
+            if isinstance(m, dict):
                 l = list(m.keys())
                 assert len(l) == 1, 'Invalid machine specification %s' % m
                 c = m[l[0]]
                 m = l[0]
-            if type(m) != str:
+            if not isinstance(m, str):
                 raise Exception('Invalid machine name %s' % m)
             self.machines[m] = machine.create_machine(c)
 
@@ -198,6 +198,7 @@ class Experiment:
         self.database.save_table('attachments', ['name', 'content'], self.attachments.items())
         for table in self.tables:
             fix_table_time(table)
-            self.database.save_table(table.table_name, [f.field_name for f in table.fields], table.rows)
+            field_names = [f.field_name for f in table.fields]
+            self.database.save_table(table.table_name, field_names, table.rows)
         # If something goes wrong dump all tables so we can debug
         self.database.commit()
