@@ -1,3 +1,5 @@
+import os
+import yaml
 from collections import defaultdict
 from database import Database
 import machine
@@ -221,6 +223,15 @@ class Experiment:
 
     def save(self):
         '''Save the experiment to the database.'''
+
+        # If something goes wrong dump all tables so we can debug
+        debug_tables = []
+        for i, table in enumerate(self.tables):
+            debug_table = 'debug_table%d.yaml' % i
+            debug_tables.append(debug_table)
+            with open(debug_table, 'w', encoding='utf8') as outfile:
+                yaml.dump(table, outfile, allow_unicode=True)
+
         # TODO
         # We should group informations on multiple tables that goes to
         # same physical table
@@ -249,5 +260,8 @@ class Experiment:
             fix_table_time(table)
             field_names = [f.field_name for f in table.fields]
             self.database.save_table(table.table_name, field_names, table.rows)
-        # If something goes wrong dump all tables so we can debug
         self.database.commit()
+
+        # delete debug files, everything went fine
+        for debug_table in debug_tables:
+            os.unlink(debug_tables)
