@@ -125,13 +125,14 @@ def fix_table_time(table):
 def collapse_frames_guest_host(guest_table, host_table):
     '''Collapse guest and host frame information using frame_size'''
     size = len(guest_table.rows)
-    assert len(host_table.rows) >= size, "Not enough frames on host"
-    idx_frame_guest = guest_table.fields.index(all_fields['guest.frame_size'])
-    idx_frame_host = host_table.fields.index(all_fields['host.frame_size'])
 
     # how many line to match (90% but don't exclude more than 10
     # frames)
     match_size = size - min(10, size // 10)
+    assert len(host_table.rows) >= match_size, "Not enough frames on host"
+    idx_frame_guest = guest_table.fields.index(all_fields['guest.frame_size'])
+    idx_frame_host = host_table.fields.index(all_fields['host.frame_size'])
+
     def match(start):
         for i in range(0, match_size):
             if (guest_table.rows[i][idx_frame_guest] !=
@@ -139,7 +140,7 @@ def collapse_frames_guest_host(guest_table, host_table):
                 return False
         return True
 
-    for start in range(len(host_table.rows) - match_size, 0, -1):
+    for start in range(len(host_table.rows) - match_size, -1, -1):
         if not match(start):
             continue
         # found a match
