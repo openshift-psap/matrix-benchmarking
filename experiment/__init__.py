@@ -155,17 +155,47 @@ def collapse_frames_guest_host(guest_table, host_table):
         return new_table
     assert False, "Cannot find guest frames in host ones"
 
+def collapse_frames_host_client(host_table, client_table):
+    '''Collapse host and client frame information using frame_size and mm_time'''
+
+    try:
+        idx_frame_host = host_table.fields.index(all_fields['host.frame_size'])
+    except:
+        idx_frame_host = host_table.fields.index(all_fields['guest.frame_size'])
+    idx_time_host = host_table.fields.index(all_fields['host.mm_time'])
+    idx_frame_client = client_table.fields.index(all_fields['client.frame_size'])
+    idx_time_client = client_table.fields.index(all_fields['client.mm_time'])
+
+    # create a dictionary from table
+    c_rows = {}
+    for row in client_table.rows:
+        c_rows[(row[idx_time_client], row[idx_frame_client])] = row
+
+    fields = [f.name for f in host_table.fields]
+    fields += [f.name for f in client_table.fields] # if f.name != 'client.frame_size']
+    empty = (None,) * len(client_table.fields)
+    new_table = Table(fields)
+
+    for row in host_table.rows:
+        key = (row[idx_time_host], row[idx_frame_host])
+        row += c_rows.get(key, empty)
+        new_table.add(*row)
+
+    return new_table
+
 def collapse_tables(tables):
     if tables[0].table_name != 'frames':
         return collapse_tables_time(tables)
     parts = {}
     for table in tables:
         parts[frames_table_part(table)] = table
-    if 'client' in parts:
-        raise NotImplementedError("collapsing client informations")
     if 'guest' in parts:
         assert 'host' in parts, "Cannot bind guest and client frame information directly"
-        return collapse_frames_guest_host(parts['guest'], parts['host'])
+        parts['host'] = collapse_frames_guest_host(parts['guest'], parts['host'])
+        del parts['guest']
+    if 'client' in parts:
+        assert 'host' in parts, "Cannot bind guest and client frame information directly"
+        return collapse_frames_host_client(parts['host'], parts['client'])
     raise NotImplementedError("Frames table collapsing")
 
 class Experiment:
