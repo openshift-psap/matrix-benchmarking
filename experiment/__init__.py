@@ -135,13 +135,18 @@ def collapse_frames_guest_host(guest_table, host_table):
     assert len(host_table.rows) >= size, "Not enough frames on host"
     idx_frame_guest = guest_table.fields.index(all_fields['guest.frame_size'])
     idx_frame_host = host_table.fields.index(all_fields['host.frame_size'])
+
+    # how many line to match (90% but don't exclude more than 10
+    # frames)
+    match_size = size - min(10, size // 10)
     def match(start):
-        for i in range(0, size):
+        for i in range(0, match_size):
             if (guest_table.rows[i][idx_frame_guest] !=
                     host_table.rows[i+start][idx_frame_host]):
                 return False
         return True
-    for start in range(len(host_table.rows) - size, 0, -1):
+
+    for start in range(len(host_table.rows) - match_size, 0, -1):
         if not match(start):
             continue
         # found a match
@@ -152,6 +157,8 @@ def collapse_frames_guest_host(guest_table, host_table):
         # XXX HACK
         new_table.fields[idx] = Field('agent_time', guest_table.table_name, 'agent_time')
         for g_row, h_row in zip(guest_table.rows, host_table.rows[start:]):
+            if g_row[idx_frame_guest] != h_row[idx_frame_host]:
+                break
             row = g_row + h_row[0:idx_frame_host] + h_row[idx_frame_host+1:]
             new_table.add(*row)
         return new_table
