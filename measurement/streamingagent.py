@@ -8,7 +8,7 @@ class StreamingAgent(Measurement):
         Measurement.__init__(self, experiment)
         self.log = 'streaming.log'
         self.table = self.experiment.create_table([
-            'time',
+            'guest.time',
             'guest.frame_size',
             'guest.capture_duration',
             'guest.encode_duration',

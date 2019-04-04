@@ -33,12 +33,14 @@ add_field('client.app_gpu', 'client_stats', 'app_gpu_usage')
 add_field('client.cpu', 'client_stats', 'cpu_usage')
 add_field('client.app_cpu', 'client_stats', 'app_cpu_usage')
 
+add_field('guest.time', 'frames', 'agent_time')
 add_field('guest.frame_size', 'frames', 'size')
 add_field('guest.capture_duration', 'frames', 'capture_duration')
 add_field('guest.encode_duration', 'frames', 'encode_duration')
 add_field('guest.send_duration', 'frames', 'send_duration')
 add_field('host.frame_size', 'frames', 'size')
 add_field('host.mm_time', 'frames', 'mm_time')
+add_field('client.time', 'frames', 'client_time')
 add_field('client.frame_size', 'frames', 'size')
 add_field('client.mm_time', 'frames', 'mm_time')
 add_field('client.decode_duration', 'frames', 'decode_duration')
@@ -116,20 +118,9 @@ def fix_table_time(table):
         return
     idx = table.fields.index(all_fields['time'])
 
+    assert table.table_name != 'frames', "Frame table should not have time field"
     # TODO hacky
-    if table.table_name != 'frames':
-        table.fields[idx] = Field('time', table.table_name, 'time')
-        return
-
-    # complex case, frames
-    part = frames_table_part(table)
-    # TODO host, no current field in the database
-    names = {
-        'guest': 'agent_time',
-        'client': 'client_time',
-    }
-    name = names[part]
-    table.fields[idx] = Field(name, table.table_name, name)
+    table.fields[idx] = Field('time', table.table_name, 'time')
 
 def collapse_frames_guest_host(guest_table, host_table):
     '''Collapse guest and host frame information using frame_size'''
@@ -155,9 +146,6 @@ def collapse_frames_guest_host(guest_table, host_table):
         fields = [f.name for f in guest_table.fields]
         fields += [f.name for f in host_table.fields if f.name != 'host.frame_size']
         new_table = Table(fields)
-        idx = guest_table.fields.index(all_fields['time'])
-        # XXX HACK
-        new_table.fields[idx] = Field('agent_time', guest_table.table_name, 'agent_time')
         for g_row, h_row in zip(guest_table.rows, host_table.rows[start:]):
             if g_row[idx_frame_guest] != h_row[idx_frame_host]:
                 break
