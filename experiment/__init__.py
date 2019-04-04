@@ -264,4 +264,4 @@ class Experiment:
 
         # delete debug files, everything went fine
         for debug_table in debug_tables:
-            os.unlink(debug_tables)
+            os.unlink(debug_table)
