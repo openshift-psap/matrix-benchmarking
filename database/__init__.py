@@ -5,8 +5,8 @@ import sqlite3
 import uuid
 
 class Database:
-    def __init__(self):
-        db = sqlite3.connect('benchmark.db')
+    def __init__(self, name='benchmark'):
+        db = sqlite3.connect('%s.db' % name)
 
         cur_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
         with open(os.path.join(cur_dir, 'smart_streaming_ddl_sqlite.sql')) as f:

@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS attachments
   id_experiment INTEGER,
   name VARCHAR(100) NOT NULL,
   content TEXT NOT NULL,
+
   CONSTRAINT con_primary_name PRIMARY KEY(id_experiment, name)
   FOREIGN KEY (id_experiment) REFERENCES experiments
 );
@@ -37,6 +38,7 @@ CREATE TABLE IF NOT EXISTS frames
   client_time DOUBLE PRECISION NULL,
   decode_duration DOUBLE PRECISION NULL,
   queue_size INT NULL,
+
   CONSTRAINT con_primary_name PRIMARY KEY(id_experiment, agent_time)
   FOREIGN KEY (id_experiment) REFERENCES experiments
 );
@@ -49,6 +51,7 @@ CREATE TABLE IF NOT EXISTS guest_stats
   gpu_usage FLOAT NULL,
   encode_usage FLOAT NULL,
   decode_usage FLOAT NULL,
+
   CONSTRAINT con_primary_name PRIMARY KEY(id_experiment, time)
   FOREIGN KEY (id_experiment) REFERENCES experiments
 );
@@ -58,6 +61,7 @@ CREATE TABLE IF NOT EXISTS host_stats
   id_experiment INTEGER,
   time DOUBLE PRECISION NOT NULL,
   cpu_usage FLOAT NULL,
+
   CONSTRAINT con_primary_name PRIMARY KEY(id_experiment, time)
   FOREIGN KEY (id_experiment) REFERENCES experiments
 );
@@ -70,6 +74,7 @@ CREATE TABLE IF NOT EXISTS client_stats
   app_gpu_usage FLOAT NULL,
   cpu_usage FLOAT NULL,
   app_cpu_usage FLOAT NULL,
+
   CONSTRAINT con_primary_name PRIMARY KEY(id_experiment, time)
   FOREIGN KEY (id_experiment) REFERENCES experiments
 );
