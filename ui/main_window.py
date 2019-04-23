@@ -224,10 +224,12 @@ class StatsApp(Gtk.Application):
         Gtk.Application.__init__(self,
                                  application_id='org.spice-space.streaming-stats',
                                  flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
+        self.window = None
     #__init__
 
     def do_shutdown(self):
-        self.window.close_all_experiments()
+        if self.window:
+            self.window.close_all_experiments()
         Gtk.Application.do_shutdown(self)
     # do_shutdown
 
