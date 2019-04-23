@@ -55,15 +55,42 @@ class FramesDataView(GraphDataView):
     text = "Frames"
 # FramesView
 
-class ExperimentDataView(Gtk.Label, DataView):
+class ExperimentDataView(Gtk.Grid, DataView):
     text = "Experiment"
     def __init__(self, data):
-        Gtk.Label.__init__(self, "")
+        Gtk.Grid.__init__(self)
         DataView.__init__(self, data)
 
-        self.set_markup("%s" % data)
-        self.show()
+        self.insert_column(0)
+        self.insert_column(1)
+        self.insert_column(2)
+        self.set_border_width(10)
+        self.set_column_homogeneous(True)
+        self.set_column_spacing(10)
+        self.set_row_spacing(10)
+
+        row = 0
+        for key, val in data:
+            self.display_data(key, val, row)
+            row += 1
+        self.show_all()
     # __init__
+
+    def display_data(self, text, value, row):
+        self.insert_row(row)
+        w = Gtk.Label("")
+        w.set_xalign(1.0)
+        w.set_markup("<b>%s:</b>" % text.capitalize())
+        self.attach(w, 0, row, 1, 1)
+
+        w = Gtk.Label("")
+        w.set_xalign(0.0)
+        if not value:
+            value = "<i>not provided</i>"
+
+        w.set_markup("%s" % value)
+        self.attach(w, 1, row, 2, 1)
+    # display_data
 # ExperimentDataView
 
 class ExperimentView(Gtk.Notebook):
