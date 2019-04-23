@@ -1,12 +1,16 @@
 #!/bin/env python
 
-class DatabaseData:
+from collections import Iterator
+
+class DatabaseData(Iterator):
     _table = None
     _members = None
 
     def __init__(self, database, args):
+        Iterator.__init__(self)
         self.database = database
         self.args = args
+        self.cur = 0
     # __init__
 
     def __getattr__(self, attr):
@@ -23,6 +27,10 @@ class DatabaseData:
         return _str
     # __str__
 
+    def __len__(self):
+        return len(self._members)
+    # __len__
+
     @classmethod
     def load(_class, database, _id=None):
         if not _class._table:
@@ -36,6 +44,17 @@ class DatabaseData:
         cursor.execute(query)
         return [_class(database, args) for args in cursor.fetchall()]
     # load
+
+    def next(self):
+        if self.cur >= len(self._members):
+            self.cur = 0
+            raise StopIteration
+
+        key = self._members[self.cur]
+        val = self.args[self.cur]
+        self.cur += 1
+        return key, val
+    # next
 # DatabaseData
 
 
