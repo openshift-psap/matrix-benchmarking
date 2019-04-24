@@ -62,20 +62,20 @@ class GuestData(DatabaseData):
     _table = "guest_stats"
     _members = ["id", "time", "gpu_memory", "gpu_usage",
                 "encode_usage", "decode_usage"]
-#GuestData
+# GuestData
 
 
 class HostData(DatabaseData):
     _table = "host_stats"
     _members = ["id", "time", "cpu_usage"]
-#HostData
+# HostData
 
 
 class ClientData(DatabaseData):
     _table = "client_stats"
     _members = ["id", "time", "gpu_usage", "app_gpu_usage",
                 "cpu_usage", "app_cpu_usage"]
-#ClientData
+# ClientData
 
 
 class FramesData(DatabaseData):
@@ -83,7 +83,7 @@ class FramesData(DatabaseData):
     _members = ["id", "agent_time", "size", "mm_time", "capture_duration",
                 "encode_duration", "send_duration", "client_time",
                 "decode_duration", "queue_size"]
-#FramesData
+# FramesData
 
 
 class ExperimentData(DatabaseData):
@@ -107,7 +107,7 @@ class ExperimentData(DatabaseData):
                 _str = "%s%s\n\t" % (_str, i)
         _str = "%s%s" % (_str, "\b\b")
         print(_str)
-    # __str__
+    # dump
 # ExperimentData
 
 
@@ -118,3 +118,4 @@ if __name__ == "__main__":
     for e in experiments:
         e.dump()
     db.close()
+# __main__
