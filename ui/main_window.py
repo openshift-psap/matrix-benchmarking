@@ -13,6 +13,7 @@ from dataview import ExperimentDataView, FramesDataView, ClientDataView, \
                      HostDataView, GuestDataView
 
 class ExperimentView(Gtk.Notebook):
+
     def __init__(self, data):
         Gtk.Notebook.__init__(self)
         self.append_page(ExperimentDataView, data)
@@ -69,13 +70,16 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def __init__(self, files):
         Gtk.ApplicationWindow.__init__(self)
+        theme = Gtk.IconTheme.get_default()
+        theme.append_search_path("./icons")
+        self.set_icon_name("spice")
         self.stack = None
 
         self.set_default_size(800, 600)
 
         # Custom title bar
         self.header = Gtk.HeaderBar()
-        self.header.set_title("Smart Streaming Stats Viewer")
+        self.header.set_title("SPICE Streaming Stats Viewer")
         self.header.set_show_close_button(True)
 
         # Headerbar buttons
@@ -85,6 +89,7 @@ class MainWindow(Gtk.ApplicationWindow):
         # headerbar custom middle widget
         self.set_titlebar(self.header)
 
+        self.add(Gtk.Image.new_from_file("icons/spice.png"))
         for f in files:
             self.load_experiments(f)
     # __init__
@@ -104,6 +109,7 @@ class MainWindow(Gtk.ApplicationWindow):
             return
 
         self.stack = Gtk.Stack()
+        self.remove(self.get_child())
         self.add(self.stack)
         self.stack.show()
 
@@ -170,6 +176,7 @@ class StatsApp(Gtk.Application):
         Gtk.Application.__init__(self,
                                  application_id='org.spice-space.streaming-stats',
                                  flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
+        GLib.set_prgname("Streaming stats")
         self.window = None
     #__init__
 
