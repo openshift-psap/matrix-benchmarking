@@ -9,23 +9,30 @@ from matplotlib.figure import Figure
 import matplotlib.pyplot as pyplot
 import numpy
 
+class Plot(object):
+
+    def __init__(self, x, y, label, y_label=None, x_label='time(s)'):
+        self.x = self.zeroify(x)
+        self.y = self.zeroify(y)
+        if y_label is not None:
+            label = '%s (%s / %s)' % (label, y_label, x_label)
+        self.label = label
+    # __init__
+
+    @staticmethod
+    def zeroify(_list):
+        return [i or 0 for i in _list]
+    # zeroify
+# Plot
+
 class DataView(object):
     def __init__(self, data):
         self.data = data
     # __init__
 # DataView
 
-class Plot(object):
-    def __init__(self, x, y, label, y_label=None, x_label='time(s)'):
-        self.x = x
-        self.y = y
-        if y_label is not None:
-            label = '%s (%s / %s)' % (label, y_label, x_label)
-        self.label = label
-    # __init__
-# Plot
-
 class GraphDataView(Gtk.ScrolledWindow, DataView):
+
     def __init__(self, data, plots=[]):
         Gtk.ScrolledWindow.__init__(self)
         DataView.__init__(self, data)
@@ -61,10 +68,10 @@ class GuestDataView(GraphDataView):
 
         for d in data:
             time.append(d.time)
-            gpu_mem.append(d.gpu_memory or 0)
-            gpu_usage.append(d.gpu_usage or 0)
-            encode_usage.append(d.encode_usage or 0)
-            decode_usage.append(d.decode_usage or 0)
+            gpu_mem.append(d.gpu_memory)
+            gpu_usage.append(d.gpu_usage)
+            encode_usage.append(d.encode_usage)
+            decode_usage.append(d.decode_usage)
 
         plots = [Plot(time, gpu_mem, "GPU Memory", "memory(MB)"),
                  Plot(time, gpu_usage, "GPU Usage", "usage(%)"),
@@ -84,7 +91,7 @@ class HostDataView(GraphDataView):
 
         for d in data:
             time.append(d.time)
-            cpu_usage.append(d.cpu_usage or 0)
+            cpu_usage.append(d.cpu_usage)
 
         plots = [Plot(time, cpu_usage, "CPU Usage", "usage(%)")]
         GraphDataView.__init__(self, data, plots)
@@ -103,10 +110,10 @@ class ClientDataView(GraphDataView):
 
         for d in data:
             time.append(d.time)
-            gpu_usage.append(d.gpu_usage or 0)
-            app_gpu_usage.append(d.app_gpu_usage or 0)
-            cpu_usage.append(d.cpu_usage or 0)
-            app_cpu_usage.append(d.app_cpu_usage or 0)
+            gpu_usage.append(d.gpu_usage)
+            app_gpu_usage.append(d.app_gpu_usage)
+            cpu_usage.append(d.cpu_usage)
+            app_cpu_usage.append(d.app_cpu_usage)
 
         plots = [Plot(time, gpu_usage, "GPU Usage", "usage(%)"),
                  Plot(time, app_gpu_usage, "App GPU Usage", "usage(%)"),
@@ -133,14 +140,14 @@ class FramesDataView(GraphDataView):
 
         for d in data:
             agent_time.append(d.agent_time)
-            size.append(d.size or 0)
+            size.append(d.size)
             mm_time.append(d.mm_time)
-            capture_duration.append(d.capture_duration or 0)
-            encode_duration.append(d.encode_duration or 0)
-            send_duration.append(d.send_duration or 0)
+            capture_duration.append(d.capture_duration)
+            encode_duration.append(d.encode_duration)
+            send_duration.append(d.send_duration)
             client_time.append(d.client_time)
-            decode_duration.append(d.decode_duration or 0)
-            queue_size.append(d.queue_size or 0)
+            decode_duration.append(d.decode_duration)
+            queue_size.append(d.queue_size)
 
         plots = [Plot(agent_time, size, "Size", "size(bytes)"),
                  Plot(agent_time, capture_duration, "Capture Duration", "duration(s)"),
