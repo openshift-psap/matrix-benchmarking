@@ -10,23 +10,61 @@ import sqlite3 as sqlite
 
 from data import ExperimentData
 from dataview import ExperimentDataView, FramesDataView, ClientDataView, \
-                     HostDataView, GuestDataView
+                     HostDataView, GuestDataView, GraphDataView
 
 class ExperimentView(Gtk.Notebook):
 
     def __init__(self, data):
-        Gtk.Notebook.__init__(self)
+        Gtk.Notebook.__init__(self, scrollable=True)
         self.append_page(ExperimentDataView, data)
         self.append_page(FramesDataView, data.frames)
         self.append_page(ClientDataView, data.client_stats)
         self.append_page(HostDataView, data.host_stats)
         self.append_page(GuestDataView, data.guest_stats)
+        self.n_pages = self.get_n_pages()
+
+        button = Gtk.Button()
+        button.set_image(Gtk.Image.new_from_icon_name("tab-new-symbolic", Gtk.IconSize.BUTTON))
+        button.set_always_show_image(True)
+        button.set_tooltip_text("Custom tab")
+        button.connect("clicked", self.new_tab_clicked)
+        button.show()
+        self.set_action_widget(button, Gtk.PackType.END)
+
+        self.custom_tabs = []
         self.show()
     # __init__
 
-    def append_page(self, type, data):
-        Gtk.Notebook.append_page(self, type(data), Gtk.Label(type.text))
-    # add_graph
+    def append_page(self, type, data, tab_widget=None):
+        if not tab_widget:
+            tab_widget = Gtk.Label(type.text)
+
+        return Gtk.Notebook.append_page(self, type(data), tab_widget)
+    # append_page
+
+    def new_tab_clicked(self, button):
+        box = Gtk.Box(Gtk.Orientation.HORIZONTAL, 4)
+        box.set_homogeneous(False)
+        box.pack_start(Gtk.Label("Custom tab %d" % len(self.custom_tabs)), True, True, 0)
+        close_button = Gtk.Button()
+        close_button.set_image(Gtk.Image.new_from_icon_name("window-close-symbolic", Gtk.IconSize.BUTTON))
+        close_button.set_always_show_image(True)
+        close_button.set_tooltip_text("Close tab")
+        close_button.set_relief(Gtk.ReliefStyle.NONE)
+        close_button.set_focus_on_click(False)
+        close_button.connect("clicked", self.close_tab_clicked)
+        box.pack_end(close_button, False, True, 0)
+        box.show_all()
+
+        self.custom_tabs.append(close_button)
+        self.set_current_page(self.append_page(GraphDataView, None, box))
+    # new_tab_clicked
+
+    def close_tab_clicked(self, button):
+        idx = self.custom_tabs.index(button)
+        self.remove_page(idx + self.n_pages)
+        self.custom_tabs.pop(idx)
+    # close_tab_clicked
 # ExperimentView
 
 class ExperimentsView(Gtk.Box):

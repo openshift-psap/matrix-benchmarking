@@ -39,6 +39,7 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
 
         if not data:
             self.add(Gtk.Label("No data provided"))
+            self.show_all()
             return
 
         graph, axes = pyplot.subplots(nrows=len(plots))
