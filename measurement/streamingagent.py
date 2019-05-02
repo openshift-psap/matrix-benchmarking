@@ -67,10 +67,13 @@ class StreamingAgent(Measurement):
                 captured = None
                 sent = None
                 frame_bytes = None
-            elif verb == 'Captured':
+                encoded = None
+            elif verb == 'Encoding':
                 captured = time
-                encoded = time # old logs do not have encoding
-            elif verb == 'Encoded':
+            elif verb == 'Captured':
+                # old logs do not have encoding
+                if captured is None:
+                    captured = time
                 encoded = time
             elif verb == 'Frame':
                 m = bytes_re.match(m.group(3))
