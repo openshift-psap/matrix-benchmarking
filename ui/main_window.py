@@ -23,10 +23,9 @@ class ExperimentView(Gtk.Notebook):
         self.append_page(GuestDataView, data.guest_stats)
         self.n_pages = self.get_n_pages()
 
-        button = Gtk.Button()
-        button.set_image(Gtk.Image.new_from_icon_name("tab-new-symbolic", Gtk.IconSize.BUTTON))
-        button.set_always_show_image(True)
-        button.set_tooltip_text("Custom tab")
+        button = Gtk.Button(image=Gtk.Image.new_from_icon_name("tab-new-symbolic", Gtk.IconSize.BUTTON),
+                            always_show_image=True,
+                            tooltip_text="Custom tab")
         button.connect("clicked", self.new_tab_clicked)
         button.show()
         self.set_action_widget(button, Gtk.PackType.END)
@@ -43,15 +42,14 @@ class ExperimentView(Gtk.Notebook):
     # append_page
 
     def new_tab_clicked(self, button):
-        box = Gtk.Box(Gtk.Orientation.HORIZONTAL, 4)
-        box.set_homogeneous(False)
+        box = Gtk.Box(Gtk.Orientation.HORIZONTAL, 4,
+                      homogeneous=False)
         box.pack_start(Gtk.Label("Custom tab %d" % len(self.custom_tabs)), True, True, 0)
-        close_button = Gtk.Button()
-        close_button.set_image(Gtk.Image.new_from_icon_name("window-close-symbolic", Gtk.IconSize.BUTTON))
-        close_button.set_always_show_image(True)
-        close_button.set_tooltip_text("Close tab")
-        close_button.set_relief(Gtk.ReliefStyle.NONE)
-        close_button.set_focus_on_click(False)
+        close_button = Gtk.Button(image=Gtk.Image.new_from_icon_name("window-close-symbolic", Gtk.IconSize.BUTTON),
+                                  always_show_image=True,
+                                  relief=Gtk.ReliefStyle.NONE,
+                                  tooltip_text="Close tab",
+                                  focus_on_click=False)
         close_button.connect("clicked", self.close_tab_clicked)
         box.pack_end(close_button, False, True, 0)
         box.show_all()
@@ -70,15 +68,14 @@ class ExperimentView(Gtk.Notebook):
 class ExperimentsView(Gtk.Box):
 
     def __init__(self, db_path):
-        Gtk.Box.__init__(self, Gtk.Orientation.VERTICAL, 4)
-        self.set_homogeneous(False)
-        self.set_border_width(10)
+        Gtk.Box.__init__(self, Gtk.Orientation.VERTICAL, 4,
+                        homogeneous=False,
+                        border_width=10)
         self.db = sqlite.connect(db_path)
         self.name = os.path.split(db_path)[-1]
 
-        switcher = Gtk.StackSidebar()
         self.stack = Gtk.Stack()
-        switcher.set_stack(self.stack)
+        switcher = Gtk.StackSidebar(stack=self.stack)
 
         for experiment in ExperimentData.load(self.db):
             self.load_experiment(experiment)
@@ -101,26 +98,23 @@ class ExperimentsView(Gtk.Box):
 
     def get_name(self):
         return self.name
-    # get_experiment
+    # get_name
 #ExperimentsView
 
 class MainWindow(Gtk.ApplicationWindow):
 
     def __init__(self, files):
-        Gtk.ApplicationWindow.__init__(self)
-        theme = Gtk.IconTheme.get_default()
-        theme.append_search_path("./icons")
-        self.set_icon_name("spice")
+        Gtk.IconTheme.get_default().append_search_path("./icons")
+        Gtk.ApplicationWindow.__init__(self,
+                                       default_width=800,
+                                       default_height=600,
+                                       icon_name="spice")
+
         self.stack = None
 
-        self.set_default_size(800, 600)
-
         # Custom title bar
-        self.header = Gtk.HeaderBar()
-        self.header.set_title("SPICE Streaming Stats Viewer")
-        self.header.set_show_close_button(True)
-
-        # Headerbar buttons
+        self.header = Gtk.HeaderBar(title="SPICE Streaming Stats Viewer",
+                                    show_close_button=True)
         self.header.pack_start(self.create_button("new", self.new_button_clicked))
         self.header.pack_start(self.create_button("open", self.open_button_clicked))
 
@@ -133,10 +127,9 @@ class MainWindow(Gtk.ApplicationWindow):
     # __init__
 
     def create_button(self, action_name, cb):
-        button = Gtk.Button()
-        button.set_image(Gtk.Image.new_from_icon_name("document-%s-symbolic" % action_name, Gtk.IconSize.BUTTON))
-        button.set_always_show_image(True)
-        button.set_tooltip_text("%s experiment" % action_name.capitalize())
+        button = Gtk.Button(image=Gtk.Image.new_from_icon_name("document-%s-symbolic" % action_name, Gtk.IconSize.BUTTON),
+                            always_show_image=True,
+                            tooltip_text="%s experiment" % action_name.capitalize())
         button.connect("clicked", cb)
         button.show()
         return button
@@ -151,8 +144,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.add(self.stack)
         self.stack.show()
 
-        s = Gtk.StackSwitcher()
-        s.set_stack(self.stack)
+        s = Gtk.StackSwitcher(stack=self.stack)
         s.show()
 
         self.header.set_custom_title(s)
@@ -185,9 +177,11 @@ class MainWindow(Gtk.ApplicationWindow):
             try:
                 experiments = ExperimentsView(path)
             except Exception as e:
-                dialog = Gtk.MessageDialog(buttons=Gtk.ButtonsType.OK,
+                dialog = Gtk.MessageDialog(text=e.message.capitalize(),
+                                           transient_for=self,
+                                           buttons=Gtk.ButtonsType.OK,
                                            message_type=Gtk.MessageType.ERROR)
-                dialog.set_markup(e.message.capitalize())
+
                 dialog.run()
                 dialog.destroy()
                 return
@@ -200,9 +194,8 @@ class MainWindow(Gtk.ApplicationWindow):
     # load_experiments
 
     def open_button_clicked(self, button):
-        dialog = Gtk.FileChooserDialog()
-        dialog.set_title("Load database file")
-        dialog.set_transient_for(self)
+        dialog = Gtk.FileChooserDialog(title="Load database file",
+                                       transient_for=self)
         dialog.add_button(Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
         dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         ret = dialog.run()

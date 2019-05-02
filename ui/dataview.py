@@ -26,6 +26,7 @@ class Plot(object):
 # Plot
 
 class DataView(object):
+
     def __init__(self, data):
         self.data = data
     # __init__
@@ -34,11 +35,11 @@ class DataView(object):
 class GraphDataView(Gtk.ScrolledWindow, DataView):
 
     def __init__(self, data, plots=[]):
-        Gtk.ScrolledWindow.__init__(self)
         DataView.__init__(self, data)
+        Gtk.ScrolledWindow.__init__(self)
 
         if not data:
-            self.add(Gtk.Label("No data provided"))
+            self.add(Gtk.Label("<i>No data provided</i>", use_markup=True))
             self.show_all()
             return
 
@@ -165,16 +166,16 @@ class ExperimentDataView(Gtk.Grid, DataView):
     text = "Experiment"
 
     def __init__(self, data):
-        Gtk.Grid.__init__(self)
         DataView.__init__(self, data)
+        Gtk.Grid.__init__(self,
+                          border_width=10,
+                          column_homogeneous=True,
+                          column_spacing=10,
+                          row_spacing=10)
 
         self.insert_column(0)
         self.insert_column(1)
         self.insert_column(2)
-        self.set_border_width(10)
-        self.set_column_homogeneous(True)
-        self.set_column_spacing(10)
-        self.set_row_spacing(10)
 
         row = 0
         for key, val in data:
@@ -185,17 +186,17 @@ class ExperimentDataView(Gtk.Grid, DataView):
 
     def display_data(self, text, value, row):
         self.insert_row(row)
-        w = Gtk.Label("")
-        w.set_xalign(1.0)
-        w.set_markup("<b>%s:</b>" % text.capitalize())
+        w = Gtk.Label("<b>%s:</b>" % text.capitalize(),
+                      use_markup=True,
+                      xalign=1.0)
         self.attach(w, 0, row, 1, 1)
 
-        w = Gtk.Label("")
-        w.set_xalign(0.0)
         if not value:
             value = "<i>not provided</i>"
 
-        w.set_markup("%s" % value)
+        w = Gtk.Label("%s" % value,
+                      use_markup=True,
+                      xalign=0.0)
         self.attach(w, 1, row, 2, 1)
     # display_data
 # ExperimentDataView
