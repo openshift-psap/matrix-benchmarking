@@ -167,15 +167,34 @@ class MainWindow(Gtk.ApplicationWindow):
         self.new_experiment()
     # new_button_clicked
 
+    def experiments_is_loaded(self, path):
+        if self.stack is None:
+            return False
+
+        if self.stack.get_child_by_name(path) is None:
+            return False
+
+        print('%s is already loaded' % path)
+        return True
+    # experiments_loaded
+
     def load_experiments(self, path):
-        self.ensure_stack()
-        experiments = self.stack.get_child_by_name(path)
-        if experiments is None:
-            experiments = ExperimentsView(path)
+        if self.experiments_is_loaded(path):
+            experiments = self.stack.get_child_by_name(path)
+        else:
+            try:
+                experiments = ExperimentsView(path)
+            except Exception as e:
+                dialog = Gtk.MessageDialog(buttons=Gtk.ButtonsType.OK,
+                                           message_type=Gtk.MessageType.ERROR)
+                dialog.set_markup(e.message.capitalize())
+                dialog.run()
+                dialog.destroy()
+                return
+
+            self.ensure_stack()
             self.stack.add_titled(experiments, path, experiments.get_name())
             self.stack.show_all()
-        else:
-            print('%s is already loaded' % path)
 
         self.stack.set_visible_child(experiments)
     # load_experiments
@@ -187,10 +206,14 @@ class MainWindow(Gtk.ApplicationWindow):
         dialog.add_button(Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
         dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
         ret = dialog.run()
+        path = None
         if ret == Gtk.ResponseType.OK:
-            self.load_experiments(dialog.get_filename())
+            path = dialog.get_filename()
 
         dialog.destroy()
+
+        if path:
+            self.load_experiments(path)
     # open_button_clicked
 
     def close_experiments(self, experiment):
