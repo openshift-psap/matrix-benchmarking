@@ -4,19 +4,19 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-from matplotlib.backends.backend_gtk3agg import FigureCanvasGTK3Agg as FigureCanvas
+from matplotlib.backends.backend_gtk3cairo import FigureCanvasGTK3Cairo as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as pyplot
 import numpy
 
 class Plot(object):
 
-    def __init__(self, x, y, label, y_label=None, x_label='time(s)'):
+    def __init__(self, x, y, title, y_label=None, x_label='time(s)'):
         self.x = self.zeroify(x)
         self.y = self.zeroify(y)
-        if y_label is not None:
-            label = '%s (%s / %s)' % (label, y_label, x_label)
-        self.label = label
+        self.x_label = x_label
+        self.y_label = y_label
+        self.title = title
     # __init__
 
     @staticmethod
@@ -43,16 +43,22 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
             self.show_all()
             return
 
-        graph, axes = pyplot.subplots(nrows=len(plots))
-        for i in xrange(len(plots)):
+        nrows = len(plots)
+        graph, axes = pyplot.subplots(nrows=nrows, sharex=True)
+        graph.subplots_adjust(top=0.95, bottom=0.05, left=0.1, right=0.95, hspace=0.3)
+        graph.align_ylabels()
+
+        for i in xrange(nrows):
             a = axes[i]
             p = plots[i]
-            a.set_title(p.label)
+            a.set(title=p.title, ylabel=p.y_label)
+            if i == nrows-1:
+                a.set_xlabel(p.x_label)
             a.grid()
             a.plot(p.x, p.y, '.-')
 
         canvas = FigureCanvas(graph)
-        canvas.set_size_request(800, 600)
+        canvas.set_size_request(900, 700)
         self.add_with_viewport(canvas)
         self.show()
     # __init__

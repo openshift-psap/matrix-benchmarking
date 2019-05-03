@@ -106,8 +106,8 @@ class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, files):
         Gtk.IconTheme.get_default().append_search_path("./icons")
         Gtk.ApplicationWindow.__init__(self,
-                                       default_width=800,
-                                       default_height=600,
+                                       default_width=1024,
+                                       default_height=768,
                                        icon_name="spice")
 
         self.stack = None
