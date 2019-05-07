@@ -22,9 +22,11 @@ class DataView(object):
 #DataView
 
 class Plot(object):
-    def __init__(self, x, y, label):
+    def __init__(self, x, y, label, y_label=None, x_label='time(s)'):
         self.x = x
         self.y = y
+        if y_label is not None:
+            label = '%s (%s / %s)' % (label, y_label, x_label)
         self.label = label
     # __init__
 # Plot
@@ -70,10 +72,10 @@ class GuestDataView(GraphDataView):
             encode_usage.append(d.encode_usage or 0)
             decode_usage.append(d.decode_usage or 0)
 
-        plots = [Plot(time, gpu_mem, "GPU Memory"),
-                 Plot(time, gpu_usage, "GPU Usage"),
-                 Plot(time, encode_usage, "Encode Usage"),
-                 Plot(time, decode_usage, "Decode Usage")]
+        plots = [Plot(time, gpu_mem, "GPU Memory", "memory(MB)"),
+                 Plot(time, gpu_usage, "GPU Usage", "usage(%)"),
+                 Plot(time, encode_usage, "Encode Usage", "usage(%)"),
+                 Plot(time, decode_usage, "Decode Usage", "usage(%)")]
 
         GraphDataView.__init__(self, data, plots)
     # __init__
@@ -90,7 +92,7 @@ class HostDataView(GraphDataView):
             time.append(d.time)
             cpu_usage.append(d.cpu_usage or 0)
 
-        plots = [Plot(time, cpu_usage, "CPU Usage")]
+        plots = [Plot(time, cpu_usage, "CPU Usage", "usage(%)")]
         GraphDataView.__init__(self, data, plots)
     # __init__
 # HostDataView
@@ -112,10 +114,10 @@ class ClientDataView(GraphDataView):
             cpu_usage.append(d.cpu_usage or 0)
             app_cpu_usage.append(d.app_cpu_usage or 0)
 
-        plots = [Plot(time, gpu_usage, "GPU Usage"),
-                 Plot(time, app_gpu_usage, "App GPU Usage"),
-                 Plot(time, cpu_usage, "CPU Usage"),
-                 Plot(time, app_cpu_usage, "App CPU Usage")]
+        plots = [Plot(time, gpu_usage, "GPU Usage", "usage(%)"),
+                 Plot(time, app_gpu_usage, "App GPU Usage", "usage(%)"),
+                 Plot(time, cpu_usage, "CPU Usage", "usage(%)"),
+                 Plot(time, app_cpu_usage, "App CPU Usage", "usage(%)")]
 
         GraphDataView.__init__(self, data, plots)
     # __init__
@@ -146,12 +148,12 @@ class FramesDataView(GraphDataView):
             decode_duration.append(d.decode_duration or 0)
             queue_size.append(d.queue_size or 0)
 
-        plots = [Plot(agent_time, size, "Size"),
-                 Plot(agent_time, capture_duration, "Capture Duration"),
-                 Plot(agent_time, encode_duration, "Encode Duration"),
-                 Plot(agent_time, send_duration, "Send Duration"),
-                 Plot(agent_time, decode_duration, "Decode Duration"),
-                 Plot(agent_time, queue_size, "Queue Size")]
+        plots = [Plot(agent_time, size, "Size", "size(bytes)"),
+                 Plot(agent_time, capture_duration, "Capture Duration", "duration(s)"),
+                 Plot(agent_time, encode_duration, "Encode Duration", "duration(s)"),
+                 Plot(agent_time, send_duration, "Send Duration", "duration(s)"),
+                 Plot(agent_time, decode_duration, "Decode Duration", "duration(s)"),
+                 Plot(agent_time, queue_size, "Queue Size", "frames(number)")]
 
         GraphDataView.__init__(self, data, plots)
     # __init__
