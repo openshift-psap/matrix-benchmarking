@@ -23,13 +23,15 @@ class RemoteViewer(Measurement):
                 self.url = str(cfg['URL'])
         self.client = self.experiment.machines['client']
         self.client.run(['rm', '-f', '/tmp/rv.log'])
+        self.client.run('rm -f /tmp/spice-gtk-gst-pipeline-debug-*.dot')
         self.client.run('killall remote-viewer || true')
         self.process = None
 
     def start(self):
         # run streaming agent with log
         cmd = '%s %s' % (self.exe, self.url)
-        cmd = 'env RECORDER_TRACES="@output=/tmp/rv.log:frames_stats" %s' % cmd
+        cmd = ('env RECORDER_TRACES="@output=/tmp/rv.log:frames_stats"'
+               ' GST_DEBUG_DUMP_DOT_DIR=/tmp %s' % cmd)
         self.process = self.client.Process(cmd)
 
     def stop(self):
@@ -44,7 +46,20 @@ class RemoteViewer(Measurement):
     def collect(self):
         # retrieve
         self.client.download('/tmp/rv.log', self.log)
+        out = self.client.run('ls -1 /tmp/spice-gtk-gst-pipeline-debug-*.dot || true')
+        files = [row for row in out.split('\n') if row]
+        dot_file = None
+        if len(files):
+            dot_file = 'rv.dot'
+            self.client.download(files[0], dot_file)
+        self.client.run('rm -f /tmp/spice-gtk-gst-pipeline-debug-*.dot')
         self.client.run(['rm', '-f', '/tmp/rv.log'])
+
+        # read dot file
+        if dot_file:
+            with open(dot_file, 'r') as f:
+                content = f.read()
+                self.experiment.add_attachment('viewer pipeline', content)
 
         # parse log
         line_re = re.compile(r'.*frame mm_time (\d+) size (\d+)'
@@ -59,3 +74,5 @@ class RemoteViewer(Measurement):
                 self.table.add(*fields)
 
         os.unlink(self.log)
+        if dot_file:
+            os.unlink(dot_file)
