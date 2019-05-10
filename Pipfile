@@ -13,6 +13,7 @@ colorama = "*"
 pipenv = "*"
 matplotlib = "*"
 psycopg2 = "*"
+scipy = "*"
 
 [requires]
 python_version = "3"

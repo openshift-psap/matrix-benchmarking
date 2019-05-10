@@ -9,6 +9,7 @@ from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as Navigatio
 from matplotlib.figure import Figure
 import matplotlib.pyplot as pyplot
 import numpy
+from scipy.spatial.distance import cdist
 import yaml
 
 class Plot(object):
@@ -77,6 +78,8 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
         self.set_label_placeholder("Loading...")
         self.connect("map", self.map_cb)
         self.connect("unmap", self.unmap_cb)
+        self.tooltips = {}
+        self.plots = {}
     # __init__
 
     def set_label_placeholder(self, text):
@@ -103,14 +106,16 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
             for i in range(nrows):
                 a = axes[i]
                 p = plots[i]
+                self.plots[a] = p
                 a.set(title=p.title, ylabel=p.y_label)
                 if i == nrows-1:
                     a.set_xlabel(p.x_label)
                 a.grid()
-                a.plot(p.x, p.y, '.-')
+                a.plot(p.x, p.y, '.-', picker=5)
 
             canvas = FigureCanvas(self.graph)
             canvas.set_size_request(900, 700)
+            canvas.mpl_connect('pick_event', self.update_tooltip)
 
             vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
             vbox.pack_start(canvas, True, True, 0)
@@ -129,8 +134,42 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
     def unmap_cb(self, widget):
         if self.graph:
             pyplot.close(self.graph)
+            self.tooltips = {}
         self.set_label_placeholder("Loading...")
     # unmap_cb
+
+    def update_tooltip(self, event):
+        line = event.artist
+        event_xy = (event.mouseevent.xdata, event.mouseevent.ydata)
+        xydata = line.get_xydata()
+
+        ### FIXME
+        # Pick closest valid point from click event
+        # https://codereview.stackexchange.com/questions/28207/finding-the-closest-point-to-a-list-of-points
+        idx = cdist([event_xy], xydata).argmin()
+        ###
+
+        x, y = xydata[idx]
+        axes = line.axes
+        x_label = self.plots[axes].x_label
+        y_label = self.plots[axes].y_label
+        txt = f"Index: {idx}\n{x_label}: {x:0.5f}\n{y_label}: {y:0.5f}"
+
+        try:
+            tooltip = self.tooltips[axes]
+            tooltip.xy = x, y
+            tooltip.set_text(txt)
+        except KeyError:
+            tooltip = axes.annotate(txt, xy = (x,y),
+                                    textcoords = "offset points", xytext = (-20, 20),
+                                    bbox = {"boxstyle" : "round,pad=0.5", "fc" : "aliceblue", "alpha" : 0.9},
+                                    arrowprops = {"arrowstyle" : "-|>"})
+            tooltip.set_visible(True)
+            self.tooltips[axes] = tooltip
+
+        event.canvas.draw()
+    # update_tooltip
+
 # GraphDataView
 
 def get_data_views(filename):
