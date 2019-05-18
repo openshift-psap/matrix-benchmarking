@@ -40,7 +40,7 @@ class NvidiaTool:
         for line in open(log):
             m = line_re.match(line)
             if not m:
-                raise Exception('Invalid line %d' % line)
+                raise Exception('Invalid line %s' % line)
             kind = m.group(1)
             time = int(m.group(2))
             value = int(m.group(3))
