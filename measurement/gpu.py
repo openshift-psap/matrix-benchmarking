@@ -38,6 +38,10 @@ class NvidiaTool:
                              r'|violPwr|violThm|memClk|procClk)\s*,\s*(\d+),\s*(\d+)$')
         kinds = set(self.kinds.keys())
         for line in open(log):
+            # some versions fill some values with invalid values, skip
+            # these lines
+            if line.rfind('N/A, N/A') >= 0:
+                continue
             m = line_re.match(line)
             if not m:
                 raise Exception('Invalid line %s' % line)
