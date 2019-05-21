@@ -16,10 +16,26 @@ class StreamingAgent(Measurement):
         ])
         self.params = {}
         if cfg:
-            if 'FPS' in cfg:
-                fps = int(cfg['FPS'])
-                self.experiment.set_param('FPS', fps)
-                self.params['framerate'] = fps
+            def param_int(cfg_name, experiment_name, param_name):
+                if cfg_name in cfg:
+                    value = int(cfg[cfg_name])
+                    self.experiment.set_param(experiment_name, value)
+                    self.params[param_name] = value
+
+            param_int('FPS', 'FPS', 'framerate')
+            param_int('GOP', 'GOP', 'gop')
+            param_int('ref-frames', 'num_ref_frames', 'max-num-ref-frames')
+            if 'bitrate' in cfg:
+                bw = int(cfg['bitrate'])
+                self.experiment.set_param('bitrate', bw)
+                bw /= 1024 * 1024
+                self.params['average-bitrate'] = bw
+                # TODO another parameter and database field ??
+                self.params['max-bitrate'] = bw * 1.5
+            if 'ratecontrol' in cfg:
+                rc = str(cfg['ratecontrol'])
+                self.experiment.add_attachment('rate control', rc)
+                self.params['ratecontrol'] = rc
             # TODO other parameters
         self.guest = self.experiment.machines['guest']
         cur_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))

@@ -5,6 +5,10 @@ measurements:
 - GPU
 - StreamingAgent:
    FPS: 10
+   # bitrate: 8000000 # bit rate in bits per second
+   # GOP: 0 # integer, 0=infinite
+   # ref-frames: 0 # integer maximum reference frames, 0=default
+   # ratecontrol: vbr # rate control
 - SpiceServer:
    log: /tmp/recorder.txt
 - RemoteViewer:
