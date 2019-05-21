@@ -34,7 +34,7 @@ class SpiceServer(Measurement):
 
         # parse log
         line_re = \
-            re.compile(r'^\[(\d+) ([0-9.]+)\] (\w+): Stream data packet size (\d+) mm_time (\d+)')
+            re.compile(r'^\[(\d+) ([0-9.]+)\] (\w+):? Stream data packet size (\d+) mm_time (\d+)')
         for line in open(self.log):
             m = line_re.match(line)
             if not m:
