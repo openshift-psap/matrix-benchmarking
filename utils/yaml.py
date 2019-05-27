@@ -25,3 +25,14 @@ def load_multiple(*args):
             if not yml:
                 raise
     return yml
+
+def subyaml(yml, path):
+    if not yml:
+        return yml
+    for k in path.split('/'):
+        if type(yml) != dict:
+            return None
+        yml = yml.get(k)
+        if not yml:
+            break
+    return yml
