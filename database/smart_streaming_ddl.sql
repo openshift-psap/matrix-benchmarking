@@ -46,7 +46,8 @@ CREATE TABLE public.experiments
   num_ref_frames INT NULL,
   /* TODO quality, GOP pattern */
   /* UUID of the imported experiment */
-  uuid VARCHAR(40) NULL
+  uuid VARCHAR(40) DEFAULT md5(random()::text || clock_timestamp()::text)::uuid NULL,
+  imported BOOLEAN DEFAULT FALSE NOT NULL
 );
 COMMENT ON TABLE public.experiments IS 'Holds information about experiments';
 COMMENT ON COLUMN public.experiments.id IS 'id of the experiment';
