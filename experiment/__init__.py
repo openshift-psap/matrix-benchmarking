@@ -206,16 +206,8 @@ class Experiment:
         self.attachments = {}
         self.parameters = {}
         self.machines = {}
-        for m in cfg.get('machines', []):
-            c = None
-            if isinstance(m, dict):
-                l = list(m.keys())
-                assert len(l) == 1, 'Invalid machine specification %s' % m
-                c = m[l[0]]
-                m = l[0]
-            if not isinstance(m, str):
-                raise Exception('Invalid machine name %s' % m)
-            self.machines[m] = machine.create_machine(c)
+        for k,c in cfg.get('machines', {}).items():
+            self.machines[k] = machine.create_machine(c)
 
     def create_table(self, fields):
         '''Create a table based on fields passed.

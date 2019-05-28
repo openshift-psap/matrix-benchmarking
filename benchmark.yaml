@@ -14,10 +14,10 @@ measurements:
 # machine to connect to, currently only local and
 # accessible through ssh (remote)
 machines:
-- guest:
+  guest:
    type: remote
    host: root@192.168.1.83
-- client
-- host:
+  client:
+  host:
    type: remote
    host: root@m2000-server
