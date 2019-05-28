@@ -20,6 +20,24 @@ description = utils.yaml.subyaml(cfg, 'description')
 if not description:
     description = args.desc
 
+# this generator will generate combination of list with some maximum
+# changes
+def matrix(rest, changes):
+    if len(rest) == 0:
+        if changes >= 0:
+            yield ()
+        return
+    if changes < 0:
+        return
+    for o in matrix(rest[1:], changes):
+        yield (rest[0][0],) + o
+    if changes <= 0:
+        return
+    changes -= 1
+    for x in rest[0][1:]:
+        for o in matrix(rest[1:], changes):
+            yield (x,) + o
+
 experiment = Experiment(cfg)
 if description:
     experiment.set_param('description', description)
