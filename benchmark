@@ -2,16 +2,27 @@
 import time
 import importlib
 import re
+import argparse
 import yaml
 import measurement
 import utils.yaml
 from experiment import Experiment
 
+# some arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('-d', '--desc', help='description')
+args = parser.parse_args()
+
 # load configuration file
 # TODO pass somehow to measurement. Global??
 cfg = utils.yaml.load_multiple("benchmark.yaml", "secure.yaml")
+description = utils.yaml.subyaml(cfg, 'description')
+if not description:
+    description = args.desc
 
 experiment = Experiment(cfg)
+if description:
+    experiment.set_param('description', description)
 
 # load and initialize measurements
 measurements = []
