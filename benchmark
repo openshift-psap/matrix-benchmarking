@@ -41,7 +41,5 @@ for m in measurements:
 for m in measurements:
     m.collect()
 
-# TODO do some data management
-
 # save to database
 experiment.save()
