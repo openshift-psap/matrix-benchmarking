@@ -4,12 +4,12 @@ import importlib
 import re
 import yaml
 import measurement
+import utils.yaml
 from experiment import Experiment
 
 # load configuration file
 # TODO pass somehow to measurement. Global??
-with open("benchmark.yaml", 'r') as f:
-    cfg = yaml.safe_load(f)
+cfg = utils.yaml.load_multiple("benchmark.yaml", "secure.yaml")
 
 experiment = Experiment(cfg)
 

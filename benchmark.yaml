@@ -21,3 +21,11 @@ machines:
   host:
    type: remote
    host: root@m2000-server
+
+databases:
+  local:
+    type: sqlite
+  remote:
+    type: postgresql
+    user: streaming
+    database: streaming
