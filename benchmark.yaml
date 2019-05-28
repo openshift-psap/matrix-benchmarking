@@ -33,3 +33,29 @@ databases:
     type: postgresql
     user: streaming
     database: streaming
+
+# This defines a set of test
+# The script will attempt to change maximum one parameter of these
+# and run the tests.
+# So, for example specifying
+#   path1:
+#   - a
+#   - b
+#   - c
+#   path2:
+#   - 1
+#   - 2
+# Will try with:
+#   path1 = a, path2 = 1
+#   path1 = a, path2 = 2
+#   path1 = b, path2 = 1
+#   path1 = c, path2 = 1
+matrix:
+  measurements/StreamingAgent/FPS:
+  - 30
+  - 10
+  - 20
+  measurements/StreamingAgent/bitrate:
+  -  8000000
+  -  4000000
+  - 12000000

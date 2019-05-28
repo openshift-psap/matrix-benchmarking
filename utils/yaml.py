@@ -36,3 +36,23 @@ def subyaml(yml, path):
         if not yml:
             break
     return yml
+
+def set_subyaml(yml, path, value):
+    if not yml:
+        return yml
+    for k in path.split('/')[:-1]:
+        y = None
+        if type(yml) == dict:
+            y = yml.get(k)
+        # special case, could be a list of single strings/dictionaries
+        elif type(yml) == list:
+            for i in yml:
+                if type(i) == dict:
+                    l = list(i.keys())
+                    if len(l) == 1 and l[0] == k:
+                        y = i[l[0]]
+        yml = y
+        assert yml is not None, 'Path %s not found' % path
+    assert type(yml) == dict
+    name = path.split('/')[-1:][0]
+    yml[name] = value

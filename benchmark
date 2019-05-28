@@ -4,6 +4,7 @@ import importlib
 import re
 import argparse
 import copy
+import sys
 import yaml
 import measurement
 import utils.yaml
@@ -12,6 +13,8 @@ from experiment import Experiment
 # some arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--desc', help='description')
+parser.add_argument('--matrix', action='store_true',
+                    help='run a matrix of tests')
 args = parser.parse_args()
 
 # load configuration file
@@ -41,7 +44,7 @@ def matrix(rest, changes):
 
 # run a single test
 def run_one(cfg):
-    cfg = copy.deepcopy(cfg)
+    print('Running one test with configuraton', cfg['measurements'])
 
     experiment = Experiment(cfg)
     if description:
@@ -78,5 +81,18 @@ def run_one(cfg):
     # save to database
     experiment.save()
 
-# launch the test
-run_one(cfg)
+# launch a single test
+if not args.matrix:
+    run_one(cfg)
+    sys.exit(0)
+
+# launch a matrix of tests
+orig_cfg = cfg
+option_names = list(cfg['matrix'].keys())
+for options in matrix(list(cfg['matrix'].values()), 1):
+    # change based on the options
+    cfg = copy.deepcopy(orig_cfg)
+    options = dict(zip(option_names, options))
+    for name, value in options.items():
+        utils.yaml.set_subyaml(cfg, name, value)
+    run_one(cfg)
