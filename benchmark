@@ -3,6 +3,7 @@ import time
 import importlib
 import re
 import argparse
+import copy
 import yaml
 import measurement
 import utils.yaml
@@ -38,37 +39,44 @@ def matrix(rest, changes):
         for o in matrix(rest[1:], changes):
             yield (x,) + o
 
-experiment = Experiment(cfg)
-if description:
-    experiment.set_param('description', description)
+# run a single test
+def run_one(cfg):
+    cfg = copy.deepcopy(cfg)
 
-# load and initialize measurements
-measurements = []
-name_re = re.compile(r'^[a-z_][a-z0-9_]*$', re.I)
-for m in cfg['measurements']:
-    cfg = None
-    if type(m) == dict:
-        l = list(m.keys())
-        assert len(l) == 1, 'Invalid measurement specification %s' % m
-        cfg = m[l[0]]
-        m = l[0]
-    if type(m) != str or not name_re.match(m):
-        raise Exception('Invalid module name %s' % m)
-    mod = importlib.import_module('measurement.' + m.lower())
-    measurements.append(getattr(mod, m)(cfg, experiment))
+    experiment = Experiment(cfg)
+    if description:
+        experiment.set_param('description', description)
 
-for m in measurements:
-    m.setup()
-for m in measurements:
-    m.start()
+    # load and initialize measurements
+    measurements = []
+    name_re = re.compile(r'^[a-z_][a-z0-9_]*$', re.I)
+    for m in cfg['measurements']:
+        cfg = None
+        if type(m) == dict:
+            l = list(m.keys())
+            assert len(l) == 1, 'Invalid measurement specification %s' % m
+            cfg = m[l[0]]
+            m = l[0]
+        if type(m) != str or not name_re.match(m):
+            raise Exception('Invalid module name %s' % m)
+        mod = importlib.import_module('measurement.' + m.lower())
+        measurements.append(getattr(mod, m)(cfg, experiment))
 
-# TODO do something more useful!
-time.sleep(5)
+    for m in measurements:
+        m.setup()
+    for m in measurements:
+        m.start()
 
-for m in measurements:
-    m.stop()
-for m in measurements:
-    m.collect()
+    # TODO do something more useful!
+    time.sleep(5)
 
-# save to database
-experiment.save()
+    for m in measurements:
+        m.stop()
+    for m in measurements:
+        m.collect()
+
+    # save to database
+    experiment.save()
+
+# launch the test
+run_one(cfg)
