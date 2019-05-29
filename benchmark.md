@@ -52,16 +52,14 @@ This modules contains the `Experiment` object which represent the
 experiment.
 
 
-Experiment object
-~~~~~~~~~~~~~~~~~
+### Experiment object
 A module should create tables to save output with the `create_table`
 method.
 
 You can add any possible attachment (metadata for the experiment like
 output of command) with `add_attachment`.
 
-Table object
-~~~~~~~~~~~~
+### Table object
 This simple object stores tables for the experiment. They do not
 entirely represent physical tables but they will be converted to
 physical one by the when the experiment is saved (`save` method or
@@ -73,7 +71,7 @@ To create a table simply pass the field names to `create_table` (see
 To populate a table simply call the method `add` passing the field
 values.
 
-[NOTE]
+**NOTE**
 Many todos, one missing part is utilities to manage remote machine and
 their configuration.
 
