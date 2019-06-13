@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import yaml
 
 # from https://stackoverflow.com/questions/823196/yaml-merge-in-python
