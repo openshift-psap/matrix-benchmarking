@@ -20,7 +20,7 @@ c1 = None
 db2 = None
 c2 = None
 
-def copy_table(name, new_id):
+def copy_table(name, old_id, new_id):
     # get table schema (to exclude 'id_experiment' field)
     sql = 'select * from %s where 0=1' % name
     c1.execute(sql)
@@ -28,7 +28,7 @@ def copy_table(name, new_id):
     fields = ','.join(names)
 
     # extract data
-    sql = 'select %s from %s' % (fields, name)
+    sql = 'select %s from %s where id_experiment=%s' % (fields, name, old_id)
     c1.execute(sql)
     def all_rows():
         for row in c1.fetchall():
@@ -99,7 +99,7 @@ try:
             # copy table by table replacing id_experiment from source
             # with new_id
             for table in ['attachments', 'frames', 'guest_stats', 'host_stats', 'client_stats']:
-                copy_table(table, new_id)
+                copy_table(table, row['id'], new_id)
 
             # commit remote transaction now that we inserted
             # everything for the current importing experiment
