@@ -76,7 +76,7 @@ CREATE TABLE public.frames
   /* size of the compressed frame */
   size INT NOT NULL,
   /* multimedia time, as defined by SPICE, provided by server Here a NUMERIC is used as the number is unsigned */
-  mm_time NUMERIC(9) NULL,
+  mm_time NUMERIC(10) NULL,
   /* time to capture by the guest, in seconds */
   capture_duration DOUBLE PRECISION NULL,
   /* time to encode by the guest, in seconds */
