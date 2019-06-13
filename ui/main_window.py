@@ -2,12 +2,20 @@
 
 import os
 import traceback
+import sys
 
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk
 
 import sqlite3 as sqlite
+import psycopg2
+
+if __package__ is None:
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    from utils import yaml
+else:
+    from ..utils import yaml
 
 from data import ExperimentData
 from dataview import ExperimentDataView, FramesDataView, ClientDataView, \
@@ -68,12 +76,23 @@ class ExperimentView(Gtk.Notebook):
 
 class ExperimentsView(Gtk.Box):
 
-    def __init__(self, db_path):
+    def __init__(self, db_path, remote_db_cfg):
         Gtk.Box.__init__(self, Gtk.Orientation.VERTICAL, 4,
                         homogeneous=False,
                         border_width=10)
-        self.db = sqlite.connect(db_path)
-        self.name = os.path.split(db_path)[-1]
+
+        if db_path == '::remote':
+            cfg = remote_db_cfg
+            database = cfg.get('database', cfg['user'])
+            self.db = psycopg2.connect(user = cfg['user'],
+                                   password = cfg['password'],
+                                   host = cfg['host'],
+                                   port = cfg.get('port', '5432'),
+                                   database = database)
+            self.name = db_path
+        else:
+            self.db = sqlite.connect(db_path)
+            self.name = os.path.split(db_path)[-1]
 
         self.stack = Gtk.Stack()
         switcher = Gtk.StackSidebar(stack=self.stack)
@@ -118,6 +137,10 @@ class MainWindow(Gtk.ApplicationWindow):
                                     show_close_button=True)
         self.header.pack_start(self.create_button("new", self.new_button_clicked))
         self.header.pack_start(self.create_button("open", self.open_button_clicked))
+        cfg = yaml.load_multiple("benchmark.yaml", "secure.yaml")
+        self.remote_db_cfg = yaml.subyaml(cfg, 'databases/remote')
+        if self.remote_db_cfg:
+            self.header.pack_start(self.create_database_button())
 
         # headerbar custom middle widget
         self.set_titlebar(self.header)
@@ -135,6 +158,15 @@ class MainWindow(Gtk.ApplicationWindow):
         button.show()
         return button
     # create_button
+
+    def create_database_button(self):
+        button = Gtk.Button(image=Gtk.Image.new_from_icon_name("network-wired-symbolic", Gtk.IconSize.BUTTON),
+                            always_show_image=True,
+                            tooltip_text="open remote experiments")
+        button.connect("clicked", self.database_button_clicked)
+        button.show()
+        return button
+    # create_button2
 
     def ensure_stack(self):
         if self.stack is not None:
@@ -176,7 +208,7 @@ class MainWindow(Gtk.ApplicationWindow):
             experiments = self.stack.get_child_by_name(path)
         else:
             try:
-                experiments = ExperimentsView(path)
+                experiments = ExperimentsView(path, self.remote_db_cfg)
             except Exception as e:
                 print(traceback.format_exc())
                 dialog = Gtk.MessageDialog(text=e.message.capitalize(),
@@ -210,6 +242,10 @@ class MainWindow(Gtk.ApplicationWindow):
         if path:
             self.load_experiments(path)
     # open_button_clicked
+
+    def database_button_clicked(self, button):
+        self.load_experiments('::remote')
+    # database_button_clicked
 
     def close_experiments(self, experiment):
         experiment.close()
