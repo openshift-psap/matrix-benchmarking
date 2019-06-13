@@ -50,12 +50,12 @@ try:
     db1.commit()
 
     # TODO debug
-#    sql = 'update experiments set imported = FALSE'
+#    sql = 'update experiments set imported = 0'
 #    c1.execute(sql)
 #    db1.commit()
 
     # get rows to import, read them all should not be many
-    sql = 'select * from experiments where imported = FALSE'
+    sql = 'select * from experiments where imported = 0'
     c1.execute(sql)
     names = [description[0] for description in c1.description]
     experiments = c1.fetchall()
@@ -108,7 +108,7 @@ try:
             print('Local experiment %s was already inserted!' % row['id'])
 
         # update local database
-        sql = 'update experiments set imported = TRUE where id=?'
+        sql = 'update experiments set imported = 1 where id=?'
         c1.execute(sql, (row['id'],))
         # commit local update
         db1.commit()
