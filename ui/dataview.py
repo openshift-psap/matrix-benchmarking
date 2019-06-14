@@ -34,25 +34,29 @@ class DataView(object):
 
 class GraphDataView(Gtk.ScrolledWindow, DataView):
 
-    def __init__(self, data, plots=[]):
+    def __init__(self, data):
         DataView.__init__(self, data)
         Gtk.ScrolledWindow.__init__(self)
-        self.plots = plots
+        self.plots = []
         self.graph = None
-        self.add_label_placeholder()
+        self.set_label_placeholder("Loading...")
         self.connect("map", self.map_cb)
         self.connect("unmap", self.unmap_cb)
     # __init__
 
-    def add_label_placeholder(self):
-        text = self.data and "Loading..." or "No data provided"
+    def set_label_placeholder(self, text):
+        if self.get_child():
+            self.remove(self.get_child())
         self.add(Gtk.Label("<i>%s</i>" % text, use_markup=True))
         self.show_all()
-    # add_label_placeholder
+    # set_label_placeholder
 
     def map_cb(self, widget):
         if not self.data:
+            self.set_label_placeholder("No data provided")
             return
+        if not self.plots:
+            self.plots = self.get_plots()
 
         def plot_idle():
             nrows = len(self.plots)
@@ -83,22 +87,21 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
     def unmap_cb(self, widget):
         if self.graph:
             pyplot.close(self.graph)
-        self.remove(self.get_child())
-        self.add_label_placeholder()
+        self.set_label_placeholder("Loading...")
     # unmap_cb
 # GraphDataView
 
 class GuestDataView(GraphDataView):
     text = "Guest"
 
-    def __init__(self, data):
+    def get_plots(self):
         time = []
         gpu_mem = []
         gpu_usage = []
         encode_usage = []
         decode_usage = []
 
-        for d in data:
+        for d in self.data:
             time.append(d.time)
             gpu_mem.append(d.gpu_memory)
             gpu_usage.append(d.gpu_usage)
@@ -110,37 +113,38 @@ class GuestDataView(GraphDataView):
                  Plot(time, encode_usage, "Encode Usage", "usage(%)"),
                  Plot(time, decode_usage, "Decode Usage", "usage(%)")]
 
-        GraphDataView.__init__(self, data, plots)
-    # __init__
+        return plots
+    # get_plots
 # GuestDataView
 
 class HostDataView(GraphDataView):
     text = "Host"
 
-    def __init__(self, data):
+    def get_plots(self):
         time = []
         cpu_usage = []
 
-        for d in data:
+        for d in self.data:
             time.append(d.time)
             cpu_usage.append(d.cpu_usage)
 
         plots = [Plot(time, cpu_usage, "CPU Usage", "usage(%)")]
-        GraphDataView.__init__(self, data, plots)
-    # __init__
+
+        return plots
+    # get_plots
 # HostDataView
 
 class ClientDataView(GraphDataView):
     text = "Client"
 
-    def __init__(self, data):
+    def get_plots(self):
         time = []
         gpu_usage = []
         app_gpu_usage = []
         cpu_usage = []
         app_cpu_usage = []
 
-        for d in data:
+        for d in self.data:
             time.append(d.time)
             gpu_usage.append(d.gpu_usage)
             app_gpu_usage.append(d.app_gpu_usage)
@@ -152,14 +156,14 @@ class ClientDataView(GraphDataView):
                  Plot(time, cpu_usage, "CPU Usage", "usage(%)"),
                  Plot(time, app_cpu_usage, "App CPU Usage", "usage(%)")]
 
-        GraphDataView.__init__(self, data, plots)
-    # __init__
+        return plots
+    # get_plots
 # ClientDataView
 
 class FramesDataView(GraphDataView):
     text = "Frames"
 
-    def __init__(self, data):
+    def get_plots(self):
         agent_time = []
         size = []
         mm_time = []
@@ -170,7 +174,7 @@ class FramesDataView(GraphDataView):
         decode_duration = []
         queue_size = []
 
-        for d in data:
+        for d in self.data:
             agent_time.append(d.agent_time)
             size.append(d.size)
             mm_time.append(d.mm_time)
@@ -188,8 +192,9 @@ class FramesDataView(GraphDataView):
                  Plot(agent_time, decode_duration, "Decode Duration", "duration(s)"),
                  Plot(agent_time, queue_size, "Queue Size", "frames(number)")]
 
-        GraphDataView.__init__(self, data, plots)
-    # __init__
+
+        return plots
+    # get_plots
 # FramesDataView
 
 class ExperimentDataView(Gtk.Grid, DataView):
