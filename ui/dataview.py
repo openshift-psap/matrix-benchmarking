@@ -2,7 +2,7 @@
 
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib
 
 from matplotlib.backends.backend_gtk3cairo import FigureCanvasGTK3Cairo as FigureCanvas
 from matplotlib.figure import Figure
@@ -37,31 +37,55 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
     def __init__(self, data, plots=[]):
         DataView.__init__(self, data)
         Gtk.ScrolledWindow.__init__(self)
+        self.plots = plots
+        self.graph = None
+        self.add_label_placeholder()
+        self.connect("map", self.map_cb)
+        self.connect("unmap", self.unmap_cb)
+    # __init__
 
-        if not data:
-            self.add(Gtk.Label("<i>No data provided</i>", use_markup=True))
-            self.show_all()
+    def add_label_placeholder(self):
+        text = self.data and "Loading..." or "No data provided"
+        self.add(Gtk.Label("<i>%s</i>" % text, use_markup=True))
+        self.show_all()
+    # add_label_placeholder
+
+    def map_cb(self, widget):
+        if not self.data:
             return
 
-        nrows = len(plots)
-        graph, axes = pyplot.subplots(nrows=nrows, sharex=True)
-        graph.subplots_adjust(top=0.95, bottom=0.05, left=0.1, right=0.95, hspace=0.3)
-        graph.align_ylabels()
+        def plot_idle():
+            nrows = len(self.plots)
+            self.graph, axes = pyplot.subplots(nrows=nrows, sharex=True)
+            self.graph.subplots_adjust(top=0.95, bottom=0.05, left=0.1, right=0.95, hspace=0.3)
+            self.graph.align_ylabels()
 
-        for i in xrange(nrows):
-            a = axes[i]
-            p = plots[i]
-            a.set(title=p.title, ylabel=p.y_label)
-            if i == nrows-1:
-                a.set_xlabel(p.x_label)
-            a.grid()
-            a.plot(p.x, p.y, '.-')
+            for i in xrange(nrows):
+                a = axes[i]
+                p = self.plots[i]
+                a.set(title=p.title, ylabel=p.y_label)
+                if i == nrows-1:
+                    a.set_xlabel(p.x_label)
+                a.grid()
+                a.plot(p.x, p.y, '.-')
 
-        canvas = FigureCanvas(graph)
-        canvas.set_size_request(900, 700)
-        self.add_with_viewport(canvas)
-        self.show()
-    # __init__
+            canvas = FigureCanvas(self.graph)
+            canvas.set_size_request(900, 700)
+            self.remove(self.get_child())
+            self.add_with_viewport(canvas)
+            self.show_all()
+            return False
+        # plot_idle
+
+        GLib.idle_add(plot_idle)
+    # map_cb
+
+    def unmap_cb(self, widget):
+        if self.graph:
+            pyplot.close(self.graph)
+        self.remove(self.get_child())
+        self.add_label_placeholder()
+    # unmap_cb
 # GraphDataView
 
 class GuestDataView(GraphDataView):
