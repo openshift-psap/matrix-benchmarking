@@ -38,7 +38,7 @@ class DatabaseData(Iterator):
 
         query = "select * from %s" % (_class._table)
         if _id:
-            query = "%s where id_experiment is %s" % (query, _id)
+            query = "%s where id_experiment = %s" % (query, _id)
 
         cursor = database.cursor()
         cursor.execute(query)
