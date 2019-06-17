@@ -5,13 +5,18 @@ import re
 from measurement import Measurement
 
 class NvidiaTool:
-    def __init__(self, experiment, machine):
-        self.kinds = {
-            'memUtil': 'guest.gpu_memory',
-            'gpuUtil': 'guest.gpu',
-            'encUtil': 'guest.encode',
-            'decUtil': 'guest.decode'
-        }
+    def __init__(self, experiment, machine, is_guest=True):
+        if is_guest:
+            self.kinds = {
+                'memUtil': 'guest.gpu_memory',
+                'gpuUtil': 'guest.gpu',
+                'encUtil': 'guest.encode',
+                'decUtil': 'guest.decode'
+            }
+        else:
+            self.kinds = {
+                'gpuUtil': 'client.gpu',
+            }
         self.machine = machine
         self.tables = {}
         for kind, field in self.kinds.items():
@@ -73,9 +78,12 @@ class GPU(Measurement):
         # TODO check the type of card (Intel/Nvidia/Others)
         # check commands (intel_gpu_time for Intel, nvidia-smi for
         # Nvidia. Use glxinfo or others to detect the card
-        # TODO should be configurable
-        self.guest = self.experiment.machines['guest']
-        self.tool = NvidiaTool(self.experiment, self.guest)
+        machine_name = 'guest'
+        if cfg:
+            machine_name = cfg.get('machine', 'guest')
+        is_guest = machine_name == 'guest'
+        machine = self.experiment.machines[machine_name]
+        self.tool = NvidiaTool(self.experiment, machine, is_guest)
 
     def start(self):
         self.tool.start()
