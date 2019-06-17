@@ -1,3 +1,6 @@
+## Description to put on the experiment
+#description: 'Experiment description'
+
 # These are the measurement take
 # Each measurement can have options
 measurements:
