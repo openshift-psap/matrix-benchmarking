@@ -1,6 +1,7 @@
 #!/bin/env python
 
 import os
+import traceback
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -177,6 +178,7 @@ class MainWindow(Gtk.ApplicationWindow):
             try:
                 experiments = ExperimentsView(path)
             except Exception as e:
+                print(traceback.format_exc())
                 dialog = Gtk.MessageDialog(text=e.message.capitalize(),
                                            transient_for=self,
                                            buttons=Gtk.ButtonsType.OK,
