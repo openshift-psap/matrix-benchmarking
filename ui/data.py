@@ -6,6 +6,46 @@ if platform.python_version().startswith("2"):
 else:
     from collections.abc import Iterator
 
+class LazyLoadList(list):
+    def __init__(self, _class, database, _id):
+        list.__init__(self)
+        self._class = _class
+        self.database = database
+        self._id = _id
+        self.loaded = False
+    # __init__
+
+    def __getitem__(self, idx):
+        self.load_data()
+        return list.__getitem__(self, idx)
+    # __getitem__
+
+    def __iter__(self):
+        self.load_data()
+        return list.__iter__(self)
+    # __iter__
+
+    def __len__(self):
+        self.load_data()
+        return list.__len__(self)
+    # __len__
+
+    def load_data(self):
+        if self.loaded:
+            return
+
+        query = "select * from %s" % (self._class._table)
+        if self._id:
+            query = "%s where id_experiment = %s" % (query, self._id)
+
+        cursor = self.database.cursor()
+        cursor.execute(query)
+        for args in cursor.fetchall():
+            self.append(self._class(self.database, args))
+        self.loaded = True
+    # load_data
+# LazyLoadList
+
 class DatabaseData(Iterator):
     _table = None
     _members = None
@@ -40,32 +80,7 @@ class DatabaseData(Iterator):
         if not _class._table:
             raise Exception("database table not provided")
 
-        class LazyLoad(object):
-            def __init__(self, _class, database, _id):
-                self._class = _class
-                self.database = database
-                self._id = _id
-
-            def __getattr__(self, name):
-                if name != 'data':
-                    raise AttributeError
-                query = "select * from %s" % (self._class._table)
-                if self._id:
-                    query = "%s where id_experiment = %s" % (query, self._id)
-
-                cursor = self.database.cursor()
-                cursor.execute(query)
-                self.data = [_class(self.database, args) for args in cursor.fetchall()]
-                del self.database
-                return self.data
-
-            def __iter__(self):
-                return iter(self.data)
-
-            def __len__(self):
-                return len(self.data)
-
-        return LazyLoad(_class, database, _id)
+        return LazyLoadList(_class, database, _id)
     # load
 
     def next(self):
