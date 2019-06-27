@@ -46,8 +46,9 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
     # __init__
 
     def set_label_placeholder(self, text):
-        if self.get_child():
-            self.remove(self.get_child())
+        child = self.get_child()
+        if child:
+            self.remove(child)
         self.add(Gtk.Label("<i>%s</i>" % text, use_markup=True))
         self.show_all()
     # set_label_placeholder
