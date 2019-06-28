@@ -60,7 +60,7 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
             self.graph.subplots_adjust(top=0.95, bottom=0.05, left=0.1, right=0.95, hspace=0.3)
             self.graph.align_ylabels()
 
-            for i in xrange(nrows):
+            for i in range(nrows):
                 a = axes[i]
                 p = self.plots[i]
                 a.set(title=p.title, ylabel=p.y_label)

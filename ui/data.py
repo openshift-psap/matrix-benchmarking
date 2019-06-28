@@ -74,6 +74,11 @@ class DatabaseData(Iterator):
         self.cur += 1
         return key, val
     # next
+
+    def __next__(self):
+        return self.next()
+    # __next__
+
 # DatabaseData
 
 

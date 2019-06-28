@@ -211,7 +211,7 @@ class MainWindow(Gtk.ApplicationWindow):
                 experiments = ExperimentsView(path, self.remote_db_cfg)
             except Exception as e:
                 print(traceback.format_exc())
-                dialog = Gtk.MessageDialog(text=e.message.capitalize(),
+                dialog = Gtk.MessageDialog(text=str(e).capitalize(),
                                            transient_for=self,
                                            buttons=Gtk.ButtonsType.OK,
                                            message_type=Gtk.MessageType.ERROR)
