@@ -45,15 +45,14 @@ class ExperimentView(Gtk.Notebook):
 
     def append_page(self, type, data, tab_widget=None):
         if not tab_widget:
-            tab_widget = Gtk.Label(type.text)
+            tab_widget = Gtk.Label(label=type.text)
 
         return Gtk.Notebook.append_page(self, type(data), tab_widget)
     # append_page
 
     def new_tab_clicked(self, button):
-        box = Gtk.Box(Gtk.Orientation.HORIZONTAL, 4,
-                      homogeneous=False)
-        box.pack_start(Gtk.Label("Custom tab %d" % len(self.custom_tabs)), True, True, 0)
+        box = Gtk.Box(spacing=4, homogeneous=False)
+        box.pack_start(Gtk.Label(label="Custom tab %d" % len(self.custom_tabs)), True, True, 0)
         close_button = Gtk.Button(image=Gtk.Image.new_from_icon_name("window-close-symbolic", Gtk.IconSize.BUTTON),
                                   always_show_image=True,
                                   relief=Gtk.ReliefStyle.NONE,
@@ -77,7 +76,7 @@ class ExperimentView(Gtk.Notebook):
 class ExperimentsView(Gtk.Box):
 
     def __init__(self, db_path, remote_db_cfg):
-        Gtk.Box.__init__(self, Gtk.Orientation.VERTICAL, 4,
+        Gtk.Box.__init__(self, spacing=4,
                         homogeneous=False,
                         border_width=10)
 
