@@ -1,6 +1,10 @@
 #!/bin/env python
 
-from collections import Iterator
+import platform
+if platform.python_version().startswith("2"):
+    from collections import Iterator
+else:
+    from collections.abc import Iterator
 
 class DatabaseData(Iterator):
     _table = None
