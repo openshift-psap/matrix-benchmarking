@@ -5,6 +5,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GLib
 
 from matplotlib.backends.backend_gtk3cairo import FigureCanvasGTK3Cairo as FigureCanvas
+from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as NavigationToolbar
 from matplotlib.figure import Figure
 import matplotlib.pyplot as pyplot
 import numpy
@@ -75,8 +76,14 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
 
             canvas = FigureCanvas(self.graph)
             canvas.set_size_request(900, 700)
+
+            vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            vbox.pack_start(canvas, True, True, 0)
+            toolbar = NavigationToolbar(canvas, self.get_toplevel())
+            vbox.pack_start(toolbar, False, True, 0)
+
             self.remove(self.get_child())
-            self.add_with_viewport(canvas)
+            self.add_with_viewport(vbox)
             self.show_all()
             return False
         # plot_idle
