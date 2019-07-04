@@ -26,6 +26,39 @@ class Plot(object):
     # zeroify
 # Plot
 
+class PlotMetaData(object):
+
+    def __init__(self, x_attr, y_attr):
+        self.x_attr = x_attr
+        self.x_data = []
+        self.y_attr = []
+        self.y_data = []
+        self.title = []
+        self.label = []
+        self.plots = []
+        self.num_plots = len(y_attr)
+
+        for i in range(self.num_plots):
+            self.y_data.append([])
+            self.y_attr.append(y_attr[i][0])
+            self.title.append(y_attr[i][1])
+            self.label.append(y_attr[i][2])
+    #__init__
+
+    def process_data(self, data):
+        if not self.plots:
+            for d in data:
+                self.x_data.append(getattr(d, self.x_attr))
+                for i in range(self.num_plots):
+                    self.y_data[i].append(getattr(d, self.y_attr[i]))
+
+            for i in range(self.num_plots):
+                self.plots.append(Plot(self.x_data, self.y_data[i], self.title[i], self.label[i]))
+
+        return self.plots
+    # process_data
+# PlotMetaData
+
 class DataView(object):
 
     def __init__(self, data):
@@ -38,7 +71,6 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
     def __init__(self, data):
         DataView.__init__(self, data)
         Gtk.ScrolledWindow.__init__(self)
-        self.plots = []
         self.graph = None
         self.set_label_placeholder("Loading...")
         self.connect("map", self.map_cb)
@@ -57,18 +89,18 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
         if not self.data:
             self.set_label_placeholder("No data provided")
             return
-        if not self.plots:
-            self.plots = self.get_plots()
+
+        plots = self.metadata.process_data(self.data)
 
         def plot_idle():
-            nrows = len(self.plots)
+            nrows = len(plots)
             self.graph, axes = pyplot.subplots(nrows=nrows, sharex=True)
             self.graph.subplots_adjust(top=0.95, bottom=0.05, left=0.1, right=0.95, hspace=0.3)
             self.graph.align_ylabels()
 
             for i in range(nrows):
                 a = axes[i]
-                p = self.plots[i]
+                p = plots[i]
                 a.set(title=p.title, ylabel=p.y_label)
                 if i == nrows-1:
                     a.set_xlabel(p.x_label)
@@ -101,108 +133,34 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
 
 class GuestDataView(GraphDataView):
     text = "Guest"
-
-    def get_plots(self):
-        time = []
-        gpu_mem = []
-        gpu_usage = []
-        encode_usage = []
-        decode_usage = []
-
-        for d in self.data:
-            time.append(d.time)
-            gpu_mem.append(d.gpu_memory)
-            gpu_usage.append(d.gpu_usage)
-            encode_usage.append(d.encode_usage)
-            decode_usage.append(d.decode_usage)
-
-        plots = [Plot(time, gpu_mem, "GPU Memory", "memory(MB)"),
-                 Plot(time, gpu_usage, "GPU Usage", "usage(%)"),
-                 Plot(time, encode_usage, "Encode Usage", "usage(%)"),
-                 Plot(time, decode_usage, "Decode Usage", "usage(%)")]
-
-        return plots
-    # get_plots
+    metadata = PlotMetaData("time", [("gpu_memory", "GPU Memory", "memory(MB)"),
+                                     ("gpu_usage", "GPU Usage", "usage(%)"),
+                                     ("encode_usage", "Encode Usage", "usage(%)"),
+                                     ("decode_usage", "Decode Usage", "usage(%)")])
 # GuestDataView
 
 class HostDataView(GraphDataView):
     text = "Host"
-
-    def get_plots(self):
-        time = []
-        cpu_usage = []
-
-        for d in self.data:
-            time.append(d.time)
-            cpu_usage.append(d.cpu_usage)
-
-        plots = [Plot(time, cpu_usage, "CPU Usage", "usage(%)")]
-
-        return plots
-    # get_plots
+    metadata = PlotMetaData("time", [("cpu_usage", "CPU Usage", "usage(%)"),])
 # HostDataView
 
 class ClientDataView(GraphDataView):
     text = "Client"
+    metadata = PlotMetaData("time", [("gpu_usage", "GPU Usage", "usage(%)"),
+                                     ("app_gpu_usage", "App GPU Usage", "usage(%)"),
+                                     ("cpu_usage", "CPU Usage", "usage(%)"),
+                                     ("app_cpu_usage", "App CPU Usage", "usage(%)")])
 
-    def get_plots(self):
-        time = []
-        gpu_usage = []
-        app_gpu_usage = []
-        cpu_usage = []
-        app_cpu_usage = []
-
-        for d in self.data:
-            time.append(d.time)
-            gpu_usage.append(d.gpu_usage)
-            app_gpu_usage.append(d.app_gpu_usage)
-            cpu_usage.append(d.cpu_usage)
-            app_cpu_usage.append(d.app_cpu_usage)
-
-        plots = [Plot(time, gpu_usage, "GPU Usage", "usage(%)"),
-                 Plot(time, app_gpu_usage, "App GPU Usage", "usage(%)"),
-                 Plot(time, cpu_usage, "CPU Usage", "usage(%)"),
-                 Plot(time, app_cpu_usage, "App CPU Usage", "usage(%)")]
-
-        return plots
-    # get_plots
 # ClientDataView
 
 class FramesDataView(GraphDataView):
     text = "Frames"
-
-    def get_plots(self):
-        agent_time = []
-        size = []
-        mm_time = []
-        capture_duration = []
-        encode_duration = []
-        send_duration = []
-        client_time = []
-        decode_duration = []
-        queue_size = []
-
-        for d in self.data:
-            agent_time.append(d.agent_time)
-            size.append(d.size)
-            mm_time.append(d.mm_time)
-            capture_duration.append(d.capture_duration)
-            encode_duration.append(d.encode_duration)
-            send_duration.append(d.send_duration)
-            client_time.append(d.client_time)
-            decode_duration.append(d.decode_duration)
-            queue_size.append(d.queue_size)
-
-        plots = [Plot(agent_time, size, "Size", "size(bytes)"),
-                 Plot(agent_time, capture_duration, "Capture Duration", "duration(s)"),
-                 Plot(agent_time, encode_duration, "Encode Duration", "duration(s)"),
-                 Plot(agent_time, send_duration, "Send Duration", "duration(s)"),
-                 Plot(agent_time, decode_duration, "Decode Duration", "duration(s)"),
-                 Plot(agent_time, queue_size, "Queue Size", "frames(number)")]
-
-
-        return plots
-    # get_plots
+    metadata = PlotMetaData("agent_time", [("size", "Size", "size(bytes)"),
+                                           ("capture_duration", "Capture Duration", "duration(s)"),
+                                           ("encode_duration", "Encode Duration", "duration(s)"),
+                                           ("send_duration", "Send Duration", "duration(s)"),
+                                           ("decode_duration", "Decode Duration", "duration(s)"),
+                                           ("queue_size", "Queue Size", "frames(number)")])
 # FramesDataView
 
 class ExperimentDataView(Gtk.Grid, DataView):
