@@ -9,6 +9,7 @@ from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as Navigatio
 from matplotlib.figure import Figure
 import matplotlib.pyplot as pyplot
 import numpy
+import yaml
 
 class Plot(object):
 
@@ -28,32 +29,33 @@ class Plot(object):
 
 class PlotMetaData(object):
 
-    def __init__(self, x_attr, y_attr):
+    def __init__(self, x_attr, x_label, y_attr):
         self.x_attr = x_attr
-        self.x_data = []
-        self.y_attr = []
-        self.y_data = []
-        self.title = []
-        self.label = []
-        self.plots = []
-        self.num_plots = len(y_attr)
+        self.x_label = x_label
+        self.y_attr = y_attr
 
-        for i in range(self.num_plots):
-            self.y_data.append([])
-            self.y_attr.append(y_attr[i][0])
-            self.title.append(y_attr[i][1])
-            self.label.append(y_attr[i][2])
+        self.plots = []
     #__init__
 
     def process_data(self, data):
-        if not self.plots:
-            for d in data:
-                self.x_data.append(getattr(d, self.x_attr))
-                for i in range(self.num_plots):
-                    self.y_data[i].append(getattr(d, self.y_attr[i]))
+        if self.plots:
+            return self.plots
 
-            for i in range(self.num_plots):
-                self.plots.append(Plot(self.x_data, self.y_data[i], self.title[i], self.label[i]))
+        try:
+            dataset_length = data.length(self.x_attr)
+        except KeyError as e:
+            print("WARNING: {} is an invalid 'x' key ({})".format(self.x_attr, e))
+            return []
+
+        x_data = [data.get(self.x_attr, row) for row in range(dataset_length)]
+
+        for field, title, label in self.y_attr:
+            try:
+                y_data = [data.get(field, row) for row in range(dataset_length)]
+                self.plots.append(Plot(x_data, y_data, title, label, self.x_label))
+            except Exception as e:
+                print("WARNING: Failed to build plot '{} - {} | {}'".format(title, field, label))
+                print(e)
 
         return self.plots
     # process_data
@@ -131,37 +133,31 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
     # unmap_cb
 # GraphDataView
 
-class GuestDataView(GraphDataView):
-    text = "Guest"
-    metadata = PlotMetaData("time", [("gpu_memory", "GPU Memory", "memory(MB)"),
-                                     ("gpu_usage", "GPU Usage", "usage(%)"),
-                                     ("encode_usage", "Encode Usage", "usage(%)"),
-                                     ("decode_usage", "Decode Usage", "usage(%)")])
-# GuestDataView
+def get_data_views(filename):
+    views_cfg = yaml.safe_load(open(filename))
 
-class HostDataView(GraphDataView):
-    text = "Host"
-    metadata = PlotMetaData("time", [("cpu_usage", "CPU Usage", "usage(%)"),])
-# HostDataView
+    data_views = []
+    for tab_title, content in views_cfg.items():
+        if not "x" in content:
+            print("WARNING: tab '{}' has no 'x' field. Skipping it.".format(tab_title))
+            continue
 
-class ClientDataView(GraphDataView):
-    text = "Client"
-    metadata = PlotMetaData("time", [("gpu_usage", "GPU Usage", "usage(%)"),
-                                     ("app_gpu_usage", "App GPU Usage", "usage(%)"),
-                                     ("cpu_usage", "CPU Usage", "usage(%)"),
-                                     ("app_cpu_usage", "App CPU Usage", "usage(%)")])
+        x_source, found, x_label = content["x"].partition(", ")
 
-# ClientDataView
+        y_attr = []
+        for plot_title, y in content.items():
+            if plot_title == "x": continue
 
-class FramesDataView(GraphDataView):
-    text = "Frames"
-    metadata = PlotMetaData("agent_time", [("size", "Size", "size(bytes)"),
-                                           ("capture_duration", "Capture Duration", "duration(s)"),
-                                           ("encode_duration", "Encode Duration", "duration(s)"),
-                                           ("send_duration", "Send Duration", "duration(s)"),
-                                           ("decode_duration", "Decode Duration", "duration(s)"),
-                                           ("queue_size", "Queue Size", "frames(number)")])
-# FramesDataView
+            y_source, found, y_desc = y.partition(", ")
+            y_attr.append((y_source, plot_title, y_desc))
+
+        class YamlDataView(GraphDataView):
+            text = tab_title
+            metadata = PlotMetaData(x_source, x_label, y_attr)
+
+        data_views.append(YamlDataView)
+
+    return data_views
 
 class ExperimentDataView(Gtk.Grid, DataView):
     text = "Experiment"

@@ -59,7 +59,7 @@ class DatabaseData(Iterator):
 
     def __getattr__(self, attr):
         if attr not in self._members:
-            raise AttributeError("%s has no attribute %s", self.__class__.__name__, attr)
+            raise AttributeError("%s has no attribute %s" % (self.__class__.__name__, attr))
         return self.args[self._members.index(attr)]
     # __getattr__
 
@@ -151,6 +151,26 @@ class ExperimentData(DatabaseData):
         _str = "%s%s" % (_str, "\b\b")
         print(_str)
     # dump
+
+    def get(self, source, row):
+        tablename, field = source.split(".")
+        table = getattr(self, tablename)
+
+        if field not in table._class._members:
+            raise(KeyError("Field '{}' not found in table {}".format(field, tablename)))
+
+        return [e for e in table[row] if e[0] == field][0][1]
+    # get
+
+    def length(self, source):
+        tablename, field = source.split(".")
+        table = getattr(self, tablename)
+
+        if field not in table._class._members:
+            raise(KeyError("Field '{}' not found in table {}".format(field, tablename)))
+
+        return len(table)
+    #length
 # ExperimentData
 
 

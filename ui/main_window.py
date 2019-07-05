@@ -18,18 +18,22 @@ else:
     from ..utils import yaml
 
 from data import ExperimentData
-from dataview import ExperimentDataView, FramesDataView, ClientDataView, \
-                     HostDataView, GuestDataView, GraphDataView
+from dataview import ExperimentDataView, get_data_views
+
+MAIN_UI_YAML_DATAVIEWS = "dataviews.yaml" # relative to this module's directory
 
 class ExperimentView(Gtk.Notebook):
 
     def __init__(self, data):
         Gtk.Notebook.__init__(self, scrollable=True)
         self.append_page(ExperimentDataView, data)
-        self.append_page(FramesDataView, data.frames)
-        self.append_page(ClientDataView, data.client_stats)
-        self.append_page(HostDataView, data.host_stats)
-        self.append_page(GuestDataView, data.guest_stats)
+
+        dataview_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                     MAIN_UI_YAML_DATAVIEWS)
+
+        for data_view_class in get_data_views(dataview_file):
+            self.append_page(data_view_class, data)
+
         self.n_pages = self.get_n_pages()
 
         button = Gtk.Button(image=Gtk.Image.new_from_icon_name("tab-new-symbolic", Gtk.IconSize.BUTTON),
