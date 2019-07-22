@@ -72,6 +72,7 @@ class StreamingAgent(Measurement):
         line_re = re.compile(r'^(\d+): (\w+)(.*)')
         bytes_re = re.compile(r' of (\d+) ')
         new_stream_re = re.compile(r' new stream wXh (\d+)X(\d+) ')
+        start_time = None
         for line in open(self.log):
             m = line_re.match(line)
             if not m:
@@ -96,7 +97,10 @@ class StreamingAgent(Measurement):
                 frame_bytes = int(m.group(1))
             elif verb == 'Sent':
                 sent = time
-                self.table.add(start / 1000000, frame_bytes,
+                if start_time is None:
+                    start_time = start
+                    start_time = start_time - start_time % (86400 * 1000000)
+                self.table.add((start - start_time) / 1000000, frame_bytes,
                                (captured - start) / 1000000,
                                (encoded - captured) / 1000000,
                                (sent - encoded) / 1000000)

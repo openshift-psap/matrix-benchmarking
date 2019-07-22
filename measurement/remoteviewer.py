@@ -65,11 +65,15 @@ class RemoteViewer(Measurement):
         line_re = re.compile(r'.*frame mm_time (\d+) size (\d+)'
                              r' creation time (\d+) decoded time (\d+)'
                              r' queue (\d+)')
+        start_time = None
         for line in open(self.log):
             m = line_re.match(line)
             if m:
                 fields = [int(m.group(i)) for i in range(1, 6)]
-                fields[2] /= 1000000
+                if start_time is None:
+                    start_time = fields[2]
+                    start_time = start_time - start_time % (86400 * 1000000)
+                fields[2] = (fields[2] - start_time) / 1000000
                 fields[3] /= 1000000
                 self.table.add(*fields)
 

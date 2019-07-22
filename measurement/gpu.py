@@ -42,6 +42,7 @@ class NvidiaTool:
         line_re = re.compile(r'^\d+,\s*(pwrDraw|decUtil|encUtil|gpuUtil|temp|memUtil'
                              r'|violPwr|violThm|memClk|procClk)\s*,\s*(\d+),\s*(\d+)$')
         kinds = set(self.kinds.keys())
+        start_time = None
         for line in open(log):
             # some versions fill some values with invalid values, skip
             # these lines
@@ -54,7 +55,10 @@ class NvidiaTool:
             time = int(m.group(2))
             value = int(m.group(3))
             if kind in kinds:
-                self.tables[kind].add(time / 1000000, value)
+                if start_time is None:
+                    start_time = time
+                    start_time = start_time - start_time % (86400 * 1000000)
+                self.tables[kind].add((time - start_time)/ 1000000, value)
 
 class IntelTool:
     def __init__(self, experiment, machine):

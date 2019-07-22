@@ -27,6 +27,7 @@ class Test(Measurement):
         self.vmstat.wait()
     def collect(self):
         # parse log
+        start_time = None
         with open(self.log) as f:
             header = f.readline()
             if header.find('timestamp') < 0:
@@ -44,5 +45,8 @@ class Test(Measurement):
                 cpu = 100 - int(fields[idle_idx])
                 time = ' '.join(fields[-2:])
                 time = int(datetime.strptime(time, '%Y-%m-%d %H:%M:%S').timestamp())
-                self.table.add(time, cpu)
+                if start_time is None:
+                    start_time = time
+                    start_time = start_time - start_time % 86400
+                self.table.add(time - start_time, cpu)
         os.unlink(self.log)
