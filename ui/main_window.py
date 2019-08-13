@@ -18,7 +18,7 @@ else:
     from ..utils import yaml
 
 from data import ExperimentData
-from dataview import ExperimentDataView, get_data_views
+from dataview import ExperimentDataView, GraphDataView, get_data_views
 
 MAIN_UI_YAML_DATAVIEWS = "dataviews.yaml" # relative to this module's directory
 
