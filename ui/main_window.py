@@ -47,11 +47,11 @@ class ExperimentView(Gtk.Notebook):
         self.show()
     # __init__
 
-    def append_page(self, type, data, tab_widget=None):
+    def append_page(self, _type, data, tab_widget=None):
         if not tab_widget:
-            tab_widget = Gtk.Label(label=type.text)
+            tab_widget = Gtk.Label(label=_type.text)
 
-        return Gtk.Notebook.append_page(self, type(data), tab_widget)
+        return Gtk.Notebook.append_page(self, _type(data), tab_widget)
     # append_page
 
     def new_tab_clicked(self, button):
