@@ -170,9 +170,8 @@ class ExperimentDataView(Gtk.Grid, DataView):
                           column_spacing=10,
                           row_spacing=10)
 
-        self.insert_column(0)
-        self.insert_column(1)
-        self.insert_column(2)
+        for i in range(2):
+            self.insert_column(i)
 
         row = 0
         for key, val in data:
