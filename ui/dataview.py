@@ -7,6 +7,7 @@ from gi.repository import Gtk, GLib
 from matplotlib.backends.backend_gtk3cairo import FigureCanvasGTK3Cairo as FigureCanvas
 from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as NavigationToolbar
 from matplotlib.figure import Figure
+from matplotlib.ticker import AutoMinorLocator
 import matplotlib.pyplot as pyplot
 import numpy
 from scipy.spatial.distance import cdist
@@ -16,6 +17,7 @@ class Plot(object):
 
     def __init__(self, x, y, title, y_label=None, x_label='time(s)'):
         self.x = self.zeroify(x)
+        self.rel_x = numpy.array(self.x) - self.x[0]
         self.y = self.zeroify(y)
         self.x_label = x_label
         self.y_label = y_label
@@ -110,8 +112,10 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
                 a.set(title=p.title, ylabel=p.y_label)
                 if i == nrows-1:
                     a.set_xlabel(p.x_label)
-                a.grid()
-                a.plot(p.x, p.y, '.-', picker=5)
+
+                a.grid(which='both', linestyle=":")
+                a.get_xaxis().set_minor_locator(AutoMinorLocator())
+                a.plot(p.rel_x, p.y, '.-', picker=5)
 
             canvas = FigureCanvas(self.graph)
             canvas.set_size_request(900, 700)
@@ -153,7 +157,7 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
         axes = line.axes
         x_label = self.plots[axes].x_label
         y_label = self.plots[axes].y_label
-        txt = f"Index: {idx}\n{x_label}: {x:0.5f}\n{y_label}: {y:0.5f}"
+        txt = f"Index: {idx}\nRelative {x_label}: {x:0.5f}\n{y_label}: {y:0.5f}"
 
         try:
             tooltip = self.tooltips[axes]
