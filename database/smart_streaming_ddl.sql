@@ -64,6 +64,7 @@ CREATE TABLE public.attachments
   /* content of the attachment */
   content TEXT NOT NULL
 );
+ALTER TABLE attachments ADD PRIMARY KEY (id_experiment, name);
 
 /* This table holds information on the frames during the experiment.
  */
@@ -90,6 +91,7 @@ CREATE TABLE public.frames
   /* queue size on the client, taken when frame was decoded, in number of frames */
   queue_size INT NULL
 );
+ALTER TABLE frames ADD PRIMARY KEY (id_experiment, agent_time);
 COMMENT ON TABLE public.frames IS 'Holds information about experiment frames';
 
 /* This table holds information about guest statistics */
@@ -107,6 +109,7 @@ CREATE TABLE public.guest_stats
   /* decode usage, percentage */
   decode_usage FLOAT NULL
 );
+ALTER TABLE guest_stats ADD PRIMARY KEY (id_experiment, time);
 COMMENT ON TABLE public.guest_stats IS 'Holds information about guest statistics';
 
 /* This table holds information about host statistics */
@@ -118,6 +121,7 @@ CREATE TABLE public.host_stats
   /* CPU usage, percentage */
   cpu_usage FLOAT NULL
 );
+ALTER TABLE host_stats ADD PRIMARY KEY (id_experiment, time);
 COMMENT ON TABLE public.host_stats IS 'Holds information about host statistics';
 
 /* This table holds information about client statistics */
@@ -135,4 +139,5 @@ CREATE TABLE public.client_stats
   /* application CPU usage, percentage */
   app_cpu_usage FLOAT NULL
 );
+ALTER TABLE client_stats ADD PRIMARY KEY (id_experiment, time);
 COMMENT ON TABLE public.client_stats IS 'Holds information about client statistics';
