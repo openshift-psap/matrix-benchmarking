@@ -14,11 +14,15 @@ async def stream_as_generator(loop, stream):
 class LiveCollect():
     def __init__(self):
         self.lines = []
+        self.alive = False
 
     def connect(self, loop):
+        self.alive = True
+
         async def follow_stream():
             async for line in stream_as_generator(loop, self.stream):
                 self.lines.append(line)
+            self.alive = False
 
         loop.create_task(follow_stream())
 
@@ -68,6 +72,8 @@ class LiveSocket(LiveCollect):
         self.async_read = async_read
 
     def connect(self, loop):
+        self.alive = True
+
         async def follow_socket():
             reader, writer = await asyncio.open_connection(sock=self.sock)
             while True:
@@ -76,4 +82,6 @@ class LiveSocket(LiveCollect):
                     break
                 self.lines.append(entry)
             print(f"Connection to {self.sock.getpeername()} closed.")
+            self.alive = False
+
         loop.create_task(follow_socket())

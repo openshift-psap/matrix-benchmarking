@@ -126,8 +126,6 @@ class ConsoleQuality():
         print("Quality Input: done")
 
     def register(self, name, sock):
-        assert name not in self.agents
-
         self.agents[name] = sock
 
     def stop(self):
@@ -148,6 +146,9 @@ class AgentInterface(measurement.Measurement):
         self.host = cfg.get("host", "localhost")
         self.port = cfg["port"]
         self.mode = cfg["mode"]
+
+    def __str__(self):
+        return f"AgentInterface:{self.mode}<{self.host}:{self.port}>"
 
     def setup(self):
         if self.mode == "client":
@@ -194,10 +195,11 @@ class AgentInterface(measurement.Measurement):
         print("Connecting to", self.port)
         try:
             self.sock.connect((self.host, self.port))
-        except ConnectionRefusedError:
-            raise Exception(f"Cannot cannot to the SmartLocalAgent on {self.host}:{self.port} ({self.mode})")
+            recorder_names = initialize(self.sock, self.mode)
 
-        recorder_names = initialize(self.sock, self.mode)
+        except ConnectionRefusedError:
+            self.live = False
+            raise Exception(f"Cannot cannot to the SmartLocalAgent on {self.host}:{self.port} ({self.mode})")
 
         self.live = utils.live.LiveSocket(self.sock, async_read_entry)
 

@@ -166,12 +166,11 @@ def run(cfg):
     for m in measurements: m.setup()
 
     print("\n* Starting the measurements ...")
-    try:
-        for mod in measurements: mod.start()
-    except ProcessNotRunningMeasurementException as e:
-        print("FATAL:", m.__class__.__name__, f": Process not running ({e})")
-        return 1
-
+    for mod in measurements:
+        try:
+            mod.start()
+        except Exception as e:
+            print("WARNING:", m.__class__.__name__, e)
 
     print("\n* Starting the Perf Collector socket ...")
     serv_thr, serv_sock = initialize_server()
@@ -183,7 +182,8 @@ def run(cfg):
         loop.stop()
 
     for mod in measurements:
-        mod.live.connect(loop)
+        if mod.live:
+            mod.live.connect(loop)
 
     fatal = None
     recording_time = 0
@@ -199,6 +199,16 @@ def run(cfg):
 
         try:
             for mod in measurements:
+                if not (mod.live and mod.live.alive):
+                    print(mod, "is dead")
+                    try:
+                        mod.start()
+                        mod.live.connect(loop)
+                    except Exception as e:
+                        print("###", e.__class__.__name__, e)
+
+                    continue
+
                 for line in mod.live.collect():
                     mod.process_line(line)
         except Exception as e:
