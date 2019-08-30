@@ -199,7 +199,23 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
 
 # GraphDataView
 
-def get_data_views(filename):
+class YamlDataViewType():
+
+    def __init__(self, text, metadata):
+        self.text = text
+        self.metadata = metadata
+
+        self.obj = None
+
+    def __call__(self, data):
+        assert self.obj is None
+
+        self.obj = GraphDataView(data)
+        self.obj.text = self.text
+        self.obj.metadata = self.metadata
+        return self.obj
+
+def get_data_views(filename, views=[]):
     views_cfg = yaml.safe_load(open(filename))
 
     data_views = []
@@ -217,11 +233,8 @@ def get_data_views(filename):
             y_source, found, y_desc = y.partition(", ")
             y_attr.append((y_source, plot_title, y_desc))
 
-        class YamlDataView(GraphDataView):
-            text = tab_title
-            metadata = PlotMetaData(x_source, x_label, y_attr)
-
-        data_views.append(YamlDataView)
+        data_views.append(YamlDataViewType(tab_title,
+                                           PlotMetaData(x_source, x_label, y_attr)))
 
     return data_views
 
