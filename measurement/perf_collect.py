@@ -36,12 +36,12 @@ def initialize(sock, experiment):
     for _ in range(nb_tables):
         msg = ""
         last = b""
-        while last != b"@":
+        while last != b"\0":
             last = sock.recv(1)
             msg += last.decode("ascii")
 
         # eg:
-        "#3 frames|client.mm_time;client.frame_size;client.time;client.decode_duration;client.queue@"
+        "#3 frames|client.mm_time;client.frame_size;client.time;client.decode_duration;client.queue\0"
         table_uname, fields_name = msg[:-1].split("|")
         table_name = table_uname.split(" ")[1]
 
@@ -58,7 +58,7 @@ async def async_read_dataset(reader):
     b_line = b""
     while True:
         b_char = await reader.read(1)
-        if b_char == b"@": break
+        if b_char == b"\0": break
         if not b_char: return False
         b_line += b_char
 
@@ -77,7 +77,7 @@ class Perf_Collect(measurement.Measurement):
 
     def set_quality(self, quality_msg):
         print(">>>", quality_msg)
-        self.sock.send((quality_msg + "@").encode("ascii"))
+        self.sock.send((quality_msg + "\0").encode("ascii"))
 
     def setup(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

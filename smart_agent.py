@@ -33,7 +33,7 @@ quality_buffer = []
 def sock_read_quality(sock):
     try:
         c = sock.recv(1).decode("ascii")
-        if c == "@":
+        if c == "\0":
             measurement.agentinterface.quality.send_str("".join(quality_buffer))
             quality_buffer[:] = []
         else:
@@ -91,7 +91,7 @@ def initialize_server():
 def initialize_new_client(client_sock, experiment):
     client_sock.send(struct.pack("I", len(experiment.tables)))
     for i, table in enumerate(experiment.tables):
-        msg = f"#{i} {table.table_name}|" +";".join([f.name for f in table.fields]) + "@"
+        msg = f"#{i} {table.table_name}|" +";".join([f.name for f in table.fields]) + "\0"
         client_sock.send(msg.encode("ascii"))
 
 
@@ -101,9 +101,9 @@ def send_quality_backlog(client_sock, experiment):
 
     for i, table in enumerate(experiment.tables):
         if table.table_name != "quality": continue
-        client_sock.send(f"#{i} {table.table_name}|{len(old_quality_message)}".encode("ascii") + b"@")
+        client_sock.send(f"#{i} {table.table_name}|{len(old_quality_message)}\0".encode("ascii"))
         for row in old_quality_message:
-            client_sock.send(str(row).encode("ascii") + b"@")
+            client_sock.send(str(row).encode("ascii") + b"\0")
 
 def initialize_new_clients(experiment):
     global new_clients
@@ -118,7 +118,7 @@ def initialize_new_clients(experiment):
 def send_all(line):
     for client in current_clients[:]:
         try:
-            client.send(line + b"@")
+            client.send(line + b"\0")
         except Exception as e:
             # safe as we're using a copy of the list
             current_clients.remove(client)

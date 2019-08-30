@@ -99,11 +99,11 @@ class ConsoleQuality():
         mode, found, msg = line.partition(":")
         if not found \
            or not mode in self.agents \
-           or "@" in msg \
+           or "\0" in msg \
            or len(msg) > 127:
             print("Invalid message. Valid modes:", ",".join(self.agents.keys()))
             return
-        self.agents[mode].send((msg+"@").encode("ascii"))
+        self.agents[mode].send((msg+"\0").encode("ascii"))
 
     def thread_routine(self):
         self.running = True
