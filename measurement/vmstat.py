@@ -18,9 +18,6 @@ class VMStat(measurement.Measurement):
         self.live = utils.live.LiveStream()
         self.headers = []
 
-    def setup(self):
-        subprocess.call('killall vmstat 2> /dev/null', shell=True)
-
     def start(self):
         # start vmstat
         self.process = subprocess.Popen('vmstat -t 1'.split(), stdout=subprocess.PIPE, close_fds=True)

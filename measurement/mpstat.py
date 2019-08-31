@@ -19,9 +19,6 @@ class MPStat(measurement.Measurement):
         self.live = utils.live.LiveStream()
         self.headers = None
 
-    def setup(self):
-        subprocess.call('killall mpstat 2> /dev/null', shell=True)
-
     def start(self):
         self.process = subprocess.Popen('mpstat 2'.split(),
                                         stdout=subprocess.PIPE, close_fds=True,
