@@ -73,6 +73,9 @@ async def async_read_entry(reader):
 def initialize(sock, mode):
     nb_recorders = sock_read_uint64(sock)
 
+    if nb_recorders == 0:
+        return None
+
     names = [sock_read_string(sock) for _ in range(nb_recorders)]
 
     # enable all the recorders
@@ -196,10 +199,12 @@ class AgentInterface(measurement.Measurement):
         try:
             self.sock.connect((self.host, self.port))
             recorder_names = initialize(self.sock, self.mode)
-
+            if not recorder_names:
+                self.live = False
+                raise Exception(f"Communication refused by the AgentInterface on {self.host}:{self.port} ({self.mode})")
         except ConnectionRefusedError:
             self.live = False
-            raise Exception(f"Cannot cannot to the SmartLocalAgent on {self.host}:{self.port} ({self.mode})")
+            raise Exception(f"Cannot connect to the AgentInterface on {self.host}:{self.port} ({self.mode})")
 
         self.live = utils.live.LiveSocket(self.sock, async_read_entry)
 

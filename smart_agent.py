@@ -74,12 +74,19 @@ current_clients = []
 old_quality_message = []
 
 def initialize_server():
-    print("INIT")
     serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serv.setblocking(0)
     serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-    serv.bind(('0.0.0.0', 1230))
+    try:
+        PORT = 1230
+        serv.bind(('0.0.0.0', PORT))
+    except OSError as e:
+        if e.errno == 98:
+            print(f"Port {PORT} already in use. Is the SmartLocalAgent already running?")
+            return None, None
+        else:
+            raise e
 
     serv.listen(5)
     thr = threading.Thread(target=accept_socket, args=[serv])
@@ -173,7 +180,10 @@ def run(cfg):
             print("WARNING:", m.__class__.__name__, e)
 
     print("\n* Starting the Perf Collector socket ...")
+
     serv_thr, serv_sock = initialize_server()
+    if serv_sock is None:
+        return
 
     loop = asyncio.get_event_loop()
 
