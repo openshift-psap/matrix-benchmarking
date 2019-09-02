@@ -95,4 +95,10 @@ for options in matrix(list(cfg['matrix'].values()), 1):
     options = dict(zip(option_names, options))
     for name, value in options.items():
         utils.yaml.set_subyaml(cfg, name, value)
-    run_one(cfg)
+    for loop in range(2):
+        try:
+            run_one(cfg)
+            break
+        except Exception as e:
+            if loop == 1:
+                raise
