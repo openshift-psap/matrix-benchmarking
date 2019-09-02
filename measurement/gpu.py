@@ -22,6 +22,7 @@ class NvidiaTool:
         for kind, field in self.kinds.items():
             self.tables[kind] = experiment.create_table(['time', field])
         machine.run(['rm', '-f', '/tmp/nvidia_stats.log'])
+        machine.run('killall nvidia-smi || true')
 
     def start(self):
         cmd = 'nvidia-smi stats > /tmp/nvidia_stats.log'
