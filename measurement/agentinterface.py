@@ -87,11 +87,15 @@ def initialize(sock, mode):
     return names
 
 #---
+ENABLE_STDIN_QUALITY = False
 
 class ConsoleQuality():
     def __init__(self):
         self.agents = {}
         self.running = None
+        if not ENABLE_STDIN_QUALITY:
+            return
+
         self.thr = threading.Thread(target=self.thread_routine)
         self.thr.daemon = True
         self.thr.start()
