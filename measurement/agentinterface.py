@@ -148,7 +148,7 @@ class AgentInterface(measurement.Measurement):
         self.tables = {}
         self.states = {}
 
-        self.live = True
+        self.live = None
 
         self.host = cfg.get("host", "localhost")
         self.port = cfg["port"]

@@ -16,15 +16,23 @@ class LiveCollect():
         self.lines = []
         self.alive = False
 
-    def connect(self, loop):
+    def connect(self, loop, process=None):
         self.alive = True
+        if not process:
+            process = self.process
 
         async def follow_stream():
             async for line in stream_as_generator(loop, self.stream):
-                self.lines.append(line)
+                process(line)
             self.alive = False
 
         loop.create_task(follow_stream())
+
+    def process(self, line):
+        self.lines.append(line)
+
+    def stop(self):
+        pass
 
     def collect(self):
         # the task is not running during this call
@@ -61,9 +69,6 @@ class LiveStream(LiveCollect):
     def start(self, stream):
         self.stream = stream
 
-    def stop(self):
-        pass
-
 class LiveSocket(LiveCollect):
     def __init__(self, sock, async_read):
         super().__init__()
@@ -71,16 +76,21 @@ class LiveSocket(LiveCollect):
         self.sock = sock
         self.async_read = async_read
 
-    def connect(self, loop):
+    def connect(self, loop, process=None):
         self.alive = True
+        if not process:
+            process = self.process
 
         async def follow_socket():
             reader, writer = await asyncio.open_connection(sock=self.sock)
             while True:
                 entry = await self.async_read(reader)
+
                 if entry is False: # None is allowed
                     break
-                self.lines.append(entry)
+
+                process(entry)
+
             print(f"Connection to {self.sock.getpeername()} closed.")
             self.alive = False
 

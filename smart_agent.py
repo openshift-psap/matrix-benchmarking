@@ -95,30 +95,29 @@ def initialize_server():
     return thr, serv
 
 
-def initialize_new_client(client_sock, experiment):
-    client_sock.send(struct.pack("I", len(experiment.tables)))
-    for i, table in enumerate(experiment.tables):
-        msg = f"#{i} {table.table_name}|" +";".join([f.name for f in table.fields]) + "\0"
+def initialize_new_client(client_sock, expe):
+    client_sock.send(struct.pack("I", len(expe.tables)))
+    for i, table in enumerate(expe.tables):
+        msg = f"#{i} {table.table_name}|" +";".join([f for f in table.fields]) + "\0"
         client_sock.send(msg.encode("ascii"))
 
 
-def send_quality_backlog(client_sock, experiment):
-    if not old_quality_message:
+def send_quality_backlog(client_sock, expe):
+    table = expe.quality
+    if not (table and table.rows):
         return
 
-    for i, table in enumerate(experiment.tables):
-        if table.table_name != "quality": continue
-        client_sock.send(f"#{i} {table.table_name}|{len(old_quality_message)}\0".encode("ascii"))
-        for row in old_quality_message:
-            client_sock.send(str(row).encode("ascii") + b"\0")
+    client_sock.send(f"#{table.tid} {table.table_name}|{len(table.rows)}\0".encode("ascii"))
+    for row in table.rows:
+        client_sock.send(str(row).encode("ascii") + b"\0")
 
-def initialize_new_clients(experiment):
+def initialize_new_clients(expe):
     global new_clients
     clients, new_clients = new_clients, [] # should be atomic
 
     for client in clients:
-        initialize_new_client(client, experiment)
-        send_quality_backlog(client, experiment)
+        initialize_new_client(client, expe)
+        send_quality_backlog(client, expe)
         current_clients.append(client)
 
 
@@ -131,24 +130,53 @@ def send_all(line):
             current_clients.remove(client)
             print(f"Client {client.getsockname()} disconnected ({e})")
 
+class AgentTable():
+    def __init__(self, tid, expe, fields):
+        self.fields = fields
+        self.expe = expe
+        self.tid = tid
 
-def process(experiment):
-    initialize_new_clients(experiment)
+        table_names = {field.partition(".")[0] for field in fields if field != "time"}
+        if len(table_names) != 1:
+            raise Exception(f"Not unique table name: {table_names} in {fields}")
+        self.table_name = table_names.pop()
 
-    for i, table in enumerate(experiment.tables):
-        send_all(f"#{i} {table.table_name}|{len(table.rows)}".encode("ascii"))
-        for row in table.rows:
-            send_all(str(row).encode("ascii"))
+        if self.table_name == "quality":
+            self.rows = []
+
+    def add(self, *args):
+        send_all(f"#{self.tid} {self.table_name}|1".encode("ascii"))
+        send_all(str(args).encode("ascii"))
+
+        if self.table_name == "quality":
+            self.rows.append(args)
+
+class AgentExperiment():
+    def __init__(self, cfg):
+        self.tables = []
+        self.quality = None
+        self.tid = 0
+
+    def create_table(self, fields):
+        table = AgentTable(self.tid, self, fields)
+        self.tid += 1
 
         if table.table_name == "quality":
-            old_quality_message.extend(table.rows)
+            assert self.quality is None, "Quality table already created ..."
+            self.quality = table
+
+        self.tables.append(table)
+        return table
+
+    def truncate(self):
+        pass
 
 
 def run(cfg):
     global quit_signal
 
     # load and initialize measurements
-    experiment = Experiment(cfg)
+    experiment = AgentExperiment(cfg)
 
     measurements = []
     name_re = re.compile(r'^[a-z_][a-z0-9_]*$', re.I)
@@ -165,19 +193,11 @@ def run(cfg):
         measurement_class = getattr(measurement_module, measurement_name)
         measurements.append(measurement_class(measurement_options, experiment))
 
-        if not measurements[-1].live:
+        if not hasattr(measurements[-1], "live"):
             raise Exception(f"Module {measurement_name} cannot run live ...")
-
 
     print("\n* Preparing the environment ...")
     for m in measurements: m.setup()
-
-    print("\n* Starting the measurements ...")
-    for mod in measurements:
-        try:
-            mod.start()
-        except Exception as e:
-            print("WARNING:", m.__class__.__name__, e)
 
     print("\n* Starting the Perf Collector socket ...")
 
@@ -191,48 +211,34 @@ def run(cfg):
         await asyncio.sleep(wait_time)
         loop.stop()
 
-    for mod in measurements:
-        if mod.live:
-            mod.live.connect(loop)
+    print("\n* Running!")
 
     fatal = None
-    recording_time = 0
     while True:
-        FIRST_RECORD_SLOT_TIME = 1 # seconds (will be dropped)
-        RECORD_SLOT_TIME = 1 # seconds
+        RECHECK_TIME=5 #s
+        loop.create_task(timer_kick(RECHECK_TIME))
 
-        record_time = FIRST_RECORD_SLOT_TIME if recording_time is None else RECORD_SLOT_TIME
-        loop.create_task(timer_kick(record_time))
+        try:
+            for mod in measurements:
+                # try to reconnect disconnected agent interfaces
+                if not (mod.live and mod.live.alive):
+                    print(mod, "is dead")
+                    try:
+                        mod.start()
+                        mod.live.connect(loop, mod.process_line)
+                    except Exception as e:
+                        print("###", e.__class__.__name__, e)
+
+        except Exception as e:
+            print(f"FATAL: {e.__class__.__name__} raised while processing: {e}")
+            fatal = sys.exc_info()
+            break
 
         # returns after timer_kick() calls loop.stop()
         loop.run_forever()
 
         try:
-            for mod in measurements:
-                if not (mod.live and mod.live.alive):
-                    print(mod, "is dead")
-                    try:
-                        mod.start()
-                        mod.live.connect(loop)
-                    except Exception as e:
-                        print("###", e.__class__.__name__, e)
-
-                    continue
-
-                for line in mod.live.collect():
-                    mod.process_line(line)
-        except Exception as e:
-            if quit_signal: break
-
-            print(f"FATAL: {e.__class__.__name__} raised while processing: {e}")
-            fatal = sys.exc_info()
-            break
-
-        recording_time += record_time
-
-        try:
-            process(experiment)
-            experiment.truncate() # successfull save, truncate the recording
+            initialize_new_clients(experiment)
         except Exception as e:
             print(f"FATAL: {e.__class__.__name__} raised while sending: {e}")
             fatal = sys.exc_info()
