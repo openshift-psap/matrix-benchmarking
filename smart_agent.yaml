@@ -4,6 +4,13 @@
 # These are the measurement take
 # Each measurement can have options
 measurement_sets:
+  host:
+    - VMStat
+    - MPStat
+    - AgentInterface:
+        port: 1235
+        mode: server
+
   guest:
     - VMStat
     - MPStat
@@ -11,12 +18,6 @@ measurement_sets:
         host: 192.168.122.186
         port: 1236
         mode: guest
-  host:
-    - VMStat
-    - MPStat
-    - AgentInterface:
-        port: 1235
-        mode: server
 
   client:
     - VMStat
@@ -31,8 +32,8 @@ measurement_sets:
 central_agent:
   run_as_agent: True
   measurement_sets:
-    - guest
     - host
+    - guest
     - client
 
 collector:
