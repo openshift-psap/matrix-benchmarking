@@ -25,7 +25,8 @@ measurement_sets:
         port: 1234
         mode: client
 
-default:
+central_agent:
+  run_as_agent: True
   measurement_sets:
     - guest
     - host

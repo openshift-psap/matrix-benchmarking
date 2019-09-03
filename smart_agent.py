@@ -2,19 +2,17 @@
 
 import argparse
 import sys
-import threading
 import re
 import asyncio
 import importlib
 import signal
-import socket
-import select
 import traceback
-import struct
 
 import utils.yaml
-from experiment import Experiment
-from measurement import ProcessNotRunningMeasurementException
+
+import measurement.agentinterface
+import agent.to_collector
+
 
 quit_signal = False
 def signal_handler(sig, frame):
@@ -25,110 +23,6 @@ def signal_handler(sig, frame):
     loop = asyncio.get_event_loop()
     loop.stop()
 
-signal.signal(signal.SIGINT, signal_handler)
-
-import measurement.agentinterface
-
-quality_buffer = []
-def sock_read_quality(sock):
-    try:
-        c = sock.recv(1).decode("ascii")
-        if c == "\0":
-            measurement.agentinterface.quality.send_str("".join(quality_buffer))
-            quality_buffer[:] = []
-        else:
-            quality_buffer.append(c)
-
-        return True
-    except Exception:
-        return False
-
-def accept_socket(server_socket):
-    read_list = [server_socket]
-    running = True
-    while running:
-
-        readable, writable, errored = select.select(read_list, [], [])
-
-        for s in readable:
-            if s == server_socket:
-                try:
-                    conn, addr = server_socket.accept()
-
-                except OSError as e:
-                    if e.errno == 22: #  Invalid argument
-                        running = False
-                        break
-
-                print("New connection from", addr)
-                new_clients.append(conn)
-                read_list.append(conn)
-            else:
-                if not sock_read_quality(s):
-                    read_list.remove(conn)
-
-    print("Perf collector socket closed.")
-
-new_clients = []
-current_clients = []
-old_quality_message = []
-
-def initialize_server():
-    serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serv.setblocking(0)
-    serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-    try:
-        PORT = 1230
-        serv.bind(('0.0.0.0', PORT))
-    except OSError as e:
-        if e.errno == 98:
-            print(f"Port {PORT} already in use. Is the SmartLocalAgent already running?")
-            return None, None
-        else:
-            raise e
-
-    serv.listen(5)
-    thr = threading.Thread(target=accept_socket, args=[serv])
-    thr.start()
-
-    return thr, serv
-
-
-def initialize_new_client(client_sock, expe):
-    client_sock.send(struct.pack("I", len(expe.tables)))
-    for i, table in enumerate(expe.tables):
-        msg = f"#{i} {table.table_name}|" +";".join([f for f in table.fields]) + "\0"
-        client_sock.send(msg.encode("ascii"))
-
-
-def send_quality_backlog(client_sock, expe):
-    table = expe.quality
-    if not (table and table.rows):
-        return
-
-    client_sock.send(f"#{table.tid} {table.table_name}|{len(table.rows)}\0".encode("ascii"))
-    for row in table.rows:
-        client_sock.send(str(row).encode("ascii") + b"\0")
-
-def initialize_new_clients(expe):
-    global new_clients
-    clients, new_clients = new_clients, [] # should be atomic
-
-    for client in clients:
-        initialize_new_client(client, expe)
-        send_quality_backlog(client, expe)
-        current_clients.append(client)
-
-
-def send_all(line):
-    for client in current_clients[:]:
-        try:
-            client.send(line + b"\0")
-        except Exception as e:
-            # safe as we're using a copy of the list
-            current_clients.remove(client)
-            print(f"Client {client.getsockname()} disconnected ({e})")
 
 class AgentTable():
     def __init__(self, tid, expe, fields):
@@ -144,18 +38,25 @@ class AgentTable():
         if self.table_name == "quality":
             self.rows = []
 
-    def add(self, *args):
-        send_all(f"#{self.tid} {self.table_name}|1".encode("ascii"))
-        send_all(str(args).encode("ascii"))
+    def add(self, *row):
+        if self.expe.new_table_row is None:
+            print("Warning: nothing to do with the table rows ...")
+            self.expe.new_table_row = False
+            return
+
+        self.expe.new_table_row(self, row)
 
         if self.table_name == "quality":
-            self.rows.append(args)
+            self.rows.append(row)
+
 
 class AgentExperiment():
-    def __init__(self, cfg):
+    def __init__(self):
         self.tables = []
         self.quality = None
         self.tid = 0
+        self.new_table = None
+        self.new_table_row = None
 
     def create_table(self, fields):
         table = AgentTable(self.tid, self, fields)
@@ -165,19 +66,45 @@ class AgentExperiment():
             assert self.quality is None, "Quality table already created ..."
             self.quality = table
 
+        if self.new_table:
+            self.new_table(table)
+
         self.tables.append(table)
         return table
 
-    def truncate(self):
+    def set_quality_callback(self, cb):
         pass
 
+    def new_quality(self, ts, src, msg):
+        print(f"{ts}: {src}: {msg}")
 
-def run(cfg):
-    global quit_signal
+def prepare_cfg(key):
+    cfg = {}
 
-    # load and initialize measurements
-    experiment = AgentExperiment(cfg)
+    cfg_filename = "smart_agent.yaml"
+    smart_cfg = utils.yaml.load_multiple(cfg_filename)
 
+    if not key in smart_cfg:
+        raise KeyError(f"Key '{key}' not found inside {cfg_filename}")
+
+    # gather the measurment sets requested for this run
+    cfg["measurements"] = list()
+    for measures in smart_cfg[key]["measurement_sets"]:
+        for measure in smart_cfg["measurement_sets"][measures]:
+            if isinstance(measure, str) and measure in cfg["measurements"]:
+                continue
+            cfg["measurements"].append(measure)
+
+    cfg["machines"] = smart_cfg["machines"]
+
+    cfg["run_as_agent"] = smart_cfg[key]["run_as_agent"]
+    #localmachine = dict(type="local")
+    #cfg["machines"] = dict(guest=localmachine, host=localmachine, client=localmachine)
+
+    return cfg
+
+
+def load_measurements(cfg, expe):
     measurements = []
     name_re = re.compile(r'^[a-z_][a-z0-9_]*$', re.I)
     for measurement_name in cfg['measurements']:
@@ -191,19 +118,49 @@ def run(cfg):
 
         measurement_module = importlib.import_module('measurement.' + measurement_name.lower())
         measurement_class = getattr(measurement_module, measurement_name)
-        measurements.append(measurement_class(measurement_options, experiment))
+        measurements.append(measurement_class(measurement_options, expe))
 
         if not hasattr(measurements[-1], "live"):
             raise Exception(f"Module {measurement_name} cannot run live ...")
+    return measurements
 
+def checkup_mods(measurements, deads, loop):
+    for mod in measurements:
+        # try to reconnect disconnected agent interfaces
+        if not (mod.live and mod.live.alive):
+            if not mod in deads:
+                print(mod, "is dead")
+                deads.append(mod)
+
+            try:
+                mod.start()
+                mod.live.connect(loop, mod.process_line)
+            except Exception as e:
+                print("###", e.__class__.__name__, e)
+        else:
+            try: deads.remove(mod)
+            except ValueError: pass
+def run(cfg):
+    run_as_agent = cfg["run_as_agent"]
+    expe = AgentExperiment()
+
+    if run_as_agent:
+        print("\n* Starting the socket for the Perf Collector...")
+        server = agent.to_collector.Server(expe)
+    else: # run as collector
+        server = ...
+
+    expe.new_table = server.new_table
+    expe.new_table_row = server.new_table_row
+
+    # load and initialize measurements
+    measurements = load_measurements(cfg, expe)
+
+    deads = []
     print("\n* Preparing the environment ...")
-    for m in measurements: m.setup()
-
-    print("\n* Starting the Perf Collector socket ...")
-
-    serv_thr, serv_sock = initialize_server()
-    if serv_sock is None:
-        return
+    for mod in measurements:
+        mod.setup()
+        deads.append(mod)
 
     loop = asyncio.get_event_loop()
 
@@ -214,76 +171,52 @@ def run(cfg):
     print("\n* Running!")
 
     fatal = None
-    while True:
-        RECHECK_TIME=5 #s
-        loop.create_task(timer_kick(RECHECK_TIME))
-
+    RECHECK_TIME=5 #s
+    while not quit_signal:
         try:
-            for mod in measurements:
-                # try to reconnect disconnected agent interfaces
-                if not (mod.live and mod.live.alive):
-                    print(mod, "is dead")
-                    try:
-                        mod.start()
-                        mod.live.connect(loop, mod.process_line)
-                    except Exception as e:
-                        print("###", e.__class__.__name__, e)
+            server.periodic_checkup()
+            checkup_mods(measurements, deads, loop)
 
         except Exception as e:
-            print(f"FATAL: {e.__class__.__name__} raised while processing: {e}")
+            print(f"FATAL: {e.__class__.__name__} raised during periodic checkup: {e}")
             fatal = sys.exc_info()
             break
 
-        # returns after timer_kick() calls loop.stop()
-        loop.run_forever()
+        loop.create_task(timer_kick(RECHECK_TIME))
+        loop.run_forever() # returns after timer_kick() calls loop.stop()
 
+    print("\n* Stoping the measurements ...")
+    for m in measurements:
         try:
-            initialize_new_clients(experiment)
+            m.stop()
         except Exception as e:
-            print(f"FATAL: {e.__class__.__name__} raised while sending: {e}")
-            fatal = sys.exc_info()
-            quit_signal = True
+            if fatal:
+                continue
+            print(f"ERROR: {e.__class__.__name__} raised "
+                  f"while stopping {m.__class__.__name__}: {e}")
 
-        if quit_signal: break
+    server.terminate()
 
-    print("\n* Preparing the environment ...")
-    for m in measurements: m.stop()
+    return fatal
 
-    serv_sock.shutdown(socket.SHUT_RDWR)
-    if fatal:
-        traceback.print_exception(*fatal)
+
+def main():
+    signal.signal(signal.SIGINT, signal_handler)
+
+    key = "central_agent" if len(sys.argv) == 1 else sys.argv[1]
+
+    try:
+        cfg = prepare_cfg(key)
+    except Exception as e:
+        print(f"Fatal: {e.__class__.__name__}: {e}")
+        return 1
+
+    error = run(cfg)
+    if error:
+        traceback.print_exception(*error)
+        return 1
 
     return 0
 
-def main():
-    # some arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-n', '--dry-run', action='store_true', help='dry live run')
-
-    args = parser.parse_args()
-
-    smart_cfg = utils.yaml.load_multiple("smart_agent.yaml")
-
-    cfg = {}
-
-    key = "default" #if len(sys.argv) == 1 else sys.argv[1]
-    if not key in smart_cfg:
-        print(f"ERROR: invalid parameter: {key}")
-
-    # gather the measurment sets requested for this run
-    cfg["measurements"] = list()
-    for measures in smart_cfg[key]["measurement_sets"]:
-        for measure in smart_cfg["measurement_sets"][measures]:
-            if isinstance(measure, str) and measure in cfg["measurements"]:
-                continue
-            cfg["measurements"].append(measure)
-
-    cfg["machines"] = smart_cfg["machines"]
-
-    #localmachine = dict(type="local")
-    #cfg["machines"] = dict(guest=localmachine, host=localmachine, client=localmachine)
-
-    sys.exit(run(cfg))
-
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
