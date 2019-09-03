@@ -1,0 +1,51 @@
+System:
+  Free Memory:
+    table: sys
+    x: time
+    y: sys.mem_free
+
+  Idle CPU:
+    table: sys
+    x: time
+    y: sys.cpu_idle
+    y2: sys.guest_cpu
+
+Frames Size:
+  Host frame size:
+    table: host
+    x: host.mm_time
+    y: host.frame_size
+
+Frames Size:
+  Host frame size:
+    table: host
+    x: host.mm_time
+    y: host.frame_size
+
+  Guest frame size:
+    table: guest
+    x: guest.time
+    y: guest.frame_size
+
+  Client frame size:
+    table: client
+    x: client.mm_time
+    y: client.frame_size
+
+Frame Processing:
+  Guest processing duration:
+    table: guest
+    x: guest.time
+    y: guest.capture_duration
+    y2: guest.encode_duration
+    y3: guest.send_duration
+
+  Client processing duration:
+    table: client
+    x: client.mm_time
+    y: client.decode_duration
+
+  Client queue:
+    table: client
+    x: client.mm_time
+    y: client.queue
