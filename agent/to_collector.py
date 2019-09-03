@@ -5,9 +5,10 @@ import struct
 import measurement
 
 class Server():
-    def __init__(self, expe):
+    def __init__(self, expe, loop):
         self.expe = expe
         self.quality_buffer = []
+        self.loop = loop
 
         self.new_clients = []
         self.current_clients = []
@@ -52,6 +53,7 @@ class Server():
                     print("New connection from", addr)
                     self.new_clients.append(conn)
                     read_list.append(conn)
+                    self.loop.stop()
                 else:
                     if not self.thr_read_quality(s):
                         read_list.remove(conn)

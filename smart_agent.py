@@ -144,9 +144,11 @@ def run(cfg):
     run_as_agent = cfg["run_as_agent"]
     expe = AgentExperiment()
 
+    loop = asyncio.get_event_loop()
+
     if run_as_agent:
         print("\n* Starting the socket for the Perf Collector...")
-        server = agent.to_collector.Server(expe)
+        server = agent.to_collector.Server(expe, loop)
     else: # run as collector
         import ui.web
         server = ui.web.Server()
@@ -162,8 +164,6 @@ def run(cfg):
     for mod in measurements:
         mod.setup()
         deads.append(mod)
-
-    loop = asyncio.get_event_loop()
 
     async def timer_kick(wait_time):
         await asyncio.sleep(wait_time)
