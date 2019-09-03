@@ -40,6 +40,25 @@ def get_table_for_spec(graph_spec):
     tables_missing.append(graph_spec)
     return None
 
+def construct_control_center_tab():
+    CODECS = ["native:mjpeg", "gst:h264", "gst:vp8"]
+    children = [
+        dcc.Dropdown(
+                id='codec-name',
+                options=[{'label': i, 'value': i} for i in CODECS],
+                value='Fertility rate, total (births per woman)'
+        ),
+        html.Span("Framerate"),
+        dcc.Input(
+            placeholder='Enter a framerate...',
+            type='text',
+            value=''
+        ),
+        html.Button('Go!', id='button')
+    ]
+
+    return dcc.Tab(label="Control center",
+            children=children)
 
 def construct_callback(tab_name, graph_title, graph_spec):
     @app.callback(Output(graph_title_to_id(graph_title), 'figure'),
@@ -89,6 +108,7 @@ def construct_app():
                 interval=1*1000
             )
     def tab_entries():
+        yield construct_control_center_tab()
         for tab_name, tab_content in dataview_cfg.items():
             print(f"Add {tab_name}")
             yield dcc.Tab(label=tab_name,
