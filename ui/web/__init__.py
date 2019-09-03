@@ -40,15 +40,16 @@ def get_table_for_spec(graph_spec):
     tables_missing.append(graph_spec)
     return None
 
-def construct_callback(graph_title, graph_spec):
+
+def construct_callback(tab_name, graph_title, graph_spec):
     @app.callback(Output(graph_title_to_id(graph_title), 'figure'),
-                  [Input('graph-refresh', 'n_intervals')])
+                  [Input(graph_title_to_id(tab_name)+'-refresh', 'n_intervals')])
     def update_graph_scatter(kick_idx):
         table = get_table_for_spec(graph_spec)
         if not table:
             raise Exception(graph_spec)
             return None
-
+        print(graph_title)
         content = table_contents[table]
 
         x_idx = table.fields.index(graph_spec["x"])
@@ -78,26 +79,26 @@ def construct_callback(graph_title, graph_spec):
 def construct_app():
     dataview_cfg = utils.yaml.load_multiple("ui/web/dataview.yaml")
 
-    def graph_list():
-        for tab, tab_content in dataview_cfg.items():
-            for graph_title in tab_content:
-                yield dcc.Graph(id=graph_title_to_id(graph_title))
+    def graph_list(tab_name, tab_content):
+        for graph_title in tab_content:
+            print(f" - {graph_title}")
+            yield dcc.Graph(id=graph_title_to_id(graph_title))
 
-    app.layout = html.Div(
-        list(graph_list()) +
-        [
-            dcc.Interval(
-                id='graph-refresh',
+        yield dcc.Interval(
+                id=graph_title_to_id(tab_name)+'-refresh',
                 interval=1*1000
-            ),
-        ]
-    )
+            )
+    def tab_entries():
+        for tab_name, tab_content in dataview_cfg.items():
+            print(f"Add {tab_name}")
+            yield dcc.Tab(label=tab_name,
+                          children=list(graph_list(tab_name, tab_content)))
 
-    for tab, tab_content in dataview_cfg.items():
+    app.layout = html.Div([dcc.Tabs(id="tabs", children=list(tab_entries()))])
+
+    for tab_name, tab_content in dataview_cfg.items():
         for graph_title, graph_spec in tab_content.items():
-            construct_callback(graph_title, graph_spec)
-
-
+            construct_callback(tab_name, graph_title, graph_spec)
 
 class Server():
     def __init__(self):
