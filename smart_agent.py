@@ -148,7 +148,8 @@ def run(cfg):
         print("\n* Starting the socket for the Perf Collector...")
         server = agent.to_collector.Server(expe)
     else: # run as collector
-        server = ...
+        import ui.web
+        server = ui.web.Server()
 
     expe.new_table = server.new_table
     expe.new_table_row = server.new_table_row

@@ -25,12 +25,20 @@ measurement_sets:
         port: 1234
         mode: client
 
+  collector:
+    - Perf_Collect
+
 central_agent:
   run_as_agent: True
   measurement_sets:
     - guest
     - host
     - client
+
+collector:
+  run_as_agent: False
+  measurement_sets:
+    - collector
 
 # machine to connect to, currently only local and
 # accessible through ssh (remote)

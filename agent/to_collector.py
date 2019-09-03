@@ -2,6 +2,7 @@ import threading
 import socket
 import select
 import struct
+import measurement
 
 class Server():
     def __init__(self, expe):

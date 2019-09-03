@@ -3,13 +3,10 @@ import struct
 import asyncio
 import collections
 import struct
-import datetime
 
 import measurement
 import measurement.perf_collect
 import utils.live
-
-import ui.dataview
 
 #---
 
@@ -17,16 +14,16 @@ HOST = "localhost"
 PORT = 1230
 
 class Quality():
-    def __init__(self, fields):
+    def __init__(self, expe, fields):
         self.fields = fields
+        self.expe = expe
 
     def add(self, values):
-        #ts = int(values[0])
-        ts = int(datetime.datetime.now().timestamp())
+        ts = int(values[0])
         src = values[1][1:-1]
         msg = values[2][1:-1].replace("||", ",")
-        print(f"{ts}: {src}: {msg}")
-        ui.dataview.append_quality(ts, f"{src}: {msg}")
+
+        self.expe.new_quality(ts, src, msg)
 
 def initialize(sock, experiment):
     nb_tables = struct.unpack("I", sock.recv(4))[0]
@@ -47,7 +44,7 @@ def initialize(sock, experiment):
 
         fields = fields_name.split(";")
         if table_name == "quality":
-            tables[table_uname] = Quality(fields)
+            tables[table_uname] = Quality(experiment, fields)
             continue
 
         tables[table_uname] = experiment.create_table(fields)
@@ -90,7 +87,7 @@ class Perf_Collect(measurement.Measurement):
 
         self.live = utils.live.LiveSocket(self.sock, async_read_dataset)
 
-        ui.dataview.set_quality_callback(self.set_quality)
+        self.experiment.set_quality_callback(self.set_quality)
 
     def start(self):
         pass

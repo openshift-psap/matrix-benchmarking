@@ -1,6 +1,8 @@
 import os
 import yaml
 from collections import defaultdict
+import datetime
+
 from database import Database
 import machine
 
@@ -238,6 +240,9 @@ class Experiment:
         self.machines = {}
         for k,c in cfg.get('machines', {}).items():
             self.machines[k] = machine.create_machine(c)
+
+    def new_quality(self, ts, src, msg):
+        pass
 
     def create_table(self, fields):
         '''Create a table based on fields passed.
