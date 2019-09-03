@@ -20,7 +20,7 @@ class MPStat(measurement.Measurement):
         self.headers = None
 
     def start(self):
-        self.process = subprocess.Popen('mpstat 2'.split(),
+        self.process = subprocess.Popen('mpstat 1'.split(),
                                         stdout=subprocess.PIPE, close_fds=True,
                                         env=dict(S_TIME_FORMAT="ISO"))
         self.live.start(self.process.stdout)
