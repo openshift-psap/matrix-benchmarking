@@ -23,8 +23,8 @@ external_stylesheets = [
     'https://codepen.io/chriddyp/pen/bWLwgP.css' # see https://codepen.io/chriddyp/pen/bWLwgP for style/columnts
 ]
 
-QUALITY_REFRESH_INTERVAL = 10000 #s
-GRAPH_REFRESH_INTERVAL = 10000 #s
+QUALITY_REFRESH_INTERVAL = 5 #s
+GRAPH_REFRESH_INTERVAL = 5 #s
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 expe = None
@@ -103,15 +103,33 @@ def construct_codec_control_callbacks(codec_cfg):
         construct_codec_control_callback(codec_name)
 
 def construct_quality_callbacks():
+
+    @app.callback(Output("quality-refresh", 'n_intervals'),
+                  [Input('quality-bt-clear', 'n_clicks'), Input('quality-bt-refresh', 'n_clicks')])
+    def clear_quality(clear_n_clicks, refresh_n_clicks):
+        if clear_n_clicks is None: return
+        if refresh_n_clicks is None: return
+
+        triggered_id = dash.callback_context.triggered[0]["prop_id"]
+        if triggered_id == "quality-bt-clear.n_clicks":
+            print("-- clear --")
+            quality[:] = []
+        else:
+            print("-- forced refresh --")
+
+        return 0
+
+
     @app.callback(Output("quality-box", 'children'),
-                  [Input('quality-refresh', 'n_intervals')],
-                  [State("quality-box", 'children')])
-    def refresh_quality(timer_kick, quality_children):
+                  [Input('quality-refresh', 'n_intervals'),
+                   #Input('quality-bt-refresh', 'n_clicks'),
+                  ])
+    def refresh_quality(*args):
         return [html.P(msg, style={"margin-top": "0px", "margin-bottom": "0px"}) \
                 for msg in quality]
 
     @app.callback(Output("quality-input", 'value'),
-                  [Input('quality-send', 'n_clicks'),
+                  [Input('quality-bt-send', 'n_clicks'),
                    Input('quality-input', 'n_submit'),],
                   [State(component_id='quality-input', component_property='value')])
     def quality_send(n_click, n_submit, quality_value):
@@ -125,10 +143,11 @@ def construct_quality_callbacks():
 
         return "" # empty the input text
 
+
 def construct_live_refresh_callbacks(dataview_cfg):
     for tab_name, tab_content in dataview_cfg.items():
         for graph_title, graph_spec in tab_content.items():
-            construct_live_refresh(tab_name, graph_title, graph_spec)
+            construct_live_refresh_cb(tab_name, graph_title, graph_spec)
 
 control_center_boxes = defaultdict(list)
 
@@ -211,16 +230,15 @@ def construct_control_center_tab(codec_cfg):
         html.Div([
             html.Div([html.H3("Quality Messages", style={"text-align":"center"}),
                       dcc.Input(placeholder='Enter a quality message...', type='text', value='', id="quality-input"),
-                      html.Button('Send!', id='quality-send'),
+                      html.Button('Send!', id='quality-bt-send'),
+                      html.Button('Clear', id='quality-bt-clear'),
+                      html.Button('Refresh', id='quality-bt-refresh'),
                       dcc.Interval(
                           id='quality-refresh',
                           interval=QUALITY_REFRESH_INTERVAL * 1000
                       ),
-                      html.Div(id="quality-box", children=[
-                          html.P("guest:hello", style={"margin-top": "0px", "margin-bottom": "0px"}),
-                          html.P("server:hello", style={"margin-top": "0px", "margin-bottom": "0px"}),
-                          html.P("client:hello", style={"margin-top": "0px", "margin-bottom": "0px"})
-                          ], style={"margin-top": "10px", "margin-left": "0px",
+                      html.Div(id="quality-box", children=[],
+                          style={"margin-top": "10px", "margin-left": "0px",
                                     "padding-left": "10px", "padding-top": "10px",
                                     "background-color": "lightblue", "text-align":"left",})
 
@@ -231,7 +249,7 @@ def construct_control_center_tab(codec_cfg):
 
     return dcc.Tab(label="Control center",  children=children)
 
-def construct_live_refresh(tab_name, graph_title, graph_spec):
+def construct_live_refresh_cb(tab_name, graph_title, graph_spec):
 
     @app.callback(Output(graph_title_to_id(graph_title), 'figure'),
                   [Input(graph_title_to_id(tab_name)+'-refresh', 'n_intervals')])
@@ -267,6 +285,46 @@ def construct_live_refresh(tab_name, graph_title, graph_spec):
 
         return {'data': [data],'layout' : layout}
 
+def construct_config_tab():
+    children = [
+        "Refreshing quality ", html.Span(id="cfg:quality:value"),
+        dcc.Slider(min=1, max=100, step=5, value=QUALITY_REFRESH_INTERVAL,
+                   marks={1:"1s", 100:"100s"},
+                   id="cfg:quality"),
+        html.Br(),
+        "Refreshing graph ", html.Span(id="cfg:graph:value"),
+        dcc.Slider(min=1, max=100, step=5, value=GRAPH_REFRESH_INTERVAL,
+                   marks={1:"1s", 100:"100s"},
+                   id="cfg:graph")
+    ]
+    return dcc.Tab(label="Config", children=children)
+
+def construct_config_tab_callbacks(dataview_cfg):
+    @app.callback(Output("quality-refresh", 'interval'),
+                  [Input('cfg:quality', 'value')])
+    def update_quality_refresh_timer(value):
+        return value * 1000
+
+    @app.callback(Output("cfg:quality:value", 'children'),
+                  [Input('cfg:quality', 'value')])
+    def update_quality_refresh_label(value):
+        return f" every {value} seconds"
+
+    # ---
+
+    @app.callback(Output("cfg:graph:value", 'children'),
+                  [Input('cfg:graph', 'value')])
+    def update_graph_refresh_label(value):
+        return f" every {value} seconds"
+
+    for tab_name, tab_content in dataview_cfg.items():
+        @app.callback(Output(graph_title_to_id(tab_name)+'-refresh', 'interval'),
+                      [Input('cfg:graph', 'value')])
+        def update_graph_refresh_timer(value):
+            return value * 1000
+
+
+
 def construct_app():
     dataview_cfg = utils.yaml.load_multiple("ui/web/dataview.yaml")
     codec_cfg = utils.yaml.load_multiple("codec_params.yaml")
@@ -287,6 +345,8 @@ def construct_app():
             yield dcc.Tab(label=tab_name,
                           children=list(graph_list(tab_name, tab_content)))
 
+        yield construct_config_tab()
+
     app.title = 'Smart Streaming Control Center'
     app.layout = html.Div([dcc.Tabs(id="main-tabs", children=list(tab_entries()))])
 
@@ -295,7 +355,7 @@ def construct_app():
     construct_quality_callbacks()
     construct_codec_control_callbacks(codec_cfg)
     construct_live_refresh_callbacks(dataview_cfg)
-
+    construct_config_tab_callbacks(dataview_cfg)
 
 class Server():
     def __init__(self, _expe):
