@@ -1,0 +1,13 @@
+all:
+  - framerate: int[0:120:5]=30
+native:mjpeg:
+  - quality: int[0:100:5]=100
+  - test: int=15
+gst:h264:
+  - test
+  - test2
+gst:vp9:
+  - _disabled
+gst:vp8:
+gst:h264:
+gst:mjpeg:

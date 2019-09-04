@@ -160,7 +160,7 @@ def run(cfg):
         server = agent.to_collector.Server(expe, loop)
     else: # run as collector
         import ui.web
-        server = ui.web.Server()
+        server = ui.web.Server(expe)
 
     expe.new_table = server.new_table
     expe.new_table_row = server.new_table_row
@@ -195,7 +195,7 @@ def run(cfg):
         loop.create_task(timer_kick(RECHECK_TIME))
         loop.run_forever() # returns after timer_kick() calls loop.stop()
 
-    print("\n* Stoping the measurements ...")
+    print("\n* Stopping the measurements ...")
     for m in measurements:
         try:
             m.stop()
