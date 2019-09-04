@@ -57,6 +57,8 @@ class AgentExperiment():
         self.tid = 0
         self.new_table = None
         self.new_table_row = None
+        self.new_quality_cb = None
+
 
     def create_table(self, fields):
         table = AgentTable(self.tid, self, fields)
@@ -72,11 +74,18 @@ class AgentExperiment():
         self.tables.append(table)
         return table
 
+    def send_quality(self, msg):
+        if not self.send_quality_cb:
+            print("No callback set for sending quality message: ", msg)
+            return
+        self.send_quality_cb(msg)
+
     def set_quality_callback(self, cb):
-        pass
+        self.new_quality_callback = cb
 
     def new_quality(self, ts, src, msg):
-        print(f"{ts}: {src}: {msg}")
+        if self.new_quality_cb:
+            self.new_quality_cb(ts, src, msg)
 
 def prepare_cfg(key):
     cfg = {}

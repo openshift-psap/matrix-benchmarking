@@ -72,7 +72,7 @@ class Perf_Collect(measurement.Measurement):
         self.current_table = None
         self.current_table_uname = None
 
-    def set_quality(self, quality_msg):
+    def send_quality(self, quality_msg):
         print(">>>", quality_msg)
         self.sock.send((quality_msg + "\0").encode("ascii"))
 
@@ -87,7 +87,7 @@ class Perf_Collect(measurement.Measurement):
 
         self.live = utils.live.LiveSocket(self.sock, async_read_dataset)
 
-        self.experiment.set_quality_callback(self.set_quality)
+        self.experiment.send_quality_cb = self.send_quality
 
     def start(self):
         pass
