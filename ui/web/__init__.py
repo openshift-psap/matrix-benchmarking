@@ -5,7 +5,7 @@ import dash_html_components as html
 import plotly
 import plotly.graph_objs as go
 import threading
-from collections import deque
+import datetime
 from collections import defaultdict
 import utils.yaml
 
@@ -24,7 +24,7 @@ external_stylesheets = [
 ]
 
 QUALITY_REFRESH_INTERVAL = 5 #s
-GRAPH_REFRESH_INTERVAL = 5 #s
+GRAPH_REFRESH_INTERVAL = 1 #s
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 expe = None
@@ -48,7 +48,7 @@ def set_encoder(encoder_name, parameters):
     cmd = f"virsh qemu-monitor-command {VIRSH_VM_NAME} '{json_msg}'"
     os.system(cmd)
 
-    add_to_quality("ui", f"New encoder: {encoder_name} || {params_str}")
+    add_to_quality(None, "ui", f"New encoder: {encoder_name} || {params_str}")
 
     return f"{encoder_name} || {params_str}"
 
@@ -62,7 +62,8 @@ def get_table_for_spec(graph_spec):
     table_name = graph_spec["table"]
     for table in tables_by_name[table_name]:
         for k in "x", "y":
-            if graph_spec[k] not in table.fields:
+            field = graph_spec[k].partition("|")[0].partition(">")[0].strip()
+            if field not in table.fields:
                 break
         else: # didn't break
             return table
@@ -103,19 +104,19 @@ def construct_codec_control_callbacks(codec_cfg):
         construct_codec_control_callback(codec_name)
 
 def construct_quality_callbacks():
-
     @app.callback(Output("quality-refresh", 'n_intervals'),
                   [Input('quality-bt-clear', 'n_clicks'), Input('quality-bt-refresh', 'n_clicks')])
     def clear_quality(clear_n_clicks, refresh_n_clicks):
-        if clear_n_clicks is None: return
-        if refresh_n_clicks is None: return
 
         triggered_id = dash.callback_context.triggered[0]["prop_id"]
+
         if triggered_id == "quality-bt-clear.n_clicks":
-            print("-- clear --")
+            if clear_n_clicks is None: return
+
             quality[:] = []
         else:
-            print("-- forced refresh --")
+            if refresh_n_clicks is None: return
+            # forced refresh, nothing to do
 
         return 0
 
@@ -142,7 +143,6 @@ def construct_quality_callbacks():
         expe.send_quality(quality_value)
 
         return "" # empty the input text
-
 
 def construct_live_refresh_callbacks(dataview_cfg):
     for tab_name, tab_content in dataview_cfg.items():
@@ -233,6 +233,11 @@ def construct_control_center_tab(codec_cfg):
                       html.Button('Send!', id='quality-bt-send'),
                       html.Button('Clear', id='quality-bt-clear'),
                       html.Button('Refresh', id='quality-bt-refresh'),
+                      html.Br(),
+                      "Refreshing quality ", html.Span(id="cfg:quality:value"),
+                      dcc.Slider(min=0, max=30, step=2, value=QUALITY_REFRESH_INTERVAL,
+                                 marks={0:"0s", 30:"30s"},
+                                 id="cfg:quality"), html.Br(),
                       dcc.Interval(
                           id='quality-refresh',
                           interval=QUALITY_REFRESH_INTERVAL * 1000
@@ -261,48 +266,86 @@ def construct_live_refresh_cb(tab_name, graph_title, graph_spec):
 
         content = table_contents[table]
 
-        x_idx = table.fields.index(graph_spec["x"])
-        y_idx = table.fields.index(graph_spec["y"])
+        x_field, _, x_modifier = graph_spec["x"].partition("|")
 
-        X = [row[x_idx] for row in content]
-        Y = [row[y_idx] for row in content]
+        x_idx = table.fields.index(x_field.strip())
+        X = [(row[x_idx]) for row in content]
 
-        data = plotly.graph_objs.Scatter(
-            x=list(X),
-            y=list(Y),
-            name='Scatter',
-            mode= 'lines+markers'
-        )
+        if x_modifier:
+            try:
+                modify = getattr(GraphFormat, x_modifier.strip())
+                X = modify(X)
+            except AttributeError: pass
+
+        X = list(X)
+
+        plots = []
+        y_max = 0
+        for y_name in "y", "y2", "y3", "y4":
+            try:
+                y_spec = graph_spec[y_name]
+            except KeyError: continue
+
+            y_def, has_label, y_label = y_spec.partition(">")
+
+            y_field, _, y_modifier = y_def.partition("|")
+
+            y_name = y_label if has_label else y_field
+
+            y_idx = table.fields.index(y_field.strip())
+            Y = [row[y_idx] for row in content]
+            if not Y: continue
+
+            if y_modifier:
+                try:
+                    modify = getattr(GraphFormat, y_modifier.strip())
+                    Y = modify(Y)
+                except AttributeError: pass
+
+            y_max = max(Y + [y_max])
+
+            plots.append(
+                plotly.graph_objs.Scatter(
+                    x=X, y=list(Y),
+                    name=y_name,
+                    mode= 'lines'))
 
         layout = go.Layout()
-        layout.title=graph_title
-        if X and Y:
-            layout.xaxis = dict(range=[min(X),max(X)])
-            layout.yaxis = dict(range=[min(Y + [0]),max(Y)])
+        layout.showlegend = True
+        layout.title = graph_title
 
+        if X:
+            layout.xaxis = dict(range=[min(X), max(X)])
             layout.xaxis.title = graph_spec["x"]
-            layout.yaxis.title = graph_spec["y"]
 
-        return {'data': [data],'layout' : layout}
+        if Y:
+            try:
+                y_max = graph_spec["y_max"]
+            except KeyError: pass # use actual y_max
+
+            layout.yaxis = dict(range=[0, y_max])
+            try:
+                layout.yaxis.title = graph_spec["y_title"]
+            except KeyError: pass
+
+
+        return {'data': plots,'layout' : layout}
 
 def construct_config_tab():
     children = [
-        "Refreshing quality ", html.Span(id="cfg:quality:value"),
-        dcc.Slider(min=1, max=100, step=5, value=QUALITY_REFRESH_INTERVAL,
-                   marks={1:"1s", 100:"100s"},
-                   id="cfg:quality"),
-        html.Br(),
-        "Refreshing graph ", html.Span(id="cfg:graph:value"),
-        dcc.Slider(min=1, max=100, step=5, value=GRAPH_REFRESH_INTERVAL,
-                   marks={1:"1s", 100:"100s"},
-                   id="cfg:graph")
+        "Graph refresh period: ",
+        dcc.Slider(min=0, max=100, step=2, value=GRAPH_REFRESH_INTERVAL-1,
+                   marks={0:"1s", 100:"100s"}, id="cfg:graph"),
+        html.Br()
     ]
+
     return dcc.Tab(label="Config", children=children)
 
 def construct_config_tab_callbacks(dataview_cfg):
     @app.callback(Output("quality-refresh", 'interval'),
                   [Input('cfg:quality', 'value')])
     def update_quality_refresh_timer(value):
+        if value == 0: value = 9999
         return value * 1000
 
     @app.callback(Output("cfg:quality:value", 'children'),
@@ -312,16 +355,55 @@ def construct_config_tab_callbacks(dataview_cfg):
 
     # ---
 
-    @app.callback(Output("cfg:graph:value", 'children'),
-                  [Input('cfg:graph', 'value')])
-    def update_graph_refresh_label(value):
-        return f" every {value} seconds"
+    @app.callback(Output('graph-header-msg', 'children'),
+                  [Input('graph-bt-save', 'n_clicks'),
+                   Input('graph-bt-clear', 'n_clicks'),])
+    def action_graph_button(save, clear):
+        triggered_id = dash.callback_context.triggered[0]["prop_id"]
 
-    for tab_name, tab_content in dataview_cfg.items():
-        @app.callback(Output(graph_title_to_id(tab_name)+'-refresh', 'interval'),
-                      [Input('cfg:graph', 'value')])
-        def update_graph_refresh_timer(value):
-            return value * 1000
+        if triggered_id == "graph-bt-save.n_clicks":
+            if save is None: return
+
+            return "save"
+        if triggered_id == "graph-bt-clear.n_clicks":
+            if clear is None: return
+            for content in table_contents.values():
+                content[:] = []
+            print("Cleaned!")
+
+
+        return ""
+
+    @app.callback(Output("cfg:graph:value", 'children'),
+                  [Input('cfg:graph', 'value'), Input('graph-bt-stop', 'n_clicks')])
+    def update_graph_refresh_label(value, bt_n_click):
+        return f" every {value+1} seconds "
+
+    @app.callback(Output("graph-bt-stop", 'children'),
+                  [Input('graph-bt-stop', 'n_clicks')])
+    def update_graph_refresh_label(bt_n_click):
+        if bt_n_click is not None and bt_n_click % 2:
+            return "Restart"
+        else:
+            return "Pause"
+
+    outputs = [Output(graph_title_to_id(tab_name)+'-refresh', 'interval')
+               for tab_name in dataview_cfg]
+
+    @app.callback(outputs,
+                  [Input('cfg:graph', 'value'),
+                   Input('graph-bt-stop', 'n_clicks')])
+    def update_graph_refresh_timer(value, bt_n_click):
+        triggered_id = dash.callback_context.triggered[0]["prop_id"]
+
+        if triggered_id == "graph-bt-stop.n_clicks":
+            if bt_n_click is not None and bt_n_click % 2:
+                value = 9999
+
+        # from the slider, min = 1
+        value += 1
+
+        return [value * 1000 for _ in outputs]
 
 
 
@@ -330,9 +412,10 @@ def construct_app():
     codec_cfg = utils.yaml.load_multiple("codec_params.yaml")
 
     def graph_list(tab_name, tab_content):
+        height = f"{(1/len(tab_content)*80):0f}vh"
         for graph_title in tab_content:
             print(f" - {graph_title}")
-            yield dcc.Graph(id=graph_title_to_id(graph_title))
+            yield dcc.Graph(id=graph_title_to_id(graph_title), style={'height': height})
 
         yield dcc.Interval(
                 id=graph_title_to_id(tab_name)+'-refresh',
@@ -348,7 +431,14 @@ def construct_app():
         yield construct_config_tab()
 
     app.title = 'Smart Streaming Control Center'
-    app.layout = html.Div([dcc.Tabs(id="main-tabs", children=list(tab_entries()))])
+    header = [ "Refreshing graph ", html.Span(id="cfg:graph:value"),
+               html.Button('', id=f'graph-bt-stop'),
+               html.Button('Save', id=f'graph-bt-save'),
+               html.Button('Clear', id=f'graph-bt-clear'),
+               html.Span(id='graph-header-msg'),
+               html.Br(), html.Br()
+    ]
+    app.layout = html.Div(header+[dcc.Tabs(id="main-tabs", children=list(tab_entries()))])
 
     #---
 
@@ -356,6 +446,28 @@ def construct_app():
     construct_codec_control_callbacks(codec_cfg)
     construct_live_refresh_callbacks(dataview_cfg)
     construct_config_tab_callbacks(dataview_cfg)
+
+class GraphFormat():
+    @staticmethod
+    def as_B_to_GB(lst):
+        return [v/1000/1000 for v in lst]
+
+    @staticmethod
+    def as_it_is(lst):
+        print(lst)
+        return lst
+
+    @staticmethod
+    def as_timestamp(lst):
+        return [datetime.datetime.fromtimestamp(t) for t in lst]
+
+    @staticmethod
+    def as_mm_time(lst):
+        return [(v - lst[0])/1000 for v in lst]
+
+    @staticmethod
+    def as_guest_time(lst):
+        return [(v - lst[0]) for v in lst]
 
 class Server():
     def __init__(self, _expe):
