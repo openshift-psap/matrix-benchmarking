@@ -289,7 +289,7 @@ class AgentInterface(measurement.Measurement):
             self.save_guest_frames(self.states, recorder_entry)
 
         elif recorder_entry.name == "quality_interface":
-            src = recorder_entry.fmt.rpartition(":")[-1]
+            src = recorder_entry.fmt.split(":")[-2]
             msg = recorder_entry.where.replace(",", "||")
 
             self.quality_table.add(recorder_entry.timestamp, src, msg)
