@@ -5,13 +5,13 @@ System:
     y: sys.mem_free | as_B_to_GB > Free
     y_title: GB of RAM
 
-  Idle CPU:
+  CPU Usage:
     table: sys
     x: time | as_timestamp
     y: sys.cpu_idle > Idle
     y2: sys.guest_cpu > Guest
     y_max: 100
-    y_title: \% of usage
+    y_title: '% of CPU usage'
 
 Frames Size:
   Guest frame size:

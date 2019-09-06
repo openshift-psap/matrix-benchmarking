@@ -13,11 +13,121 @@ import logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
-tables_by_name = defaultdict(list)
-table_definitions = {}
-table_contents = {}
+class DB():
+    tables_by_name = defaultdict(list)
+    table_definitions = {}
+    table_contents = {}
 
-tables_missing = []
+
+
+class DbTableForSpec():
+    table_for_spec = {}
+
+    @staticmethod
+    def get_table_for_spec(graph_spec):
+        try: return DbTableForSpec.table_for_spec[str(graph_spec.yaml_desc)]
+        except KeyError: pass
+
+        for table in DB.tables_by_name[graph_spec.table]:
+            for ax in graph_spec.all_axis:
+                if ax.field_name not in table.fields:
+                    break
+            else: # didn't break, all the fields are present
+                break
+        else: # didn't break, table not found
+            print(f"WARNING: No table found for {graph_spec.yaml_desc}")
+            table = None
+            table_for_spec = None
+
+        if table:
+            table_for_spec = DbTableForSpec(table, graph_spec)
+
+        DbTableForSpec.table_for_spec[str(graph_spec.yaml_desc)] = table_for_spec
+
+        return table_for_spec
+
+    def __init__(self, table, graph_spec):
+        self.table = table
+        self.graph_spec = graph_spec
+
+        self.content = DB.table_contents[table]
+
+    def get(self, field):
+        idx =self. table.fields.index(field.field_name)
+
+        values = [(row[idx]) for row in self.content]
+
+        return list(field.modify(values))
+
+    def get_x(self):
+        return self.get(self.graph_spec.x)
+
+    def get_all_y(self):
+        for y_field in self.graph_spec.all_y_axis:
+            yield y_field, self.get(y_field)
+
+class FieldSpec():
+    def __init__(self, yaml_desc):
+        field_modif, has_label, label = yaml_desc.partition(">")
+
+        self.field_name, _, modif = field_modif.partition("|")
+        self.field_name = self.field_name.strip()
+
+        self.label = label if has_label else self.field_name
+
+        try:
+            self.modify = getattr(GraphFormat, modif.strip())
+        except AttributeError:
+            self.modify = lambda x:x
+
+class GraphSpec():
+    def __init__(self, graph_name, yaml_desc):
+        self.graph_name = graph_name
+        self.yaml_desc = yaml_desc
+        self.table = yaml_desc["table"]
+
+        self.x = FieldSpec(yaml_desc["x"])
+
+        self.all_y_axis = []
+        for ax in "y", "y2", "y3", "y4":
+            try:
+                self.all_y_axis.append(FieldSpec(yaml_desc[ax]))
+            except KeyError: pass
+        self.all_axis = [self.x] + self.all_y_axis
+
+        try:
+            self.y_max = self.yaml_desc["y_max"]
+        except KeyError: pass
+
+        try:
+            self.y_title = self.yaml_desc["y_title"]
+        except KeyError: pass
+
+    def get_spec(self, name):
+        return self.yaml_desc[name]
+
+    def to_id(self):
+        return self.graph_name.lower().replace(" ", "-")
+
+
+class GraphTabContent():
+    def __init__(self, tab_name, yaml_desc):
+        self.tab_name = tab_name
+        self.yaml_desc = yaml_desc
+
+        self.graphs = [GraphSpec(graph_name, graph_spec)
+                       for graph_name, graph_spec in self.yaml_desc.items()]
+
+    def to_id(self):
+        return self.tab_name.lower().replace(" ", "-")
+
+class DataviewCfg():
+    def __init__(self, yaml_desc):
+        self.yaml_desc = yaml_desc
+
+        self.tabs = [GraphTabContent(tab_name, graph_tab_content)
+                     for tab_name, graph_tab_content in self.yaml_desc.items()]
+
 
 external_stylesheets = [
     'https://codepen.io/chriddyp/pen/bWLwgP.css' # see https://codepen.io/chriddyp/pen/bWLwgP for style/columnts
@@ -52,25 +162,8 @@ def set_encoder(encoder_name, parameters):
 
     return f"{encoder_name} || {params_str}"
 
-def graph_title_to_id(graph_name):
-    return graph_name.lower().replace(" ", "-")
 
-def get_table_for_spec(graph_spec):
-    if graph_spec in tables_missing:
-        return None
 
-    table_name = graph_spec["table"]
-    for table in tables_by_name[table_name]:
-        for k in "x", "y":
-            field = graph_spec[k].partition("|")[0].partition(">")[0].strip()
-            if field not in table.fields:
-                break
-        else: # didn't break
-            return table
-
-    print(f"WARNING: No table found for {graph_spec}")
-    tables_missing.append(graph_spec)
-    return None
 
 def construct_codec_control_callback(codec_name):
     cb_states = [State(tag_id, tag_cb_field) \
@@ -145,9 +238,9 @@ def construct_quality_callbacks():
         return "" # empty the input text
 
 def construct_live_refresh_callbacks(dataview_cfg):
-    for tab_name, tab_content in dataview_cfg.items():
-        for graph_title, graph_spec in tab_content.items():
-            construct_live_refresh_cb(tab_name, graph_title, graph_spec)
+    for graph_tab in dataview_cfg.tabs:
+        for graph_spec in graph_tab.graphs:
+            construct_live_refresh_cb(graph_tab, graph_spec)
 
 control_center_boxes = defaultdict(list)
 
@@ -254,80 +347,45 @@ def construct_control_center_tab(codec_cfg):
 
     return dcc.Tab(label="Control center",  children=children)
 
-def construct_live_refresh_cb(tab_name, graph_title, graph_spec):
+def construct_live_refresh_cb(graph_tab, graph_spec):
 
-    @app.callback(Output(graph_title_to_id(graph_title), 'figure'),
-                  [Input(graph_title_to_id(tab_name)+'-refresh', 'n_intervals')])
+    @app.callback(Output(graph_spec.to_id(), 'figure'),
+                  [Input(graph_tab.to_id()+'-refresh', 'n_intervals')])
     def update_graph_scatter(timer_kick):
-        table = get_table_for_spec(graph_spec)
-        if not table:
-            raise Exception(graph_spec)
-            return None
+        tbl = DbTableForSpec.get_table_for_spec(graph_spec)
+        if not tbl:
+            raise NameError(graph_spec)
 
-        content = table_contents[table]
-
-        x_field, _, x_modifier = graph_spec["x"].partition("|")
-
-        x_idx = table.fields.index(x_field.strip())
-        X = [(row[x_idx]) for row in content]
-
-        if x_modifier:
-            try:
-                modify = getattr(GraphFormat, x_modifier.strip())
-                X = modify(X)
-            except AttributeError: pass
-
-        X = list(X)
+        content = DB.table_contents[tbl.table]
+        X = tbl.get_x()
 
         plots = []
         y_max = 0
-        for y_name in "y", "y2", "y3", "y4":
-            try:
-                y_spec = graph_spec[y_name]
-            except KeyError: continue
-
-            y_def, has_label, y_label = y_spec.partition(">")
-
-            y_field, _, y_modifier = y_def.partition("|")
-
-            y_name = y_label if has_label else y_field
-
-            y_idx = table.fields.index(y_field.strip())
-            Y = [row[y_idx] for row in content]
-            if not Y: continue
-
-            if y_modifier:
-                try:
-                    modify = getattr(GraphFormat, y_modifier.strip())
-                    Y = modify(Y)
-                except AttributeError: pass
-
+        for y_field, Y in tbl.get_all_y():
             y_max = max(Y + [y_max])
 
             plots.append(
                 plotly.graph_objs.Scatter(
-                    x=X, y=list(Y),
-                    name=y_name,
+                    x=X, y=Y,
+                    name=y_field.label,
                     mode= 'lines'))
 
         layout = go.Layout()
         layout.showlegend = True
-        layout.title = graph_title
+        layout.title = graph_spec.graph_name
 
-        if X:
+        try:
             layout.xaxis = dict(range=[min(X), max(X)])
-            layout.xaxis.title = graph_spec["x"]
+        except ValueError: pass # X is empty
+        layout.xaxis.title = graph_spec.x.label
 
-        if Y:
-            try:
-                y_max = graph_spec["y_max"]
-            except KeyError: pass # use actual y_max
-
-            layout.yaxis = dict(range=[0, y_max])
-            try:
-                layout.yaxis.title = graph_spec["y_title"]
-            except KeyError: pass
-
+        try:
+            y_max = graph_spec.y_max
+        except AttributeError: pass # use actual y_max
+        layout.yaxis = dict(range=[0, y_max])
+        try:
+            layout.yaxis.title = graph_spec.y_title
+        except AttributeError: pass
 
         return {'data': plots,'layout' : layout}
 
@@ -387,8 +445,8 @@ def construct_config_tab_callbacks(dataview_cfg):
         else:
             return "Pause"
 
-    outputs = [Output(graph_title_to_id(tab_name)+'-refresh', 'interval')
-               for tab_name in dataview_cfg]
+    outputs = [Output(graph_tab.to_id()+'-refresh', 'interval')
+               for graph_tab in dataview_cfg.tabs]
 
     @app.callback(outputs,
                   [Input('cfg:graph', 'value'),
@@ -408,25 +466,27 @@ def construct_config_tab_callbacks(dataview_cfg):
 
 
 def construct_app():
-    dataview_cfg = utils.yaml.load_multiple("ui/web/dataview.yaml")
+    dataview_cfg = DataviewCfg(utils.yaml.load_multiple("ui/web/dataview.yaml"))
     codec_cfg = utils.yaml.load_multiple("codec_params.yaml")
 
-    def graph_list(tab_name, tab_content):
-        height = f"{(1/len(tab_content)*80):0f}vh"
-        for graph_title in tab_content:
-            print(f" - {graph_title}")
-            yield dcc.Graph(id=graph_title_to_id(graph_title), style={'height': height})
+    def graph_list(graph_tab):
+        height = f"{(1/len(graph_tab.graphs)*80):0f}vh"
+        for graph_spec in graph_tab.graphs:
+            print(f" - {graph_spec.graph_name}")
+            yield dcc.Graph(id=graph_spec.to_id(), style={'height': height})
 
         yield dcc.Interval(
-                id=graph_title_to_id(tab_name)+'-refresh',
+                id=graph_tab.to_id()+'-refresh',
                 interval=GRAPH_REFRESH_INTERVAL * 1000
             )
+
     def tab_entries():
         yield construct_control_center_tab(codec_cfg)
-        for tab_name, tab_content in dataview_cfg.items():
-            print(f"Add {tab_name}")
-            yield dcc.Tab(label=tab_name,
-                          children=list(graph_list(tab_name, tab_content)))
+
+        for graph_tab in dataview_cfg.tabs:
+            print(f"Add {graph_tab.tab_name}")
+            yield dcc.Tab(label=graph_tab.tab_name,
+                          children=list(graph_list(graph_tab)))
 
         yield construct_config_tab()
 
@@ -487,12 +547,12 @@ class Server():
 
     def new_table(self, table):
         # table_name might not be unique ...
-        table_definitions[table] = table
-        table_contents[table] = []
-        tables_by_name[table.table_name].append(table)
+        DB.table_definitions[table] = table
+        DB.table_contents[table] = []
+        DB.tables_by_name[table.table_name].append(table)
 
     def new_table_row(self, table, row):
-        table_contents[table].append(row)
+        DB.table_contents[table].append(row)
 
     def periodic_checkup(self):
         pass
