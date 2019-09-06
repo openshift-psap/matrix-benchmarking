@@ -17,8 +17,23 @@ class DB():
     tables_by_name = defaultdict(list)
     table_definitions = {}
     table_contents = {}
+    quality_by_table = defaultdict(list)
 
+class Quality():
+    quality = []
 
+    @staticmethod
+    def add_to_quality(ts, src, msg):
+        Quality.quality.insert(0, f"{src}: {msg}")
+
+        Quality.add_quality_to_plots(msg)
+
+    @staticmethod
+    def add_quality_to_plots(msg):
+        for table, content in DB.table_contents.items():
+            if not content: continue
+
+            DB.quality_by_table[table].append((content[-1], msg))
 
 class DbTableForSpec():
     table_for_spec = {}
@@ -52,12 +67,18 @@ class DbTableForSpec():
 
         self.content = DB.table_contents[table]
 
+    def idx(self, field):
+        return self.table.fields.index(field.field_name)
+
     def get(self, field):
-        idx =self. table.fields.index(field.field_name)
+        idx = self.idx(field)
 
         values = [(row[idx]) for row in self.content]
 
         return list(field.modify(values))
+
+    def get_first_raw_x(self):
+        return self.content[0][self.idx(self.graph_spec.x)]
 
     def get_x(self):
         return self.get(self.graph_spec.x)
@@ -139,10 +160,6 @@ GRAPH_REFRESH_INTERVAL = 1 #s
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 expe = None
 
-quality = []
-def add_to_quality(ts, src, msg):
-    quality.insert(0, f"{src}: {msg}")
-
 
 VIRSH_VM_NAME = "fedora30"
 
@@ -158,12 +175,9 @@ def set_encoder(encoder_name, parameters):
     cmd = f"virsh qemu-monitor-command {VIRSH_VM_NAME} '{json_msg}'"
     os.system(cmd)
 
-    add_to_quality(None, "ui", f"New encoder: {encoder_name} || {params_str}")
+    Quality.add_to_quality(None, "ui", f"New encoder: {encoder_name} || {params_str}")
 
     return f"{encoder_name} || {params_str}"
-
-
-
 
 def construct_codec_control_callback(codec_name):
     cb_states = [State(tag_id, tag_cb_field) \
@@ -206,7 +220,7 @@ def construct_quality_callbacks():
         if triggered_id == "quality-bt-clear.n_clicks":
             if clear_n_clicks is None: return
 
-            quality[:] = []
+            Quality.quality[:] = []
         else:
             if refresh_n_clicks is None: return
             # forced refresh, nothing to do
@@ -215,12 +229,10 @@ def construct_quality_callbacks():
 
 
     @app.callback(Output("quality-box", 'children'),
-                  [Input('quality-refresh', 'n_intervals'),
-                   #Input('quality-bt-refresh', 'n_clicks'),
-                  ])
+                  [Input('quality-refresh', 'n_intervals')])
     def refresh_quality(*args):
         return [html.P(msg, style={"margin-top": "0px", "margin-bottom": "0px"}) \
-                for msg in quality]
+                for msg in Quality.quality]
 
     @app.callback(Output("quality-input", 'value'),
                   [Input('quality-bt-send', 'n_clicks'),
@@ -371,6 +383,7 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
                     mode= 'lines'))
 
         layout = go.Layout()
+        layout.hovermode = "closest"
         layout.showlegend = True
         layout.title = graph_spec.graph_name
 
@@ -386,6 +399,28 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
         try:
             layout.yaxis.title = graph_spec.y_title
         except AttributeError: pass
+
+        shapes = []
+        if DB.quality_by_table[tbl.table]:
+            quality_x = []
+            quality_y = []
+            quality_msg = []
+            for row, msg in DB.quality_by_table[tbl.table]:
+                quality_x.append(row[tbl.idx(graph_spec.x)])
+                quality_y.append(y_max / 2)
+                quality_msg.append(msg)
+
+            plots.append(
+                go.Scatter(
+                    x=graph_spec.x.modify(quality_x),
+                    y=quality_y,
+                    hovertext=quality_msg,
+                    mode="markers",
+                    marker=dict(color="green"),
+                )
+            )
+
+        layout.shapes = shapes
 
         return {'data': plots,'layout' : layout}
 
@@ -413,23 +448,33 @@ def construct_config_tab_callbacks(dataview_cfg):
 
     # ---
 
+    marker_cnt = 0
     @app.callback(Output('graph-header-msg', 'children'),
                   [Input('graph-bt-save', 'n_clicks'),
+                   Input('graph-bt-marker', 'n_clicks'),
                    Input('graph-bt-clear', 'n_clicks'),])
-    def action_graph_button(save, clear):
+    def action_graph_button(save, marker, clear):
         triggered_id = dash.callback_context.triggered[0]["prop_id"]
+
+        if triggered_id == "graph-bt-marker.n_clicks":
+            if marker is None: return
+            nonlocal marker_cnt
+            Quality.add_to_quality(0, "ui", f"Marker {marker_cnt}")
+            marker_cnt += 1
+            return
 
         if triggered_id == "graph-bt-save.n_clicks":
             if save is None: return
+            return ""
 
-            return "save"
         if triggered_id == "graph-bt-clear.n_clicks":
             if clear is None: return
-            for content in table_contents.values():
+            for content in DB.table_contents.values():
                 content[:] = []
             print("Cleaned!")
+            return
 
-
+        print("click not handled... ", triggered_id, save, marker, clear)
         return ""
 
     @app.callback(Output("cfg:graph:value", 'children'),
@@ -495,6 +540,7 @@ def construct_app():
                html.Button('', id=f'graph-bt-stop'),
                html.Button('Save', id=f'graph-bt-save'),
                html.Button('Clear', id=f'graph-bt-clear'),
+               html.Button('Insert marker', id=f'graph-bt-marker'),
                html.Span(id='graph-header-msg'),
                html.Br(), html.Br()
     ]
@@ -509,31 +555,35 @@ def construct_app():
 
 class GraphFormat():
     @staticmethod
-    def as_B_to_GB(lst):
+    def as_B_to_GB(lst, first=None):
         return [v/1000/1000 for v in lst]
 
     @staticmethod
-    def as_it_is(lst):
+    def as_it_is(lst, first=None):
         print(lst)
         return lst
 
     @staticmethod
-    def as_timestamp(lst):
+    def as_timestamp(lst, first=None):
         return [datetime.datetime.fromtimestamp(t) for t in lst]
 
     @staticmethod
-    def as_mm_time(lst):
-        return [(v - lst[0])/1000 for v in lst]
+    def as_mm_time(lst, first=None):
+        if first is None and lst: first = lst[0]
+
+        return [(v - first)/1000 for v in lst]
 
     @staticmethod
-    def as_guest_time(lst):
-        return [(v - lst[0]) for v in lst]
+    def as_guest_time(lst, first=None):
+        if first is None and lst: first = lst[0]
+
+        return [(v - first) for v in lst]
 
 class Server():
     def __init__(self, _expe):
         global expe; expe = _expe
 
-        expe.new_quality_cb = add_to_quality
+        expe.new_quality_cb = Quality.add_to_quality
 
         self.thr = threading.Thread(target=self._thr_run_dash)
         self.thr.daemon = True
