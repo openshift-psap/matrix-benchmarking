@@ -18,6 +18,7 @@ Frames Size:
     table: guest
     x: guest.time | as_guest_time
     y: guest.frame_size
+    y2: guest.frame_size | avg_20 > avg(20)
 
   Host frame size:
     table: host

@@ -8,6 +8,7 @@ import threading
 import datetime
 from collections import defaultdict
 import json
+import statistics
 
 import utils.yaml
 
@@ -584,6 +585,19 @@ class GraphFormat():
     @staticmethod
     def as_B_to_GB(lst, first=None):
         return [v/1000/1000 for v in lst]
+
+    @staticmethod
+    def avg_20(lst, first=None):
+        from collections import deque
+        cache = deque(maxlen=20)
+        cache += lst[:cache.maxlen]
+
+        avg = []
+        for e in lst:
+            cache.append(e)
+            avg.append(statistics.mean(cache))
+
+        return avg
 
     @staticmethod
     def as_it_is(lst, first=None):
