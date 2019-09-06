@@ -7,6 +7,8 @@ import plotly.graph_objs as go
 import threading
 import datetime
 from collections import defaultdict
+import json
+
 import utils.yaml
 
 import logging
@@ -14,19 +16,37 @@ log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 class DB():
+    expe = None
+
     tables_by_name = defaultdict(list)
     table_definitions = {}
     table_contents = {}
     quality_by_table = defaultdict(list)
+
+    @staticmethod
+    def save_to_file(filename):
+        output = open(filename, "w")
+        print(json.dumps(Quality.quality), file=output)
+
+        for table in DB.expe.tables:
+            print(table.header(), file=output)
+            print(json.dumps(DB.table_contents[table]), file=output)
+            print(json.dumps(DB.quality_by_table[table]), file=output)
+
+    @staticmethod
+    def init_quality_from_viewer():
+        import measurement.perf_viewer
+        measurement.perf_viewer.Perf_Viewer.quality_for_ui = DB.quality_by_table
 
 class Quality():
     quality = []
 
     @staticmethod
     def add_to_quality(ts, src, msg):
-        Quality.quality.insert(0, f"{src}: {msg}")
+        Quality.quality.insert(0, (ts, src, msg))
 
-        Quality.add_quality_to_plots(msg)
+        if msg.startswith("!"):
+            Quality.add_quality_to_plots(msg)
 
     @staticmethod
     def add_quality_to_plots(msg):
@@ -34,6 +54,7 @@ class Quality():
             if not content: continue
 
             DB.quality_by_table[table].append((content[-1], msg))
+
 
 class DbTableForSpec():
     table_for_spec = {}
@@ -158,7 +179,6 @@ QUALITY_REFRESH_INTERVAL = 5 #s
 GRAPH_REFRESH_INTERVAL = 1 #s
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-expe = None
 
 
 VIRSH_VM_NAME = "fedora30"
@@ -175,7 +195,7 @@ def set_encoder(encoder_name, parameters):
     cmd = f"virsh qemu-monitor-command {VIRSH_VM_NAME} '{json_msg}'"
     os.system(cmd)
 
-    Quality.add_to_quality(None, "ui", f"New encoder: {encoder_name} || {params_str}")
+    Quality.add_to_quality(None, "ui", f"!Set encoder: {encoder_name} || {params_str}")
 
     return f"{encoder_name} || {params_str}"
 
@@ -231,8 +251,8 @@ def construct_quality_callbacks():
     @app.callback(Output("quality-box", 'children'),
                   [Input('quality-refresh', 'n_intervals')])
     def refresh_quality(*args):
-        return [html.P(msg, style={"margin-top": "0px", "margin-bottom": "0px"}) \
-                for msg in Quality.quality]
+        return [html.P(f"{src}: {msg}", style={"margin-top": "0px", "margin-bottom": "0px"}) \
+                for (ts, src, msg) in Quality.quality]
 
     @app.callback(Output("quality-input", 'value'),
                   [Input('quality-bt-send', 'n_clicks'),
@@ -242,10 +262,10 @@ def construct_quality_callbacks():
         if not quality_value:
             return ""
 
-        if not expe:
+        if not DB.expe:
             return "<error: expe not set>"
 
-        expe.send_quality(quality_value)
+        DB.expe.send_quality(quality_value)
 
         return "" # empty the input text
 
@@ -366,7 +386,7 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
     def update_graph_scatter(timer_kick):
         tbl = DbTableForSpec.get_table_for_spec(graph_spec)
         if not tbl:
-            raise NameError(graph_spec)
+            raise NameError(graph_spec.yaml_desc)
 
         content = DB.table_contents[tbl.table]
         X = tbl.get_x()
@@ -414,6 +434,7 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
                 go.Scatter(
                     x=graph_spec.x.modify(quality_x),
                     y=quality_y,
+                    name="Quality",
                     hovertext=quality_msg,
                     mode="markers",
                     marker=dict(color="green"),
@@ -465,12 +486,18 @@ def construct_config_tab_callbacks(dataview_cfg):
 
         if triggered_id == "graph-bt-save.n_clicks":
             if save is None: return
+            DEST = "save.db"
+            print("Saving into", DEST, "...")
+            DB.save_to_file(DEST)
+            print("Saving: done")
+
             return ""
 
         if triggered_id == "graph-bt-clear.n_clicks":
             if clear is None: return
             for content in DB.table_contents.values():
                 content[:] = []
+            DB.quality_by_table .clear()
             print("Cleaned!")
             return
 
@@ -580,10 +607,10 @@ class GraphFormat():
         return [(v - first) for v in lst]
 
 class Server():
-    def __init__(self, _expe):
-        global expe; expe = _expe
-
-        expe.new_quality_cb = Quality.add_to_quality
+    def __init__(self, expe):
+        DB.expe = expe
+        DB.expe.new_quality_cb = Quality.add_to_quality
+        DB.init_quality_from_viewer()
 
         self.thr = threading.Thread(target=self._thr_run_dash)
         self.thr.daemon = True

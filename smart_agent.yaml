@@ -29,6 +29,9 @@ measurement_sets:
   collector:
     - Perf_Collect
 
+  viewer:
+    - Perf_Viewer
+
 central_agent:
   run_as_agent: True
   measurement_sets:
@@ -40,6 +43,11 @@ collector:
   run_as_agent: False
   measurement_sets:
     - collector
+
+viewer:
+  run_as_agent: False
+  measurement_sets:
+    - viewer
 
 # machine to connect to, currently only local and
 # accessible through ssh (remote)

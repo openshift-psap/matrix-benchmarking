@@ -49,6 +49,8 @@ class AgentTable():
         if self.table_name == "quality":
             self.rows.append(row)
 
+    def header(self):
+        return f"#{self.tid} {self.table_name}|{';'.join(self.fields)}"
 
 class AgentExperiment():
     def __init__(self):
@@ -58,7 +60,6 @@ class AgentExperiment():
         self.new_table = None
         self.new_table_row = None
         self.new_quality_cb = None
-
 
     def create_table(self, fields):
         table = AgentTable(self.tid, self, fields)
@@ -78,6 +79,7 @@ class AgentExperiment():
         if not self.send_quality_cb:
             print("No callback set for sending quality message: ", msg)
             return
+
         self.send_quality_cb(msg)
 
     def set_quality_callback(self, cb):
@@ -146,9 +148,12 @@ def checkup_mods(measurements, deads, loop):
                 mod.live.connect(loop, mod.process_line)
             except Exception as e:
                 print("###", e.__class__.__name__, e)
+                fatal = sys.exc_info()
+                traceback.print_exception(*fatal)
         else:
             try: deads.remove(mod)
             except ValueError: pass
+
 def run(cfg):
     run_as_agent = cfg["run_as_agent"]
     expe = AgentExperiment()
@@ -175,7 +180,10 @@ def run(cfg):
         deads.append(mod)
 
     async def timer_kick(wait_time):
-        await asyncio.sleep(wait_time)
+        for _ in range(wait_time):
+            # this allows asyncio to check for loop.stop every 1s
+            await asyncio.sleep(1)
+
         loop.stop()
 
     print("\n* Running!")

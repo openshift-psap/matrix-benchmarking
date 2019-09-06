@@ -25,10 +25,23 @@ class Quality():
 
         self.expe.new_quality(ts, src, msg)
 
+def create_table(experiment, line):
+    # eg: "#3 frames|client.mm_time;client.frame_size;client.time;client.decode_duration;client.queue"
+    table_uname, fields_name = line.split("|")
+    table_name = table_uname.split(" ")[1]
+
+    fields = fields_name.split(";")
+    if table_name == "quality":
+        table = Quality(experiment, fields)
+    else:
+        table = experiment.create_table(fields)
+
+    return table_uname, table
+
 def initialize(sock, experiment):
     nb_tables = struct.unpack("I", sock.recv(4))[0]
 
-    print(f"Receive {nb_tables} table definitions")
+    print(f"Receive {nb_tables} table defiitions")
     tables = {}
     for _ in range(nb_tables):
         msg = ""
@@ -37,17 +50,9 @@ def initialize(sock, experiment):
             last = sock.recv(1)
             msg += last.decode("ascii")
 
-        # eg:
-        "#3 frames|client.mm_time;client.frame_size;client.time;client.decode_duration;client.queue\0"
-        table_uname, fields_name = msg[:-1].split("|")
-        table_name = table_uname.split(" ")[1]
+        table_uname, table = create_table(experiment, msg[:-1])
+        tables[table_uname] = table
 
-        fields = fields_name.split(";")
-        if table_name == "quality":
-            tables[table_uname] = Quality(experiment, fields)
-            continue
-
-        tables[table_uname] = experiment.create_table(fields)
     return tables
 
 
