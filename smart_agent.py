@@ -179,14 +179,15 @@ def run(cfg):
         mod.setup()
         deads.append(mod)
 
+    server.start()
+    print("\n* Running!")
+
     async def timer_kick(wait_time):
         for _ in range(wait_time):
             # this allows asyncio to check for loop.stop every 1s
             await asyncio.sleep(1)
 
         loop.stop()
-
-    print("\n* Running!")
 
     fatal = None
     RECHECK_TIME=5 #s

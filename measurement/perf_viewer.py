@@ -5,7 +5,7 @@ import measurement
 import measurement.perf_collect
 import utils.live
 
-
+viewer_mode = False
 
 class DummyLiveCollect(utils.live.LiveCollect):
     def connect(self, loop, process=None):
@@ -21,6 +21,8 @@ class Perf_Viewer(measurement.Measurement):
         self.live = DummyLiveCollect()
         if sys.stdin.isatty():
             raise IOError("Please launch the viewer with '... < file.db'")
+        global viewer_mode
+        viewer_mode = True
 
     def setup(self):
         pass

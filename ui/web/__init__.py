@@ -176,6 +176,8 @@ external_stylesheets = [
     'https://codepen.io/chriddyp/pen/bWLwgP.css' # see https://codepen.io/chriddyp/pen/bWLwgP for style/columnts
 ]
 
+VIEWER_MODE = False
+
 QUALITY_REFRESH_INTERVAL = 5 #s
 GRAPH_REFRESH_INTERVAL = 1 #s
 
@@ -201,6 +203,8 @@ def set_encoder(encoder_name, parameters):
     return f"{encoder_name} || {params_str}"
 
 def construct_codec_control_callback(codec_name):
+    if VIEWER_MODE: return
+
     cb_states = [State(tag_id, tag_cb_field) \
                  for tag_id, tag_cb_field, _ in control_center_boxes[codec_name]]
 
@@ -232,6 +236,14 @@ def construct_codec_control_callbacks(codec_cfg):
         construct_codec_control_callback(codec_name)
 
 def construct_quality_callbacks():
+    @app.callback(Output("quality-box", 'children'),
+                  [Input('quality-refresh', 'n_intervals')])
+    def refresh_quality(*args):
+        return [html.P(f"{src}: {msg}", style={"margin-top": "0px", "margin-bottom": "0px"}) \
+                for (ts, src, msg) in Quality.quality]
+
+    if VIEWER_MODE: return
+
     @app.callback(Output("quality-refresh", 'n_intervals'),
                   [Input('quality-bt-clear', 'n_clicks'), Input('quality-bt-refresh', 'n_clicks')])
     def clear_quality(clear_n_clicks, refresh_n_clicks):
@@ -247,13 +259,6 @@ def construct_quality_callbacks():
             # forced refresh, nothing to do
 
         return 0
-
-
-    @app.callback(Output("quality-box", 'children'),
-                  [Input('quality-refresh', 'n_intervals')])
-    def refresh_quality(*args):
-        return [html.P(f"{src}: {msg}", style={"margin-top": "0px", "margin-bottom": "0px"}) \
-                for (ts, src, msg) in Quality.quality]
 
     @app.callback(Output("quality-input", 'value'),
                   [Input('quality-bt-send', 'n_clicks'),
@@ -352,36 +357,44 @@ def construct_control_center_tab(codec_cfg):
         dcc.Tabs(id="video-enc-tabs", children=list(get_codec_tabs())),
     ]
 
-    children = [
-        html.Div([
-            html.Div([html.H3("Quality Messages", style={"text-align":"center"}),
-                      dcc.Input(placeholder='Enter a quality message...', type='text', value='', id="quality-input"),
-                      html.Button('Send!', id='quality-bt-send'),
-                      html.Button('Clear', id='quality-bt-clear'),
-                      html.Button('Refresh', id='quality-bt-refresh'),
-                      html.Br(),
-                      "Refreshing quality ", html.Span(id="cfg:quality:value"),
-                      dcc.Slider(min=0, max=30, step=2, value=QUALITY_REFRESH_INTERVAL,
-                                 marks={0:"0s", 30:"30s"},
-                                 id="cfg:quality"), html.Br(),
-                      dcc.Interval(
-                          id='quality-refresh',
-                          interval=QUALITY_REFRESH_INTERVAL * 1000
-                      ),
-                      html.Div(id="quality-box", children=[],
-                          style={"margin-top": "10px", "margin-left": "0px",
-                                    "padding-left": "10px", "padding-top": "10px",
-                                    "background-color": "lightblue", "text-align":"left",})
-
-            ], style={"text-align":"center",}, className="four columns"),
-            html.Div(codec_tabs, className="eight columns"),
-            ], className="row")
+    quality_children = [
+        html.H3("Quality Messages", style={"text-align":"center"}),
+        dcc.Interval(
+            id='quality-refresh',
+            interval=QUALITY_REFRESH_INTERVAL * 1000
+        )
     ]
 
-    return dcc.Tab(label="Control center",  children=children)
+    quality_area = html.Div(id="quality-box", children=[],
+                            style={"margin-top": "10px", "margin-left": "0px",
+                                   "padding-left": "10px", "padding-top": "10px",
+                                   "background-color": "lightblue", "text-align":"left",})
+
+    if VIEWER_MODE:
+        tab_children = quality_children + [quality_area]
+    else:
+        quality_children += [
+            dcc.Input(placeholder='Enter a quality message...', type='text', value='', id="quality-input"),
+            html.Button('Send!', id='quality-bt-send'),
+            html.Button('Clear', id='quality-bt-clear'),
+            html.Button('Refresh', id='quality-bt-refresh'),
+            html.Br(),
+            "Refreshing quality ", html.Span(id="cfg:quality:value"),
+            dcc.Slider(min=0, max=30, step=2, value=QUALITY_REFRESH_INTERVAL,
+                       marks={0:"0s", 30:"30s"},
+                       id="cfg:quality"), html.Br(),
+            quality_area]
+
+        tab_children = [
+            html.Div([
+                html.Div(quality_children, style={"text-align":"center",}, className="four columns"),
+                html.Div(codec_tabs, className="eight columns"),
+            ], className="row")
+        ]
+
+    return dcc.Tab(label="Control center", children=tab_children)
 
 def construct_live_refresh_cb(graph_tab, graph_spec):
-
     @app.callback(Output(graph_spec.to_id(), 'figure'),
                   [Input(graph_tab.to_id()+'-refresh', 'n_intervals')])
     def update_graph_scatter(timer_kick):
@@ -447,19 +460,28 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
         return {'data': plots,'layout' : layout}
 
 def construct_config_tab():
-    children = [
-        "Graph refresh period: ",
-        dcc.Slider(min=0, max=100, step=2, value=GRAPH_REFRESH_INTERVAL-1,
-                   marks={0:"1s", 100:"100s"}, id="cfg:graph"),
-        html.Br()
-    ]
+    children = []
+
+    if not VIEWER_MODE:
+        children += [
+            "Graph refresh period: ",
+            dcc.Slider(min=0, max=100, step=2, value=GRAPH_REFRESH_INTERVAL-1,
+                       marks={0:"1s", 100:"100s"}, id="cfg:graph"),
+            html.Br()
+        ]
+    else:
+        children += ["Nothing yet in viewer mode"]
 
     return dcc.Tab(label="Config", children=children)
 
 def construct_config_tab_callbacks(dataview_cfg):
+    if VIEWER_MODE: return
+
     @app.callback(Output("quality-refresh", 'interval'),
                   [Input('cfg:quality', 'value')])
     def update_quality_refresh_timer(value):
+        if VIEWER_MODE: return 9999999
+
         if value == 0: value = 9999
         return value * 1000
 
@@ -525,6 +547,8 @@ def construct_config_tab_callbacks(dataview_cfg):
                   [Input('cfg:graph', 'value'),
                    Input('graph-bt-stop', 'n_clicks')])
     def update_graph_refresh_timer(value, bt_n_click):
+        if VIEWER_MODE: return 99999
+
         triggered_id = dash.callback_context.triggered[0]["prop_id"]
 
         if triggered_id == "graph-bt-stop.n_clicks":
@@ -548,10 +572,11 @@ def construct_app():
             print(f" - {graph_spec.graph_name}")
             yield dcc.Graph(id=graph_spec.to_id(), style={'height': height})
 
+
         yield dcc.Interval(
-                id=graph_tab.to_id()+'-refresh',
-                interval=GRAPH_REFRESH_INTERVAL * 1000
-            )
+            id=graph_tab.to_id()+'-refresh',
+            interval=GRAPH_REFRESH_INTERVAL * 1000
+        )
 
     def tab_entries():
         yield construct_control_center_tab(codec_cfg)
@@ -564,14 +589,17 @@ def construct_app():
         yield construct_config_tab()
 
     app.title = 'Smart Streaming Control Center'
-    header = [ "Refreshing graph ", html.Span(id="cfg:graph:value"),
-               html.Button('', id=f'graph-bt-stop'),
-               html.Button('Save', id=f'graph-bt-save'),
-               html.Button('Clear', id=f'graph-bt-clear'),
-               html.Button('Insert marker', id=f'graph-bt-marker'),
-               html.Span(id='graph-header-msg'),
-               html.Br(), html.Br()
-    ]
+    header = []
+    if not VIEWER_MODE:
+        header += [ "Refreshing graph ", html.Span(id="cfg:graph:value"),
+                   html.Button('', id=f'graph-bt-stop'),
+                   html.Button('Save', id=f'graph-bt-save'),
+                   html.Button('Clear', id=f'graph-bt-clear'),
+                   html.Button('Insert marker', id=f'graph-bt-marker'),
+                   html.Span(id='graph-header-msg'),
+                   html.Br(), html.Br()
+        ]
+
     app.layout = html.Div(header+[dcc.Tabs(id="main-tabs", children=list(tab_entries()))])
 
     #---
@@ -629,8 +657,12 @@ class Server():
         self.thr = threading.Thread(target=self._thr_run_dash)
         self.thr.daemon = True
 
-        construct_app()
+    def start(self):
+        import measurement.perf_viewer
+        global VIEWER_MODE
+        VIEWER_MODE = measurement.perf_viewer.viewer_mode
 
+        construct_app()
         self.thr.start()
 
     def terminate(self):

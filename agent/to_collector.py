@@ -13,6 +13,7 @@ class Server():
         self.new_clients = []
         self.current_clients = []
 
+    def start(self):
         self.serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.serv_sock.setblocking(0)
         self.serv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
