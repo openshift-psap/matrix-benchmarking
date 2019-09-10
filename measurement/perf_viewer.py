@@ -19,8 +19,7 @@ class Perf_Viewer(measurement.Measurement):
         measurement.Measurement.__init__(self, experiment)
         self.experiment = experiment
         self.live = DummyLiveCollect()
-        if sys.stdin.isatty():
-            raise IOError("Please launch the viewer with '... < file.db'")
+        #if sys.stdin.isatty(): raise IOError("Please launch the viewer with '... < file.db'")
         global viewer_mode
         viewer_mode = True
 
@@ -36,7 +35,7 @@ class Perf_Viewer(measurement.Measurement):
             self.experiment.new_quality(*entry)
         print(len(quality), "quality messages reloaded")
 
-        if not Perf_Viewer.quality_for_ui:
+        if Perf_Viewer.quality_for_ui is None:
             print("WARNING: quality graph markers not shared with UI.")
 
         while True:
@@ -50,7 +49,7 @@ class Perf_Viewer(measurement.Measurement):
             for cpt, row in enumerate(json.loads(content_str)):
                 table.add(*row)
 
-            if Perf_Viewer.quality_for_ui:
+            if Perf_Viewer.quality_for_ui is not None:
                 Perf_Viewer.quality_for_ui[table] = json.loads(quality_str)
 
             print(f"{table.table_name}: {cpt} rows reloaded.")

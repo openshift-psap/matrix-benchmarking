@@ -5,6 +5,8 @@ from collections import defaultdict
 
 import utils.yaml
 
+from . import quality
+
 class DB():
     expe = None
 
@@ -15,8 +17,9 @@ class DB():
 
     @staticmethod
     def save_to_file(filename):
+        print("Saving into", filename)
         output = open(filename, "w")
-        print(json.dumps(Quality.quality), file=output)
+        print(json.dumps(quality.Quality.quality), file=output)
 
         for table in DB.expe.tables:
             print(table.header(), file=output)
@@ -26,7 +29,14 @@ class DB():
     @staticmethod
     def init_quality_from_viewer():
         import measurement.perf_viewer
+
         measurement.perf_viewer.Perf_Viewer.quality_for_ui = DB.quality_by_table
+
+    @staticmethod
+    def clear_graphs():
+        for content in DB.table_contents.values():
+            content[:] = []
+        DB.quality_by_table .clear()
 
 class GraphFormat():
     @staticmethod

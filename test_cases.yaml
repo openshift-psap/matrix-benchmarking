@@ -1,0 +1,35 @@
+name: cubemap
+description: shows 3D movements and reflections
+before:
+  - vm do killall firefox
+  - vm open https://webglsamples.org/dynamic-cubemap/dynamic-cubemap.html
+  - sleep 5
+
+run:
+  gst:h264:
+    framerate: 5, 15, 30, 45, 60
+  gst:vp8:
+    framerate: 5, 15, 30, 45, 60
+  gst:mjpeg:
+    framerate: 5, 15, 30, 45, 60
+  native:mjpeg:
+    framerate: 5, 15, 30, 45, 60
+
+wait: 20
+
+after:
+  - vm do killall firefox
+---
+name: aquarium2
+disabled: true
+description: show a fish aquarium
+run:
+  gst:vp8:
+    framerate: 5, 15, 30, 45, 60
+  gst:h264:
+    framerate: 5, 15, 30, 45, 60
+  gst:mjpeg:
+    framerate: 5, 15, 30, 45, 60
+  native:mjpeg:
+    framerate: 5, 15, 30, 45, 60
+---

@@ -21,6 +21,9 @@ class Quality():
 
             UIState.DB.quality_by_table[table].append((content[-1], msg))
 
+    @staticmethod
+    def clear():
+        Quality.quality[:] = []
 
 def construct_quality_callbacks():
     refresh_inputs = Input('url', 'pathname') if UIState.VIEWER_MODE else \
@@ -43,7 +46,7 @@ def construct_quality_callbacks():
         if triggered_id == "quality-bt-clear.n_clicks":
             if clear_n_clicks is None: return
 
-            Quality.quality[:] = []
+            Quality.clear()
         else:
             if refresh_n_clicks is None: return
             # forced refresh, nothing to do

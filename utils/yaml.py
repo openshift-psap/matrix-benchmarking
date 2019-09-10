@@ -11,6 +11,10 @@ def merge(user, default):
                 user[k] = merge(user[k],v)
     return user
 
+def load_all(fname):
+    with open(fname, 'r') as f:
+        return list(yaml.safe_load_all(f))
+
 def load_multiple(*args):
     yml = None
     for arg in args:

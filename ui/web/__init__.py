@@ -17,6 +17,7 @@ external_stylesheets = [
 class InitialState():
     GRAPH_REFRESH_INTERVAL = 1 #s
     QUALITY_REFRESH_INTERVAL = 5 #s
+    SCRIPT_REFRESH_INTERVAL = 1 #s
 
 class UIState():
     VIEWER_MODE = False
@@ -25,7 +26,7 @@ class UIState():
 
 
 def module_late_init(expe):
-    from . import live, control, graph, quality, config
+    from . import live, control, graph, quality, config, script
 
     UIState.DB = graph.DB
 
@@ -45,6 +46,9 @@ def construct_app():
             yield dcc.Tab(label=graph_tab.tab_name,
                           children=list(live.graph_list(graph_tab)))
 
+        if not UIState.VIEWER_MODE:
+            yield script.construct_script_tab()
+
         yield config.construct_config_tab()
 
     UIState.app.title = 'Smart Streaming Control Center'
@@ -58,8 +62,7 @@ def construct_app():
     control.construct_codec_control_callbacks(codec_cfg)
     live.construct_live_refresh_callbacks(dataview_cfg)
     config.construct_config_tab_callbacks(dataview_cfg)
-
-
+    script.construct_script_tab_callbacks()
 
 class Server():
     def __init__(self, expe):

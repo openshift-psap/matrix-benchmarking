@@ -26,10 +26,10 @@ def construct_header():
     if UIState.VIEWER_MODE: return []
 
     return ["Refreshing graph ", html.Span(id="cfg:graph:value"),
-            html.Button('', id=f'graph-bt-stop'),
-            html.Button('Save', id=f'graph-bt-save'),
-            html.Button('Clear', id=f'graph-bt-clear'),
-            html.Button('Insert marker', id=f'graph-bt-marker'),
+            html.Button('', id='graph-bt-stop'),
+            html.Button('Save', id='graph-bt-save'),
+            html.Button('Clear', id='graph-bt-clear'),
+            html.Button('Insert marker', id='graph-bt-marker'),
             html.Span(id='graph-header-msg'),
             html.Br(), html.Br()
     ]
@@ -42,6 +42,7 @@ def construct_live_refresh_callbacks(dataview_cfg):
 def construct_live_refresh_cb(graph_tab, graph_spec):
     scatter_input = Input('url', 'pathname') if UIState.VIEWER_MODE else \
                     Input(graph_tab.to_id()+'-refresh', 'n_intervals')
+
     @UIState.app.callback(Output(graph_spec.to_id(), 'figure'),
                           [scatter_input])
     def update_graph_scatter(_):

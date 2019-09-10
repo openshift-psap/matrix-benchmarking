@@ -22,7 +22,7 @@ def set_encoder(encoder_name, parameters):
     cmd = f"virsh qemu-monitor-command {VIRSH_VM_NAME} '{json_msg}'"
     os.system(cmd)
 
-    quality.Quality.add_to_quality(None, "ui", f"!Set encoder: {encoder_name} || {params_str}")
+    quality.Quality.add_to_quality(None, "ui", f"Set encoder: {encoder_name} || {params_str}")
 
     return f"{encoder_name} || {params_str}"
 
