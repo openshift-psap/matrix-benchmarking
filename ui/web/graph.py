@@ -75,7 +75,7 @@ class GraphFormat():
     def as_guest_time(lst, first=None):
         if first is None and lst: first = lst[0]
 
-        return [(v - first) for v in lst]
+        return [(v - first)*1000 for v in lst]
 
 class DbTableForSpec():
     table_for_spec = {}

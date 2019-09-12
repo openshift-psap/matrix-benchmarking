@@ -157,7 +157,7 @@ def construct_control_center_tab(codec_cfg):
             html.Button('Refresh', id='quality-bt-refresh'),
             html.Br(),
             "Refreshing quality ", html.Span(id="cfg:quality:value"),
-            dcc.Slider(min=0, max=30, step=2, value=InitialState.QUALITY_REFRESH_INTERVAL,
+            dcc.Slider(min=0, max=30, step=1, value=InitialState.QUALITY_REFRESH_INTERVAL,
                        marks={0:"0s", 30:"30s"},
                        id="cfg:quality"), html.Br(),
             quality_area]

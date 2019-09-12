@@ -3,19 +3,19 @@ description: shows 3D movements and reflections
 before:
   - vm do killall firefox
   - vm open https://webglsamples.org/dynamic-cubemap/dynamic-cubemap.html
-  - sleep 5
+  - sleep 10
 
 run:
   gst:h264:
-    framerate: 5, 15, 30, 45, 60
+    framerate: 5, 30, 60
   gst:vp8:
-    framerate: 5, 15, 30, 45, 60
+    framerate: 5, 30, 60
   gst:mjpeg:
-    framerate: 5, 15, 30, 45, 60
+    framerate: 5 30, 60
   native:mjpeg:
-    framerate: 5, 15, 30, 45, 60
+    framerate: 5, 30, 60
 
-wait: 20
+wait: 10
 
 after:
   - vm do killall firefox

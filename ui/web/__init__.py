@@ -16,7 +16,7 @@ external_stylesheets = [
 
 class InitialState():
     GRAPH_REFRESH_INTERVAL = 1 #s
-    QUALITY_REFRESH_INTERVAL = 5 #s
+    QUALITY_REFRESH_INTERVAL = 1 #s
     SCRIPT_REFRESH_INTERVAL = 1 #s
 
 class UIState():
