@@ -73,7 +73,7 @@ class Perf_Collect(measurement.Measurement):
         self.experiment = experiment
 
         self.tables = None
-        self.live = True
+        self.live = None
         self.current_table = None
         self.current_table_uname = None
 
@@ -82,6 +82,9 @@ class Perf_Collect(measurement.Measurement):
         self.sock.send((quality_msg + "\0").encode("ascii"))
 
     def setup(self):
+        self.experiment.send_quality_cb = self.send_quality
+
+    def start(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             self.sock.connect((HOST, PORT))
@@ -91,11 +94,6 @@ class Perf_Collect(measurement.Measurement):
         self.tables = initialize(self.sock, self.experiment)
 
         self.live = utils.live.LiveSocket(self.sock, async_read_dataset)
-
-        self.experiment.send_quality_cb = self.send_quality
-
-    def start(self):
-        pass
 
     def stop(self):
         self.live = None

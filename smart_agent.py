@@ -13,6 +13,7 @@ import utils.yaml
 import measurement.agentinterface
 import agent.to_collector
 
+VERBOSE = False
 
 quit_signal = False
 def signal_handler(sig, frame):
@@ -22,7 +23,6 @@ def signal_handler(sig, frame):
     quit_signal = True
     loop = asyncio.get_event_loop()
     loop.stop()
-
 
 class AgentTable():
     def __init__(self, tid, expe, fields):
@@ -148,8 +148,9 @@ def checkup_mods(measurements, deads, loop):
                 mod.live.connect(loop, mod.process_line)
             except Exception as e:
                 print("###", e.__class__.__name__, e)
-                fatal = sys.exc_info()
-                traceback.print_exception(*fatal)
+                if VERBOSE:
+                    fatal = sys.exc_info()
+                    traceback.print_exception(*fatal)
         else:
             try: deads.remove(mod)
             except ValueError: pass
