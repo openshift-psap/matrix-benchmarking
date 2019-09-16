@@ -56,6 +56,11 @@ add_field('client.mm_time', 'frames', 'mm_time')
 add_field('client.decode_duration', 'frames', 'decode_duration')
 add_field('client.queue', 'frames', 'queue_size')
 
+# sys
+add_field('sys.cpu_idle', 'sys', 'cpu_idle')
+add_field('sys.mem_free', 'sys', 'mem_free')
+add_field('sys.guest_cpu', 'sys', 'guest_cpu')
+
 # quality
 add_field('quality.ts', 'quality', 'ts')
 add_field('quality.src', 'quality', 'src')

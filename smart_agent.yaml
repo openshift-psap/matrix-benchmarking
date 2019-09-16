@@ -5,16 +5,22 @@
 # Each measurement can have options
 measurement_sets:
   guest:
+    - VMStat
+    - MPStat
     - AgentInterface:
         host: 192.168.122.186
         port: 1236
         mode: guest
   host:
+    - VMStat
+    - MPStat
     - AgentInterface:
         port: 1235
         mode: server
 
   client:
+    - VMStat
+    - MPStat
     - AgentInterface:
         port: 1234
         mode: client
