@@ -48,19 +48,29 @@ class PlotMetaData(object):
 
         try:
             dataset_length = data.length(self.x_attr)
-        except KeyError as e:
-            print("WARNING: {} is an invalid 'x' key ({})".format(self.x_attr, e))
-            return []
+        except Exception as e:
+            print(f"WARNING: cannot access X attribute '{self.x_attr}'")
+            print(e)
+            raise(e)
 
         x_data = [data.get(self.x_attr, row) for row in range(dataset_length)]
 
         for field, title, label in self.y_attr:
             try:
-                y_data = [data.get(field, row) for row in range(dataset_length)]
-                self.plots.append(Plot(x_data, y_data, title, label, self.x_label))
+                y_length = data.length(field)
             except Exception as e:
-                print("WARNING: Failed to build plot '{} - {} | {}'".format(title, field, label))
+                print(f"WARNING: cannot access Y attribute '{field}', skipping it")
                 print(e)
+                continue
+
+            if dataset_length < y_length:
+                print(f"WARNING: {self.x_attr} and {field} don't have the same length "
+                      f"({dataset_length} and {y_length}), skipping.")
+                continue
+
+            y_data = [data.get(field, row_idx) for row_idx in range(dataset_length)]
+
+            self.plots.append(Plot(x_data, y_data, title, label, self.x_label))
 
         return self.plots
     # process_data
@@ -99,7 +109,16 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
             self.set_label_placeholder("No data provided")
             return
 
-        plots = self.metadata.process_data(self.data)
+        try:
+            plots = self.metadata.process_data(self.data)
+        except Exception as e:
+            print("WARNING: error while processing the data for plotting...")
+            print(e.__class__.__name__+":", e)
+            plots = False
+
+        if not plots:
+            self.set_label_placeholder("No graph can be plotted on this tab.")
+            return
 
         def plot_idle():
             nrows = len(plots)
@@ -127,8 +146,10 @@ class GraphDataView(Gtk.ScrolledWindow, DataView):
             vbox.pack_start(canvas, True, True, 0)
             toolbar = NavigationToolbar(canvas, self.get_toplevel())
             vbox.pack_start(toolbar, False, True, 0)
+            child = self.get_child()
+            if child:
+                self.remove(child)
 
-            self.remove(self.get_child())
             self.add_with_viewport(vbox)
             self.show_all()
             return False
