@@ -56,6 +56,11 @@ add_field('client.mm_time', 'frames', 'mm_time')
 add_field('client.decode_duration', 'frames', 'decode_duration')
 add_field('client.queue', 'frames', 'queue_size')
 
+# quality
+add_field('quality.ts', 'quality', 'ts')
+add_field('quality.src', 'quality', 'src')
+add_field('quality.msg', 'quality', 'msg')
+
 class Table:
     def __init__(self, field_names):
         self.fields = []

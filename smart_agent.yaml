@@ -1,0 +1,37 @@
+## Description to put on the experiment
+#description: 'Experiment description'
+
+# These are the measurement take
+# Each measurement can have options
+measurement_sets:
+  guest:
+    - AgentInterface:
+        host: 192.168.122.186
+        port: 1236
+        mode: guest
+  host:
+    - AgentInterface:
+        port: 1235
+        mode: server
+
+  client:
+    - AgentInterface:
+        port: 1234
+        mode: client
+
+default:
+  measurement_sets:
+    - guest
+    - host
+    - client
+
+# machine to connect to, currently only local and
+# accessible through ssh (remote)
+machines:
+  guest:
+   type: remote
+   host: vm.fedora30
+  client:
+   type: local
+  host:
+   type: local
