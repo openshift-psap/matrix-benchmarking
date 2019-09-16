@@ -16,9 +16,11 @@ import yaml
 class Plot(object):
 
     def __init__(self, x, y, title, y_label=None, x_label='time(s)'):
-        self.x = self.zeroify(x)
-        self.rel_x = numpy.array(self.x) - self.x[0]
-        self.y = self.zeroify(y)
+        self.x = [_x for _x, _y in zip(x, y) if _y is not None]
+
+        self.rel_x = numpy.array(self.x) - self.x[0] if self.x else []
+        self.y = [_y for _x, _y in zip(x, y) if _y is not None]
+
         self.x_label = x_label
         self.y_label = y_label
         self.title = title
