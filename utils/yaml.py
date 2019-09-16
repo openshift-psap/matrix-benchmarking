@@ -22,7 +22,7 @@ def load_multiple(*args):
                 yml = merge(yml, cfg)
             else:
                 yml = cfg
-        except:
+        except Exception:
             if not yml:
                 raise
     return yml

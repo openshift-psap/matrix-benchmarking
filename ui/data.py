@@ -1,10 +1,8 @@
 #!/bin/env python
 
 import platform
-if platform.python_version().startswith("2"):
-    from collections import Iterator
-else:
-    from collections.abc import Iterator
+from collections.abc import Iterator
+import experiment
 
 class LazyLoadList(list):
     def __init__(self, _class, database, _id):
@@ -36,10 +34,18 @@ class LazyLoadList(list):
 
         query = "select * from %s" % (self._class._table)
         if self._id:
-            query = "%s where id_experiment = %s" % (query, self._id)
+            query += " where id_experiment = %s" % self._id
 
         cursor = self.database.cursor()
-        cursor.execute(query)
+        try:
+            cursor.execute(query)
+        except Exception as e:
+            self.loaded = True
+            print(f"Error: cannot load table '{self._class._table}'")
+            print(e.__class__.__name__+":", e)
+            self.database.rollback()
+            return
+
         for args in cursor.fetchall():
             self.append(self._class(self.database, args))
         self.loaded = True

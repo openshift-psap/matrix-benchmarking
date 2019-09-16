@@ -1,3 +1,4 @@
+class ProcessNotRunningMeasurementException(Exception): pass
 
 class Measurement:
     """This class represent a measurement

@@ -122,6 +122,9 @@ def fix_table_time(table):
     # TODO hacky
     table.fields[idx] = Field('time', table.table_name, 'time')
 
+class NotEnoughHostFramesExperimentException(Exception): pass
+class NoGuestFramesInHostFramesExperimentException(Exception): pass
+
 def collapse_frames_guest_host(guest_table, host_table):
     '''Collapse guest and host frame information using frame_size'''
     size = len(guest_table.rows)
@@ -129,7 +132,10 @@ def collapse_frames_guest_host(guest_table, host_table):
     # how many line to match (90% but don't exclude more than 10
     # frames)
     match_size = size - min(10, size // 10)
-    assert len(host_table.rows) >= match_size, "Not enough frames on host"
+
+    if len(host_table.rows) < match_size:
+        raise NotEnoughHostFramesExperimentException()
+
     idx_frame_guest = guest_table.fields.index(all_fields['guest.frame_size'])
     idx_frame_host = host_table.fields.index(all_fields['host.frame_size'])
 
@@ -153,14 +159,15 @@ def collapse_frames_guest_host(guest_table, host_table):
             row = g_row + h_row[0:idx_frame_host] + h_row[idx_frame_host+1:]
             new_table.add(*row)
         return new_table
-    assert False, "Cannot find guest frames in host ones"
+
+    raise NoGuestFramesInHostFramesExperimentException()
 
 def collapse_frames_host_client(host_table, client_table):
     '''Collapse host and client frame information using frame_size and mm_time'''
 
     try:
         idx_frame_host = host_table.fields.index(all_fields['host.frame_size'])
-    except:
+    except Exception:
         idx_frame_host = host_table.fields.index(all_fields['guest.frame_size'])
     idx_time_host = host_table.fields.index(all_fields['host.mm_time'])
     idx_frame_client = client_table.fields.index(all_fields['client.frame_size'])
@@ -184,6 +191,9 @@ def collapse_frames_host_client(host_table, client_table):
     return new_table
 
 def collapse_tables(tables):
+    if len(tables) == 1:
+        return tables[0]
+
     if tables[0].table_name != 'frames':
         return collapse_tables_time(tables)
     parts = {}
