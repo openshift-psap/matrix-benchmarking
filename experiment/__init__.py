@@ -231,9 +231,9 @@ def collapse_tables(tables):
     raise NotImplementedError("Frames table collapsing")
 
 class Experiment:
-    def __init__(self, cfg):
+    def __init__(self, cfg, db_name='benchmark'):
         # TODO pass configuration
-        self.database = Database()
+        self.database = Database(db_name)
         self.tables = []
         self.attachments = {}
         self.parameters = {}

@@ -63,7 +63,7 @@ def construct_config_tab_callbacks(dataview_cfg):
 
         if triggered_id == "graph-bt-save.n_clicks":
             if save is None: return
-            DEST = "save.db"
+            DEST = "save.rec"
             print("Saving into", DEST, "...")
             graph.DB.save_to_file(DEST)
             print("Saving: done")

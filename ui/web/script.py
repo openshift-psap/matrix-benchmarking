@@ -121,7 +121,7 @@ class Script():
 
             append_quality(f"!finished: {self.name}")
 
-            dest = self.to_id() + "_" + datetime.datetime.today().strftime("%Y%m%d-%H%M") + ".db"
+            dest = self.to_id() + "_" + datetime.datetime.today().strftime("%Y%m%d-%H%M") + ".rec"
             save_graph(dest)
 
             if not dry: return

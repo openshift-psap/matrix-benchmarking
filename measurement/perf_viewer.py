@@ -15,11 +15,18 @@ class DummyLiveCollect(utils.live.LiveCollect):
 class Perf_Viewer(measurement.Measurement):
     quality_for_ui = None
 
-    def __init__(self, cfg, experiment):
+    def __init__(self, cfg, experiment, input_f=None):
         measurement.Measurement.__init__(self, experiment)
         self.experiment = experiment
         self.live = DummyLiveCollect()
-        #if sys.stdin.isatty(): raise IOError("Please launch the viewer with '... < file.db'")
+
+        if input_f is None:
+            self.input_f = sys.stdin
+            if sys.stdin.isatty():
+                raise IOError("Please launch the viewer with '... < file.db'")
+        else:
+            self.input_f = input_f
+
         global viewer_mode
         viewer_mode = True
 
@@ -27,9 +34,7 @@ class Perf_Viewer(measurement.Measurement):
         pass
 
     def start(self):
-        input_f = sys.stdin
-
-        quality = json.loads(input_f.readline())
+        quality = json.loads(self.input_f.readline())
 
         for entry in quality:
             self.experiment.new_quality(*entry)
@@ -39,11 +44,11 @@ class Perf_Viewer(measurement.Measurement):
             print("WARNING: quality graph markers not shared with UI.")
 
         while True:
-            table_def = input_f.readline()
+            table_def = self.input_f.readline()
             if not table_def: break
 
-            content_str = input_f.readline()
-            quality_str = input_f.readline()
+            content_str = self.input_f.readline()
+            quality_str = self.input_f.readline()
 
             _, table = measurement.perf_collect.create_table(self.experiment, table_def[:-1])
             for cpt, row in enumerate(json.loads(content_str)):
@@ -54,6 +59,7 @@ class Perf_Viewer(measurement.Measurement):
 
             print(f"{table.table_name}: {cpt} rows reloaded.")
         print("Reloading completed.")
+        self.input_f.close()
 
     def stop(self):
         pass

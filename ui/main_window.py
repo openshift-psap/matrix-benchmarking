@@ -14,6 +14,7 @@ import psycopg2
 import utils.yaml
 import ui.data
 import ui.dataview
+import agent.to_convert
 
 MAIN_UI_YAML_DATAVIEWS = "dataviews.yaml" # relative to this module's directory
 
@@ -78,6 +79,8 @@ class ExperimentsView(Gtk.Box):
         Gtk.Box.__init__(self, spacing=4,
                         homogeneous=False,
                         border_width=10)
+        if db_path.endswith(".rec"):
+            db_path = agent.to_convert.convert(db_path)
 
         if db_path == '::remote':
             cfg = remote_db_cfg
