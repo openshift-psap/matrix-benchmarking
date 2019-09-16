@@ -11,14 +11,9 @@ from gi.repository import GLib, Gio, Gtk
 import sqlite3 as sqlite
 import psycopg2
 
-if __package__ is None:
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    from utils import yaml
-else:
-    from ..utils import yaml
-
-from data import ExperimentData
-from dataview import ExperimentDataView, GraphDataView, get_data_views
+import utils.yaml
+import ui.data
+import ui.dataview
 
 MAIN_UI_YAML_DATAVIEWS = "dataviews.yaml" # relative to this module's directory
 
@@ -26,12 +21,12 @@ class ExperimentView(Gtk.Notebook):
 
     def __init__(self, data):
         Gtk.Notebook.__init__(self, scrollable=True)
-        self.append_page(ExperimentDataView, data)
+        self.append_page(ui.dataview.ExperimentDataView, data)
 
         dataview_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                      MAIN_UI_YAML_DATAVIEWS)
 
-        for data_view_class in get_data_views(dataview_file):
+        for data_view_class in ui.dataview.get_data_views(dataview_file):
             self.append_page(data_view_class, data)
 
         self.n_pages = self.get_n_pages()
@@ -67,7 +62,7 @@ class ExperimentView(Gtk.Notebook):
         box.show_all()
 
         self.custom_tabs.append(close_button)
-        self.set_current_page(self.append_page(GraphDataView, None, box))
+        self.set_current_page(self.append_page(ui.dataview.GraphDataView, None, box))
     # new_tab_clicked
 
     def close_tab_clicked(self, button):
@@ -100,8 +95,12 @@ class ExperimentsView(Gtk.Box):
         self.stack = Gtk.Stack()
         switcher = Gtk.StackSidebar(stack=self.stack)
 
-        for experiment in ExperimentData.load(self.db):
-            self.load_experiment(experiment)
+        for experiment in ui.data.ExperimentData.load(self.db):
+            try:
+                self.load_experiment(experiment)
+            except Exception as e:
+                print(f"Failed to load experiemnt #{experiment.id}: {e}")
+                raise e
 
         self.pack_start(switcher, False, True, 0)
         self.pack_start(self.stack, True, True, 0)
@@ -140,8 +139,8 @@ class MainWindow(Gtk.ApplicationWindow):
                                     show_close_button=True)
         self.header.pack_start(self.create_button("new", self.new_button_clicked))
         self.header.pack_start(self.create_button("open", self.open_button_clicked))
-        cfg = yaml.load_multiple("benchmark.yaml", "secure.yaml")
-        self.remote_db_cfg = yaml.subyaml(cfg, 'databases/remote')
+        cfg = utils.yaml.load_multiple("benchmark.yaml", "secure.yaml")
+        self.remote_db_cfg = utils.yaml.subyaml(cfg, 'databases/remote')
         if self.remote_db_cfg:
             self.header.pack_start(self.create_database_button())
 
@@ -282,7 +281,7 @@ class StatsApp(Gtk.Application):
     # do_shutdown
 
     def do_activate(self):
-        self.window = MainWindow(self.args[1:])
+        self.window = MainWindow(self.args)
         self.add_window(self.window)
         self.window.show_all()
     # do_activate
@@ -294,7 +293,11 @@ class StatsApp(Gtk.Application):
     # do_command_line
 # StatsApp
 
-if __name__ == "__main__":
+def main(argv):
     import sys
     app = StatsApp()
-    app.run(sys.argv)
+    app.run(argv[1:])
+
+if __name__ == "__main__":
+    print("FATAL: do not run 'ui/main_window.py' as main, but 'gui'")
+    exit(0)
