@@ -18,6 +18,16 @@ def add_field(name, table_name, field_name):
     field = Field(name, table_name, field_name)
     all_fields[name] = field
 
+def get_all_tables():
+    return set([f.table_name for f in all_fields.values() if f.table_name])
+
+def get_table_fields(table_name):
+    fields = set([f.field_name for f in all_fields.values()
+                  if f.table_name is None or f.table_name == table_name])
+    fields.add("id")
+
+    return list(fields)
+
 # special field
 add_field('time', None, None)
 

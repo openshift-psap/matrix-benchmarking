@@ -47,6 +47,9 @@ class LazyLoadList(list):
             return
 
         for args in cursor.fetchall():
+            if self._class._members is None:
+                self._class._members = [desc[0] for desc in cursor.description]
+
             self.append(self._class(self.database, args))
         self.loaded = True
     # load_data
@@ -106,35 +109,6 @@ class DatabaseData(Iterator):
 
 # DatabaseData
 
-
-class GuestData(DatabaseData):
-    _table = "guest_stats"
-    _members = ["id", "time", "gpu_memory", "gpu_usage",
-                "encode_usage", "decode_usage"]
-# GuestData
-
-
-class HostData(DatabaseData):
-    _table = "host_stats"
-    _members = ["id", "time", "cpu_usage"]
-# HostData
-
-
-class ClientData(DatabaseData):
-    _table = "client_stats"
-    _members = ["id", "time", "gpu_usage", "app_gpu_usage",
-                "cpu_usage", "app_cpu_usage"]
-# ClientData
-
-
-class FramesData(DatabaseData):
-    _table = "frames"
-    _members = ["id", "agent_time", "size", "mm_time", "capture_duration",
-                "encode_duration", "send_duration", "client_time",
-                "decode_duration", "queue_size"]
-# FramesData
-
-
 class ExperimentData(DatabaseData):
     _table = "experiments"
     _members = ["id", "time", "description", "fps", "width",
@@ -143,10 +117,17 @@ class ExperimentData(DatabaseData):
 
     def __init__(self, database, args):
         DatabaseData.__init__(self, database, args)
-        self.frames = FramesData.load(self.database, self.id)
-        self.guest_stats = GuestData.load(self.database, self.id)
-        self.host_stats = HostData.load(self.database, self.id)
-        self.client_stats = ClientData.load(self.database, self.id)
+
+        for table_name in experiment.get_all_tables():
+            #if table_name == "frames": continue
+            # create the subclass
+            table_def = type(table_name, (DatabaseData,),
+                             {'_table': table_name,
+                              '_members': None})
+
+
+
+            setattr(self, table_name, table_def.load(self.database, self.id))
     # __init__
 
     def dump(self):
@@ -158,23 +139,15 @@ class ExperimentData(DatabaseData):
         print(_str)
     # dump
 
-    def get(self, source, row):
-        tablename, field = source.split(".")
-        table = getattr(self, tablename)
+    def get(self, source, row_idx):
+        table_name, field = source.split(".")
+        table = getattr(self, table_name)
 
-        if field not in table._class._members:
-            raise(KeyError("Field '{}' not found in table {}".format(field, tablename)))
-
-        return [e for e in table[row] if e[0] == field][0][1]
+        return [e for e in table[row_idx] if e[0] == field][0][1]
     # get
 
     def length(self, source):
-        tablename, field = source.split(".")
-        table = getattr(self, tablename)
-
-        if field not in table._class._members:
-            raise(KeyError("Field '{}' not found in table {}".format(field, tablename)))
-
+        table = getattr(self, source.split(".")[0])
         return len(table)
     #length
 # ExperimentData
