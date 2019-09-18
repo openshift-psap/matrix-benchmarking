@@ -14,7 +14,7 @@ control_center_boxes = defaultdict(list)
 VIRSH_VM_NAME = "fedora30"
 
 def set_encoder(encoder_name, parameters):
-    params_str = ";".join(f"{name+'=' if not name.startswith('_') else ''}{value}" for name, value in parameters.items() if value) + ";"
+    params_str = ";".join(f"{name+'=' if not name.startswith('_') else ''}{value}" for name, value in parameters.items() if value not in (None, "")) + ";"
     json_msg = json.dumps(dict(execute="set-spice",
                                arguments={"guest-encoder": encoder_name,
                                           "guest-encoder-params": params_str}))
@@ -30,9 +30,10 @@ def construct_codec_control_callback(codec_name):
     if UIState.VIEWER_MODE: return
 
     cb_states = [State(tag_id, tag_cb_field) \
-                 for tag_id, tag_cb_field, _ in control_center_boxes[codec_name]]
+                 for tag_id, tag_cb_field, *_ in control_center_boxes[codec_name]]
 
-    param_names = [tag_id.rpartition(":")[-1] for tag_id, tag_cb_field, _ in control_center_boxes[codec_name]]
+    param_names = [prefix+tag_id.rpartition(":")[-1]
+                   for tag_id, tag_cb_field, _, prefix in control_center_boxes[codec_name]]
     @UIState.app.callback(Output(f"{codec_name}-msg", 'children'),
                           [Input(f'{codec_name}-go-button', "n_clicks")],
                           cb_states)
@@ -41,86 +42,118 @@ def construct_codec_control_callback(codec_name):
         if n_clicks is None: return # button creation
 
         params = dict(zip(param_names, states))
+        if params.get("custom", None):
+            for custom in params["custom"].split(";"):
+                k, _, v = custom.partition("=")
+                params[k] = v
+
+            del params["custom"]
 
         return set_encoder(codec_name, params)
 
-    for tag_id, tag_cb_field, need_value_cb in control_center_boxes[codec_name]:
+    for tag_id, tag_cb_field, need_value_cb, _ in control_center_boxes[codec_name]:
         if not need_value_cb: continue
 
         @UIState.app.callback(Output(f"{tag_id}:value", 'children'),
                               [Input(tag_id, tag_cb_field)])
         def value_callback(value):
-            return f": {value}"
+            return f": {value if value is not None else ''}"
 
 
 def construct_codec_control_callbacks(codec_cfg):
     for codec_name, options in codec_cfg.items():
-        if codec_name == "all": continue
+        if codec_name.startswith("_"): continue
         if options and "_disabled" in options: continue
 
         construct_codec_control_callback(codec_name)
 
 def construct_control_center_tab(codec_cfg):
 
-    def get_option_box(codec_name, option):
-        if option is None:
-            option = "custom"
-
+    def get_option_box(codec_name, opt_name, opt_props):
         tag = None
         tag_cb_field = "value"
         need_value_cb = False
+        opt_type = opt_props.get("type", "str")
 
-        if isinstance(option, dict):
-            key, value = list(option.items())[0]
-            opt_name = key.capitalize()
+        if opt_type.startswith("int["): # int[start:end:step]=default
+            range_str, _, default = opt_type[4:].partition("]=")
+            _min, _max, _step = map(int, range_str.split(":"))
+            marks = {_min:_min, _max:_max}
+            tag = dcc.Slider(min=_min, max=_max, step=_step, value=int(default), marks=marks)
+            need_value_cb = True
+        elif opt_type.startswith("int"):
+            default = int(opt_type.partition("=")[-1]) if opt_type.startswith("int=") else ""
 
-            if isinstance(value, str):
-                if value.startswith("int["): # int[start:end:step]=default
-                    range_str, _, default = value[4:].partition("]=")
-                    _min, _max, _step = map(int, range_str.split(":"))
-                    marks = {_min:_min, _max:_max}
-                    tag = dcc.Slider(min=_min, max=_max, step=_step, value=int(default), marks=marks)
-                    need_value_cb = True
-                elif value.startswith("int"):
-
-                    default = int(value.partition("=")[-1]) if value.startswith("int=") else ""
-
-                    tag = dcc.Input(placeholder=f'Enter a numeric value for "{option}"',
+            tag = dcc.Input(placeholder=f'Enter a numeric value for "{opt_name}"',
                                     type='number', value=default, style={"width": "100%"})
-                    need_value_cb = True
+            need_value_cb = True
+
+        elif opt_type == "enum":
+            options = [{'label': enum, 'value': enum} for enum in [""] + opt_props['values'].split(", ")]
+            tag = dcc.Dropdown(options=options, searchable=False)
 
         if tag is None:
-            if not isinstance(option, str):
-                raise Exception(f"Option not handled ... {option}")
+            if opt_type != "str":
+                raise Exception(f"Option not handled ... {opt_name}->{opt_props}")
 
-            opt_name = option.capitalize()
-            tag = dcc.Input(placeholder=f'Enter a value for "{option}"', type='text',
+            tag = dcc.Input(placeholder=f'Enter a value for "{opt_name}"', type='text',
                             style={"width": "100%"})
 
-        tag_id = f"{codec_name}-opt:{opt_name.lower()}"
+        tag_id = f"{codec_name}-opt:{opt_name.lower()}".replace(".", "_")
         tag.id = tag_id
 
-        control_center_boxes[codec_name].append((tag_id, tag_cb_field, need_value_cb))
+        prefix = opt_props.get("_prefix", "")
+        control_center_boxes[codec_name].append((tag_id, tag_cb_field, need_value_cb, prefix))
 
-        return [html.P(children=[opt_name, html.Span(id=tag_id+":value")],
-                       style={"text-align": "center"}),
+        opt_name_span = html.Span(opt_name)
+        children = [opt_name_span, html.Span(id=tag_id+":value")]
+
+        opt_name_span.title = ""
+
+        opt_name_span.title += opt_props.get("desc", "")
+        if "default" in opt_props:
+            opt_name_span.title += f' [default: {opt_props["default"]}]'
+
+        try:
+            url = opt_props["url"]
+            children.append(html.A("*", href=url, target="_blank", title=f"More about {opt_name}"))
+        except KeyError: pass
+
+        return [html.P(children=children, style={"text-align": "center"}),
                 html.P([tag])]
 
     def get_codec_params(codec_name):
-        all_options = codec_cfg.get("all", []) + \
-            (codec_cfg[codec_name] if codec_cfg[codec_name] is not None else [])
+        all_options = {}
+        for name, options in codec_cfg.items():
+            if not options: continue
 
-        for option in all_options:
-            yield from get_option_box(codec_name, option)
+            if name == "_all" or name.startswith("_") and codec_name.startswith(name[1:]): pass # keep
+            elif codec_name == name: pass # keep
+            else: continue
 
-        yield from get_option_box(codec_name, None)
+            if "_prefix" in options:
+                prefix = options["_prefix"]
+                options = options.copy()
+                del options["_prefix"]
+                for param_option in options.values():
+                    param_option["_prefix"] = prefix
+
+            all_options.update(options)
+
+        for opt_name, opt_props in all_options.items():
+            yield from get_option_box(codec_name, opt_name, opt_props)
+
+        yield from get_option_box(codec_name, "custom", {"desc": "format: (key=value;)*"})
 
         yield html.P(id=f"{codec_name}-msg", style={"text-align":"center"})
 
     def get_codec_tabs():
         for codec_name, options in codec_cfg.items():
-            if codec_name == "all": continue
-            if options and "_disabled" in options: continue
+            if codec_name.startswith("_"): continue
+
+            if options is None: options = {}
+
+            if "_disabled" in options: continue
 
             print(f"Create {codec_name} tab ...")
             children = []

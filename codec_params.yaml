@@ -1,13 +1,48 @@
-all:
-  - framerate: int[0:120:5]=30
-native:mjpeg:
-  - quality: int[0:100:5]=100
-  - test: int=15
-gst:h264:
-  - test
-  - test2
-gst:vp9:
-  - _disabled
+_template_group:
+  opt_name:
+    type: int[start:stop:step]=default
+    type: int # free range
+    desc: the option description
+    url: link for more information
+
+_all:
+  framerate:
+    type: int[0:120:5]=30
+
+_gst:vp:
+  _prefix: gst.prop=
+  keyframe-max-dist:
+    type: int
+    desc: "maximum distance between keyframes (number of frames)"
+    default: 128
+    url: "https://thiblahute.github.io/GStreamer-doc/vpx-1.0/vp8enc.html?gi-language=c#GstVP8Enc:keyframe-max-dist"
+  target-bitrate:
+    type: int
+    desc: "target bitrate (in bits/sec)"
+    default: 256000
+    url: "https://thiblahute.github.io/GStreamer-doc/vpx-1.0/vp8enc.html#GstVP8Enc:target-bitrate"
+    min: 1000
+  threads:
+    type: int
+    desc: "number of threads to use"
+    default: 0
+    url: "https://thiblahute.github.io/GStreamer-doc/vpx-1.0/vp8enc.html#GstVP8Enc:threads"
+  sharpness:
+    type: int
+    desc: "filter sharpness"
+    default: 0
+    url: "https://thiblahute.github.io/GStreamer-doc/vpx-1.0/vp8enc.html#GstVP8Enc:sharpness"
+  end-usage:
+    type: enum
+    values: vbr, cbr, vq
+    desc: "rate control mode"
+    default: vbr
+    url: "https://thiblahute.github.io/GStreamer-doc/vpx-1.0/vp8enc.html?gi-language=c#GstVP8Enc:end-usage"
 gst:vp8:
+gst:vp9:
 gst:h264:
+gst:h265:
 gst:mjpeg:
+native:mjpeg:
+  quality:
+    type: int[0:100:5]=100
