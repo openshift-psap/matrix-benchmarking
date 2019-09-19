@@ -25,7 +25,8 @@ class AgentTable():
         if len(table_names) != 1:
             raise Exception(f"Not unique table name: {table_names} in {fields}")
         self.table_name = table_names.pop()
-
+        if VERBOSE:
+            print(self.table_name, "|", ", ".join(fields))
         if self.table_name == "quality":
             self.rows = []
 
