@@ -45,4 +45,5 @@ gst:h265:
 gst:mjpeg:
 native:mjpeg:
   quality:
+    _prefix: mjpeg.
     type: int[0:100:5]=100
