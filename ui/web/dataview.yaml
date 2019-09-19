@@ -16,34 +16,34 @@ System:
 Frames Size:
   Guest frame size:
     table: guest
-    x: guest.time | as_guest_time
+    x: guest.msg_ts | as_us_timestamp
     y: guest.frame_size
     y2: guest.frame_size | avg_20 > avg(20)
 
   Host frame size:
     table: host
-    x: host.mm_time | as_mm_time
+    x: host.msg_ts | as_us_timestamp
     y: host.frame_size
 
   Client frame size:
     table: client
-    x: client.mm_time | as_mm_time
+    x: client.msg_ts | as_us_timestamp
     y: client.frame_size
 
 Frame Processing:
   Guest processing duration:
     table: guest
-    x: guest.time | as_guest_time
+    x: guest.msg_ts | as_us_timestamp
     y: guest.capture_duration
     y2: guest.encode_duration
     y3: guest.send_duration
 
   Client processing duration:
     table: client
-    x: client.mm_time | as_mm_time
+    x: client.msg_ts | as_us_timestamp
     y: client.decode_duration
 
   Client queue:
     table: client
-    x: client.mm_time | as_mm_time
+    x: client.msg_ts | as_us_timestamp
     y: client.queue

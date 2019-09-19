@@ -66,6 +66,10 @@ class GraphFormat():
         return [datetime.datetime.fromtimestamp(t) for t in lst]
 
     @staticmethod
+    def as_us_timestamp(lst, first=None):
+        return [datetime.datetime.fromtimestamp(t/1000000) for t in lst]
+
+    @staticmethod
     def as_mm_time(lst, first=None):
         if first is None and lst: first = lst[0]
 
