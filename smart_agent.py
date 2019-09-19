@@ -182,6 +182,7 @@ def run(cfg):
 
     server.start()
     print("\n* Running!")
+    RECHECK_TIME=5 #s
 
     async def timer_kick(wait_time):
         for _ in range(wait_time):
@@ -189,9 +190,11 @@ def run(cfg):
             await asyncio.sleep(1)
 
         loop.stop()
+        loop.create_task(timer_kick(RECHECK_TIME))
 
     fatal = None
-    RECHECK_TIME=5 #s
+    loop.create_task(timer_kick(RECHECK_TIME))
+
     while not quit_signal:
         try:
             server.periodic_checkup()
@@ -202,7 +205,6 @@ def run(cfg):
             fatal = sys.exc_info()
             break
 
-        loop.create_task(timer_kick(RECHECK_TIME))
         loop.run_forever() # returns after timer_kick() calls loop.stop()
 
     print("\n* Stopping the measurements ...")
