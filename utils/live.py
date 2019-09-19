@@ -1,5 +1,6 @@
 import asyncio
 import subprocess
+import sys
 
 async def stream_as_generator(loop, stream):
     reader = asyncio.StreamReader(loop=loop)
@@ -15,6 +16,7 @@ class LiveCollect():
     def __init__(self):
         self.lines = []
         self.alive = False
+        self.exception = []
 
     def connect(self, loop, process=None):
         self.alive = True
@@ -23,7 +25,10 @@ class LiveCollect():
 
         async def follow_stream():
             async for line in stream_as_generator(loop, self.stream):
-                process(line)
+                try:
+                    process(line)
+                except Exception as e:
+                    self.exception.append((e, sys.exc_info()))
             self.alive = False
 
         loop.create_task(follow_stream())

@@ -5,7 +5,6 @@ import sys
 import re
 import asyncio
 import importlib
-import signal
 import traceback
 
 import utils.yaml
@@ -14,15 +13,7 @@ import measurement.agentinterface
 import agent.to_collector
 
 VERBOSE = False
-
 quit_signal = False
-def signal_handler(sig, frame):
-    global quit_signal
-    if quit_signal: return
-    print("\nQuitting ...")
-    quit_signal = True
-    loop = asyncio.get_event_loop()
-    loop.stop()
 
 class AgentTable():
     def __init__(self, tid, expe, fields):
@@ -137,7 +128,14 @@ def load_measurements(cfg, expe):
 
 def checkup_mods(measurements, deads, loop):
     for mod in measurements:
+        while mod.live and mod.live.exception:
+            ex, info = mod.live.exception.pop()
+            print(mod, "raised", ex.__class__.__name__, ex)
+            if VERBOSE:
+                traceback.print_exception(*info)
+
         # try to reconnect disconnected agent interfaces
+
         if not (mod.live and mod.live.alive):
             if not mod in deads:
                 print(mod, "is dead")
@@ -222,8 +220,30 @@ def run(cfg):
     return fatal
 
 
+
+async def shutdown(signal, loop):
+    print("\nQuitting ...")
+
+    global quit_signal
+    quit_signal = True
+
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    for task in tasks: task.cancel()
+
+    # Cancelling outstanding tasks
+    await asyncio.gather(*tasks, return_exceptions=True)
+
+    loop.stop()
+
+def prepare_gracefull_shutdown():
+    import signal
+    loop = asyncio.get_event_loop()
+
+    for s in (signal.SIGHUP, signal.SIGTERM, signal.SIGINT):
+        loop.add_signal_handler(s, lambda s=s: asyncio.create_task(shutdown(s, loop)))
+
 def main():
-    signal.signal(signal.SIGINT, signal_handler)
+    prepare_gracefull_shutdown()
 
     key = "central_agent" if len(sys.argv) == 1 else sys.argv[1]
 
