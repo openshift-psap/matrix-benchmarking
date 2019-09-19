@@ -46,6 +46,9 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
     @UIState.app.callback(Output(graph_spec.to_id(), 'figure'),
                           [scatter_input])
     def update_graph_scatter(_):
+        if not UIState.DB.table_contents:
+            return {}
+
         tbl = graph.DbTableForSpec.get_table_for_spec(graph_spec)
         if not tbl:
             raise NameError(graph_spec.yaml_desc)
