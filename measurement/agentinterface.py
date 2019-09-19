@@ -209,6 +209,7 @@ def register_entry_handlers(agent):
 
 def register_frame_stats(agent):
     table = agent.experiment.create_table([
+        'client.msg_ts',
         'client.mm_time',
         'client.frame_size',
         'client.time',
@@ -226,7 +227,7 @@ def register_frame_stats(agent):
         time /= 1000000
         decode_duration /= 1000000
 
-        table.add(mm_time, frame_size, time, decode_duration, queue)
+        table.add(entry.time, mm_time, frame_size, time, decode_duration, queue)
 
     agent.processors["frames_stats"] = process
 
@@ -234,7 +235,7 @@ def register_frame_stats(agent):
 def register_quality(agent):
     agent.quality_table = \
         agent.experiment.create_table([
-            'quality.ts',
+            'quality.msg_ts',
             'quality.src',
             'quality.msg',
         ])
@@ -251,6 +252,7 @@ def register_quality(agent):
 
 def register_stream_channel_data(agent):
     table = agent.experiment.create_table([
+        'host.msg_ts',
         'host.frame_size',
         'host.mm_time',
     ])
@@ -259,13 +261,14 @@ def register_stream_channel_data(agent):
     def process(entry):
         frame_size, mm_time = fmt.match(entry.msg).groups()
 
-        table.add(int(frame_size), int(mm_time))
+        table.add(entry.time, int(frame_size), int(mm_time))
 
     agent.processors["stream_channel_data"] = process
     agent.processors["stream_device_data"] = None # ignore, identical to above
 
 def register_guest_frame(agent):
     table = agent.experiment.create_table([
+        'guest.msg_ts',
         'guest.time',
         'guest.frame_size',
         'guest.capture_duration',
@@ -306,7 +309,8 @@ def register_guest_frame(agent):
 
             if state.start is None: return # partial state, skip it
 
-            table.add(state.start / 1000000, state.frame_bytes,
+            table.add(time,
+                      state.start / 1000000, state.frame_bytes,
                       (state.captured - state.start) / 1000000,
                       (state.encoded - state.captured) / 1000000,
                       (state.sent - state.encoded) / 1000000)
