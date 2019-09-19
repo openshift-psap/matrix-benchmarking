@@ -35,11 +35,21 @@ def construct_codec_control_callback(codec_name):
     param_names = [prefix+tag_id.rpartition(":")[-1]
                    for tag_id, tag_cb_field, _, prefix in control_center_boxes[codec_name]]
     @UIState.app.callback(Output(f"{codec_name}-msg", 'children'),
-                          [Input(f'{codec_name}-go-button', "n_clicks")],
+                          [Input(f'{codec_name}-go-button', "n_clicks"),
+                           Input(f'{codec_name}-reset-button', "n_clicks")],
                           cb_states)
     def activate_codec(*args):
-        n_clicks, *states = args
-        if n_clicks is None: return # button creation
+        triggered_id = dash.callback_context.triggered[0]["prop_id"]
+
+        go_n_clicks, reset_n_clicks, *states = args
+
+        if triggered_id == f"{codec_name}-reset-button.n_clicks":
+            if reset_n_clicks is None: return # button creation
+
+            set_encoder("reset", {})
+            return "Encoding reset!"
+
+        if go_n_clicks is None: return # button creation
 
         params = dict(zip(param_names, states))
         if params.get("custom", None):
@@ -157,9 +167,10 @@ def construct_control_center_tab(codec_cfg):
 
             print(f"Create {codec_name} tab ...")
             children = []
-            children += get_codec_params(codec_name)
-            children += [html.Div([html.Button('Go!', id=f'{codec_name}-go-button')],
+            children += [html.Div([html.Button('Go!', id=f'{codec_name}-go-button'),
+                                   html.Button('Reset', id=f'{codec_name}-reset-button')],
                                   style={"text-align": "center"})]
+            children += get_codec_params(codec_name)
 
             yield dcc.Tab(label=codec_name, children=children)
 
