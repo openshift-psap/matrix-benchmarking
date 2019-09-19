@@ -41,7 +41,7 @@ def create_table(experiment, line):
 def initialize(sock, experiment):
     nb_tables = struct.unpack("I", sock.recv(4))[0]
 
-    print(f"Receive {nb_tables} table defiitions")
+    print(f"Received {nb_tables} table definitions")
     tables = {}
     for _ in range(nb_tables):
         msg = ""
