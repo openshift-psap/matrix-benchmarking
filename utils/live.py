@@ -91,7 +91,8 @@ class LiveSocket(LiveCollect):
 
                 process(entry)
 
-            print(f"Connection to {self.sock.getpeername()} closed.")
+            addr, port = self.sock.getpeername()
+            print(f"Connection to {addr}:{port} closed.")
             self.alive = False
 
         loop.create_task(follow_socket())

@@ -32,3 +32,5 @@ class Measurement:
         For instance get logs and parse them.
         Should store the results on a table."""
         pass
+    def __str__(self):
+        return self.__class__.__name__

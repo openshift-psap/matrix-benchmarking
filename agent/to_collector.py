@@ -44,14 +44,16 @@ class Server():
             for s in readable:
                 if s == self.serv_sock:
                     try:
-                        conn, addr = self.serv_sock.accept()
-
+                        conn, (addr, port) = self.serv_sock.accept()
                     except OSError as e:
                         if e.errno == 22: #  Invalid argument
                             running = False
                             break
+                        else:
+                            print("ERROR:", e.__class__.__name__, ":", e)
+                            continue
 
-                    print("New connection from", addr)
+                    print(f"New connection from {addr}:{port}")
                     self.new_clients.append(conn)
                     read_list.append(conn)
                     self.loop.stop()
@@ -110,7 +112,8 @@ class Server():
             except Exception as e:
                 # safe as we're using a copy of the list
                 self.current_clients.remove(client)
-                print(f"Client {client.getsockname()} disconnected ({e})")
+                addr, port = client.getsockname()
+                print(f"Client {addr}:{port} disconnected ({e})")
 
     def new_table_row(self, table, row):
         self.send_all(f"#{table.tid} {table.table_name}|1".encode("ascii"))
