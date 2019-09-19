@@ -57,7 +57,7 @@ class Server():
                     self.loop.stop()
                 else:
                     if not self.thr_read_quality(s):
-                        read_list.remove(conn)
+                        read_list.remove(s)
 
         print("Socket to Perf collector closed.")
 
