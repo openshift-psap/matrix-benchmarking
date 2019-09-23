@@ -43,13 +43,18 @@ class Script():
             yaml_run = self.yaml_desc["run"]
 
             codecs = []
-            for codec_name, params_desc in yaml_run.items():
+            for test_name, test_params in yaml_run.items():
                 params = []
 
-                for param_name, param_values in params_desc.items():
-                    params += [html.Li([html.I(param_name), ": ", param_values])]
+                for param_name, param_values in test_params.items():
+                    if param_name.startswith("_"):
+                        param_tag = html.B(param_name[1:])
+                    else:
+                        param_tag = param_name
 
-                codecs += [html.Li([codec_name, html.Ul(params)])]
+                    params += [html.Li([param_tag, ": ", param_values])]
+
+                codecs += [html.Li([html.I(test_name), html.Ul(params)])]
 
             yield html.Ul(codecs)
 
@@ -75,8 +80,11 @@ class Script():
             if dry: return
             control.set_encoder(codec, params)
 
+        total_wait_time = 0
         def wait(nb_sec):
             self.log(f"wait: {nb_sec} seconds")
+            nonlocal total_wait_time
+            total_wait_time += nb_sec
             if dry: return
             time.sleep(nb_sec)
 
@@ -101,32 +109,89 @@ class Script():
             if dry: return
             graph.DB.save_to_file(fname)
 
+        def reset():
+            self.log(f"reset encoder params")
+            if dry: return
+            control.set_encoder("reset", {})
+
         def do_run():
             Script.messages[:] = []
             self.log("running" + " (dry)" if dry else "!")
 
-            clear_graph()
-            clear_quality()
-            wait(2)
-            append_quality(f"!running: {self.name}")
+            codec_name = self.yaml_desc["codec"]
+            record_time = int(self.yaml_desc["wait"])
+
+
+            first_record = True
+            def init_recording(test_name):
+                clear_graph()
+                clear_quality()
+                wait(1)
+                append_quality(f"!running: {self.name}")
+                wait(1)
+                append_quality(f"!running: {self.name} / {test_name}")
+                wait(1)
+
             for cmd in self.yaml_desc.get("before", []): execute(cmd)
 
-            for codec_name, params_desc in self.yaml_desc["run"].items():
-                for param_name, param_values in params_desc.items():
-                    for param_value in param_values.split(", "):
-                        set_encoding(codec_name, {param_name: param_value})
-                        wait(int(self.yaml_desc["wait"]))
+            reset()
 
-            for cmd in self.yaml_desc.get("after", []): execute(cmd)
+            for test_name, test_cfg in self.yaml_desc["run"].items():
+                if test_cfg.get("_disabled", False):
+                    self.log(f"{self.name} / {test_name}: disabled")
+                    continue
+
+                if not first_record:
+                    append_quality(f"!running: {self.name} / {test_name}")
+                rolling_param  = None
+                fixed_params = {}
+
+                for param_name, param_value in test_cfg.items():
+                    if param_name.startswith("_"):
+                        assert rolling_param is None
+                        rolling_param = param_name[1:], param_value
+                        continue
+
+                    fixed_params[param_name] = param_value
+
+                first_test = True
+                for rolling_param_value in rolling_param[1].split(", "):
+                    if first_test:
+                        first_test = True
+
+                        first_params = {**fixed_params, **{rolling_param[0]: rolling_param_value}}
+                        set_encoding(codec_name, first_params)
+
+                        if first_record:
+                            first_record = False
+
+                            # this late initialization is necessary to
+                            # ensure that the recording data are 100%
+                            # clean: the first encoding config is already
+                            # set, so no data from the previous
+                            # configuration is recorded
+                            init_recording(test_name)
+
+                            set_encoding(codec_name, first_params)
+                    else:
+                        set_encoding(codec_name, {rolling_param[0]: rolling_param_value})
+
+                    wait(record_time)
+
+                reset()
+                wait(5)
 
             append_quality(f"!finished: {self.name}")
 
             dest = self.to_id() + "_" + datetime.datetime.today().strftime("%Y%m%d-%H%M") + ".rec"
             save_graph(dest)
 
-            if not dry: return
+            for cmd in self.yaml_desc.get("after", []): execute(cmd)
 
             self.log("done!")
+            self.log(f"Estimated time: {total_wait_time/60:.0f}min{total_wait_time%60}s")
+            if not dry: return
+
             Script.thr = None
 
         if dry:

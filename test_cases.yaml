@@ -1,35 +1,23 @@
-name: cubemap
-description: shows 3D movements and reflections
+name: vp8_keyframe-max-dist_target-bitrate
+description: shows 3D shapes in motion
 before:
   - vm do killall firefox
-  - vm open https://webglsamples.org/dynamic-cubemap/dynamic-cubemap.html
+  - vm open https://webglsamples.org/video/video.html
   - sleep 10
 
+codec: gst:vp8
+
 run:
-  gst:h264:
-    framerate: 5, 30, 60
-  gst:vp8:
-    framerate: 5, 30, 60
-  gst:mjpeg:
-    framerate: 5 30, 60
-  native:mjpeg:
-    framerate: 5, 30, 60
+  test1:
+    _gst.prop=keyframe-max-dist: 1, 2, 4, 8, 14, 20, 40, 80, 130, 200
+    framerate: 30
+    gst.prop=target-bitrate: 4000
+
+  test:
+    _disabled: true
+    _gst.prop=target-bitrate: 1000, 2000, 4000, 8000, 16000, 32000, 64000, 128000, 256000, 512000
 
 wait: 10
 
 after:
   - vm do killall firefox
----
-name: aquarium2
-disabled: true
-description: show a fish aquarium
-run:
-  gst:vp8:
-    framerate: 5, 15, 30, 45, 60
-  gst:h264:
-    framerate: 5, 15, 30, 45, 60
-  gst:mjpeg:
-    framerate: 5, 15, 30, 45, 60
-  native:mjpeg:
-    framerate: 5, 15, 30, 45, 60
----
