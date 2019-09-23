@@ -1,5 +1,5 @@
 import dash
-from dash.dependencies import Output, Input, State
+from dash.dependencies import Output, Input, State, ClientsideFunction
 import dash_core_components as dcc
 import dash_html_components as html
 
@@ -10,12 +10,16 @@ from . import InitialState, UIState
 from . import graph
 
 def graph_list(graph_tab):
-    height = f"{(1/len(graph_tab.graphs)*80):0f}vh"
     for graph_spec in graph_tab.graphs:
         print(f" - {graph_spec.graph_name}")
-        yield dcc.Graph(id=graph_spec.to_id(), style={'height': height})
+        yield html.H3(graph_spec.graph_name, id=graph_spec.to_id()+'-title',
+                      style={'text-align': "center", "font-size": "17px", "fill":"rgb(68, 68, 68)",
+                             'margin-bottom': '0rem'})
+        yield dcc.Graph(id=graph_spec.to_id())
 
-    if UIState.VIEWER_MODE: return []
+        yield html.Div(id=graph_spec.to_id()+":clientside-output")
+
+    if UIState.VIEWER_MODE: return
 
     yield dcc.Interval(
         id=graph_tab.to_id()+'-refresh',
@@ -23,9 +27,10 @@ def graph_list(graph_tab):
     )
 
 def construct_header():
-    if UIState.VIEWER_MODE: return []
+    headers = []
+    if UIState.VIEWER_MODE: return headers
 
-    return ["Refreshing graph ", html.Span(id="cfg:graph:value"),
+    return headers + ["Refreshing graph ", html.Span(id="cfg:graph:value"),
             html.Button('', id='graph-bt-stop'),
             html.Button('Save', id='graph-bt-save'),
             html.Button('Clear', id='graph-bt-clear'),
@@ -40,12 +45,49 @@ def construct_live_refresh_callbacks(dataview_cfg):
             construct_live_refresh_cb(graph_tab, graph_spec)
 
 def construct_live_refresh_cb(graph_tab, graph_spec):
+    UIState.app.clientside_callback(
+        ClientsideFunction(namespace="clientside", function_name="resize_graph"),
+        Output(graph_spec.to_id()+":clientside-output", "children"),
+        [Input(graph_spec.to_id(), "style")],
+    )
+
+    @UIState.app.callback([Output(graph_spec.to_id(), 'style'),
+                           Output(graph_spec.to_id()+'-title', 'style')],
+                          [Input(graph_spec.to_id()+'-title', 'n_clicks')],
+                          [State(graph_spec.to_id(), 'style'),
+                           State(graph_spec.to_id()+'-title', 'style')])
+    def update_graph_style(n_clicks, style, title_style):
+        if style is None: style = {}
+
+        # vh = view height, 100 == all the visible screen
+        VH_MAX = 75
+
+        if n_clicks is None:
+            if graph_spec.yaml_desc.get("_collapsed"):
+                height = "5vh"
+            else:
+                nb_visible = sum([1 for _graph_spec in graph_tab.graphs
+                                  if not _graph_spec.yaml_desc.get("_collapsed")])
+
+                height = f"{(1/nb_visible*VH_MAX):.0f}vh"
+
+        elif "height" in style and style["height"] == f"{VH_MAX}vh":
+            height = f"{(1/len(graph_tab.graphs)*VH_MAX):.0f}vh"
+
+            title_style["color"] = ""
+        else:
+            height = f"{VH_MAX}vh"
+            title_style["color"] = "green"
+
+        style["height"] = height
+
+        return style, title_style
+
     scatter_input = Input('url', 'pathname') if UIState.VIEWER_MODE else \
                     Input(graph_tab.to_id()+'-refresh', 'n_intervals')
-
     @UIState.app.callback(Output(graph_spec.to_id(), 'figure'),
                           [scatter_input])
-    def update_graph_scatter(_):
+    def update_graph_scatter(*args):
         if not UIState.DB.table_contents:
             return {}
 
@@ -70,7 +112,6 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
         layout = go.Layout()
         layout.hovermode = "closest"
         layout.showlegend = True
-        layout.title = graph_spec.graph_name
 
         try:
             layout.xaxis = dict(range=[min(X), max(X)])

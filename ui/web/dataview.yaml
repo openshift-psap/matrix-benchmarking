@@ -24,11 +24,13 @@ Frames Size:
     table: host
     x: host.msg_ts | as_us_timestamp
     y: host.frame_size
+    _collapsed: true
 
   Client frame size:
     table: client
     x: client.msg_ts | as_us_timestamp
     y: client.frame_size
+    _collapsed: true
 
 Frame Processing:
   Guest processing duration:
