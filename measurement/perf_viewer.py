@@ -21,9 +21,10 @@ class Perf_Viewer(measurement.Measurement):
         self.live = DummyLiveCollect()
 
         if input_f is None:
-            self.input_f = sys.stdin
-            if sys.stdin.isatty():
-                raise IOError("Please launch the viewer with '... < file.db'")
+            try:
+                self.input_f = open(sys.argv[2])
+            except (IndexError, FileNotFoundError):
+                raise IOError("Please launch the viewer with "+" ".join(sys.argv+["FILE.rec"]))
         else:
             self.input_f = input_f
 
