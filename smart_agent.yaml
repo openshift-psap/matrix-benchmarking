@@ -5,6 +5,7 @@ measurement_sets:
   central:
     - VMStat
     - MPStat
+    - Intel_GPU_Top
     - AgentInterface:
         port: 1235
         mode: server
@@ -26,6 +27,7 @@ measurement_sets:
   host:
     - VMStat
     - MPStat
+    - Intel_GPU_Top
     - AgentInterface:
         port: 1234
         mode: client

@@ -27,6 +27,15 @@ Guest System:
     y_max: 100
     y_title: '% of CPU usage'
 
+GPU Usage:
+  Host:
+    table: host.gpu
+    x: gpu.time | as_timestamp
+    y: gpu.render
+    y2: gpu.blitter
+    y3: gpu.video
+    y4: gpu.videoenhance
+
 CPU Usage:
   Host:
     table: host.client-pid
