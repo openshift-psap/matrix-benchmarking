@@ -5,13 +5,16 @@ import dash
 from dash.dependencies import Output, Input, State
 import dash_core_components as dcc
 import dash_html_components as html
+import socket
 
 from . import InitialState, UIState
 from . import quality
 
 control_center_boxes = defaultdict(list)
 
+USE_VIRSH = False
 VIRSH_VM_NAME = "fedora30"
+QMP_ADDR = "localhost", 4444
 
 def set_encoder(encoder_name, parameters):
     params_str = ";".join(f"{name+'=' if not name.startswith('_') else ''}{value}" for name, value in parameters.items() if value not in (None, "")) + ";"
@@ -19,8 +22,26 @@ def set_encoder(encoder_name, parameters):
                                arguments={"guest-encoder": encoder_name,
                                           "guest-encoder-params": params_str}))
 
-    cmd = f"virsh qemu-monitor-command {VIRSH_VM_NAME} '{json_msg}'"
-    os.system(cmd)
+    if USE_VIRSH:
+        cmd = f"virsh qemu-monitor-command {VIRSH_VM_NAME} '{json_msg}'"
+        os.system(cmd)
+    else:
+        qmp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        qmp_sock.connect(QMP_ADDR)
+        qmp_sock.send('{"execute":"qmp_capabilities"}'.encode('ascii'))
+        qmp_sock.send(json_msg.encode("ascii"))
+        resp = ""
+        to_read = 3
+        while True:
+            c = qmp_sock.recv(1).decode('ascii')
+            if not c: break
+            resp += c
+
+            if c == '\n':
+                to_read -= 1; resp = ""
+                if to_read == 0: break
+        del qmp_sock
 
     quality.Quality.add_to_quality(None, "ui", f"Set encoder: {encoder_name} || {params_str}")
 
