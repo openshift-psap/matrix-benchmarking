@@ -7,7 +7,6 @@ import re
 
 import measurement
 import utils.live
-import ui.dataview
 
 #---
 
