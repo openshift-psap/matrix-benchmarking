@@ -7,20 +7,19 @@ import datetime
 import measurement
 import utils.live
 
-class MPStat(measurement.Measurement):
+class SysStat(measurement.Measurement):
     def __init__(self, cfg, experiment):
         measurement.Measurement.__init__(self, experiment)
         self.process = None
 
-        subprocess.check_call('mpstat -V'.split(),
+        subprocess.check_call(self.check_cmd.split(),
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-        self.table = self.experiment.create_table(['time', 'sys.cpu_idle', "sys.guest_cpu"])
         self.live = utils.live.LiveStream()
         self.headers = None
 
     def start(self):
-        self.process = subprocess.Popen('mpstat 1'.split(),
+        self.process = subprocess.Popen(self.cmd.split(),
                                         stdout=subprocess.PIPE, close_fds=True,
                                         env=dict(S_TIME_FORMAT="ISO"))
         self.live.start(self.process.stdout)
@@ -28,6 +27,18 @@ class MPStat(measurement.Measurement):
     def stop(self):
         self.live.stop()
         self.process.kill()
+
+    def process_line(self, line):
+        raise NotImplementedError()
+
+class MPStat(SysStat):
+    def __init__(self, cfg, experiment):
+        self.cmd = 'mpstat 1'
+        self.check_cmd = 'mpstat -V'
+
+        SysStat.__init__(self, cfg, experiment)
+
+        self.table = self.experiment.create_table(['time', 'sys.cpu_idle', "sys.guest_cpu"])
 
     def process_line(self, line):
         if self.headers is None:

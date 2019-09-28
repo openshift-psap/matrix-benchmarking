@@ -4,28 +4,16 @@ from datetime import datetime
 
 import measurement
 import utils.live
+from . import mpstat
 
-class VMStat(measurement.Measurement):
+class VMStat(mpstat.SysStat):
     def __init__(self, cfg, experiment):
-        measurement.Measurement.__init__(self, experiment)
-        self.process = None
+        self.cmd = 'vmstat -t 1'
+        self.check_cmd = 'vmstat --version'
 
-        # verify we have the command we need
-        subprocess.check_call('vmstat --version'.split(),
-                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        mpstat.SysStat.__init__(self, cfg, experiment)
 
         self.table = self.experiment.create_table(['time', 'sys.mem_free'])
-        self.live = utils.live.LiveStream()
-        self.headers = []
-
-    def start(self):
-        # start vmstat
-        self.process = subprocess.Popen('vmstat -t 1'.split(), stdout=subprocess.PIPE, close_fds=True)
-        self.live.start(self.process.stdout)
-
-    def stop(self):
-        self.live.stop()
-        self.process.kill()
 
     def process_line(self, line):
         if "memory" in line: return # first header line
