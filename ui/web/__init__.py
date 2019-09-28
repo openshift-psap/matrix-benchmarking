@@ -16,8 +16,9 @@ external_stylesheets = [
 
 class InitialState():
     GRAPH_REFRESH_INTERVAL = 1 #s
-    QUALITY_REFRESH_INTERVAL = 1 #s
-    SCRIPT_REFRESH_INTERVAL = 1 #s
+    QUALITY_REFRESH_INTERVAL = 0 #s
+    SCRIPT_REFRESH_INTERVAL = 0 #s
+    LIVE_GRAPH_NB_SECONDS_TO_KEEP = 2*60 #s
 
 class UIState():
     VIEWER_MODE = False

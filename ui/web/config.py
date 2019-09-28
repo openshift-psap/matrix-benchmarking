@@ -6,9 +6,12 @@ import dash_html_components as html
 from . import InitialState, UIState
 from . import graph, quality
 
+def construct_config_stubs():
+    yield dcc.Input(type='number', value=0, id='graph-view-length')
+
 def construct_config_tab():
     if UIState.VIEWER_MODE:
-        return
+        return html.Div([tag for tag in construct_config_stubs()])
 
     children = [
         "Graph refresh period: ",
@@ -19,6 +22,9 @@ def construct_config_tab():
         dcc.Slider(min=0, max=100, step=1, value=InitialState.SCRIPT_REFRESH_INTERVAL,
                    marks={0:"0s", 100:"100s"}, id="cfg:script-refresh"),
         html.Br(),
+        "Number of seconds to show on the live graph: ",
+        dcc.Input(type='number', value=InitialState.LIVE_GRAPH_NB_SECONDS_TO_KEEP,
+                  id='graph-view-length'),
     ]
 
     return dcc.Tab(label="Config", children=children)

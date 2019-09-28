@@ -86,7 +86,8 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
     scatter_input = Input('url', 'pathname') if UIState.VIEWER_MODE else \
                     Input(graph_tab.to_id()+'-refresh', 'n_intervals')
     @UIState.app.callback(Output(graph_spec.to_id(), 'figure'),
-                          [scatter_input])
+                          [scatter_input,
+                          Input("graph-view-length", "value")])
     def update_graph_scatter(*args):
         if not UIState.DB.table_contents:
             return {}
@@ -98,14 +99,21 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
         content = UIState.DB.table_contents[tbl.table]
         X = tbl.get_x()
 
+        nb_seconds_to_keep = args[-1]
+        records_to_drop = 0
+        if nb_seconds_to_keep != 0:
+            for records_to_drop, v in enumerate(X):
+                if (X[-1] - v).seconds <= nb_seconds_to_keep: break
+
+        X_cut = X[records_to_drop:]
         plots = []
         y_max = 0
-        for y_field, Y in tbl.get_all_y():
-            y_max = max(Y + [y_max])
+        for y_field, Y in tbl.get_all_y(X):
+            y_max = max([y for y in Y if y is not None] + [y_max] + [0])
 
             plots.append(
                 plotly.graph_objs.Scatter(
-                    x=X, y=Y,
+                    x=X_cut, y=Y[records_to_drop:],
                     name=y_field.label,
                     mode= 'lines'))
 
@@ -114,7 +122,7 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
         layout.showlegend = True
 
         try:
-            layout.xaxis = dict(range=[min(X), max(X)])
+            layout.xaxis = dict(range=[min(X_cut), max(X_cut)])
         except ValueError: pass # X is empty
         layout.xaxis.title = graph_spec.x.label
 
@@ -138,7 +146,7 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
 
             plots.append(
                 go.Scatter(
-                    x=graph_spec.x.modify(quality_x),
+                    x=graph_spec.x.modify(quality_x, None),
                     y=quality_y,
                     name="Quality",
                     hovertext=quality_msg,
