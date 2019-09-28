@@ -6,6 +6,7 @@ import threading
 import re
 
 import measurement
+import measurement.hot_connect
 import utils.live
 
 #---
@@ -195,8 +196,10 @@ class AgentInterface(measurement.Measurement):
 # ---- #
 
 def register_entry_handlers(agent):
+    register_agent_info(agent)
+
     if agent.mode == "client":
-            register_frame_stats(agent)
+        register_frame_stats(agent)
 
     elif agent.mode == "server":
         register_quality(agent)
@@ -247,6 +250,13 @@ def register_quality(agent):
         print(f"Quality received: '{src}' says '{msg}'")
 
     agent.processors["quality_interface"] = process
+
+
+def register_agent_info(agent):
+    def process(entry):
+        print(f"{agent.mode}: Agent info received: '{entry.msg}'")
+
+    agent.processors["agent_info"] = process
 
 
 def register_stream_channel_data(agent):

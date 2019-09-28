@@ -9,6 +9,7 @@ import traceback
 
 import utils.yaml
 
+import measurement.hot_connect
 import measurement.agentinterface
 import agent.to_collector
 
@@ -174,6 +175,9 @@ def run(cfg):
     measurements = load_measurements(cfg, expe)
 
     deads = []
+
+    measurement.hot_connect.setup(loop, expe, measurements, deads)
+
     print("\n* Preparing the environment ...")
     for mod in measurements:
         mod.setup()
