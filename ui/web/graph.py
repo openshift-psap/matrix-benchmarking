@@ -40,46 +40,57 @@ class DB():
 
 class GraphFormat():
     @staticmethod
-    def as_B_to_GB(lst, first=None):
-        return [v/1000/1000 for v in lst]
+    def as_B_to_GB(Y_lst, X_lst):
+        return [v/1000/1000 for v in Y_lst]
 
     @staticmethod
-    def avg_20(lst, first=None):
+    def per_sec_5(Y_lst, X_lst):
+        return GraphFormat.per_sec_N(Y_lst, X_lst, 5)
+
+    @staticmethod
+    def per_sec_20(Y_lst, X_lst):
+        return GraphFormat.per_sec_N(Y_lst, X_lst, 20)
+
+    @staticmethod
+    def per_sec_60(Y_lst, X_lst):
+        return GraphFormat.per_sec_N(Y_lst, X_lst, 60)
+
+    @staticmethod
+    def per_sec_N(Y_lst, X_lst, n):
         from collections import deque
-        cache = deque(maxlen=20)
-        cache += lst[:cache.maxlen]
+        cache = deque()
 
-        avg = []
-        for e in lst:
-            cache.append(e)
-            avg.append(statistics.mean(cache))
+        def time_length(_cache):
+            l = _cache[-1][0] - _cache[0][0]
+            return l.seconds
 
-        return avg
+        enough = False
+        new = []
+        for x, y in zip(X_lst, Y_lst):
+            cache.append((x, y))
+            while time_length(cache) > n:
+                cache.popleft()
+                enough = True
 
-    @staticmethod
-    def as_it_is(lst, first=None):
-        print(lst)
-        return lst
+            if not enough:
+                new.append(None)
+            else:
+                new.append(sum([y for x,y in cache]) / n)
 
-    @staticmethod
-    def as_timestamp(lst, first=None):
-        return [datetime.datetime.fromtimestamp(t) for t in lst]
-
-    @staticmethod
-    def as_us_timestamp(lst, first=None):
-        return [datetime.datetime.fromtimestamp(t/1000000) for t in lst]
+        return new
 
     @staticmethod
-    def as_mm_time(lst, first=None):
-        if first is None and lst: first = lst[0]
-
-        return [(v - first)/1000 for v in lst]
+    def as_it_is(Y_lst, X_lst):
+        print(Y_lst)
+        return Y_lst
 
     @staticmethod
-    def as_guest_time(lst, first=None):
-        if first is None and lst: first = lst[0]
+    def as_timestamp(Y_lst, X_lst):
+        return [datetime.datetime.fromtimestamp(t) for t in Y_lst]
 
-        return [(v - first)*1000 for v in lst]
+    @staticmethod
+    def as_us_timestamp(Y_lst, X_lst):
+        return [datetime.datetime.fromtimestamp(t/1000000) for t in Y_lst]
 
 class DbTableForSpec():
     table_for_spec = {}
@@ -116,22 +127,24 @@ class DbTableForSpec():
     def idx(self, field):
         return self.table.fields.index(field.field_name)
 
-    def get(self, field):
+    def get(self, field, X):
         idx = self.idx(field)
 
         values = [(row[idx]) for row in self.content]
-
-        return list(field.modify(values))
+        try:
+            return list(field.modify(values, X))
+        except Exception as e:
+            print(e)
 
     def get_first_raw_x(self):
         return self.content[0][self.idx(self.graph_spec.x)]
 
     def get_x(self):
-        return self.get(self.graph_spec.x)
+        return self.get(self.graph_spec.x, None)
 
-    def get_all_y(self):
+    def get_all_y(self, X):
         for y_field in self.graph_spec.all_y_axis:
-            yield y_field, self.get(y_field)
+            yield y_field, self.get(y_field, X)
 
 class FieldSpec():
     def __init__(self, yaml_desc):
@@ -145,7 +158,7 @@ class FieldSpec():
         try:
             self.modify = getattr(GraphFormat, modif.strip())
         except AttributeError:
-            self.modify = lambda x:x
+            self.modify = lambda y,x:y
 
 class GraphSpec():
     def __init__(self, graph_tab, graph_name, yaml_desc):

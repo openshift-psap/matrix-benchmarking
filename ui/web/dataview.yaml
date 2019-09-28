@@ -65,6 +65,9 @@ Frame Processing:
     table: host.client
     x: client.msg_ts | as_us_timestamp
     y: client.decode_duration
+    y2: client.decode_duration | per_sec_5 > per_second (over 5s)
+    y3: client.decode_duration | per_sec_20 > per_second (over 20s)
+    y4: client.decode_duration | per_sec_60 > per_second (over 60s)
 
   Client queue:
     table: host.client
