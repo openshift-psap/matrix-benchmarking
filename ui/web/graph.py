@@ -148,7 +148,8 @@ class FieldSpec():
             self.modify = lambda x:x
 
 class GraphSpec():
-    def __init__(self, graph_name, yaml_desc):
+    def __init__(self, graph_tab, graph_name, yaml_desc):
+        self.graph_tab = graph_tab
         self.graph_name = graph_name
         self.yaml_desc = yaml_desc
         self.table = yaml_desc["table"]
@@ -174,7 +175,7 @@ class GraphSpec():
         return self.yaml_desc[name]
 
     def to_id(self):
-        return self.graph_name.lower().replace(" ", "-")
+        return self.graph_tab.to_id() + "-" + self.graph_name.lower().replace(" ", "-")
 
 
 class GraphTabContent():
@@ -182,8 +183,9 @@ class GraphTabContent():
         self.tab_name = tab_name
         self.yaml_desc = yaml_desc
 
-        self.graphs = [GraphSpec(graph_name, graph_spec)
-                       for graph_name, graph_spec in self.yaml_desc.items()]
+        self.graphs = [GraphSpec(self, graph_name, graph_spec)
+                       for graph_name, graph_spec in self.yaml_desc.items()
+                       if not graph_spec.get("_disabled")]
 
     def to_id(self):
         return self.tab_name.lower().replace(" ", "-")

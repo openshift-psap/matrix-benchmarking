@@ -1,51 +1,72 @@
-System:
+Host System:
   Memory:
-    table: sys
+    table: host.sys
     x: time | as_timestamp
     y: sys.mem_free | as_B_to_GB > Free
     y_title: GB of RAM
 
   CPU Usage:
-    table: sys
+    table: host.sys
     x: time | as_timestamp
     y: sys.cpu_idle > Idle
     y2: sys.guest_cpu > Guest
     y_max: 100
     y_title: '% of CPU usage'
 
+Guest System:
+  Memory:
+    table: guest.sys
+    x: time | as_timestamp
+    y: sys.mem_free | as_B_to_GB > Free
+    y_title: GB of RAM
+
+  CPU Usage:
+    table: guest.sys
+    x: time | as_timestamp
+    y: sys.cpu_idle > Idle
+    y_max: 100
+    y_title: '% of CPU usage'
+
 Frames Size:
   Guest frame size:
-    table: guest
+    table: guest.guest
     x: guest.msg_ts | as_us_timestamp
     y: guest.frame_size
-    y2: guest.frame_size | avg_20 > avg(20)
+    y2: guest.frame_size | per_sec_5 > bw(5s)
+    y3: guest.frame_size | per_sec_20 > bw(20s)
+    y4: guest.frame_size | per_sec_60 > bw(60s)
 
   Host frame size:
-    table: host
+    table: host.host
     x: host.msg_ts | as_us_timestamp
     y: host.frame_size
     _collapsed: true
+    _disabled: true
 
   Client frame size:
-    table: client
+    table: host.client
     x: client.msg_ts | as_us_timestamp
     y: client.frame_size
     _collapsed: true
+    _disabled: true
 
 Frame Processing:
   Guest processing duration:
-    table: guest
+    table: guest.guest
     x: guest.msg_ts | as_us_timestamp
     y: guest.capture_duration
-    y2: guest.encode_duration
-    y3: guest.send_duration
+    y2: guest.capture_duration | per_sec_5 > per_second (over 5s)
+    y3: guest.capture_duration | per_sec_20 > per_second (over 20s)
+    y4: guest.capture_duration | per_sec_60 > per_second (over 60s)
+    _y2: guest.encode_duration
+    _y3: guest.send_duration
 
   Client processing duration:
-    table: client
+    table: host.client
     x: client.msg_ts | as_us_timestamp
     y: client.decode_duration
 
   Client queue:
-    table: client
+    table: host.client
     x: client.msg_ts | as_us_timestamp
     y: client.queue

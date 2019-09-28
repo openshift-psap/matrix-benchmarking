@@ -10,8 +10,9 @@ import utils.live
 
 #---
 
-HOST = "localhost"
-PORT = 1230
+DEFAULT_HOST = "localhost"
+DEFAULT_PORT = 1230
+DEFAULT_MODE = "local"
 
 class Quality():
     def __init__(self, expe, fields):
@@ -25,8 +26,8 @@ class Quality():
 
         self.expe.new_quality(ts, src, msg)
 
-def create_table(experiment, line):
-    # eg: "#3 frames|client.mm_time;client.frame_size;client.time;client.decode_duration;client.queue"
+def create_table(experiment, line, mode=None):
+    # line: "#3 frames|client.mm_time;client.frame_size;client.time;client.decode_duration;client.queue"
     table_uname, fields_name = line.split("|")
     table_name = table_uname.split(" ")[1]
 
@@ -34,26 +35,9 @@ def create_table(experiment, line):
     if table_name == "quality":
         table = Quality(experiment, fields)
     else:
-        table = experiment.create_table(fields)
+        table = experiment.create_table(fields, mode)
 
     return table_uname, table
-
-def initialize(sock, experiment):
-    nb_tables = struct.unpack("I", sock.recv(4))[0]
-
-    print(f"Received {nb_tables} table definitions")
-    tables = {}
-    for _ in range(nb_tables):
-        msg = ""
-        last = b""
-        while last != b"\0":
-            last = sock.recv(1)
-            msg += last.decode("ascii")
-
-        table_uname, table = create_table(experiment, msg[:-1])
-        tables[table_uname] = table
-
-    return tables
 
 
 async def async_read_dataset(reader):
@@ -77,21 +61,44 @@ class Perf_Collect(measurement.Measurement):
         self.current_table = None
         self.current_table_uname = None
 
+        self.host = cfg.get("host", DEFAULT_HOST)
+        self.port = cfg.get("port", DEFAULT_PORT)
+        self.mode = cfg.get("mode", DEFAULT_MODE)
+
+    def initialize_localagent(self):
+        nb_tables = struct.unpack("I", self.sock.recv(4))[0]
+
+        print(f"Received {nb_tables} table definitions")
+        tables = {}
+        for _ in range(nb_tables):
+            msg = ""
+            last = b""
+            while last != b"\0":
+                last = self.sock.recv(1)
+                msg += last.decode("ascii")
+
+            table_uname, table = create_table(self.experiment, msg[:-1], self.mode)
+
+            tables[table_uname] = table
+
+        return tables
+
     def send_quality(self, quality_msg):
         print(">>>", quality_msg)
         self.sock.send((quality_msg + "\0").encode("ascii"))
 
     def setup(self):
-        self.experiment.send_quality_cb = self.send_quality
+        self.experiment.send_quality_cbs.append(self.send_quality)
 
     def start(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            self.sock.connect((HOST, PORT))
+            self.sock.connect((self.host, self.port))
         except ConnectionRefusedError:
-            raise Exception(f"Cannot cannot to the SmartLocalAgent on {HOST}:{PORT}")
+            raise Exception("Cannot connect to the SmartLocalAgent on "
+                            f"{self.host}:{self.port} ({self.mode})")
 
-        self.tables = initialize(self.sock, self.experiment)
+        self.tables = self.initialize_localagent()
 
         self.live = utils.live.LiveSocket(self.sock, async_read_dataset)
 

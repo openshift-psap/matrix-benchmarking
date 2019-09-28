@@ -1,43 +1,63 @@
-## Description to put on the experiment
-#description: 'Experiment description'
+default: host_agent
 
-# These are the measurement take
-# Each measurement can have options
+# ---
 measurement_sets:
-  host:
+  central:
     - VMStat
     - MPStat
     - AgentInterface:
         port: 1235
         mode: server
+    - AgentInterface:
+        host: 192.168.122.186
+        port: 1236
+        mode: guest
+    - AgentInterface:
+        port: 1234
+        mode: client
 
   guest:
     - VMStat
     - MPStat
     - AgentInterface:
-        host: 192.168.122.186
         port: 1236
         mode: guest
 
-  client:
+  host:
     - VMStat
     - MPStat
     - AgentInterface:
         port: 1234
         mode: client
+    - AgentInterface:
+        port: 1235
+        mode: server
 
   collector:
-    - Perf_Collect
+    - Perf_Collect:
+        port: 1230
+        mode: host
+    - Perf_Collect:
+        port: 1230
+        host: 192.168.122.186
+        mode: guest
 
   viewer:
     - Perf_Viewer
 
-central_agent:
-  run_as_agent: True
+# --- #
+
+host_agent:
   measurement_sets:
     - host
+
+guest_agent:
+  measurement_sets:
     - guest
-    - client
+
+central_agent:
+  measurement_sets:
+    - central_agent
 
 collector:
   run_as_agent: False
@@ -48,14 +68,3 @@ viewer:
   run_as_agent: False
   measurement_sets:
     - viewer
-
-# machine to connect to, currently only local and
-# accessible through ssh (remote)
-machines:
-  guest:
-   type: remote
-   host: vm.fedora30
-  client:
-   type: local
-  host:
-   type: local

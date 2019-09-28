@@ -45,13 +45,16 @@ class Perf_Viewer(measurement.Measurement):
             print("WARNING: quality graph markers not shared with UI.")
 
         while True:
-            table_def = self.input_f.readline()
-            if not table_def: break
+            _table_def = self.input_f.readline()
+            if not _table_def: break
 
             content_str = self.input_f.readline()
             quality_str = self.input_f.readline()
 
-            _, table = measurement.perf_collect.create_table(self.experiment, table_def[:-1])
+            mode = _table_def.split()[1].split(".")[0]
+            table_def = _table_def.replace(f" {mode}.", " ")[:-1]
+
+            _, table = measurement.perf_collect.create_table(self.experiment, table_def, mode)
             for cpt, row in enumerate(json.loads(content_str)):
                 table.add(*row)
 

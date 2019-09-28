@@ -16,7 +16,7 @@ VERBOSE = False
 quit_signal = False
 
 class AgentTable():
-    def __init__(self, tid, expe, fields):
+    def __init__(self, tid, expe, fields, mode=None):
         self.fields = fields
         self.expe = expe
         self.tid = tid
@@ -24,9 +24,12 @@ class AgentTable():
         table_names = {field.partition(".")[0] for field in fields if field != "time"}
         if len(table_names) != 1:
             raise Exception(f"Not unique table name: {table_names} in {fields}")
-        self.table_name = table_names.pop()
+
+        self.table_name = (mode+"." if mode else "") + table_names.pop()
+
         if VERBOSE:
             print(self.table_name, "|", ", ".join(fields))
+
         if self.table_name == "quality":
             self.rows = []
 
@@ -52,9 +55,9 @@ class AgentExperiment():
         self.new_table = None
         self.new_table_row = None
         self.new_quality_cb = None
-
-    def create_table(self, fields):
-        table = AgentTable(self.tid, self, fields)
+        self.send_quality_cbs = []
+    def create_table(self, fields, mode=None):
+        table = AgentTable(self.tid, self, fields, mode)
         self.tid += 1
 
         if table.table_name == "quality":
@@ -68,11 +71,12 @@ class AgentExperiment():
         return table
 
     def send_quality(self, msg):
-        if not self.send_quality_cb:
+        if not self.send_quality_cbs:
             print("No callback set for sending quality message: ", msg)
             return
 
-        self.send_quality_cb(msg)
+        for send_quality_cb in self.send_quality_cbs:
+            send_quality_cb(msg)
 
     def set_quality_callback(self, cb):
         self.new_quality_callback = cb
@@ -86,7 +90,7 @@ def prepare_cfg(key):
 
     cfg_filename = "smart_agent.yaml"
     smart_cfg = utils.yaml.load_multiple(cfg_filename)
-
+    if key is None: key = smart_cfg["default"]
     if not key in smart_cfg:
         raise KeyError(f"Key '{key}' not found inside {cfg_filename}")
 
@@ -98,11 +102,7 @@ def prepare_cfg(key):
                 continue
             cfg["measurements"].append(measure)
 
-    cfg["machines"] = smart_cfg["machines"]
-
-    cfg["run_as_agent"] = smart_cfg[key]["run_as_agent"]
-    #localmachine = dict(type="local")
-    #cfg["machines"] = dict(guest=localmachine, host=localmachine, client=localmachine)
+    cfg["run_as_agent"] = smart_cfg[key].get("run_as_agent", True)
 
     return cfg
 
@@ -246,7 +246,7 @@ def prepare_gracefull_shutdown():
 def main():
     prepare_gracefull_shutdown()
 
-    key = "central_agent" if len(sys.argv) == 1 else sys.argv[1]
+    key = None if len(sys.argv) == 1 else sys.argv[1]
 
     try:
         cfg = prepare_cfg(key)
