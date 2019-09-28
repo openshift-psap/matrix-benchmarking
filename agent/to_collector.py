@@ -76,7 +76,8 @@ class Server():
                 self.quality_buffer.append(c)
 
             return True
-        except Exception:
+        except Exception as e:
+            print("thr_read_quality failed:", e)
             return False
 
     def thr_quality_to_agent(self, msg):
