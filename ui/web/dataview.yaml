@@ -27,6 +27,19 @@ Guest System:
     y_max: 100
     y_title: '% of CPU usage'
 
+CPU Usage:
+  Host:
+    table: host.client-pid
+    x: time | as_timestamp
+    y: client-pid.cpu_user
+    y2: client-pid.cpu_system
+
+  Guest:
+    table: guest.guest-pid
+    x: time | as_timestamp
+    y: guest-pid.cpu_user
+    y2: guest-pid.cpu_system
+
 Frames Size:
   Guest frame size:
     table: guest.guest

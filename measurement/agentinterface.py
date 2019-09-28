@@ -255,6 +255,11 @@ def register_quality(agent):
 def register_agent_info(agent):
     def process(entry):
         print(f"{agent.mode}: Agent info received: '{entry.msg}'")
+        if entry.msg.startswith("pid: "):
+            pid = int(entry.msg.partition(" ")[-1])
+            measurement.hot_connect.attach_to_pid(agent.experiment, agent.mode, pid)
+        else:
+            print("{agent.mode}: info not recognized...")
 
     agent.processors["agent_info"] = process
 
