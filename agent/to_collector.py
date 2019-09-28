@@ -66,6 +66,9 @@ class Server():
     def thr_read_quality(self, comm_sock):
         try:
             c = comm_sock.recv(1).decode("ascii")
+
+            if not c: return False
+
             if c == "\0":
                 self.thr_quality_to_agent("".join(self.quality_buffer))
                 self.quality_buffer[:] = []
