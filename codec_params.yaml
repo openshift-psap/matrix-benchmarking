@@ -1,4 +1,5 @@
-_template_group:
+template_group:
+  _group: true
   opt_name:
     type: int[start:stop:step]=default
     type: int # free range
@@ -6,11 +7,16 @@ _template_group:
     url: link for more information
 
 _all:
+  _group: true
   framerate:
     type: int[0:120:5]=30
 
-_gst:vp:
-  _prefix: gst.prop=
+grp_gst:
+  _group: true
+
+grp_gst-vp8-9_sw_encoding:
+  _prefix: gst.$3.prop=
+  _group: true
   keyframe-max-dist:
     type: int
     desc: "maximum distance between keyframes (number of frames)"
@@ -38,11 +44,58 @@ _gst:vp:
     desc: "rate control mode"
     default: vbr
     url: "https://thiblahute.github.io/GStreamer-doc/vpx-1.0/vp8enc.html?gi-language=c#GstVP8Enc:end-usage"
-gst:vp8:
-gst:vp9:
-gst:h264:
-gst:h265:
-gst:mjpeg:
+
+grp_gst-vp8-9_intelvaapi_encoding:
+  _prefix: gst.$3.prop=
+  _group: true
+  bitrate:
+    type: uint
+    desc: "The desired bitrate expressed in kbps (0: auto-calculate)"
+    url: "https://gstreamer.freedesktop.org/documentation/vaapi/vaapivp8enc.html?gi-language=c#vaapivp8enc:bitrate"
+    default: 0
+  default-roi-delta-qp:
+    type: int
+    desc: "The default delta-qp to apply to each Region of Interest(lower value means higher-quality, higher value means lower-quality)"
+    default: -10
+    url: "https://gstreamer.freedesktop.org/documentation/vaapi/vaapivp8enc.html#vaapivp8enc:default-roi-delta-qp"
+  keyframe-period:
+    type: uint
+    default: 30
+    desc: "Maximal distance between two keyframes (0: auto-calculate)"
+    url: "Maximal distance between two keyframes (0: auto-calculate)"
+  quality-level:
+    type: uint
+    desc: "Encoding Quality Level (lower value means higher-quality/slow-encode, higher value means lower-quality/fast-encode)"
+    default: 4
+  rate-control:
+    type: enum
+    values: vbr, cbr, cqp
+    desc: "Rate control mode"
+    default: cqp
+    url: "https://gstreamer.freedesktop.org/documentation/vaapi/vaapivp8enc.html#vaapivp8enc:rate-control"
+  sharpness-level:
+    type: uint
+    desc: "Controls the deblocking filter sensitivity"
+    default: 0
+    url: "https://gstreamer.freedesktop.org/documentation/vaapi/vaapivp9enc.html#vaapivp8enc:sharpness-level"
+
+gst.vp8.vp8enc:
+  _group: grp_gst-vp8-9_sw_encoding
+
+gst.vp8.vaapivp8enc:
+  _group: grp_gst-vp8-9_intelvaapi_encoding
+
+gst.vp9.vaapivp9enc:
+  _group: grp_gst-vp8-9_intelvaapi_encoding
+
+  cpb-length:
+    type: uint
+    default: 128
+    desc: "Length of the CPB_buffer/window_size in milliseconds"
+    url: "https://gstreamer.freedesktop.org/documentation/vaapi/vaapivp9enc.html#vaapivp9enc:cpb-length"
+
+gst.h264.vaapih264enc:
+gst.mjpeg.vaapimpeg2enc:
 native:mjpeg:
   quality:
     _prefix: mjpeg.

@@ -29,21 +29,22 @@ def set_encoder(encoder_name, parameters):
 def construct_codec_control_callback(codec_name):
     if UIState.VIEWER_MODE: return
 
+    codec_id_name = codec_name.replace(".", ":")
     cb_states = [State(tag_id, tag_cb_field) \
                  for tag_id, tag_cb_field, *_ in control_center_boxes[codec_name]]
 
     param_names = [prefix+tag_id.rpartition(":")[-1]
                    for tag_id, tag_cb_field, _, prefix in control_center_boxes[codec_name]]
-    @UIState.app.callback(Output(f"{codec_name}-msg", 'children'),
-                          [Input(f'{codec_name}-go-button', "n_clicks"),
-                           Input(f'{codec_name}-reset-button', "n_clicks")],
+    @UIState.app.callback(Output(f"{codec_id_name}-msg", 'children'),
+                          [Input(f'{codec_id_name}-go-button', "n_clicks"),
+                           Input(f'{codec_id_name}-reset-button', "n_clicks")],
                           cb_states)
     def activate_codec(*args):
         triggered_id = dash.callback_context.triggered[0]["prop_id"]
 
         go_n_clicks, reset_n_clicks, *states = args
 
-        if triggered_id == f"{codec_name}-reset-button.n_clicks":
+        if triggered_id == f"{codec_id_name}-reset-button.n_clicks":
             if reset_n_clicks is None: return # button creation
 
             set_encoder("reset", {})
@@ -72,8 +73,9 @@ def construct_codec_control_callback(codec_name):
 
 def construct_codec_control_callbacks(codec_cfg):
     for codec_name, options in codec_cfg.items():
-        if codec_name.startswith("_"): continue
-        if options and "_disabled" in options: continue
+        if not options: options = {}
+        if options.get("_group") is True: continue
+        if options.get("_disabled"): continue
 
         construct_codec_control_callback(codec_name)
 
@@ -91,12 +93,13 @@ def construct_control_center_tab(codec_cfg):
             marks = {_min:_min, _max:_max}
             tag = dcc.Slider(min=_min, max=_max, step=_step, value=int(default), marks=marks)
             need_value_cb = True
-        elif opt_type.startswith("int"):
+
+        elif opt_type.startswith("int") or opt_type == "uint":
             default = int(opt_type.partition("=")[-1]) if opt_type.startswith("int=") else ""
 
             tag = dcc.Input(placeholder=f'Enter a numeric value for "{opt_name}"',
                                     type='number', value=default, style={"width": "100%"})
-            need_value_cb = True
+            need_value_cb = False
 
         elif opt_type == "enum":
             options = [{'label': enum, 'value': enum} for enum in [""] + opt_props['values'].split(", ")]
@@ -113,6 +116,9 @@ def construct_control_center_tab(codec_cfg):
         tag.id = tag_id
 
         prefix = opt_props.get("_prefix", "")
+        for i, v in enumerate(codec_name.split(".")):
+            prefix = prefix.replace(f"${i+1}", v)
+
         control_center_boxes[codec_name].append((tag_id, tag_cb_field, need_value_cb, prefix))
 
         opt_name_span = html.Span(opt_name)
@@ -132,14 +138,28 @@ def construct_control_center_tab(codec_cfg):
         return [html.P(children=children, style={"text-align": "center"}),
                 html.P([tag])]
 
-    def get_codec_params(codec_name):
+    def get_codec_params(codec_name, codec_id_name):
         all_options = {}
         for name, options in codec_cfg.items():
             if not options: continue
 
-            if name == "_all" or name.startswith("_") and codec_name.startswith(name[1:]): pass # keep
-            elif codec_name == name: pass # keep
+            if codec_name == name: pass # keep
+            elif name == "_all": pass # keep
+            elif options.get("_group") is True:
+                codec_opts = codec_cfg.get(codec_name)
+                if not codec_opts: continue
+                group = codec_opts.get("_group")
+                try:
+                    if group != name and name not in group:
+                        continue
+                    # else: keep
+                except TypeError: continue # argument of type 'bool' is not iterable
+
             else: continue
+
+            if "_group" in options:
+                options = options.copy()
+                del options["_group"]
 
             if "_prefix" in options:
                 prefix = options["_prefix"]
@@ -148,6 +168,7 @@ def construct_control_center_tab(codec_cfg):
                 for param_option in options.values():
                     param_option["_prefix"] = prefix
 
+
             all_options.update(options)
 
         for opt_name, opt_props in all_options.items():
@@ -155,22 +176,22 @@ def construct_control_center_tab(codec_cfg):
 
         yield from get_option_box(codec_name, "custom", {"desc": "format: (key=value;)*"})
 
-        yield html.P(id=f"{codec_name}-msg", style={"text-align":"center"})
+        yield html.P(id=f"{codec_id_name}-msg", style={"text-align":"center"})
 
     def get_codec_tabs():
         for codec_name, options in codec_cfg.items():
-            if codec_name.startswith("_"): continue
-
             if options is None: options = {}
 
-            if "_disabled" in options: continue
+            if options.get("_group") is True: continue
+            if options.get("_disabled"): continue
 
             print(f"Create {codec_name} tab ...")
+            codec_id_name = codec_name.replace(".", ":")
             children = []
-            children += [html.Div([html.Button('Go!', id=f'{codec_name}-go-button'),
-                                   html.Button('Reset', id=f'{codec_name}-reset-button')],
+            children += [html.Div([html.Button('Go!', id=f'{codec_id_name}-go-button'),
+                                   html.Button('Reset', id=f'{codec_id_name}-reset-button')],
                                   style={"text-align": "center"})]
-            children += get_codec_params(codec_name)
+            children += get_codec_params(codec_name, codec_id_name)
 
             yield dcc.Tab(label=codec_name, children=children)
 
