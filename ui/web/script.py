@@ -2,14 +2,64 @@ import dash
 from dash.dependencies import Output, Input, State
 import dash_core_components as dcc
 import dash_html_components as html
-import datetime, time
-import os
+import os, time
 import threading
 
 import utils.yaml
 
 from . import InitialState, UIState
 from . import quality, graph, control
+
+class Exec():
+    def __init__(self, script, dry):
+        self.dry = dry
+        self.script = script
+        self.total_wait_time = 0
+
+    def log(self, *args):
+        self.script.log(*args)
+
+    def execute(self, cmd):
+        self.log("exec:", cmd)
+        if self.dry: return
+        os.system(cmd)
+
+    def set_encoding(self, codec, params):
+        self.log("set_enc:", codec, params)
+        if self.dry: return
+        control.set_encoder(codec, params)
+
+    def wait(self, nb_sec):
+        self.log(f"wait {nb_sec} seconds")
+        self.total_wait_time += nb_sec
+        if self.dry: return
+        time.sleep(nb_sec)
+
+    def clear_quality(self):
+        self.log(f"clear quality")
+        if self.dry: return
+        quality.Quality.clear()
+
+    def append_quality(self, msg):
+        quality_msg = (0, "script", msg)
+        self.log(f"append to quality: ", ":".join(quality_msg[1:]))
+        if self.dry: return
+        quality.Quality.add_to_quality(*quality_msg)
+
+    def clear_graph(self):
+        self.log(f"clear graphs")
+        if self.dry: return
+        graph.DB.clear_graphs()
+
+    def save_graph(self, fname):
+        self.log(f"save graph into {fname}")
+        if self.dry: return
+        graph.DB.save_to_file(fname)
+
+    def reset(self):
+        self.log(f"reset encoder params")
+        if self.dry: return
+        control.set_encoder("reset", {})
 
 class Script():
     all_scripts = {}
@@ -24,186 +74,36 @@ class Script():
         return self.yaml_desc["name"].lower().replace(" ", "-")
 
     def to_html(self):
-        def prop_to_html(key):
-            yield html.P([html.B(key+": "), html.I(self.yaml_desc.get(key, "[missing]"))])
-
-        def keylist_to_html(key, yaml_desc=self.yaml_desc):
-            if not key in yaml_desc: return
-
-            yield html.P(html.B(key+": "))
-            lst = [html.Li(e) for e in yaml_desc[key]]
-
-            yield html.Ul(lst)
-
-        def run_to_html():
-            yield html.P(html.B("run: "))
-            if not "run" in self.yaml_desc or self.yaml_desc["run"] is None:
-                yield "nothing to run"
-                return
-            yaml_run = self.yaml_desc["run"]
-
-            codecs = []
-            for test_name, test_params in yaml_run.items():
-                params = []
-
-                for param_name, param_values in test_params.items():
-                    if param_name.startswith("_"):
-                        param_tag = html.B(param_name[1:])
-                    else:
-                        param_tag = param_name
-
-                    params += [html.Li([param_tag, ": ", param_values])]
-
-                codecs += [html.Li([html.I(test_name), html.Ul(params)])]
-
-            yield html.Ul(codecs)
-
-        yield from prop_to_html("description")
-        yield from keylist_to_html("before")
-        yield from run_to_html()
-        yield from prop_to_html("wait")
-        yield from keylist_to_html("after")
-
-        yield html.Br()
+        yield "nothing"
 
     def log(self, *args):
-        Script.messages.append(self.name+": "+" ".join(map(str, args)))
+        Script.messages.append(" ".join(map(str, args)))
+
+    def do_run(self, exe):
+        self.log("This method should be overriden ...")
 
     def run(self, dry):
-        def execute(cmd):
-            self.log("exec:", cmd)
-            if dry: return
-            os.system(cmd)
-
-        def set_encoding(codec, params):
-            self.log("set_enc:", codec, params)
-            if dry: return
-            control.set_encoder(codec, params)
-
-        total_wait_time = 0
-        def wait(nb_sec):
-            self.log(f"wait: {nb_sec} seconds")
-            nonlocal total_wait_time
-            total_wait_time += nb_sec
-            if dry: return
-            time.sleep(nb_sec)
-
-        def clear_quality():
-            self.log(f"quality: clear")
-            if dry: return
-            quality.Quality.clear()
-
-        def append_quality(msg):
-            quality_msg = (0, "script", msg)
-            self.log(f"quality: append: ", ":".join(quality_msg[1:]))
-            if dry: return
-            quality.Quality.add_to_quality(*quality_msg)
-
-        def clear_graph():
-            self.log(f"graph: clear")
-            if dry: return
-            graph.DB.clear_graphs()
-
-        def save_graph(fname):
-            self.log(f"graph: save into {fname}")
-            if dry: return
-            graph.DB.save_to_file(fname)
-
-        def reset():
-            self.log(f"reset encoder params")
-            if dry: return
-            control.set_encoder("reset", {})
-
-        def do_run():
-            Script.messages[:] = []
-            self.log("running" + " (dry)" if dry else "!")
-
-            codec_name = self.yaml_desc["codec"]
-            record_time = int(self.yaml_desc["wait"])
-
-
-            first_record = True
-            def init_recording(test_name):
-                clear_graph()
-                clear_quality()
-                wait(1)
-                append_quality(f"!running: {self.name}")
-                wait(1)
-                append_quality(f"!running: {self.name} / {test_name}")
-                wait(1)
-
-            for cmd in self.yaml_desc.get("before", []): execute(cmd)
-
-            reset()
-
-            for test_name, test_cfg in self.yaml_desc["run"].items():
-                if test_cfg.get("_disabled", False):
-                    self.log(f"{self.name} / {test_name}: disabled")
-                    continue
-
-                if not first_record:
-                    append_quality(f"!running: {self.name} / {test_name}")
-                rolling_param  = None
-                fixed_params = {}
-
-                for param_name, param_value in test_cfg.items():
-                    if param_name.startswith("_"):
-                        assert rolling_param is None
-                        rolling_param = param_name[1:], param_value
-                        continue
-
-                    fixed_params[param_name] = param_value
-
-                first_test = True
-                for rolling_param_value in rolling_param[1].split(", "):
-                    if first_test:
-                        first_test = True
-
-                        first_params = {**fixed_params, **{rolling_param[0]: rolling_param_value}}
-                        set_encoding(codec_name, first_params)
-
-                        if first_record:
-                            first_record = False
-
-                            # this late initialization is necessary to
-                            # ensure that the recording data are 100%
-                            # clean: the first encoding config is already
-                            # set, so no data from the previous
-                            # configuration is recorded
-                            init_recording(test_name)
-
-                            set_encoding(codec_name, first_params)
-                    else:
-                        set_encoding(codec_name, {rolling_param[0]: rolling_param_value})
-
-                    wait(record_time)
-
-                reset()
-                wait(5)
-
-            append_quality(f"!finished: {self.name}")
-
-            dest = self.to_id() + "_" + datetime.datetime.today().strftime("%Y%m%d-%H%M") + ".rec"
-            save_graph(dest)
-
-            for cmd in self.yaml_desc.get("after", []): execute(cmd)
-
-            self.log("done!")
-            self.log(f"Estimated time: {total_wait_time/60:.0f}min{total_wait_time%60}s")
-            if not dry: return
-
-            Script.thr = None
-
+        exe = Exec(self, dry)
         if dry:
-            do_run()
+            self.log(f"Running {self.name} (dry)")
+            self.do_run(exe)
+            self.log(f"Estimated time: {exe.total_wait_time/60:.0f}min{exe.total_wait_time%60}s")
         elif Script.thr:
             self.log("Failed, a script thread is already running ...")
         else:
-            Script.thr = threading.Thread(target=do_run)
+            def run_thr(exe):
+                Script.messages[:] = []
+                self.log(f"Running {self.name}!")
+                self.do_run(exe)
+                Script.thr = None
+
+            Script.thr = threading.Thread(target=run_thr, args=(exe,))
             Script.thr.daemon = True
             Script.thr.start()
 
 def construct_script_tabs():
+    from . import script_types
+
     Script.all_scripts.clear()
 
     all_yaml_desc = utils.yaml.load_all("test_cases.yaml")
@@ -211,12 +111,16 @@ def construct_script_tabs():
     for script_yaml_desc in all_yaml_desc:
         if not script_yaml_desc: continue
         if script_yaml_desc.get("disabled", False) is True: continue
+        try:
+            script_type = script_types.TYPES[script_yaml_desc.get("_type")]
+        except KeyError:
+            yield dcc.Tab(label="Invalid script")
+            return
 
-        script = Script(script_yaml_desc)
+        script = script_type(script_yaml_desc)
         Script.all_scripts[script.to_id()] = script
 
-        yield dcc.Tab(value=script.to_id(),
-                      label=script.name,
+        yield dcc.Tab(value=script.to_id(), label=script.name,
                       children=list(script.to_html()))
 
 def construct_script_tab():
