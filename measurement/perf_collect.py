@@ -26,19 +26,6 @@ class Quality():
 
         self.expe.new_quality(ts, src, msg)
 
-def create_table(experiment, line, mode=None):
-    # line: "#3 frames|client.mm_time;client.frame_size;client.time;client.decode_duration;client.queue"
-    table_uname, fields_name = line.split("|")
-    table_name = table_uname.split(" ")[1]
-
-    fields = fields_name.split(";")
-    if table_name == "quality":
-        table = Quality(experiment, fields)
-    else:
-        table = experiment.create_table(fields, mode)
-
-    return table_uname, table
-
 
 async def async_read_dataset(reader):
     b_line = b""
@@ -64,6 +51,41 @@ class Perf_Collect(measurement.Measurement):
         self.host = cfg.get("host", DEFAULT_HOST)
         self.port = cfg.get("port", DEFAULT_PORT)
         self.mode = cfg.get("mode", DEFAULT_MODE)
+        self.tables = {}
+
+    def create_table(self, line):
+        self.__class__.do_create_table(self.experiment, line, self.mode, self.tables)
+
+    @staticmethod
+    def do_create_table(experiment, line, mode, tables=None):
+        # line: "frames|client.mm_time;client.frame_size;client.time;client.decode_duration;client.queue"
+
+        table_name, fields_name = line.split("|")
+        fields = fields_name.split(";")
+
+        if tables and table_name in tables:
+            old_fields = tables[table_name].fields
+
+            if (len(old_fields) != len(fields) or
+                any([a != b for a, b in zip(old_fields, fields)])
+            ):
+                print(f"ERROR: Trying to re-create table {table_name} with different fields")
+                print(f"ERROR: Old fields: {', '.join(old_fields)}")
+                print(f"ERROR: New fields: {', '.join(fields)}")
+                raise AttributeError()
+            else:
+                print(f"INFO: Table '{table_name}' is already known.")
+                return
+
+        if table_name == "quality":
+            table = Quality(experiment, fields)
+        else:
+            table = experiment.create_table(fields, mode)
+
+        if tables is not None:
+            tables[table_name] = table
+
+        return table
 
     def initialize_localagent(self):
         nb_tables = struct.unpack("I", self.sock.recv(4))[0]
@@ -77,11 +99,10 @@ class Perf_Collect(measurement.Measurement):
                 last = self.sock.recv(1)
                 msg += last.decode("ascii")
 
-            table_uname, table = create_table(self.experiment, msg[:-1], self.mode)
+            if not msg.startswith("#"): import pdb;pdb.set_trace()
 
-            tables[table_uname] = table
-
-        return tables
+            # eg: msg = '#client-pid|time;client-pid.cpu_user;client-pid.cpu_system\0'
+            self.create_table(msg[1:-1])
 
     def send_quality(self, quality_msg):
         print(">>>", quality_msg)
@@ -98,7 +119,7 @@ class Perf_Collect(measurement.Measurement):
             raise Exception("Cannot connect to the SmartLocalAgent on "
                             f"{self.host}:{self.port} ({self.mode})")
 
-        self.tables = self.initialize_localagent()
+        self.initialize_localagent()
 
         self.live = utils.live.LiveSocket(self.sock, async_read_dataset)
 
@@ -107,16 +128,26 @@ class Perf_Collect(measurement.Measurement):
 
     def process_line(self, buf):
         line = buf.decode("ascii")
-        if line.startswith("#"): # eg: '#3 frames'
-            self.current_table_uname, lenght = line.split("|")
-            self.current_table = self.tables[self.current_table_uname]
+
+        if line.startswith("#"): # eg: '#client-pid|time;client-pid.cpu_user;client-pid.cpu_system' --> new table
+            self.create_table(line[1:])
+
+        elif line.startswith("@"): # eg: '@frames' --> new 'frames' records comming next
+            self.current_table_uname, lenght = line[1:].split("|")
+            try:
+                self.current_table = self.tables[self.current_table_uname]
+            except KeyError as e:
+                import pdb;pdb.set_trace()
+                pass
         else:
             line_tuple = line[1:-1].split(", ")
 
             def cast(elt):
-                if elt == "None": import pdb;pdb.set_trace()
-                return float(elt) if ("." in elt or "e" in elt) else int(elt)
-
+                try:
+                    return float(elt) if ("." in elt or "e" in elt) else int(elt)
+                except ValueError:
+                    import pdb;pdb.set_trace()
+                    pass
             if isinstance(self.current_table, Quality):
                 self.current_table.add(line_tuple)
             else:

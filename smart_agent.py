@@ -17,10 +17,9 @@ VERBOSE = False
 quit_signal = False
 
 class AgentTable():
-    def __init__(self, tid, expe, fields, mode=None):
+    def __init__(self, expe, fields, mode=None):
         self.fields = fields
         self.expe = expe
-        self.tid = tid
 
         table_names = {field.partition(".")[0] for field in fields if field != "time"}
         if len(table_names) != 1:
@@ -46,20 +45,24 @@ class AgentTable():
             self.rows.append(row)
 
     def header(self):
-        return f"#{self.tid} {self.table_name}|{';'.join(self.fields)}"
+        return f"#{self.table_name}|{';'.join(self.fields)}"
 
 class AgentExperiment():
     def __init__(self):
-        self.tables = []
+        self.tables = {}
+
         self.quality = None
-        self.tid = 0
         self.new_table = None
         self.new_table_row = None
         self.new_quality_cb = None
         self.send_quality_cbs = []
+
     def create_table(self, fields, mode=None):
-        table = AgentTable(self.tid, self, fields, mode)
-        self.tid += 1
+        table = AgentTable(self, fields, mode)
+
+        try:
+            return self.tables[table.table_name]
+        except KeyError: pass # new table, proceed
 
         if table.table_name == "quality":
             assert self.quality is None, "Quality table already created ..."
@@ -68,7 +71,8 @@ class AgentExperiment():
         if self.new_table:
             self.new_table(table)
 
-        self.tables.append(table)
+        self.tables[table.table_name] = table
+
         return table
 
     def send_quality(self, msg):

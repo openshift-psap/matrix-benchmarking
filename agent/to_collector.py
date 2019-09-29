@@ -88,15 +88,17 @@ class Server():
         if not (table and table.rows):
             return
 
-        client_sock.send(f"#{table.tid} {table.table_name}|{len(table.rows)}\0".encode("ascii"))
+        msg = f"@{table.table_name}|{len(table.rows)}".encode("ascii")
+        self.send_one(msg, client_sock)
+
         for row in table.rows:
-            client_sock.send(str(row).encode("ascii") + b"\0")
+            self.send_one(str(row).encode("ascii"), client_sock)
 
     def initialize_new_client(self, client_sock):
         client_sock.send(struct.pack("I", len(self.expe.tables)))
-        for i, table in enumerate(self.expe.tables):
-            msg = f"#{i} {table.table_name}|" +";".join([f for f in table.fields]) + "\0"
-            client_sock.send(msg.encode("ascii"))
+
+        for table in self.expe.tables.values():
+            self.send_table_def(table, client_sock)
 
     def periodic_checkup(self):
         self.initialize_new_clients()
@@ -109,19 +111,30 @@ class Server():
             self.send_quality_backlog(client)
             self.current_clients.append(client)
 
-    def send_all(self, line):
-        for client in self.current_clients[:]:
+    def send_one(self, msg, client_sock):
+        return client_sock.send(msg + b"\0")
+
+    def send_all(self, msg):
+        for client_sock in self.current_clients[:]:
             try:
-                client.send(line + b"\0")
+                self.send_one(msg, client_sock)
             except Exception as e:
                 # safe as we're using a copy of the list
-                self.current_clients.remove(client)
-                addr, port = client.getsockname()
+                self.current_clients.remove(client_sock)
+                addr, port = client_sock.getsockname()
                 print(f"Client {addr}:{port} disconnected ({e})")
 
     def new_table_row(self, table, row):
-        self.send_all(f"#{table.tid} {table.table_name}|1".encode("ascii"))
+        self.send_all(f"@{table.table_name}|1".encode("ascii"))
         self.send_all(str(row).encode("ascii"))
 
     def new_table(self, table):
-        pass
+        self.send_table_def(table)
+
+    def send_table_def(self, table, client_sock=None):
+        msg = (f"#{table.table_name}|" +";".join([f for f in table.fields])).encode("ascii")
+
+        if client_sock:
+            self.send_one(msg, client_sock)
+        else:
+            self.send_all(msg)

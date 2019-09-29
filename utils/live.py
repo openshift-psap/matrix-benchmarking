@@ -27,6 +27,8 @@ class LiveCollect():
             async for line in stream_as_generator(loop, self.stream):
                 try:
                     process(line)
+                except StopIteration:
+                    break
                 except Exception as e:
                     self.exception.append((e, sys.exc_info()))
             self.alive = False

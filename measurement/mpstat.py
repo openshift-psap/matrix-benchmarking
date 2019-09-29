@@ -38,7 +38,7 @@ class MPStat(SysStat):
 
         SysStat.__init__(self, cfg, experiment)
 
-        self.table = self.experiment.create_table(['time', 'sys.cpu_idle', "sys.guest_cpu"])
+        self.table = self.experiment.create_table(['time', 'cpu.idle', "cpu.guest"])
 
     def process_line(self, line):
         if self.headers is None:

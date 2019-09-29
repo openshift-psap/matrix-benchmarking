@@ -21,7 +21,7 @@ class DB():
         output = open(filename, "w")
         print(json.dumps(quality.Quality.quality), file=output)
 
-        for table in DB.expe.tables:
+        for table in DB.expe.tables.values():
             print(table.header(), file=output)
             print(json.dumps(DB.table_contents[table]), file=output)
             print(json.dumps(DB.quality_by_table[table]), file=output)
@@ -107,14 +107,12 @@ class DbTableForSpec():
             else: # didn't break, all the fields are present
                 break
         else: # didn't break, table not found
-            print(f"WARNING: No table found for {graph_spec.yaml_desc}")
             table = None
             table_for_spec = None
 
         if table:
             table_for_spec = DbTableForSpec(table, graph_spec)
-
-        DbTableForSpec.table_for_spec[str(graph_spec.yaml_desc)] = table_for_spec
+            DbTableForSpec.table_for_spec[str(graph_spec.yaml_desc)] = table_for_spec
 
         return table_for_spec
 

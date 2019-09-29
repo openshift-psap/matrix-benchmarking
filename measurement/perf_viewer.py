@@ -28,6 +28,8 @@ class Perf_Viewer(measurement.Measurement):
         else:
             self.input_f = input_f
 
+        self.perf_collect = measurement.perf_collect.Perf_Collect({}, self.experiment)
+
         global viewer_mode
         viewer_mode = True
 
@@ -50,11 +52,11 @@ class Perf_Viewer(measurement.Measurement):
 
             content_str = self.input_f.readline()
             quality_str = self.input_f.readline()
+            # eg: table_def = '#host.mem|time;mem.free\n'
+            mode = _table_def[1:].split(".")[0]
+            table_def = _table_def.replace(f"#{mode}.", "#")
 
-            mode = _table_def.split()[1].split(".")[0]
-            table_def = _table_def.replace(f" {mode}.", " ")[:-1]
-
-            _, table = measurement.perf_collect.create_table(self.experiment, table_def, mode)
+            table = measurement.perf_collect.Perf_Collect.do_create_table(self.experiment, table_def, mode)
             for cpt, row in enumerate(json.loads(content_str)):
                 table.add(*row)
 

@@ -1,29 +1,29 @@
 Host System:
   Memory:
-    table: host.sys
+    table: host.mem
     x: time | as_timestamp
-    y: sys.mem_free | as_B_to_GB > Free
+    y: mem.free | as_B_to_GB > Free
     y_title: GB of RAM
 
   CPU Usage:
-    table: host.sys
+    table: host.cpu
     x: time | as_timestamp
-    y: sys.cpu_idle > Idle
-    y2: sys.guest_cpu > Guest
+    y: cpu.idle > Idle
+    y2: cpu.guest > Guest
     y_max: 100
     y_title: '% of CPU usage'
 
 Guest System:
   Memory:
-    table: guest.sys
+    table: guest.mem
     x: time | as_timestamp
-    y: sys.mem_free | as_B_to_GB > Free
+    y: mem.free | as_B_to_GB > Free
     y_title: GB of RAM
 
   CPU Usage:
-    table: guest.sys
+    table: guest.cpu
     x: time | as_timestamp
-    y: sys.cpu_idle > Idle
+    y: cpu.idle > Idle
     y_max: 100
     y_title: '% of CPU usage'
 

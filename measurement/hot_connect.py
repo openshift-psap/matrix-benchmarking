@@ -18,3 +18,10 @@ def attach_to_pid(mode, pid):
     measurements.append(pidstat.PidStat(dict(pid=pid, mode=mode), expe))
     dead_measurements.append(measurements[-1]) # avoid smart_agent death message
     loop.stop()
+
+
+def detach_module(mod):
+    measurements.remove(mod)
+
+    try: dead_measurements.remove(mod)
+    except ValueError: pass # the module wasn't dead

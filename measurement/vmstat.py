@@ -13,7 +13,7 @@ class VMStat(mpstat.SysStat):
 
         mpstat.SysStat.__init__(self, cfg, experiment)
 
-        self.table = self.experiment.create_table(['time', 'sys.mem_free'])
+        self.table = self.experiment.create_table(['time', 'mem.free'])
 
     def process_line(self, line):
         if "memory" in line: return # first header line

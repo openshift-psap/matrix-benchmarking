@@ -94,7 +94,8 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
 
         tbl = graph.DbTableForSpec.get_table_for_spec(graph_spec)
         if not tbl:
-            raise NameError(graph_spec.yaml_desc)
+            title = f"No table for {graph_spec.yaml_desc}"
+            return {'data': [],'layout' : dict(title=title)}
 
         content = UIState.DB.table_contents[tbl.table]
         X = tbl.get_x()
