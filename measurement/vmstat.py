@@ -26,6 +26,9 @@ class VMStat(mpstat.SysStat):
             self.headers += ["date", "time"]
             return
 
+        # printed when pidstat is terminated
+        if "Average" in line: return
+
         assert self.headers
 
         fields = dict(zip(self.headers, line.split()))

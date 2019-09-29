@@ -50,6 +50,9 @@ class MPStat(SysStat):
                 self.headers = ["time"] + line.split()[1:]
             return
 
+        # printed when pidstat is terminated
+        if "Average" in line: return
+
         fields = dict(zip(self.headers, line.split()))
 
         idle = float(fields["%idle"])

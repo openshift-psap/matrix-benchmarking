@@ -1,18 +1,21 @@
 import datetime
+import os
 
-from . import mpstat
+
+from . import mpstat, hot_connect
 
 class PidStat(mpstat.SysStat):
     def __init__(self, cfg, experiment):
-        mode = cfg['mode']
-        self.cmd = f'pidstat -p {cfg["pid"]} 1'
+        self.mode = cfg['mode']
+        self.pid = cfg["pid"]
+        self.cmd = f'pidstat -p {self.pid} 1'
         self.check_cmd = 'pidstat -V'
 
         mpstat.SysStat.__init__(self, cfg, experiment)
 
         self.table = self.experiment.create_table(["time",
-                                                   f'{mode}-pid.cpu_user',
-                                                   f'{mode}-pid.cpu_system'])
+                                                   f'{self.mode}-pid.cpu_user',
+                                                   f'{self.mode}-pid.cpu_system'])
 
     def process_line(self, line):
         if self.headers is None:
@@ -20,6 +23,10 @@ class PidStat(mpstat.SysStat):
                 "02:58:42 PM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command"
                 self.headers = ["time"] + line.split()[1:]
             return
+
+        # printed when pidstat is terminated
+        if "Average" in line: return
+        if not line: return
 
         fields = dict(zip(self.headers, line.split()))
 
@@ -30,6 +37,12 @@ class PidStat(mpstat.SysStat):
             usr = float(fields["%usr"])
             sys = float(fields["%system"])
         except Exception as e:
-            raise Exception("Faile to parse line '{line.strip()}'", e)
+            if not os.path.exists(f"/proc/{self.pid}"):
+                print(f"PidStat: {self.mode}: {self.pid} is dead")
+
+                hot_connect.detach_module(self)
+                raise StopIteration()
+
+            raise Exception(f"Failed to parse line '{line.strip()}'", e)
 
         self.table.add(time, usr, sys)
