@@ -19,7 +19,10 @@ class SysStat(measurement.Measurement):
         self.headers = None
 
     def start(self):
-        self.process = subprocess.Popen(self.cmd.split(),
+        def preexec(): # Don't forward signals.
+            os.setpgrp()
+
+        self.process = subprocess.Popen(self.cmd.split(),  preexec_fn=preexec,
                                         stdout=subprocess.PIPE, close_fds=True,
                                         env=dict(S_TIME_FORMAT="ISO"))
         self.live.start(self.process.stdout)

@@ -1,5 +1,7 @@
 import datetime
 import json
+import subprocess
+import os
 
 from . import mpstat
 
@@ -18,9 +20,8 @@ class Intel_GPU_Top(mpstat.SysStat):
 
     def process_buffer(self):
         json_txt = "".join(self.json_buffer)[:-1] # remove trailing ','
-        try:
-            json_desc = json.loads(json_txt)
-        except: import pdb;pdb.set_trace()
+
+        json_desc = json.loads(json_txt)
 
         engines = ['Render/3D/0', 'Blitter/0', 'Video/0', 'VideoEnhance/0']
 
@@ -28,6 +29,12 @@ class Intel_GPU_Top(mpstat.SysStat):
 
         self.table.add(int(datetime.datetime.now().timestamp()),
                        *entries)
+
+    def stop(self):
+        if self.process.poll() is None:
+            subprocess.check_call("sudo killall intel_gpu_top".split())
+
+        self.live.stop()
 
     def process_line(self, line):
         if not line.strip():
@@ -38,5 +45,9 @@ class Intel_GPU_Top(mpstat.SysStat):
         self.open_parent -= line.count("}")
 
         if self.open_parent == 0:
-            self.process_buffer()
+            try:
+                self.process_buffer()
+            except json.decoder.JSONDecodeError:
+                self.stop()
+
             self.json_buffer[:] = []
