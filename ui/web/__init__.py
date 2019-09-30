@@ -52,13 +52,13 @@ def construct_app():
             yield dcc.Tab(label=graph_tab.tab_name,
                           children=list(live.graph_list(graph_tab)))
 
-        if not ui_state.VIEWER_MODE:
-            yield script.construct_script_tab()
-
         yield config.construct_config_tab()
 
     ui_state.app.title = 'Smart Streaming Control Center'
     header = [dcc.Input(id='empty', style={"display": "none"})] + live.construct_header()
+
+    if ui_state.VIEWER_MODE:
+        header += config.construct_config_stubs()
 
     layout = html.Div(header+[dcc.Tabs(id="main-tabs", children=list(tab_entries()))])
 

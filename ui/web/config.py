@@ -7,11 +7,11 @@ from . import InitialState, UIState
 from . import graph, quality
 
 def construct_config_stubs():
-    yield dcc.Input(type='number', value=0, id='graph-view-length')
+    yield dcc.Input(type='number', value=0, id='graph-view-length', style={"display":"none"})
 
 def construct_config_tab():
     if UIState().VIEWER_MODE:
-        return html.Div([tag for tag in construct_config_stubs()])
+        return
 
     children = [
         "Graph refresh period: ",
