@@ -10,7 +10,7 @@ def construct_config_stubs():
     yield dcc.Input(type='number', value=0, id='graph-view-length')
 
 def construct_config_tab():
-    if UIState.VIEWER_MODE:
+    if UIState().VIEWER_MODE:
         return html.Div([tag for tag in construct_config_stubs()])
 
     children = [
@@ -30,22 +30,23 @@ def construct_config_tab():
     return dcc.Tab(label="Config", children=children)
 
 def construct_config_tab_callbacks(dataview_cfg):
-    if UIState.VIEWER_MODE: return
+    ui_state = UIState()
+    if ui_state.VIEWER_MODE: return
 
-    @UIState.app.callback(Output("script-msg-refresh", 'interval'),
+    @ui_state.app.callback(Output("script-msg-refresh", 'interval'),
                           [Input('cfg:script-refresh', 'value')])
     def update_script_refresh_timer(value):
         if value == 0: value = 9999
         print(f"Refresh scripts every {value}s")
         return value * 1000
 
-    @UIState.app.callback(Output("quality-refresh", 'interval'),
+    @ui_state.app.callback(Output("quality-refresh", 'interval'),
                           [Input('cfg:quality', 'value')])
     def update_quality_refresh_timer(value):
         if value == 0: value = 9999
         return value * 1000
 
-    @UIState.app.callback(Output("cfg:quality:value", 'children'),
+    @ui_state.app.callback(Output("cfg:quality:value", 'children'),
                           [Input('cfg:quality', 'value')])
     def update_quality_refresh_label(value):
         return f" every {value} seconds"
@@ -53,12 +54,14 @@ def construct_config_tab_callbacks(dataview_cfg):
     # ---
 
     marker_cnt = 0
-    @UIState.app.callback(Output('graph-header-msg', 'children'),
+    @ui_state.app.callback(Output('graph-header-msg', 'children'),
                           [Input('graph-bt-save', 'n_clicks'),
                            Input('graph-bt-marker', 'n_clicks'),
                            Input('graph-bt-clear', 'n_clicks'),])
     def action_graph_button(save, marker, clear):
-        triggered_id = dash.callback_context.triggered[0]["prop_id"]
+
+        try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
+        except IndexError: return # nothing triggered the script (on multiapp load)
 
         if triggered_id == "graph-bt-marker.n_clicks":
             if marker is None: return
@@ -85,12 +88,12 @@ def construct_config_tab_callbacks(dataview_cfg):
         print("click not handled... ", triggered_id, save, marker, clear)
         return ""
 
-    @UIState.app.callback(Output("cfg:graph:value", 'children'),
+    @ui_state.app.callback(Output("cfg:graph:value", 'children'),
                           [Input('cfg:graph-refresh', 'value'), Input('graph-bt-stop', 'n_clicks')])
     def update_graph_refresh_label(value, bt_n_click):
         return f" every {value+1} seconds "
 
-    @UIState.app.callback(Output("graph-bt-stop", 'children'),
+    @ui_state.app.callback(Output("graph-bt-stop", 'children'),
                           [Input('graph-bt-stop', 'n_clicks')])
     def update_graph_refresh_label(bt_n_click):
         if bt_n_click is not None and bt_n_click % 2:
@@ -101,11 +104,12 @@ def construct_config_tab_callbacks(dataview_cfg):
     outputs = [Output(graph_tab.to_id()+'-refresh', 'interval')
                for graph_tab in dataview_cfg.tabs]
 
-    @UIState.app.callback(outputs,
+    @ui_state.app.callback(outputs,
                           [Input('cfg:graph-refresh', 'value'),
                            Input('graph-bt-stop', 'n_clicks')])
     def update_graph_refresh_timer(value, stop_n_click):
-        triggered_id = dash.callback_context.triggered[0]["prop_id"]
+        try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
+        except IndexError: return # nothing triggered the script (on multiapp load)
 
         if triggered_id == "graph-bt-stop.n_clicks":
             if stop_n_click is not None and stop_n_click % 2:

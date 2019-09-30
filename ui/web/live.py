@@ -19,7 +19,7 @@ def graph_list(graph_tab):
 
         yield html.Div(id=graph_spec.to_id()+":clientside-output")
 
-    if UIState.VIEWER_MODE: return
+    if UIState().VIEWER_MODE: return
 
     yield dcc.Interval(
         id=graph_tab.to_id()+'-refresh',
@@ -28,7 +28,7 @@ def graph_list(graph_tab):
 
 def construct_header():
     headers = []
-    if UIState.VIEWER_MODE: return headers
+    if UIState().VIEWER_MODE: return headers
 
     return headers + ["Refreshing graph ", html.Span(id="cfg:graph:value"),
             html.Button('', id='graph-bt-stop'),
@@ -45,17 +45,17 @@ def construct_live_refresh_callbacks(dataview_cfg):
             construct_live_refresh_cb(graph_tab, graph_spec)
 
 def construct_live_refresh_cb(graph_tab, graph_spec):
-    UIState.app.clientside_callback(
+    UIState().app.clientside_callback(
         ClientsideFunction(namespace="clientside", function_name="resize_graph"),
         Output(graph_spec.to_id()+":clientside-output", "children"),
         [Input(graph_spec.to_id(), "style")],
     )
-
-    @UIState.app.callback([Output(graph_spec.to_id(), 'style'),
-                           Output(graph_spec.to_id()+'-title', 'style')],
-                          [Input(graph_spec.to_id()+'-title', 'n_clicks')],
-                          [State(graph_spec.to_id(), 'style'),
-                           State(graph_spec.to_id()+'-title', 'style')])
+    ui_state = UIState()
+    @ui_state.app.callback([Output(graph_spec.to_id(), 'style'),
+                            Output(graph_spec.to_id()+'-title', 'style')],
+                           [Input(graph_spec.to_id()+'-title', 'n_clicks')],
+                           [State(graph_spec.to_id(), 'style'),
+                            State(graph_spec.to_id()+'-title', 'style')])
     def update_graph_style(n_clicks, style, title_style):
         if style is None: style = {}
 
@@ -83,13 +83,14 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
 
         return style, title_style
 
-    scatter_input = Input('url', 'pathname') if UIState.VIEWER_MODE else \
+    ui_state = UIState()
+    scatter_input = Input('empty', 'value') if UIState().VIEWER_MODE else \
                     Input(graph_tab.to_id()+'-refresh', 'n_intervals')
-    @UIState.app.callback(Output(graph_spec.to_id(), 'figure'),
+    @ui_state.app.callback(Output(graph_spec.to_id(), 'figure'),
                           [scatter_input,
                           Input("graph-view-length", "value")])
     def update_graph_scatter(*args):
-        if not UIState.DB.table_contents:
+        if not UIState().DB.table_contents:
             return {}
 
         tbl = graph.DbTableForSpec.get_table_for_spec(graph_spec)
@@ -97,7 +98,7 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
             title = f"No table for {graph_spec.yaml_desc}"
             return {'data': [],'layout' : dict(title=title)}
 
-        content = UIState.DB.table_contents[tbl.table]
+        content = UIState().DB.table_contents[tbl.table]
         X = tbl.get_x()
 
         nb_seconds_to_keep = args[-1]
@@ -136,11 +137,11 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
         except AttributeError: pass
 
         shapes = []
-        if UIState.DB.quality_by_table[tbl.table]:
+        if UIState().DB.quality_by_table[tbl.table]:
             quality_x = []
             quality_y = []
             quality_msg = []
-            for row, msg in UIState.DB.quality_by_table[tbl.table]:
+            for row, msg in UIState().DB.quality_by_table[tbl.table]:
                 quality_x.append(row[tbl.idx(graph_spec.x)])
                 quality_y.append(y_max / 2)
                 quality_msg.append(msg)

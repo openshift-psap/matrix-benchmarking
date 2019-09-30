@@ -154,15 +154,16 @@ def construct_script_tab():
     return dcc.Tab(label="Scripts", children=children)
 
 def construct_script_tab_callbacks():
-    if UIState.VIEWER_MODE: return
+    ui_state = UIState()
+    if ui_state.VIEWER_MODE: return
 
-    @UIState.app.callback(Output("script-tabs", 'children'),
+    @ui_state.app.callback(Output("script-tabs", 'children'),
                           [Input('script-bt-reload', 'n_clicks')])
     def reload_scripts(*args):
         print("Script: reloading")
         return list(construct_script_tabs())
 
-    @UIState.app.callback(Output("script-msg-box", 'children'),
+    @ui_state.app.callback(Output("script-msg-box", 'children'),
                           [Input('script-msg-refresh', 'n_intervals'),
                            Input('script-bt-dry', 'n_clicks'),
                            Input('script-bt-run', 'n_clicks'),
@@ -172,7 +173,9 @@ def construct_script_tab_callbacks():
     def trigger_scripts(kick, dry_n_clicks, run_n_clicks, refresh_n_clicks,
                         clear_n_clicks, tab_name):
 
-        triggered_id = dash.callback_context.triggered[0]["prop_id"]
+        try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
+        except IndexError: return # nothing triggered the script (on multiapp load)
+
         if triggered_id == "script-bt-clear.n_clicks" and clear_n_clicks is not None:
             Script.messages[:] = []
 
