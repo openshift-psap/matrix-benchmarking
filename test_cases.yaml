@@ -21,3 +21,24 @@ wait: 10
 
 after:
   - vm do killall firefox
+---
+name: matrix
+before:
+  - vm do killall firefox
+  - vm open $webpage
+  - sleep 10
+after:
+  - vm do killall firefox
+_type: matrix
+
+$webpage:
+  #aqua: https://webglsamples.org/aquarium/aquarium.html
+  cubemap: https://webglsamples.org/dynamic-cubemap/dynamic-cubemap.html
+
+wait: 30
+codec: gst.vp8.vaapivp8enc
+matrix:
+  framerate: 10, 30, 60
+  gst.prop=target-bitrate: 1000, 5000, 10000
+  gst.prop=rate-control: vbr, cbr, cqp
+  gst.prop=keyframe-period: 0, 20, 40

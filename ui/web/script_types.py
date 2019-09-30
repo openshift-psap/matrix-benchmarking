@@ -1,5 +1,6 @@
 import dash_html_components as html
 import datetime
+import itertools, functools, operator
 
 from . import script
 
@@ -119,7 +120,93 @@ class SimpleScript(script.Script):
 
         self.log("done!")
 
+class MatrixScript(script.Script):
+    def to_html(self):
+        def prop_to_html(key):
+            yield html.P([html.B(key+": "), html.I(self.yaml_desc.get(key, "[missing]"))])
+
+        def keylist_to_html(key, yaml_desc=self.yaml_desc):
+            if not key in yaml_desc: return
+
+            yield html.P(html.B(key+": "))
+            lst = [html.Li(e) for e in yaml_desc[key]]
+
+            yield html.Ul(lst)
+
+        def matrix_to_html():
+            yield html.P(html.B("matrix:"))
+
+            params = []
+            for param, values in self.yaml_desc["matrix"].items():
+                items = values.split(", ")
+                params.append(html.Li([html.I(param.rpartition("=")[-1]), " → ", " | ".join(items)]))
+
+            if "$webpage" in self.yaml_desc:
+                pages = []
+                for name, url in self.yaml_desc["$webpage"].items():
+                    pages.append(html.A(name, href=url))
+                    pages.append(" | ")
+                params.append(html.Li([html.I("webpages"), " → ", html.Span(pages[:-1])]))
+
+            yield html.Ul(params)
+
+        yield from prop_to_html("name")
+        yield from prop_to_html("wait")
+        yield from prop_to_html("codec")
+        yield from keylist_to_html("before")
+        yield from keylist_to_html("after")
+        yield from matrix_to_html()
+
+    def do_run_the_matrix(self, exe, webpage_name):
+        codec_name = self.yaml_desc["codec"]
+        wait_time = self.yaml_desc["wait"]
+        script_name = self.yaml_desc["name"]
+
+        param_lists = []
+        for name, values in self.yaml_desc["matrix"].items():
+            param_lists.append([(name, value) for value in values.split(", ")])
+
+        total_expe = functools.reduce(operator.mul, map(len, param_lists), 1)
+        for expe_cnt, param_items in enumerate(itertools.product(*param_lists)):
+            param_dict = dict(param_items)
+            exe.reset()
+            self.log(f"running {expe_cnt}/{total_expe}")
+            exe.set_encoding(codec_name, param_dict)
+            exe.clear_graph()
+            exe.clear_quality()
+            exe.wait(1)
+            exe.set_encoding(codec_name, param_dict)
+            exe.wait(wait_time)
+
+            dest = f"logs/{script_name}_{webpage_name}_{wait_time}s_" + \
+                datetime.datetime.today().strftime("%Y%m%d-%H%M%S") + ".rec"
+            exe.save_graph(dest)
+
+            param_str = ";".join([f"{k}={v}" for k, v in param_items])
+            file_entry = f"{webpage_name} {wait_time}s {codec_name} {param_str} | {dest}"
+            filename = f"logs/{script_name}.log"
+            self.log(f"write log: {filename} << {file_entry}")
+
+            if exe.dry: continue
+
+            with open(filename, "a") as log_f:
+                print(file_entry, file=log_f)
+
+    def do_run_webpage(self, exe, name, url):
+        for cmd in self.yaml_desc.get("before", []):
+            exe.execute(cmd.replace("$webpage", url))
+
+        self.do_run_the_matrix(exe, name)
+
+        for cmd in self.yaml_desc.get("after", []): exe.execute(cmd)
+
+
+    def do_run(self, exe):
+        for name, url in self.yaml_desc.get("$webpage", {"none": "none"}).items():
+            self.do_run_webpage(exe, name, url)
+            self.log("---")
 TYPES = {
     None: SimpleScript,
     "simple": SimpleScript,
+    "matrix": MatrixScript,
 }
