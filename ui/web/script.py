@@ -101,7 +101,7 @@ class Script():
             Script.thr.daemon = True
             Script.thr.start()
 
-def construct_script_tabs():
+def construct_script_inner_tabs():
     from . import script_types
 
     Script.all_scripts.clear()
@@ -160,7 +160,7 @@ def construct_script_tab_callbacks():
                           [Input('script-bt-reload', 'n_clicks')])
     def reload_scripts(*args):
         print("Script: reloading")
-        return list(construct_script_tabs())
+        return list(construct_script_inner_tabs())
 
     @UIState.app.callback(Output("script-msg-box", 'children'),
                           [Input('script-msg-refresh', 'n_intervals'),

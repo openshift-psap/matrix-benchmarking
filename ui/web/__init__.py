@@ -5,10 +5,11 @@ import dash_html_components as html
 import threading
 import flask
 import sys
+import logging
 
 import utils.yaml
+from . import matrix_view
 
-import logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
@@ -67,10 +68,14 @@ def construct_layout(ui_state):
             yield dcc.Tab(label=graph_tab.tab_name,
                           children=list(live.graph_list(graph_tab)))
 
+        if UIState.viewer_mode: return
+
+        yield script.construct_script_tab()
         yield config.construct_config_tab()
 
     ui_state.app.title = 'Smart Streaming Control Center'
     header = [dcc.Input(id='empty', style={"display": "none"})] + live.construct_header()
+
 
     if UIState.viewer_mode:
         header += config.construct_config_stubs()
@@ -80,12 +85,18 @@ def construct_layout(ui_state):
 
 def construct_callbacks():
     from . import quality, control, live, config, script
+
     quality.construct_quality_callbacks()
     control.construct_codec_control_callbacks(codec_cfg)
     live.construct_live_refresh_callbacks(dataview_cfg)
     config.construct_config_tab_callbacks(dataview_cfg)
     script.construct_script_tab_callbacks()
 
+    # Dash doesn't support creating the callbacks AFTER the app is running,
+    # can the Matrix callback IDs are dynamic (base on the name of the parameters)
+    # So at the moment, only one file can be loaded, here in the startup...
+    matrix_view.parse_data("logs/matrix.log")
+    matrix_view.build_callbacks(main_app)
 
 def initialize_viewer(url, ui_state):
     from measurement import hot_connect
@@ -130,7 +141,8 @@ def construct_dispatcher():
                     traceback.print_exception(*sys.exc_info())
 
                     return html.Div(f"Error: {e}")
-
+            elif pathname.startswith('/matrix/'):
+                return matrix_view.build_layout()
             else:
                 import glob
                 children = [html.P(html.A(filename.rpartition("/")[-1],

@@ -3,6 +3,7 @@ import datetime
 import itertools, functools, operator
 
 from . import script
+from . import matrix_view
 
 class SimpleScript(script.Script):
     def to_html(self):
@@ -202,6 +203,9 @@ class MatrixScript(script.Script):
 
 
     def do_run(self, exe):
+        if not matrix_view.Matrix.properties:
+            matrix_view.parse_data("logs/matrix.log")
+
         for name, url in self.yaml_desc.get("$webpage", {"none": "none"}).items():
             self.do_run_webpage(exe, name, url)
             self.log("---")
