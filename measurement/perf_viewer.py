@@ -37,33 +37,37 @@ class Perf_Viewer(measurement.Measurement):
         pass
 
     def start(self):
-        quality = json.loads(self.input_f.readline())
+        parser = parse_rec_file(self.input_f)
 
-        for entry in quality:
+        _, quality_rows = next(parser)
+        for entry in quality_rows:
             self.experiment.new_quality(*entry)
-        print(len(quality), "quality messages reloaded")
+
+        print(len(quality_rows), "quality messages reloaded")
 
         if Perf_Viewer.quality_for_ui is None:
             print("WARNING: quality graph markers not shared with UI.")
 
         while True:
-            _table_def = self.input_f.readline()
+            _, _table_def = next(parser)
             if not _table_def: break
 
-            content_str = self.input_f.readline()
-            quality_str = self.input_f.readline()
-            # eg: table_def = '#host.mem|time;mem.free\n'
+            _, table_rows= next(parser)
+            _, quality_rows = next(parser)
+
+            # eg: table_def = '#host.mem|time;mem.free'
             mode = _table_def[1:].split(".")[0]
             table_def = _table_def.replace(f"#{mode}.", "#")
 
             table = measurement.perf_collect.Perf_Collect.do_create_table(self.experiment, table_def, mode)
-            for cpt, row in enumerate(json.loads(content_str)):
+            for row in table_rows:
                 table.add(*row)
 
             if Perf_Viewer.quality_for_ui is not None:
-                Perf_Viewer.quality_for_ui[table] = json.loads(quality_str)
+                Perf_Viewer.quality_for_ui[table] = quality_rows
 
-            print(f"{table.table_name}: {cpt} rows reloaded.")
+            print(f"{table.table_name}: {len(table_rows)} rows reloaded.")
+
         print("Reloading completed.")
         self.input_f.close()
 
@@ -72,3 +76,16 @@ class Perf_Viewer(measurement.Measurement):
 
     def process_line(self, buf):
         pass
+
+def parse_rec_file(input_f):
+    yield "quality_rows", json.loads(input_f.readline())
+
+    while True:
+        table_def = input_f.readline()
+        if not table_def:
+            break
+        yield "table_def", table_def[:-1]
+        yield "table_rows", json.loads(input_f.readline())
+        yield "quality_rows", json.loads(input_f.readline())
+
+    yield "table_def", None
