@@ -9,13 +9,18 @@ import plotly.graph_objs as go
 from . import InitialState, UIState
 from . import graph
 
+# vh = view height, 100 == all the visible screen
+GRAPH_MAX_VH_HEIGHT = 75
+
 def graph_list(graph_tab):
     for graph_spec in graph_tab.graphs:
         print(f" - {graph_spec.graph_name}")
         yield html.H3(graph_spec.graph_name, id=graph_spec.to_id()+'-title',
                       style={'text-align': "center", "font-size": "17px", "fill":"rgb(68, 68, 68)",
                              'margin-bottom': '0rem'})
-        yield dcc.Graph(id=graph_spec.to_id())
+
+        yield dcc.Graph(id=graph_spec.to_id(),
+                        style={"height":f"{(1/len(graph_tab.graphs)*GRAPH_MAX_VH_HEIGHT):.0f}vh"})
 
         yield html.Div(id=graph_spec.to_id()+":clientside-output")
 
@@ -59,24 +64,15 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
     def update_graph_style(n_clicks, style, title_style):
         if style is None: style = {}
 
-        # vh = view height, 100 == all the visible screen
-        VH_MAX = 75
+        if n_clicks is None or "height" in style and style["height"] == f"{GRAPH_MAX_VH_HEIGHT}vh":
+            nb_visible = sum([1 for _graph_spec in graph_tab.graphs
+                              if not _graph_spec.yaml_desc.get("_collapsed")])
 
-        if n_clicks is None:
-            if graph_spec.yaml_desc.get("_collapsed"):
-                height = "5vh"
-            else:
-                nb_visible = sum([1 for _graph_spec in graph_tab.graphs
-                                  if not _graph_spec.yaml_desc.get("_collapsed")])
-
-                height = f"{(1/nb_visible*VH_MAX):.0f}vh"
-
-        elif "height" in style and style["height"] == f"{VH_MAX}vh":
-            height = f"{(1/len(graph_tab.graphs)*VH_MAX):.0f}vh"
+            height = f"{(1/len(graph_tab.graphs)*GRAPH_MAX_VH_HEIGHT):.0f}vh"
 
             title_style["color"] = ""
         else:
-            height = f"{VH_MAX}vh"
+            height = f"{GRAPH_MAX_VH_HEIGHT}vh"
             title_style["color"] = "green"
 
         style["height"] = height

@@ -62,14 +62,12 @@ Frames Size:
     table: host.host
     x: host.msg_ts | as_us_timestamp
     y: host.frame_size
-    _collapsed: true
     _disabled: true
 
   Client frame size:
     table: host.client
     x: client.msg_ts | as_us_timestamp
     y: client.frame_size
-    _collapsed: true
     _disabled: true
 
 Frame Processing:
