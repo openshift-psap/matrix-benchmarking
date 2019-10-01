@@ -1,23 +1,35 @@
-expe = None
+import asyncio
+
 measurements = None
 loop = None
 dead_measurements = None
 
-def setup(_loop, _expe, _measurements, _dead_measurements):
-    global expe, measurements, loop, dead_measurements
-    loop = _loop
-    expe = _expe
+def setup(_measurements, _dead_measurements):
+    global measurements, dead_measurements
     measurements = _measurements
     dead_measurements = _dead_measurements
 
-def attach_to_pid(mode, pid):
-    assert expe is not None
 
+def _register_module(mod):
+    measurements.append(mod)
+    dead_measurements.append(measurements[-1]) # avoid smart_agent death message
+    try:
+        asyncio.get_event_loop().stop()
+    except RuntimeError: pass # There is no current event loop in thread '...'.
+
+def attach_to_pid(expe, mode, pid):
     from measurement import pidstat
 
-    measurements.append(pidstat.PidStat(dict(pid=pid, mode=mode), expe))
-    dead_measurements.append(measurements[-1]) # avoid smart_agent death message
-    loop.stop()
+    _register_module(pidstat.PidStat(dict(pid=pid, mode=mode), expe))
+
+
+def load_record_file(expe, filename):
+    from measurement import perf_viewer
+
+    mod = perf_viewer.Perf_Viewer({}, expe, open(filename))
+    mod.setup()
+    mod.start()
+    mod.stop()
 
 
 def detach_module(mod):

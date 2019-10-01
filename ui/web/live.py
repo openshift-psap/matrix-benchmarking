@@ -19,7 +19,7 @@ def graph_list(graph_tab):
 
         yield html.Div(id=graph_spec.to_id()+":clientside-output")
 
-    if UIState().VIEWER_MODE: return
+    if UIState.viewer_mode: return
 
     yield dcc.Interval(
         id=graph_tab.to_id()+'-refresh',
@@ -28,7 +28,7 @@ def graph_list(graph_tab):
 
 def construct_header():
     headers = []
-    if UIState().VIEWER_MODE: return headers
+    if UIState.viewer_mode: return headers
 
     return headers + ["Refreshing graph ", html.Span(id="cfg:graph:value"),
             html.Button('', id='graph-bt-stop'),
@@ -45,13 +45,13 @@ def construct_live_refresh_callbacks(dataview_cfg):
             construct_live_refresh_cb(graph_tab, graph_spec)
 
 def construct_live_refresh_cb(graph_tab, graph_spec):
-    UIState().app.clientside_callback(
+    UIState.app.clientside_callback(
         ClientsideFunction(namespace="clientside", function_name="resize_graph"),
         Output(graph_spec.to_id()+":clientside-output", "children"),
         [Input(graph_spec.to_id(), "style")],
     )
-    ui_state = UIState()
-    @ui_state.app.callback([Output(graph_spec.to_id(), 'style'),
+
+    @UIState.app.callback([Output(graph_spec.to_id(), 'style'),
                             Output(graph_spec.to_id()+'-title', 'style')],
                            [Input(graph_spec.to_id()+'-title', 'n_clicks')],
                            [State(graph_spec.to_id(), 'style'),
@@ -83,10 +83,9 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
 
         return style, title_style
 
-    ui_state = UIState()
-    scatter_input = Input('empty', 'value') if UIState().VIEWER_MODE else \
+    scatter_input = Input('empty', 'value') if UIState.viewer_mode else \
                     Input(graph_tab.to_id()+'-refresh', 'n_intervals')
-    @ui_state.app.callback(Output(graph_spec.to_id(), 'figure'),
+    @UIState.app.callback(Output(graph_spec.to_id(), 'figure'),
                           [scatter_input,
                           Input("graph-view-length", "value")])
     def update_graph_scatter(*args):

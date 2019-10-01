@@ -5,8 +5,6 @@ import measurement
 import measurement.perf_collect
 import utils.live
 
-viewer_mode = False
-
 class DummyLiveCollect(utils.live.LiveCollect):
     def connect(self, loop, process=None):
         self.alive = True
@@ -30,9 +28,6 @@ class Perf_Viewer(measurement.Measurement):
 
         self.perf_collect = measurement.perf_collect.Perf_Collect({}, self.experiment)
 
-        global viewer_mode
-        viewer_mode = True
-
     def setup(self):
         pass
 
@@ -40,6 +35,7 @@ class Perf_Viewer(measurement.Measurement):
         parser = parse_rec_file(self.input_f)
 
         _, quality_rows = next(parser)
+
         for entry in quality_rows:
             self.experiment.new_quality(*entry)
 

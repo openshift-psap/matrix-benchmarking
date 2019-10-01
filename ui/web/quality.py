@@ -5,11 +5,9 @@ import dash_html_components as html
 from . import InitialState, UIState
 
 class Quality():
-    quality = []
-
     @staticmethod
     def add_to_quality(ts, src, msg):
-        Quality.quality.insert(0, (ts, src, msg))
+        UIState().DB.quality.insert(0, (ts, src, msg))
 
         if msg.startswith("!"):
             Quality.add_quality_to_plots(msg)
@@ -23,22 +21,20 @@ class Quality():
 
     @staticmethod
     def clear():
-        Quality.quality[:] = []
+        UIState().DB.quality[:] = []
 
 def construct_quality_callbacks():
-    ui_state = UIState()
-
-    refresh_inputs = Input('empty', 'value') if UIState().VIEWER_MODE else \
+    refresh_inputs = Input('empty', 'value') if UIState.viewer_mode else \
                      Input('quality-refresh', 'n_intervals')
-    @ui_state.app.callback(Output("quality-box", 'children'),
+    @UIState.app.callback(Output("quality-box", 'children'),
                           [refresh_inputs])
     def refresh_quality(*args):
         return [html.P(f"{src}: {msg}", style={"margin-top": "0px", "margin-bottom": "0px"}) \
-                for (ts, src, msg) in Quality.quality]
+                for (ts, src, msg) in UIState().DB.quality]
 
-    if ui_state.VIEWER_MODE: return
+    if UIState.viewer_mode: return
 
-    @ui_state.app.callback(Output("quality-refresh", 'n_intervals'),
+    @UIState.app.callback(Output("quality-refresh", 'n_intervals'),
                           [Input('quality-bt-clear', 'n_clicks'),
                            Input('quality-bt-refresh', 'n_clicks')])
     def clear_quality(clear_n_clicks, refresh_n_clicks):
@@ -56,7 +52,7 @@ def construct_quality_callbacks():
 
         return 0
 
-    @ui_state.app.callback(Output("quality-input", 'value'),
+    @UIState.app.callback(Output("quality-input", 'value'),
                   [Input('quality-bt-send', 'n_clicks'),
                    Input('quality-input', 'n_submit'),],
                   [State(component_id='quality-input', component_property='value')])
@@ -66,7 +62,6 @@ def construct_quality_callbacks():
 
         if not UIState().DB.expe:
             return "<error: expe not set>"
-
-        ui_state.DB.expe.send_quality(quality_value)
+        UIState().DB.expe.send_quality(quality_value)
 
         return "" # empty the input text

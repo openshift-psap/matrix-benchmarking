@@ -17,9 +17,8 @@ VERBOSE = False
 quit_signal = False
 
 class AgentTable():
-    def __init__(self, expe, fields, mode=None):
+    def __init__(self, fields, mode=None):
         self.fields = fields
-        self.expe = expe
 
         table_names = {field.partition(".")[0] for field in fields if field != "time"}
         if len(table_names) != 1:
@@ -34,12 +33,13 @@ class AgentTable():
             self.rows = []
 
     def add(self, *row):
-        if self.expe.new_table_row is None:
-            print("Warning: nothing to do with the table rows ...")
-            self.expe.new_table_row = False
+        if not AgentExperiment.new_table_row:
+            if AgentExperiment.new_table_row is None:
+                print("Warning: nothing to do with the table rows ...")
+                AgentExperiment.new_table_row = False
             return
 
-        self.expe.new_table_row(self, row)
+        AgentExperiment.new_table_row(self, row)
 
         if self.table_name == "quality":
             self.rows.append(row)
@@ -48,17 +48,17 @@ class AgentTable():
         return f"#{self.table_name}|{';'.join(self.fields)}"
 
 class AgentExperiment():
+    new_table = None
+    new_table_row = None
+
     def __init__(self):
         self.tables = {}
-
         self.quality = None
-        self.new_table = None
-        self.new_table_row = None
         self.new_quality_cb = None
         self.send_quality_cbs = []
 
     def create_table(self, fields, mode=None):
-        table = AgentTable(self, fields, mode)
+        table = AgentTable(fields, mode)
 
         try:
             return self.tables[table.table_name]
@@ -68,8 +68,8 @@ class AgentExperiment():
             assert self.quality is None, "Quality table already created ..."
             self.quality = table
 
-        if self.new_table:
-            self.new_table(table)
+        if AgentExperiment.new_table:
+            AgentExperiment.new_table(table)
 
         self.tables[table.table_name] = table
 
@@ -101,13 +101,14 @@ def prepare_cfg(key):
 
     # gather the measurment sets requested for this run
     cfg["measurements"] = list()
-    for measures in smart_cfg[key]["measurement_sets"]:
+    for measures in smart_cfg[key].get("measurement_sets", []):
         for measure in smart_cfg["measurement_sets"][measures]:
             if isinstance(measure, str) and measure in cfg["measurements"]:
                 continue
             cfg["measurements"].append(measure)
 
-    cfg["run_as_agent"] = smart_cfg[key].get("run_as_agent", True)
+    cfg["run_as_collector"] = smart_cfg[key].get("run_as_collector", False)
+    cfg["run_as_viewer"] = smart_cfg[key].get("run_as_viewer", False)
 
     return cfg
 
@@ -160,27 +161,29 @@ def checkup_mods(measurements, deads, loop):
             except ValueError: pass
 
 def run(cfg):
-    run_as_agent = cfg["run_as_agent"]
-    expe = AgentExperiment()
+    run_as_collector = cfg["run_as_collector"]
+    run_as_viewer = cfg["run_as_viewer"]
 
     loop = asyncio.get_event_loop()
 
-    if run_as_agent:
-        print("\n* Starting the socket for the Perf Collector...")
-        server = agent.to_collector.Server(expe, loop)
-    else: # run as collector
+    expe = AgentExperiment() if not run_as_viewer else None
+
+    if run_as_collector or run_as_viewer:
         import ui.web
+        ui.web.AgentExperimentClass = AgentExperiment
         server = ui.web.Server(expe)
 
-    expe.new_table = server.new_table
-    expe.new_table_row = server.new_table_row
+    else: # run as agent
+        print("\n* Starting the socket for the Perf Collector...")
+        server = agent.to_collector.Server(expe, loop)
 
-    # load and initialize measurements
-    measurements = load_measurements(cfg, expe)
+    AgentExperiment.new_table = server.new_table
+    AgentExperiment.new_table_row = server.new_table_row
 
     deads = []
+    measurements = load_measurements(cfg, expe) if not run_as_viewer else []
 
-    measurement.hot_connect.setup(loop, expe, measurements, deads)
+    measurement.hot_connect.setup(measurements, deads)
 
     print("\n* Preparing the environment ...")
     for mod in measurements:

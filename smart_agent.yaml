@@ -39,13 +39,11 @@ measurement_sets:
     - Perf_Collect:
         port: 1230
         mode: host
+
     - Perf_Collect:
         port: 1230
         host: 192.168.122.186
         mode: guest
-
-  viewer:
-    - Perf_Viewer
 
 # --- #
 
@@ -62,11 +60,9 @@ central_agent:
     - central_agent
 
 collector:
-  run_as_agent: False
+  run_as_collector: True
   measurement_sets:
     - collector
 
 viewer:
-  run_as_agent: False
-  measurement_sets:
-    - viewer
+  run_as_viewer: True

@@ -6,37 +6,44 @@ from collections import defaultdict
 import utils.yaml
 
 from . import quality
+from . import UIState
 
 class DB():
-    expe = None
+    def __init__(self):
+        self.expe = None
+        self.quality = []
+        self.tables_by_name = defaultdict(list)
+        self.table_contents = {}
+        self.quality_by_table = defaultdict(list)
+        self.table_for_spec = {}
 
-    tables_by_name = defaultdict(list)
-    table_definitions = {}
-    table_contents = {}
-    quality_by_table = defaultdict(list)
+    def new_table(self, table):
+        self.table_contents[table] = []
 
-    @staticmethod
-    def save_to_file(filename):
+        self.tables_by_name[table.table_name].append(table)
+
+    def new_table_row(self, table, row):
+        self.table_contents[table].append(row)
+
+    def save_to_file(self, filename):
         print("Saving into", filename)
         output = open(filename, "w")
-        print(json.dumps(quality.Quality.quality), file=output)
+        print(json.dumps(self.quality.Quality.quality), file=output)
 
-        for table in DB.expe.tables.values():
+        for table in self.expe.tables.values():
             print(table.header(), file=output)
-            print(json.dumps(DB.table_contents[table]), file=output)
-            print(json.dumps(DB.quality_by_table[table]), file=output)
+            print(json.dumps(self.table_contents[table]), file=output)
+            print(json.dumps(self.quality_by_table[table]), file=output)
 
-    @staticmethod
-    def init_quality_from_viewer():
+    def init_quality_from_viewer(self):
         import measurement.perf_viewer
 
-        measurement.perf_viewer.Perf_Viewer.quality_for_ui = DB.quality_by_table
+        measurement.perf_viewer.Perf_Viewer.quality_for_ui = self.quality_by_table
 
-    @staticmethod
-    def clear_graphs():
-        for content in DB.table_contents.values():
+    def clear_graphs(self):
+        for content in self.table_contents.values():
             content[:] = []
-        DB.quality_by_table .clear()
+        self.quality_by_table .clear()
 
 class GraphFormat():
     @staticmethod
@@ -93,14 +100,14 @@ class GraphFormat():
         return [datetime.datetime.fromtimestamp(t/1000000) for t in Y_lst]
 
 class DbTableForSpec():
-    table_for_spec = {}
-
     @staticmethod
     def get_table_for_spec(graph_spec):
-        try: return DbTableForSpec.table_for_spec[str(graph_spec.yaml_desc)]
+        db = UIState().DB
+
+        try: return db.table_for_spec[str(graph_spec.yaml_desc)]
         except KeyError: pass
 
-        for table in DB.tables_by_name[graph_spec.table]:
+        for table in db.tables_by_name[graph_spec.table]:
             for ax in graph_spec.all_axis:
                 if ax.field_name not in table.fields:
                     break
@@ -112,7 +119,7 @@ class DbTableForSpec():
 
         if table:
             table_for_spec = DbTableForSpec(table, graph_spec)
-            DbTableForSpec.table_for_spec[str(graph_spec.yaml_desc)] = table_for_spec
+            db.table_for_spec[str(graph_spec.yaml_desc)] = table_for_spec
 
         return table_for_spec
 
@@ -120,7 +127,7 @@ class DbTableForSpec():
         self.table = table
         self.graph_spec = graph_spec
 
-        self.content = DB.table_contents[table]
+        self.content = UIState().DB.table_contents[table]
 
     def idx(self, field):
         return self.table.fields.index(field.field_name)
@@ -144,6 +151,7 @@ class DbTableForSpec():
         for y_field in self.graph_spec.all_y_axis:
             yield y_field, self.get(y_field, X)
 
+
 class FieldSpec():
     def __init__(self, yaml_desc):
         field_modif, has_label, label = yaml_desc.partition(">")
@@ -157,6 +165,7 @@ class FieldSpec():
             self.modify = getattr(GraphFormat, modif.strip())
         except AttributeError:
             self.modify = lambda y,x:y
+
 
 class GraphSpec():
     def __init__(self, graph_tab, graph_name, yaml_desc):

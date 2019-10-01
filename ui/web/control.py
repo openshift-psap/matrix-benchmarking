@@ -48,16 +48,15 @@ def set_encoder(encoder_name, parameters):
     return f"{encoder_name} || {params_str}"
 
 def construct_codec_control_callback(codec_name):
-    if UIState().VIEWER_MODE: return
+    if UIState.viewer_mode: return
 
     codec_id_name = codec_name.replace(".", ":")
     cb_states = [State(tag_id, tag_cb_field) \
                  for tag_id, tag_cb_field, *_ in control_center_boxes[codec_name]]
 
-    ui_state = UIState()
     param_names = [prefix+tag_id.rpartition(":")[-1]
                    for tag_id, tag_cb_field, _, prefix in control_center_boxes[codec_name]]
-    @ui_state.app.callback(Output(f"{codec_id_name}-msg", 'children'),
+    @UIState.app.callback(Output(f"{codec_id_name}-msg", 'children'),
                            [Input(f'{codec_id_name}-go-button', "n_clicks"),
                             Input(f'{codec_id_name}-reset-button', "n_clicks")],
                            cb_states)
@@ -89,7 +88,7 @@ def construct_codec_control_callback(codec_name):
     for tag_id, tag_cb_field, need_value_cb, _ in control_center_boxes[codec_name]:
         if not need_value_cb: continue
 
-        @ui_state.app.callback(Output(f"{tag_id}:value", 'children'),
+        @UIState.app.callback(Output(f"{tag_id}:value", 'children'),
                                [Input(tag_id, tag_cb_field)])
         def value_callback(value):
             return f": {value if value is not None else ''}"
@@ -231,7 +230,7 @@ def construct_control_center_tab(codec_cfg):
                                    "padding-left": "10px", "padding-top": "10px",
                                    "background-color": "lightblue", "text-align":"left",})
 
-    if UIState().VIEWER_MODE:
+    if UIState.viewer_mode:
         tab_children = [quality_header, quality_area]
     else:
         quality_children = [

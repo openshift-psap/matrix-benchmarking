@@ -49,12 +49,12 @@ class Exec():
     def clear_graph(self):
         self.log(f"clear graphs")
         if self.dry: return
-        graph.DB.clear_graphs()
+        UIState().DB.clear_graphs()
 
     def save_graph(self, fname):
         self.log(f"save graph into {fname}")
         if self.dry: return
-        graph.DB.save_to_file(fname)
+        UIState().DB.save_to_file(fname)
 
     def reset(self):
         self.log(f"reset encoder params")
@@ -154,16 +154,15 @@ def construct_script_tab():
     return dcc.Tab(label="Scripts", children=children)
 
 def construct_script_tab_callbacks():
-    ui_state = UIState()
-    if ui_state.VIEWER_MODE: return
+    if UIState.viewer_mode: return
 
-    @ui_state.app.callback(Output("script-tabs", 'children'),
+    @UIState.app.callback(Output("script-tabs", 'children'),
                           [Input('script-bt-reload', 'n_clicks')])
     def reload_scripts(*args):
         print("Script: reloading")
         return list(construct_script_tabs())
 
-    @ui_state.app.callback(Output("script-msg-box", 'children'),
+    @UIState.app.callback(Output("script-msg-box", 'children'),
                           [Input('script-msg-refresh', 'n_intervals'),
                            Input('script-bt-dry', 'n_clicks'),
                            Input('script-bt-run', 'n_clicks'),
