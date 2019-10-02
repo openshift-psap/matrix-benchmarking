@@ -17,7 +17,7 @@ run:
     _disabled: true
     _gst.prop=target-bitrate: 1000, 2000, 4000, 8000, 16000, 32000, 64000, 128000, 256000, 512000
 
-wait: 10
+record_time: 10
 
 after:
   - vm do killall firefox
@@ -35,7 +35,7 @@ $webpage:
   #aqua: https://webglsamples.org/aquarium/aquarium.html
   cubemap: https://webglsamples.org/dynamic-cubemap/dynamic-cubemap.html
 
-wait: 30
+record_time: 30
 codec: gst.vp8.vaapivp8enc
 matrix:
   framerate: 10, 30, 60

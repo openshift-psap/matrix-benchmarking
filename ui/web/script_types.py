@@ -44,14 +44,14 @@ class SimpleScript(script.Script):
         yield from prop_to_html("description")
         yield from keylist_to_html("before")
         yield from run_to_html()
-        yield from prop_to_html("wait")
+        yield from prop_to_html("record_time")
         yield from keylist_to_html("after")
 
         yield html.Br()
 
     def do_run(self, exe):
         codec_name = self.yaml_desc["codec"]
-        record_time = int(self.yaml_desc["wait"])
+        record_time = int(self.yaml_desc["record_time"])
 
         first_record = True
         def init_recording(test_name):
@@ -152,7 +152,7 @@ class MatrixScript(script.Script):
             yield html.Ul(params)
 
         yield from prop_to_html("name")
-        yield from prop_to_html("wait")
+        yield from prop_to_html("record_time")
         yield from prop_to_html("codec")
         yield from keylist_to_html("before")
         yield from keylist_to_html("after")
@@ -160,7 +160,7 @@ class MatrixScript(script.Script):
 
     def do_run_the_matrix(self, exe, webpage_name):
         codec_name = self.yaml_desc["codec"]
-        wait_time = self.yaml_desc["wait"]
+        record_time = self.yaml_desc["record_time"]
         script_name = self.yaml_desc["name"]
 
         param_lists = []
@@ -177,9 +177,9 @@ class MatrixScript(script.Script):
             exe.clear_quality()
             exe.wait(1)
             exe.set_encoding(codec_name, param_dict)
-            exe.wait(wait_time)
+            exe.wait(record_time)
 
-            dest = f"logs/{script_name}_{webpage_name}_{wait_time}s_" + \
+            dest = f"logs/{script_name}_{webpage_name}_{record_time}s_" + \
                 datetime.datetime.today().strftime("%Y%m%d-%H%M%S") + ".rec"
             exe.save_graph(dest)
 
