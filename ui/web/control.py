@@ -48,8 +48,6 @@ def set_encoder(encoder_name, parameters):
     return f"{encoder_name} || {params_str}"
 
 def construct_codec_control_callback(codec_name):
-    if UIState.viewer_mode: return
-
     codec_id_name = codec_name.replace(".", ":")
     cb_states = [State(tag_id, tag_cb_field) \
                  for tag_id, tag_cb_field, *_ in control_center_boxes[codec_name]]
@@ -223,22 +221,21 @@ def construct_control_center_tab(codec_cfg):
         dcc.Tabs(id="video-enc-tabs", children=list(get_codec_tabs())),
     ]
 
-    quality_header = html.H3("Quality Messages", style={"text-align":"center"})
+    quality_headers = [html.H3("Quality Messages", style={"text-align":"center"}),
+                       dcc.Interval(
+                           id='quality-refresh',
+                           interval=InitialState.QUALITY_REFRESH_INTERVAL * 1000
+                       )]
 
     quality_area = html.Div(id="quality-box", children=[],
                             style={"margin-top": "10px", "margin-left": "0px",
                                    "padding-left": "10px", "padding-top": "10px",
                                    "background-color": "lightblue", "text-align":"left",})
 
-    if UIState.viewer_mode:
-        tab_children = [quality_header, quality_area]
+    if UIState().viewer_mode:
+        tab_children = quality_headers + [quality_area]
     else:
-        quality_children = [
-            quality_header,
-            dcc.Interval(
-                id='quality-refresh',
-                interval=InitialState.QUALITY_REFRESH_INTERVAL * 1000
-            ),
+        quality_children = quality_headers + [
             dcc.Input(placeholder='Enter a quality message...', type='text', value='', id="quality-input"),
             html.Button('Send!', id='quality-bt-send'),
             html.Button('Clear', id='quality-bt-clear'),

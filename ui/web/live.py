@@ -24,16 +24,15 @@ def graph_list(graph_tab):
 
         yield html.Div(id=graph_spec.to_id()+":clientside-output")
 
-    if UIState.viewer_mode: return
 
+    refresh_interval = 9999999 if UIState().viewer_mode else InitialState.GRAPH_REFRESH_INTERVAL * 1000
     yield dcc.Interval(
         id=graph_tab.to_id()+'-refresh',
-        interval=InitialState.GRAPH_REFRESH_INTERVAL * 1000
-    )
+        interval=refresh_interval)
 
 def construct_header():
     headers = []
-    if UIState.viewer_mode: return headers
+    if UIState().viewer_mode: return headers
 
     return headers + ["Refreshing graph ", html.Span(id="cfg:graph:value"),
             html.Button('', id='graph-bt-stop'),
@@ -79,8 +78,7 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
 
         return style, title_style
 
-    scatter_input = Input('empty', 'value') if UIState.viewer_mode else \
-                    Input(graph_tab.to_id()+'-refresh', 'n_intervals')
+    scatter_input = Input(graph_tab.to_id()+'-refresh', 'n_intervals')
     @UIState.app.callback(Output(graph_spec.to_id(), 'figure'),
                           [scatter_input,
                           Input("graph-view-length", "value")])

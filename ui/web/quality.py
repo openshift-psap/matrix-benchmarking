@@ -24,15 +24,12 @@ class Quality():
         UIState().DB.quality[:] = []
 
 def construct_quality_callbacks():
-    refresh_inputs = Input('empty', 'value') if UIState.viewer_mode else \
-                     Input('quality-refresh', 'n_intervals')
+    refresh_inputs = Input('quality-refresh', 'n_intervals')
     @UIState.app.callback(Output("quality-box", 'children'),
                           [refresh_inputs])
     def refresh_quality(*args):
         return [html.P(f"{src}: {msg}", style={"margin-top": "0px", "margin-bottom": "0px"}) \
                 for (ts, src, msg) in UIState().DB.quality]
-
-    if UIState.viewer_mode: return
 
     @UIState.app.callback(Output("quality-refresh", 'n_intervals'),
                           [Input('quality-bt-clear', 'n_clicks'),

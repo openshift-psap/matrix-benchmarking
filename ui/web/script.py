@@ -152,8 +152,6 @@ def construct_script_tab():
     return dcc.Tab(label="Scripts", children=children)
 
 def construct_script_tab_callbacks():
-    if UIState.viewer_mode: return
-
     @UIState.app.callback(Output("script-tabs", 'children'),
                           [Input('script-bt-reload', 'n_clicks')])
     def reload_scripts(*args):

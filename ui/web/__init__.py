@@ -27,11 +27,13 @@ codec_cfg = utils.yaml.load_multiple("codec_params.yaml")
 dataview_cfg = None
 main_app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 AgentExperimentClass = None # populated by smart_agent, cannot import it from here
+running_as_collector = False
 
 class _UIState():
-    def __init__(self, expe=None):
+    def __init__(self, expe=None, viewer_mode=False):
         from . import graph, quality
 
+        self.viewer_mode = viewer_mode
         self.app = main_app
         self.DB = graph.DB()
         self.layout = None
@@ -46,16 +48,21 @@ class _UIState():
 
 ui_states = {}
 class __UIState():
-    def __init__(self, _viewer_mode):
+    def __init__(self):
         self.app = main_app
-        self.viewer_mode = _viewer_mode
 
     def __call__(self):
-        key = flask.request.referrer if self.viewer_mode else "collector"
+        try:
+            key = flask.request.referrer.split("/", maxsplit=3)[-1] # http://host/{key}
+        except RuntimeError as e: # Working outside of request context
+            if running_as_collector:
+                key = "collector"
+            else: raise(e)
+
         return ui_states[key]
 
 
-UIState = __UIState("viewer" in sys.argv)
+UIState = __UIState()
 
 def construct_layout(ui_state):
     from . import live, config, control, script, quality
@@ -68,7 +75,7 @@ def construct_layout(ui_state):
             yield dcc.Tab(label=graph_tab.tab_name,
                           children=list(live.graph_list(graph_tab)))
 
-        if UIState.viewer_mode: return
+        if UIState().viewer_mode: return
 
         yield script.construct_script_tab()
         yield config.construct_config_tab()
@@ -77,7 +84,7 @@ def construct_layout(ui_state):
     header = [dcc.Input(id='empty', style={"display": "none"})] + live.construct_header()
 
 
-    if UIState.viewer_mode:
+    if UIState().viewer_mode:
         header += config.construct_config_stubs()
 
     return html.Div(header+[dcc.Tabs(id="main-tabs", children=list(tab_entries()))])
@@ -120,42 +127,56 @@ def construct_dispatcher():
                        [Input('url', 'pathname')])
     def display_page(pathname):
         if pathname is None: return
-        url = flask.request.referrer
+        url = flask.request.referrer.split("/", maxsplit=3)[-1] # http://host/{key}
 
         try: return UIState().layout
         except KeyError: pass
 
-        if UIState.viewer_mode:
-            if pathname.startswith('/viewer/'):
-                try:
-                    ui_state = _UIState()
-                    ui_states[url] = ui_state # must remain before init()
+        if running_as_collector and pathname.startswith('/collector'):
+            return UIState().layout
 
-                    ui_state.layout = initialize_viewer(url, ui_state)
+        elif pathname == "/viewer":
+            import glob
+            children = [html.P(html.A(filename.rpartition("/")[-1],
+                                      href="/viewer/"+(filename.rpartition("/")[-1]),
+                                      target="_blank")) \
+                        for filename in glob.glob("logs/*.rec")]
 
-                    return ui_state.layout
-                except Exception as e:
-                    del ui_states[url]
-                    import traceback, sys, os, signal
-                    print(f"DASH: {e.__class__.__name__}: {e}")
-                    traceback.print_exception(*sys.exc_info())
+            return html.Div(children)
 
-                    return html.Div(f"Error: {e}")
-            elif pathname.startswith('/matrix/'):
-                return matrix_view.build_layout()
-            else:
-                import glob
-                children = [html.P(html.A(filename.rpartition("/")[-1],
-                                          href="/viewer/"+(filename.rpartition("/")[-1]),
-                                          target="_blank")) \
-                            for filename in glob.glob("logs/*.rec")]
-                return html.Div(children)
+        elif pathname.startswith('/viewer/'):
+            try:
+                ui_state = _UIState(viewer_mode=True)
+                ui_states[url] = ui_state # must remain before init()
 
+                ui_state.layout = initialize_viewer(url, ui_state)
+
+                return ui_state.layout
+            except Exception as e:
+                del ui_states[url]
+                import traceback, sys, os, signal
+                print(f"DASH: {e.__class__.__name__}: {e}")
+                traceback.print_exception(*sys.exc_info())
+
+                return html.Div(f"Error: {e}")
+
+        elif pathname.startswith('/matrix'):
+            return matrix_view.build_layout()
         else:
-            if pathname != "/":
-                return html.A("Go to /", href="/")
+            if pathname == "/collector":
+                msg = "Performance collector not available, running as viewer."
+            elif pathname != "/":
+                msg = f"Invalid page requested ({pathname})"
             else:
-                return html.Div("Error, should not end up here ...")
+                msg = ""
+
+            index = html.Ul(
+                ([html.Li(html.A("Performance Collector", href="/collector"))]
+                 if running_as_collector else []) +
+                [html.Li(html.A("Viewer index", href="/viewer")),
+                 html.Li(html.A("Matrix visualizer", href="/matrix"))])
+
+            return [msg, index]
 
 
 class Server():
@@ -186,9 +207,9 @@ class Server():
         dataview_cfg = graph.DataviewCfg(utils.yaml.load_multiple("ui/web/dataview.yaml"))
 
         if expe:
-            assert not UIState.viewer_mode, "Shouldn't be in viewer mode"
-            ui_state = ui_states["collector"] = _UIState(expe)
-
+            global running_as_collector
+            running_as_collector = True
+            ui_state = ui_states["collector"] = _UIState(expe, viewer_mode=False)
             ui_state.layout = construct_layout(ui_state)
 
         construct_dispatcher()

@@ -10,7 +10,7 @@ def construct_config_stubs():
     yield dcc.Input(type='number', value=0, id='graph-view-length', style={"display":"none"})
 
 def construct_config_tab():
-    if UIState.viewer_mode: return
+    if UIState().viewer_mode: return
 
     children = [
         "Graph refresh period: ",
@@ -29,7 +29,6 @@ def construct_config_tab():
     return dcc.Tab(label="Config", children=children)
 
 def construct_config_tab_callbacks(dataview_cfg):
-    if UIState.viewer_mode: return
 
     @UIState.app.callback(Output("script-msg-refresh", 'interval'),
                           [Input('cfg:script-refresh', 'value')])
