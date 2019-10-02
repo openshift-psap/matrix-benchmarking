@@ -109,6 +109,8 @@ def parse_data(filename):
 
         for param in entry.params.split(";"):
             key, value = param.split("=")
+            try: value = int(value)
+            except ValueError: pass # not a number, keep it as a string
             Matrix.properties[key].add(value)
 
         Matrix.entry_map[entry.key] = entry
@@ -123,7 +125,7 @@ def parse_data(filename):
             Matrix.properties["stats"].add(stat.name)
 
     for key, values in Matrix.properties.items():
-        print(f"{key:20s}: {', '.join(values)}")
+        print(f"{key:20s}: {', '.join(map(str, values))}")
 
 def build_layout():
     controls = [html.B("Parameters:"), html.Br()]

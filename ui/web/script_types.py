@@ -147,7 +147,7 @@ class MatrixScript(script.Script):
                 for name, url in self.yaml_desc["$webpage"].items():
                     pages.append(html.A(name, href=url))
                     pages.append(" | ")
-                params.append(html.Li([html.I("webpages"), " → ", html.Span(pages[:-1])]))
+                params.append(html.Li([html.I("$webpage"), " → ", html.Span(pages[:-1])]))
 
             yield html.Ul(params)
 
@@ -167,9 +167,28 @@ class MatrixScript(script.Script):
         for name, values in self.yaml_desc["matrix"].items():
             param_lists.append([(name, value) for value in values.split(", ")])
 
+        if not exe.dry:
+            log_filename = f"logs/{script_name}.csv"
+            with open(log_filename, "a") as log_f:
+                print(f"# {datetime.datetime.now()}", file=log_f)
+
+        expe_skipped = 0
         total_expe = functools.reduce(operator.mul, map(len, param_lists), 1)
         for expe_cnt, param_items in enumerate(itertools.product(*param_lists)):
             param_dict = dict(param_items)
+            param_str = ";".join([f"{k}={v}" for k, v in param_items]).replace('gst.prop=', '')
+
+            file_key = f"{webpage_name} {record_time}s {codec_name} {param_str}"
+            exe.log("---")
+            exe.log(f"running {expe_cnt}/{total_expe}")
+            exe.log("> "+file_key)
+            if file_key in matrix_view.Matrix.entry_map:
+                # add filename here
+                exe.log(f">> already recorded, skipping.")
+
+                expe_skipped += 1
+                continue
+
             exe.reset()
 
             exe.set_encoding(codec_name, param_dict)
@@ -183,15 +202,22 @@ class MatrixScript(script.Script):
                 datetime.datetime.today().strftime("%Y%m%d-%H%M%S") + ".rec"
             exe.save_graph(dest)
 
-            param_str = ";".join([f"{k}={v}" for k, v in param_items])
-            file_entry = f"{webpage_name} {wait_time}s {codec_name} {param_str} | {dest}"
-            filename = f"logs/{script_name}.log"
-            exe.log(f"write log: {filename} << {file_entry}")
+            OLD = True
+            if OLD:
+                file_entry = f"{file_key} | {dest}"
+                log_filename = f"logs/{script_name}.log"
+            else:
+                file_entry = f"{dest} | {codec_name} | {record_time}s | {webpage_name} | {param_str}"
+                log_filename = f"logs/{script_name}.csv"
+
+            exe.log(f"write log: {log_filename} << {file_entry}")
 
             if exe.dry: continue
 
-            with open(filename, "a") as log_f:
+            with open(log_filename, "a") as log_f:
                 print(file_entry, file=log_f)
+
+        exe.log(f"Performed {total_expe - expe_skipped} experiments.")
         exe.log(f"Skipped {expe_skipped} experiments already recorded.")
 
     def do_run_webpage(self, exe, name, url):
