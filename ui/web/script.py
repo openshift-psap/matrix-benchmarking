@@ -17,7 +17,11 @@ class Exec():
         self.total_wait_time = 0
 
     def log(self, *args):
-        self.script.log(*args)
+        msg = " ".join(map(str, args))
+        if self.dry:
+            Script.messages.append(msg)
+        else:
+            Script.messages.insert(0, msg)
 
     def execute(self, cmd):
         self.log("exec:", cmd)
@@ -76,24 +80,18 @@ class Script():
     def to_html(self):
         yield "nothing"
 
-    def log(self, *args):
-        Script.messages.append(" ".join(map(str, args)))
-
-    def do_run(self, exe):
-        self.log("This method should be overriden ...")
-
     def run(self, dry):
         exe = Exec(self, dry)
         if dry:
-            self.log(f"Running {self.name} (dry)")
+            exe.log(f"Running {self.name} (dry)")
             self.do_run(exe)
-            self.log(f"Estimated time: {exe.total_wait_time/60:.0f}min{exe.total_wait_time%60}s")
+            exe.log(f"Estimated time: {exe.total_wait_time/60:.0f}min{exe.total_wait_time%60}s")
         elif Script.thr:
-            self.log("Failed, a script thread is already running ...")
+            exe.log("Failed, a script thread is already running ...")
         else:
             def run_thr(exe):
                 Script.messages[:] = []
-                self.log(f"Running {self.name}!")
+                exe.log(f"Running {self.name}!")
                 self.do_run(exe)
                 Script.thr = None
 

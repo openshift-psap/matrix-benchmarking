@@ -69,7 +69,7 @@ class SimpleScript(script.Script):
 
         for test_name, test_cfg in self.yaml_desc["run"].items():
             if test_cfg.get("_disabled", False):
-                self.log(f"{self.name} / {test_name}: disabled")
+                exe.log(f"{self.name} / {test_name}: disabled")
                 continue
 
             if not first_record:
@@ -119,7 +119,7 @@ class SimpleScript(script.Script):
 
         for cmd in self.yaml_desc.get("after", []): exe.execute(cmd)
 
-        self.log("done!")
+        exe.log("done!")
 
 class MatrixScript(script.Script):
     def to_html(self):
@@ -171,7 +171,7 @@ class MatrixScript(script.Script):
         for expe_cnt, param_items in enumerate(itertools.product(*param_lists)):
             param_dict = dict(param_items)
             exe.reset()
-            self.log(f"running {expe_cnt}/{total_expe}")
+
             exe.set_encoding(codec_name, param_dict)
             exe.clear_graph()
             exe.clear_quality()
@@ -186,12 +186,13 @@ class MatrixScript(script.Script):
             param_str = ";".join([f"{k}={v}" for k, v in param_items])
             file_entry = f"{webpage_name} {wait_time}s {codec_name} {param_str} | {dest}"
             filename = f"logs/{script_name}.log"
-            self.log(f"write log: {filename} << {file_entry}")
+            exe.log(f"write log: {filename} << {file_entry}")
 
             if exe.dry: continue
 
             with open(filename, "a") as log_f:
                 print(file_entry, file=log_f)
+        exe.log(f"Skipped {expe_skipped} experiments already recorded.")
 
     def do_run_webpage(self, exe, name, url):
         for cmd in self.yaml_desc.get("before", []):
@@ -208,7 +209,8 @@ class MatrixScript(script.Script):
 
         for name, url in self.yaml_desc.get("$webpage", {"none": "none"}).items():
             self.do_run_webpage(exe, name, url)
-            self.log("---")
+            exe.log("---")
+
 TYPES = {
     None: SimpleScript,
     "simple": SimpleScript,
