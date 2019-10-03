@@ -207,7 +207,7 @@ def register_entry_handlers(agent):
 
     elif agent.mode == "guest":
         register_guest_frame(agent)
-
+        register_guest_streaming_info(agent)
 
 def register_frame_stats(agent):
     table = agent.experiment.create_table([
@@ -279,6 +279,17 @@ def register_stream_channel_data(agent):
 
     agent.processors["stream_channel_data"] = process
     agent.processors["stream_device_data"] = None # ignore, identical to above
+
+def register_guest_streaming_info(agent):
+    def process(entry):
+        info_type, _, info_msg = entry.msg.partition(": ")
+        if info_type == "resolution":
+            print("Guest streaming resolution:", info_msg)
+            quality.send_str("guest:"+entry.msg)
+        else:
+            print("Unknown streaming_info message:", entry.msg)
+
+    agent.processors["streaming_info"] = process
 
 def register_guest_frame(agent):
     table = agent.experiment.create_table([

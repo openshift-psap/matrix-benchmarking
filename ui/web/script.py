@@ -28,9 +28,9 @@ class Exec():
         if self.dry: return
         os.system(cmd)
 
-    def set_encoding(self, codec, params):
+    def set_encoding(self, codec, params, force=False):
         self.log("set_enc:", codec, params)
-        if self.dry: return
+        if self.dry and not force: return
         control.set_encoder(codec, params)
 
     def wait(self, nb_sec):

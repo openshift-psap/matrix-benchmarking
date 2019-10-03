@@ -158,10 +158,11 @@ class MatrixScript(script.Script):
         yield from keylist_to_html("after")
         yield from matrix_to_html()
 
-    def do_run_the_matrix(self, exe, webpage_name):
+    def do_run_the_matrix(self, exe, webpage_name, res):
         codec_name = self.yaml_desc["codec"]
         record_time = self.yaml_desc["record_time"]
         script_name = self.yaml_desc["name"]
+        resolution_str = 'x'.join([res["width"], res["height"]]) if res else "----x----"
 
         param_lists = []
         for name, values in self.yaml_desc["matrix"].items():
@@ -178,7 +179,8 @@ class MatrixScript(script.Script):
             param_dict = dict(param_items)
             param_str = ";".join([f"{k}={v}" for k, v in param_items]).replace('gst.prop=', '')
 
-            file_key = f"{webpage_name} {record_time}s {codec_name} {param_str}"
+            file_key = " | ".join([webpage_name, f"{record_time}s", codec_name,
+                                   param_str, resolution_str])
             exe.log("---")
             exe.log(f"running {expe_cnt}/{total_expe}")
             exe.log("> "+file_key)
@@ -220,11 +222,48 @@ class MatrixScript(script.Script):
         exe.log(f"Performed {total_expe - expe_skipped} experiments.")
         exe.log(f"Skipped {expe_skipped} experiments already recorded.")
 
-    def do_run_webpage(self, exe, name, url):
+    def get_resolution(self, exe):
+        from . import UIState
+        import time
+        # messages in db.quality are 'newer first'
+
+        resolution = None
+        db = UIState().DB
+
+        # find the ts of the last quality message, if any
+        # (UI quality messages may have ts=None)
+        last_quality_ts = 0
+        for ts, src, msg in db.quality[:]:
+            if not ts: continue
+            last_quality_ts = ts
+            break
+
+        exe.set_encoding("share_resolution", {}, force=True)
+        MAX_WAIT_LOOPS = 5 # 2.5s
+        nb_loops = 0
+
+        while True:
+            nb_loops += 1
+            time.sleep(0.5)
+            for ts, src, msg in db.quality[:]:
+                if ts and ts <= last_quality_ts: break
+                if not msg.startswith("resolution: "): continue
+                # msg = 'guest: resolution: height=1919 width=1007'
+                try: return dict([kv.split('=') for kv in msg.split()[1:]])
+                except Exception as e:
+                    print(f"Failed to parse resolution ({msg}):", e)
+                    return None
+
+            self.log(f"resolution not found, attempt {nb_loops}/{MAX_WAIT_LOOPS}")
+            if nb_loops >= MAX_WAIT_LOOPS:
+                print("bye")
+                return None
+
+    def do_run_webpage(self, exe, name, url, resolution):
         for cmd in self.yaml_desc.get("before", []):
             exe.execute(cmd.replace("$webpage", url))
 
-        self.do_run_the_matrix(exe, name)
+        self.do_run_the_matrix(exe, name, resolution)
 
         for cmd in self.yaml_desc.get("after", []): exe.execute(cmd)
 
@@ -233,8 +272,18 @@ class MatrixScript(script.Script):
         if not matrix_view.Matrix.properties:
             matrix_view.parse_data("logs/matrix.log")
 
+        exe.log("Query frame resolution ...")
+        resolution = self.get_resolution(exe)
+        if not resolution:
+            exe.log("Failed to get the resolution")
+            if not exe.dry:
+                exe.log("Something's wrong, bye!")
+                return
+
+        exe.log("resolution:", resolution)
+
         for name, url in self.yaml_desc.get("$webpage", {"none": "none"}).items():
-            self.do_run_webpage(exe, name, url)
+            self.do_run_webpage(exe, name, url, resolution)
             exe.log("---")
 
 TYPES = {
