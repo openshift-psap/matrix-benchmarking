@@ -1,35 +1,64 @@
-Host System:
-  Memory:
-    table: host.mem
-    x: time | as_timestamp
-    y: mem.free | as_B_to_GB > Free
-    y_title: GB of RAM
-
-  CPU Usage:
-    table: host.cpu
-    x: time | as_timestamp
-    y: cpu.idle > Idle
-    y2: cpu.guest > Guest
-    y_max: 100
-    y_title: '% of CPU usage'
-
-Guest System:
-  Memory:
+Memory:
+  Guest:
     table: guest.mem
     x: time | as_timestamp
     y: mem.free | as_B_to_GB > Free
     y_title: GB of RAM
 
-  CPU Usage:
+  Server:
+    table: server.mem
+    x: time | as_timestamp
+    y: mem.free | as_B_to_GB > Free
+    y_title: GB of RAM
+
+  Client:
+    table: client.mem
+    x: time | as_timestamp
+    y: mem.free | as_B_to_GB > Free
+    y_title: GB of RAM
+
+CPU:
+  Guest:
     table: guest.cpu
     x: time | as_timestamp
     y: cpu.idle > Idle
     y_max: 100
     y_title: '% of CPU usage'
 
-GPU Usage:
-  Host:
-    table: host.gpu
+  Server:
+    table: server.cpu
+    x: time | as_timestamp
+    y: cpu.idle > Idle
+    y2: cpu.guest > Guest
+    y_max: 100
+    y_title: '% of CPU usage'
+
+  Client:
+    table: client.cpu
+    x: time | as_timestamp
+    y: cpu.idle > Idle
+    y_max: 100
+    y_title: '% of CPU usage'
+
+GPU:
+  Guest:
+    table: guest.gpu
+    x: gpu.time | as_timestamp
+    y: gpu.render
+    y2: gpu.blitter
+    y3: gpu.video
+    y4: gpu.videoenhance
+
+  Server:
+    table: server.gpu
+    x: gpu.time | as_timestamp
+    y: gpu.render
+    y2: gpu.blitter
+    y3: gpu.video
+    y4: gpu.videoenhance
+
+  Client:
+    table: client.gpu
     x: gpu.time | as_timestamp
     y: gpu.render
     y2: gpu.blitter
@@ -37,17 +66,23 @@ GPU Usage:
     y4: gpu.videoenhance
 
 CPU Usage:
-  Host:
-    table: host.client-pid
-    x: time | as_timestamp
-    y: client-pid.cpu_user
-    y2: client-pid.cpu_system
-
   Guest:
     table: guest.guest-pid
     x: time | as_timestamp
     y: guest-pid.cpu_user
     y2: guest-pid.cpu_system
+
+  Server:
+    table: server.server-pid
+    x: time | as_timestamp
+    y: server-pid.cpu_user
+    y2: server-pid.cpu_system
+
+  Client:
+    table: client.client-pid
+    x: time | as_timestamp
+    y: client-pid.cpu_user
+    y2: client-pid.cpu_system
 
 Frames Size:
   Guest frame size:
@@ -70,26 +105,51 @@ Frames Size:
     y: client.frame_size
     _disabled: true
 
+Frame Rate:
+  Guest generation rate:
+    table: guest.guest
+    x: guest.msg_ts | as_us_timestamp
+    y: setting | framerate > framerate requested
+    y2: guest.msg_ts | as_fps > FPS
+
+  Server forward rate:
+    table: server.host
+    x: host.msg_ts | as_us_timestamp
+    y: setting | framerate > framerate requested
+    y2: host.frame_size | as_fps > FPS
+
+  Client Reception rate:
+    table: client.client
+    x: client.msg_ts | as_us_timestamp
+    y: setting | framerate > framerate requested
+    y2: client.queue | as_fps > FPS
+
+  Client queue:
+    table: client.client
+    x: client.msg_ts | as_us_timestamp
+    y: client.queue
+
 Frame Processing:
   Guest processing duration:
     table: guest.guest
     x: guest.msg_ts | as_us_timestamp
     y: guest.capture_duration
-    y2: guest.capture_duration | per_sec_5 > per_second (over 5s)
+    #y2: guest.capture_duration | per_sec_5 > per_second (over 5s)
     y3: guest.capture_duration | per_sec_20 > per_second (over 20s)
-    y4: guest.capture_duration | per_sec_60 > per_second (over 60s)
+    #y4: guest.capture_duration | per_sec_60 > per_second (over 60s)
     _y2: guest.encode_duration
     _y3: guest.send_duration
 
   Client processing duration:
-    table: host.client
+    table: client.client
     x: client.msg_ts | as_us_timestamp
     y: client.decode_duration
-    y2: client.decode_duration | per_sec_5 > per_second (over 5s)
+    #y2: client.decode_duration | per_sec_5 > per_second (over 5s)
     y3: client.decode_duration | per_sec_20 > per_second (over 20s)
-    y4: client.decode_duration | per_sec_60 > per_second (over 60s)
+    #y4: client.decode_duration | per_sec_60 > per_second (over 60s)
 
   Client queue:
-    table: host.client
+    _disabled: true
+    table: client.client
     x: client.msg_ts | as_us_timestamp
     y: client.queue
