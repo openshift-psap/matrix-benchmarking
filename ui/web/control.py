@@ -14,7 +14,7 @@ control_center_boxes = defaultdict(list)
 
 USE_VIRSH = False
 VIRSH_VM_NAME = "fedora30"
-QMP_ADDR = "localhost", 4444
+QMP_ADDR = "192.168.1.127", 4444
 
 def set_encoder(encoder_name, parameters):
     params_str = ";".join(f"{name+'=' if not name.startswith('_') else ''}{value}" for name, value in parameters.items() if value not in (None, "")) + ";"
