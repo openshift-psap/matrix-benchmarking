@@ -34,6 +34,7 @@ _type: matrix
 $webpage:
   #aqua: https://webglsamples.org/aquarium/aquarium.html
   cubemap: https://webglsamples.org/dynamic-cubemap/dynamic-cubemap.html
+  still: https://www.redhat.com/
 
 record_time: 30
 codec: gst.vp8.vaapivp8enc
