@@ -108,7 +108,7 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
         plots = []
         y_max = 0
         for y_field, Y in tbl.get_all_y(X):
-            y_max = max([y for y in Y if y is not None] + [y_max] + [0])
+            y_max = max([y for y in Y if y is not None] + [y_max])
 
             plots.append(
                 plotly.graph_objs.Scatter(
