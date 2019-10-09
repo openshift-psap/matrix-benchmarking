@@ -339,32 +339,39 @@ def build_callbacks(app):
                 layout = go.Layout()
                 if len(variables) == 0:
                     layout.title = "Select at least 1 variable parameter..."
-                elif len(variables) == 1:
-                    var_name = list(variables.items())[0][0]
-                    layout.title = table_stat.name + " vs " + var_name
-                    layout.xaxis = dict(type='category', title=var_name)
-                    layout.yaxis = dict(title=table_stat.name+ f"({table_stat.unit})")
+                elif len(variables) <= 2:
+                    param_lists = [[(key, v) for v in value] for key, value in variables.items()]
 
-                    x = []; y = []; y_err = []
-                    for param, values in variables.items():
-                        for value in sorted(values):
-                            params[param] = value
-                            params["params"] = ";".join([f"{k}={params[k]}" for k in params_order])
-                            key = " | ".join([params[k] for k in KEY_ORDER])
+                    main_var, *second_var = variables.keys()
 
-                            try: entry = Matrix.entry_map[key]
-                            except KeyError: continue # missing experiment
+                    layout.title = f"{table_stat.name} vs {main_var}" \
+                        + f"x {second_var[0]}" if second_var else ""
+                    layout.xaxis = dict(type='category', title=main_var)
+                    layout.yaxis = dict(title=table_stat.name+ f" ({table_stat.unit})")
 
-                            x.append(f"{value}")
-                            y.append(entry.stats[table_stat.name].value)
-                            y_err.append(entry.stats[table_stat.name].stdev)
-                    if any(y_err):
+                    x = defaultdict(list); y = defaultdict(list); y_err = defaultdict(list)
+                    for param_values in sorted(itertools.product(*param_lists)):
+                        params.update(dict(param_values))
+
+                        params["params"] = ";".join([f"{k}={params[k]}" for k in params_order])
+                        key = " | ".join([params[k] for k in KEY_ORDER])
+
+                        try: entry = Matrix.entry_map[key]
+                        except KeyError: continue # missing experiment
+
+                        key = f"{second_var[0]}={params[second_var[0]]}" \
+                            if second_var else "_"
+
+                        x[key].append(params[main_var])
+                        y[key].append(entry.stats[table_stat.name].value)
+                        y_err[key].append(entry.stats[table_stat.name].stdev)
+
+                    for key in x.keys():
                         y_error = dict(type='data', visible=True,
-                                       array=y_err)
-                    else: y_error = None
+                                       array=y_err[key]) if any(y_err[key]) else None
 
-                    data.append({'x': x, 'y': y, 'type': 'bar', 'name': table_stat.name,
-                                 'error_y' : y_error})
+                        data.append({'x': x[key], 'y': y[key], 'error_y' : y_error,
+                                     'type': 'bar', 'name': key})
                 else:
                     layout.title = f"Too many variable parameters ({', '.join(variables)}) ..."
 
