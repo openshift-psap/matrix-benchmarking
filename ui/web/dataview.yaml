@@ -109,20 +109,20 @@ Frame Rate:
   Guest generation rate:
     table: guest.guest
     x: guest.msg_ts | as_us_timestamp
-    y: setting | framerate > framerate requested
-    y2: guest.msg_ts | as_fps > FPS
+    y: guest.msg_ts | as_delta > Generation time Δ
+    y2: setting | framerate > framerate requested
 
   Server forward rate:
     table: server.host
     x: host.msg_ts | as_us_timestamp
-    y: setting | framerate > framerate requested
-    y2: host.frame_size | as_fps > FPS
+    y: host.frame_size | as_delta > Forwarding time Δ
+    y2: setting | framerate > framerate requested
 
   Client Reception rate:
     table: client.client
     x: client.msg_ts | as_us_timestamp
-    y: setting | framerate > framerate requested
-    y2: client.queue | as_fps > FPS
+    y: client.queue | as_delta > Reception time Δ
+    y2: setting | framerate > framerate requested
 
   Client queue:
     table: client.client

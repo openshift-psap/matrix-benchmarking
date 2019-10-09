@@ -92,6 +92,13 @@ class GraphFormat():
         return Y_lst
 
     @staticmethod
+    def as_delta(Y_lst, X_lst):
+        new = [(stop-start).total_seconds() for start, stop in zip (X_lst, X_lst[1:])]
+        if new: new.append(new[-1]) # so that len(new) == len(Y_lst)
+
+        return new
+
+    @staticmethod
     def as_timestamp(Y_lst, X_lst):
         return [datetime.datetime.fromtimestamp(t) for t in Y_lst]
 
