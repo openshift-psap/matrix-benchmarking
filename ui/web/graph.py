@@ -106,6 +106,39 @@ class GraphFormat():
     def as_us_timestamp(Y_lst, X_lst):
         return [datetime.datetime.fromtimestamp(t/1000000) for t in Y_lst]
 
+    @staticmethod
+    def get_setting_modifier(operation_name):
+        OPERATIONS = {
+            'inverted': lambda x: 1/float(x),
+        }
+
+        def modifier(table, X_lst, X_raw, X_idx):
+            db = UIState().DB
+            qual = iter(db.quality_by_table[table])
+            try: current_qual = next(qual)
+            except StopIteration: qual = None
+            new = []
+            last_value = 0
+            name, *operations = operation_name.split(" | ")
+            for x_raw in X_raw:
+                while qual and current_qual[0][X_idx] == x_raw:
+                    qual_msg = current_qual[1]
+                    if qual_msg.startswith("!encoding:") and name in qual_msg:
+                        params = qual_msg.partition("params:")[-1].split(';')
+                        for param in params:
+                            if not param.startswith(name): continue
+                            last_value= int(param.split("=")[1])
+                            for op in operations:
+                                last_value = OPERATIONS[op](last_value)
+                            new.append(last_value)
+                            break
+                    try: current_qual = next(qual)
+                    except StopIteration: qual = None
+                else:
+                    new.append(last_value)
+            return new
+        return modifier
+
 class DbTableForSpec():
     @staticmethod
     def get_table_for_spec(graph_spec):
@@ -116,6 +149,7 @@ class DbTableForSpec():
 
         for table in db.tables_by_name[graph_spec.table]:
             for ax in graph_spec.all_axis:
+                if ax.field_name == "setting": continue
                 if ax.field_name not in table.fields:
                     break
             else: # didn't break, all the fields are present
@@ -140,6 +174,9 @@ class DbTableForSpec():
         return self.table.fields.index(field.field_name)
 
     def get(self, field, X):
+        if field.field_name == "setting":
+            return field.modify(self.table, X, self.get_raw_x(), self.idx(self.graph_spec.x))
+
         idx = self.idx(field)
 
         values = [(row[idx]) for row in self.content]
@@ -147,6 +184,11 @@ class DbTableForSpec():
             return list(field.modify(values, X))
         except Exception as e:
             print(e)
+
+    def get_raw_x(self):
+        idx = self.idx(self.graph_spec.x)
+
+        return [row[idx] for row in self.content]
 
     def get_first_raw_x(self):
         return self.content[0][self.idx(self.graph_spec.x)]
@@ -165,11 +207,16 @@ class FieldSpec():
 
         self.field_name, _, modif = field_modif.partition("|")
         self.field_name = self.field_name.strip()
+        modif = modif.strip()
 
         self.label = label if has_label else self.field_name
 
+        if self.field_name == "setting":
+            self.modify = GraphFormat.get_setting_modifier(modif)
+            return
+
         try:
-            self.modify = getattr(GraphFormat, modif.strip())
+            self.modify = getattr(GraphFormat, modif)
         except AttributeError:
             self.modify = lambda y,x:y
 
