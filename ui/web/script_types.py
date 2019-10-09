@@ -194,30 +194,27 @@ class MatrixScript(script.Script):
             exe.reset()
 
             exe.set_encoding(codec_name, param_dict)
+            exe.wait(10)
             exe.clear_graph()
             exe.clear_quality()
             exe.wait(1)
-            exe.set_encoding(codec_name, param_dict)
+            exe.append_quality(f"script: name: {script_name}"):
+            exe.append_quality("script: encoding: {codec_name} | {param_dict}"):
             exe.wait(record_time)
 
-            dest = f"logs/{script_name}_{webpage_name}_{record_time}s_" + \
+            dest = f"logs/{script_name}_{record_time}s_" + \
                 datetime.datetime.today().strftime("%Y%m%d-%H%M%S") + ".rec"
             exe.save_graph(dest)
 
-            OLD = True
-            if OLD:
-                file_entry = f"{file_key} | {dest}"
-                log_filename = f"logs/{script_name}.log"
-            else:
-                file_entry = f"{dest} | {codec_name} | {record_time}s | {webpage_name} | {param_str}"
-                log_filename = f"logs/{script_name}.csv"
+            log_entry = f"{file_key} | {dest}"
+            log_filename = f"logs/{script_name}.csv"
 
-            exe.log(f"write log: {log_filename} << {file_entry}")
+            exe.log(f"write log: {log_filename} << {log_entry}")
 
             if exe.dry: continue
 
             with open(log_filename, "a") as log_f:
-                print(file_entry, file=log_f)
+                print(log_entry, file=log_f)
 
         exe.log(f"Performed {total_expe - expe_skipped} experiments.")
         exe.log(f"Skipped {expe_skipped} experiments already recorded.")

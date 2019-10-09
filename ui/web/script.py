@@ -2,7 +2,7 @@ import dash
 from dash.dependencies import Output, Input, State
 import dash_core_components as dcc
 import dash_html_components as html
-import os, time
+import os, time, datetime
 import threading
 
 import utils.yaml
@@ -21,6 +21,7 @@ class Exec():
         if self.dry:
             Script.messages.append(msg)
         else:
+            print(datetime.datetime.now().strftime("%H:%M:%S"), msg)
             Script.messages.insert(0, msg)
 
     def execute(self, cmd):

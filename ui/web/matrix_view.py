@@ -10,36 +10,113 @@ from dash.dependencies import Output, Input, State
 import plotly
 import plotly.graph_objs as go
 
+import datetime
+
 import measurement.perf_viewer
 
 class TableStats():
     all_stats = []
+    stats_by_name = {}
 
     interesting_tables = defaultdict(list)
 
-    def __init__(self, id_name, name, table, field, units, min_rows=0):
+    def __init__(self, id_name, name, table, field, fmt, unit, min_rows=0, divisor=1):
         self.id_name = id_name
         self.name = name
         self.table = table
         self.field = field
-        self.units = units
+        self.unit = unit
+        self.fmt = fmt
         self.min_rows = min_rows
+        self.divisor = divisor
+
+        self.do_process = None
 
         TableStats.interesting_tables[table].append(self)
         TableStats.all_stats.append(self)
+        TableStats.stats_by_name[self.name] = self
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.id_name
+
+    @classmethod
+    def Average(clazz, *args, **kwargs):
+        obj = clazz(*args, **kwargs)
+        obj.do_process = obj.process_average
+        return obj
+
+    @classmethod
+    def PerSeconds(clazz, *args, **kwargs):
+        obj = clazz(*args, **kwargs)
+        obj.do_process = obj.process_per_seconds
+        return obj
 
     def process(self, table_def, rows):
+        class FutureValue():
+            def __init__(self):
+                self.computed = False
+                self._value = None
+                self._stdev = None
+
+            @property
+            def value(myself):
+                if myself._value is not None: return myself._value
+
+                myself._value, myself._stdev = self.do_process(table_def, rows)
+                return myself._value
+
+            @property
+            def stdev(myself):
+                if myself._value is not None:
+                    _not_used = myself.value # force trigger the computation
+
+                return myself._stdev
+
+            def __str__(myself):
+                val = f"{myself.value:{self.fmt}}{self.unit}"
+                if myself.stdev:
+                    val += f" +/- {myself.stdev:{self.fmt}}{self.unit}"
+                return val
+
+        return FutureValue()
+
+    def process_per_seconds(self, table_def, rows):
+        time_field, value_field = self.field
+
+        indexes = table_def.partition("|")[2].split(";")
+
+        time_row_id = indexes.index(time_field)
+        value_row_id = indexes.index(value_field)
+
+        values_total = sum(row[value_row_id] for row in rows)
+        start_time = datetime.datetime.fromtimestamp(rows[0][time_row_id]/1000000)
+        end_time = datetime.datetime.fromtimestamp(rows[-1][time_row_id]/1000000)
+
+        return (values_total / (end_time - start_time).seconds) / self.divisor, 0
+
+    def process_average(self, table_def, rows):
+        import statistics
         row_id = table_def.partition("|")[2].split(";").index(self.field)
-        total = sum(row[row_id] for row in rows)
+        values = [row[row_id] for row in rows]
 
-        return total/len(rows)
+        return statistics.mean(values) / self.divisor, statistics.stdev(values) / self.divisor
 
-TableStats("client_cpu", "Client CPU (%)", "host.client-pid", "client-pid.cpu_user", "%")
-TableStats("qemu_cpu", "Qemu CPU (%)", "host.server-pid", "server-pid.cpu_user", "%")
-TableStats("host_gpu_video", "Host Video (%)", "host.gpu", "gpu.video", "%")
-TableStats("host_gpu_render", "Host Render (%)", "host.gpu", "gpu.render", "%")
-TableStats("guest_cpu", "Guest CPU (%)", "guest.guest-pid", "guest-pid.cpu_user", "%")
-TableStats("frame_size", "Frame Size (B)", "host.host", "host.frame_size", "B", min_rows=10)
+TableStats.PerSeconds("frame_size", "Frame Bandwidth", "server.host",
+                      ("host.msg_ts", "host.frame_size"), ".0f", "KB/s", min_rows=10, divisor=1000)
+
+for name in ("server", "client", "guest"):
+    TableStats.Average(f"{name}_gpu_video", f"{name.capitalize()} GPU Video",
+                       "server.gpu", "gpu.video", ".0f", "%")
+    TableStats.Average(f"{name}_gpu_render", f"{name.capitalize()} GPU Render", "server.gpu",
+                       "gpu.render", ".0f",  "%")
+
+    TableStats.Average(f"{name}_cpu", f"{name.capitalize()} CPU", f"{name}.{name}-pid",
+                       f"{name}-pid.cpu_user", ".0f", "%")
+
+TableStats.Average(f"client_queue", f"Client Queue", "client.client", "client.queue", ".2f", "")
 
 class Matrix():
     properties = defaultdict(set)
@@ -49,17 +126,20 @@ class Matrix():
 
 FileEntry = types.SimpleNamespace
 
-KEY_ORDER = "webpage", "record_time", "codec", "params"
+KEY_ORDER = "webpage", "record_time", "codec", "params", "resolution"
 params_order = None
 
 def parse_data(filename):
+    if not os.path.exists(filename): return
+
     for line in open(filename).readlines():
         if not line.strip(): continue
+        if line.startswith("#"): continue
         entry = FileEntry()
 
-        # aqua 30s gst.vp8.vaapivp8enc framerate=10;gst.prop=target-bitrate=1000;gst.prop=rate-control=vbr;gst.prop=keyframe-period=0 | logs/matrix_aqua_30s_20190929-172656.rec
-        entry.key, entry.filename = line.strip().replace("gst.prop=", "").split(" | ")
-        entry.__dict__.update(dict(zip(KEY_ORDER, entry.key.split())))
+        # cubemap | 30s | gst.vp8.vaapivp8enc | framerate=10;target-bitrate=1000;rate-control=vbr;keyframe-period=0 | 1199x1919 | logs/matrix_30s_20191008-173112.rec
+        entry.key, _, entry.filename = line.strip().replace("gst.prop=", "").rpartition(" | ")
+        entry.__dict__.update(dict(zip(KEY_ORDER, entry.key.split(" | "))))
 
         global params_order
         if params_order is None:
@@ -106,6 +186,7 @@ def parse_data(filename):
         Matrix.properties["codec"].add(entry.codec)
         Matrix.properties["record_time"].add(entry.record_time)
         Matrix.properties["webpage"].add(entry.webpage)
+        Matrix.properties["resolution"].add(entry.resolution)
 
         for param in entry.params.split(";"):
             key, value = param.split("=")
@@ -117,12 +198,11 @@ def parse_data(filename):
 
         entry.stats = {}
         for table_def, (table_name, table_rows) in entry.tables.items():
-            for table_stats in TableStats.interesting_tables[table_name]:
+            for table_stat in TableStats.interesting_tables[table_name]:
+                entry.stats[table_stat.name] = table_stat.process(table_def, table_rows)
 
-                entry.stats[table_stats.name] = table_stats.process(table_def, table_rows)
-
-        for stat in TableStats.all_stats:
-            Matrix.properties["stats"].add(stat.name)
+        for table_stat in TableStats.all_stats:
+            Matrix.properties["stats"].add(table_stat.name)
 
     for key, values in Matrix.properties.items():
         print(f"{key:20s}: {', '.join(map(str, values))}")
@@ -132,16 +212,20 @@ def build_layout():
     for key, values in Matrix.properties.items():
         options = [{'label': i, 'value': i} for i in sorted(values)]
 
-        len_is_1 = len(values) == 1
-        if not len_is_1:
-            options.insert(0, {'label': "[ all ]", 'value': "---"})
+        attr = {}
+        if key == "stats":
+            attr["multi"] = True
 
-        tag = dcc.Dropdown(
-                id='list-params-'+key,
-                options=options, disabled=len_is_1,
-                value=options[0]['value'] if len_is_1 else "---",
-            searchable=False, clearable=False
-            )
+        elif len(values) == 1:
+            attr["disabled"] = True
+            attr["value"] = options[0]['value']
+        else:
+            options.insert(0, {'label': "[ all ]", 'value': "---"})
+            attr["value"] = "---"
+
+        tag = dcc.Dropdown(id='list-params-'+key, options=options,
+                           **attr, searchable=False, clearable=False)
+
         controls += [f"{key}: ", tag]
 
     invalids = [html.B("Invalids:"), html.Br(),
@@ -150,14 +234,18 @@ def build_layout():
 
     graph_children = []
     for table_stat in TableStats.all_stats:
-        graph_children += [dcc.Graph(id=table_stat.id_name, style={"display": "block"})]
+        graph_children += [dcc.Graph(id=table_stat.id_name, style={"display": "none"})]
 
     return html.Div([html.Div(children=controls+invalids, className='two columns'),
                      html.Div("nothing yet", id='text-box', className='four columns'),
                      html.Div(children=graph_children, id='graph-box', className='six columns')])
 
 def process_selection(params):
+    variables = [k for k, v in params.items() if v == "---"]
+
     params = {k:(Matrix.properties[k] if v == "---" else [v]) for k, v in params.items() }
+    params["stats"] = params["stats"][0] # stats param is already a list
+    if params["stats"] is None: params["stats"] = []
 
     param_lists = [[(key, v) for v in value] for key, value in params.items() if key != "stats"]
 
@@ -167,10 +255,10 @@ def process_selection(params):
         return f"Select more parameters ({total_expe} combinations with current selection)"
 
     children = []
-    for entry_props in itertools.product(*param_lists):
+    for entry_props in sorted(itertools.product(*param_lists)):
         entry_dict = dict(entry_props)
         entry_dict["params"] = ";".join([f"{k}={entry_dict[k]}" for k in params_order])
-        key = " ".join([entry_dict[k] for k in KEY_ORDER])
+        key = " | ".join([entry_dict[k] for k in KEY_ORDER])
 
         try: entry = Matrix.entry_map[key]
         except KeyError: continue
@@ -180,13 +268,20 @@ def process_selection(params):
 
         link = html.A("view", target="_blank", href="/viewer/"+entry.filename)
 
-        entry_stats = [html.Li(f"{k}: {int(v)}") for k, v in entry.stats.items() if k in params["stats"]]
+        entry_stats = []
+        for stat_name, stat_value in entry.stats.items():
+            if stat_name not in params["stats"]: continue
+            table_stat = TableStats.stats_by_name[stat_name]
+
+            entry_stats.append(html.Li(f"{stat_name}: {stat_value}"))
+
         entry_html = [title, " [", link, "]", html.Ul(entry_stats)]
 
         children.append(html.Li(entry_html))
 
-
-    return [html.P(f"Nb expe selected: {len(children)} ({total_expe-len(children)} missing), DB total: {len(Matrix.entry_map)}"), html.Ul(children)]
+    return [html.P(f"Showing {len(children)} experiments out of {len(Matrix.entry_map)} ({total_expe-len(children)} missing)"),
+            html.P([html.B("Variables: "), ', '.join(variables)]),
+            html.Ul(children)]
 
 def build_callbacks(app):
     @app.callback(Output("text-box", 'children'),
@@ -218,14 +313,12 @@ def build_callbacks(app):
         def create_callback(table_stat):
             @app.callback(Output(table_stat.id_name, 'style'),
                           [Input('list-params-stats', "value")])
-            def graph_style(stats_value):
+            def graph_style(stats_values):
                 try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
-                except IndexError: return # nothing triggered the script (on multiapp load)
+                except IndexError: triggered_id = None # nothing triggered the script (on multiapp load)
+
                 style = {}
-                if stats_value == "---":
-                    style["display"] = "block"
-                else:
-                    style["display"] = "block" if stats_value == table_stat.name else "none"
+                style["display"] = "block" if triggered_id and table_stat.name in stats_values else "none"
                 if style["display"] == "block":
                     print("Show",table_stat.name )
                 return style
@@ -235,8 +328,8 @@ def build_callbacks(app):
             def graph_figure(*args):
                 params = dict(zip([key for key in Matrix.properties], args))
 
-                stats_value = params["stats"]
-                if stats_value not in ("---", table_stat.name):
+                stats_values = params["stats"]
+                if not stats_values or table_stat.name not in stats_values:
                     return dash.no_update
 
                 variables = {k:(Matrix.properties[k]) for k, v in params.items() \
@@ -250,22 +343,28 @@ def build_callbacks(app):
                     var_name = list(variables.items())[0][0]
                     layout.title = table_stat.name + " vs " + var_name
                     layout.xaxis = dict(type='category', title=var_name)
-                    layout.yaxis = dict(title=table_stat.name)
+                    layout.yaxis = dict(title=table_stat.name+ f"({table_stat.unit})")
 
-                    x = []; y = []
+                    x = []; y = []; y_err = []
                     for param, values in variables.items():
                         for value in sorted(values):
                             params[param] = value
                             params["params"] = ";".join([f"{k}={params[k]}" for k in params_order])
-                            key = " ".join([params[k] for k in KEY_ORDER])
+                            key = " | ".join([params[k] for k in KEY_ORDER])
 
                             try: entry = Matrix.entry_map[key]
                             except KeyError: continue # missing experiment
 
                             x.append(f"{value}")
-                            y.append(entry.stats[table_stat.name])
+                            y.append(entry.stats[table_stat.name].value)
+                            y_err.append(entry.stats[table_stat.name].stdev)
+                    if any(y_err):
+                        y_error = dict(type='data', visible=True,
+                                       array=y_err)
+                    else: y_error = None
 
-                    data.append({'x': x, 'y': y, 'type': 'bar', 'name': 'Cars'})
+                    data.append({'x': x, 'y': y, 'type': 'bar', 'name': table_stat.name,
+                                 'error_y' : y_error})
                 else:
                     layout.title = f"Too many variable parameters ({', '.join(variables)}) ..."
 

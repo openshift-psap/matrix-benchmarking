@@ -102,7 +102,7 @@ def construct_callbacks():
     # Dash doesn't support creating the callbacks AFTER the app is running,
     # can the Matrix callback IDs are dynamic (base on the name of the parameters)
     # So at the moment, only one file can be loaded, here in the startup...
-    matrix_view.parse_data("logs/matrix.log")
+    matrix_view.parse_data("logs/matrix.csv")
     matrix_view.build_callbacks(main_app)
 
 def initialize_viewer(url, ui_state):
