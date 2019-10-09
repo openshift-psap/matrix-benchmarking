@@ -90,7 +90,7 @@ class Perf_Collect(measurement.Measurement):
     def initialize_localagent(self):
         nb_tables = struct.unpack("I", self.sock.recv(4))[0]
 
-        print(f"Received {nb_tables} table definitions")
+        print(f"{self.mode}: received {nb_tables} table definitions")
         tables = {}
         for _ in range(nb_tables):
             msg = ""
