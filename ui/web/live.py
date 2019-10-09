@@ -11,6 +11,7 @@ from . import graph
 
 # vh = view height, 100 == all the visible screen
 GRAPH_MAX_VH_HEIGHT = 75
+GRAPH_MIN_VH_HEIGHT = 75/3
 
 def graph_list(graph_tab):
     for graph_spec in graph_tab.graphs:
@@ -19,13 +20,15 @@ def graph_list(graph_tab):
                       style={'text-align': "center", "font-size": "17px", "fill":"rgb(68, 68, 68)",
                              'margin-bottom': '0rem'})
 
+        height = max((1/len(graph_tab.graphs)*GRAPH_MAX_VH_HEIGHT), GRAPH_MIN_VH_HEIGHT)
         yield dcc.Graph(id=graph_spec.to_id(),
-                        style={"height":f"{(1/len(graph_tab.graphs)*GRAPH_MAX_VH_HEIGHT):.0f}vh"})
+                        style={"height":f"{height:.0f}vh"})
 
         yield html.Div(id=graph_spec.to_id()+":clientside-output")
 
 
     refresh_interval = 9999999 if UIState().viewer_mode else InitialState.GRAPH_REFRESH_INTERVAL * 1000
+
     yield dcc.Interval(
         id=graph_tab.to_id()+'-refresh',
         interval=refresh_interval)
@@ -67,7 +70,8 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
             nb_visible = sum([1 for _graph_spec in graph_tab.graphs
                               if not _graph_spec.yaml_desc.get("_collapsed")])
 
-            height = f"{(1/len(graph_tab.graphs)*GRAPH_MAX_VH_HEIGHT):.0f}vh"
+            _height = max((1/len(graph_tab.graphs)*GRAPH_MAX_VH_HEIGHT), GRAPH_MIN_VH_HEIGHT)
+            height = f"{_height:.0f}vh"
 
             title_style["color"] = ""
         else:

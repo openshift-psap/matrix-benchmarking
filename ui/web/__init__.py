@@ -135,7 +135,7 @@ def construct_dispatcher():
         if running_as_collector and pathname.startswith('/collector'):
             return UIState().layout
 
-        elif pathname == "/viewer":
+        elif pathname in ("/viewer", "/viewer/"):
             import glob
             children = [html.P(html.A(filename.rpartition("/")[-1],
                                       href="/viewer/"+(filename.rpartition("/")[-1]),

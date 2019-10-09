@@ -24,10 +24,12 @@ class Quality():
         UIState().DB.quality[:] = []
 
 def construct_quality_callbacks():
-    refresh_inputs = Input('quality-refresh', 'n_intervals')
     @UIState.app.callback(Output("quality-box", 'children'),
-                          [refresh_inputs])
+                          [Input('quality-refresh', 'n_intervals')])
     def refresh_quality(*args):
+        try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
+        except IndexError: return # nothing triggered the script (on multiapp load)
+
         return [html.P(f"{src}: {msg}", style={"margin-top": "0px", "margin-bottom": "0px"}) \
                 for (ts, src, msg) in UIState().DB.quality]
 

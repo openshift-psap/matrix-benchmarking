@@ -221,10 +221,12 @@ def construct_control_center_tab(codec_cfg):
         dcc.Tabs(id="video-enc-tabs", children=list(get_codec_tabs())),
     ]
 
+    refresh_interval = 9999999 if UIState().viewer_mode else InitialState.QUALITY_REFRESH_INTERVAL * 1000
+
     quality_headers = [html.H3("Quality Messages", style={"text-align":"center"}),
                        dcc.Interval(
-                           id='quality-refresh',
-                           interval=InitialState.QUALITY_REFRESH_INTERVAL * 1000
+                           id='quality-refresh', n_intervals=0,
+                           interval=refresh_interval
                        )]
 
     quality_area = html.Div(id="quality-box", children=[],
