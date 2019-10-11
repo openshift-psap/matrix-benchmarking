@@ -76,9 +76,10 @@ class Server():
                 self.quality_buffer.append(c)
 
             return True
+        except ConnectionResetError: pass # Collector disconnected
         except Exception as e:
             print("thr_read_quality failed:", e)
-            return False
+        return False
 
     def thr_quality_to_agent(self, msg):
         measurement.agentinterface.quality.send_str(msg)

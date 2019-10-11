@@ -105,8 +105,13 @@ class Perf_Collect(measurement.Measurement):
             self.create_table(msg[1:-1])
 
     def send_quality(self, quality_msg):
-        print(">>>", quality_msg)
-        self.sock.send((quality_msg + "\0").encode("ascii"))
+        if not self.live: return
+        try:
+            self.sock.send((quality_msg + "\0").encode("ascii"))
+        except BrokenPipeError:
+            print(f"{self.mode}: BrokenPipeError")
+            self.sock = None
+            self.live = False
 
     def setup(self):
         self.experiment.send_quality_cbs.append(self.send_quality)
@@ -116,7 +121,7 @@ class Perf_Collect(measurement.Measurement):
         try:
             self.sock.connect((self.host, self.port))
         except ConnectionRefusedError:
-            raise Exception("Cannot connect to the SmartLocalAgent on "
+            raise ConnectionRefusedError("Cannot connect to the SmartLocalAgent on "
                             f"{self.host}:{self.port} ({self.mode})")
 
         self.initialize_localagent()

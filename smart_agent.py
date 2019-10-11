@@ -79,7 +79,7 @@ class AgentExperiment():
         if not self.send_quality_cbs:
             print("No callback set for sending quality message: ", msg)
             return
-
+        print("Quality to send:", quality_msg)
         for send_quality_cb in self.send_quality_cbs:
             send_quality_cb(msg)
 
@@ -152,7 +152,7 @@ def checkup_mods(measurements, deads, loop):
                 mod.start()
                 mod.live.connect(loop, mod.process_line)
             except Exception as e:
-                print("###", e.__class__.__name__, e)
+                print("###", e.__class__.__name__+":", e)
                 if VERBOSE:
                     fatal = sys.exc_info()
                     traceback.print_exception(*fatal)
