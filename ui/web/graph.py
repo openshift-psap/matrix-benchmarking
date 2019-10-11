@@ -28,7 +28,7 @@ class DB():
     def save_to_file(self, filename):
         print("Saving into", filename)
         output = open(filename, "w")
-        print(json.dumps(self.quality.Quality.quality), file=output)
+        print(json.dumps(self.quality), file=output)
 
         for table in self.expe.tables.values():
             print(table.header(), file=output)

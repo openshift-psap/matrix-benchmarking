@@ -198,8 +198,8 @@ class MatrixScript(script.Script):
             exe.clear_graph()
             exe.clear_quality()
             exe.wait(1)
-            exe.append_quality(f"script: name: {script_name}"):
-            exe.append_quality("script: encoding: {codec_name} | {param_dict}"):
+            exe.append_quality(f"script: name: {script_name}")
+            exe.append_quality(f"script: encoding: {codec_name} | {', '.join([f'{k}={v}' for k, v in param_dict.items()])}")
             exe.wait(record_time)
 
             dest = f"logs/{script_name}_{record_time}s_" + \
