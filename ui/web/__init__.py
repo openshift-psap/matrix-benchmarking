@@ -161,7 +161,7 @@ def construct_dispatcher():
                 return html.Div(f"Error: {e}")
 
         elif pathname.startswith('/matrix'):
-            return matrix_view.build_layout()
+            return matrix_view.build_layout(main_app)
         else:
             if pathname == "/collector":
                 msg = "Performance collector not available, running as viewer."

@@ -6,7 +6,7 @@ import itertools, functools, operator
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-from dash.dependencies import Output, Input, State
+from dash.dependencies import Output, Input, State, ClientsideFunction
 import plotly
 import plotly.graph_objs as go
 
@@ -207,8 +207,8 @@ def parse_data(filename):
     for key, values in Matrix.properties.items():
         print(f"{key:20s}: {', '.join(map(str, values))}")
 
-def build_layout():
-    controls = [html.B("Parameters:"), html.Br()]
+def build_layout(app):
+    matrix_controls = [html.B("Parameters:"), html.Br()]
     for key, values in Matrix.properties.items():
         options = [{'label': i, 'value': i} for i in sorted(values)]
 
@@ -226,17 +226,26 @@ def build_layout():
         tag = dcc.Dropdown(id='list-params-'+key, options=options,
                            **attr, searchable=False, clearable=False)
 
-        controls += [f"{key}: ", tag]
+        matrix_controls += [f"{key}: ", tag]
 
     invalids = [html.B("Invalids:"), html.Br(),
                 html.Button("Show", id="invalids-show"),
                 html.Button("Delete", id="invalids-delete")]
 
+    show_text = [html.Br(), html.B("Aspect:"), html.Br(),
+                 dcc.Checklist(id="matrix-show-text", value='txt',
+                               options=[{'label': 'Show text', 'value': 'txt'}])]
+
+    control_children = matrix_controls + invalids + show_text
+
     graph_children = []
     for table_stat in TableStats.all_stats:
         graph_children += [dcc.Graph(id=table_stat.id_name, style={"display": "none"})]
 
-    return html.Div([html.Div(children=controls+invalids, className='two columns'),
+
+    graph_children += [html.Div(id="text-box:clientside-output")]
+
+    return html.Div([html.Div(children=control_children, className='two columns'),
                      html.Div("nothing yet", id='text-box', className='four columns'),
                      html.Div(children=graph_children, id='graph-box', className='six columns')])
 
@@ -284,6 +293,19 @@ def process_selection(params):
             html.Ul(children)]
 
 def build_callbacks(app):
+    app.clientside_callback(
+        ClientsideFunction(namespace="clientside", function_name="resize_graph"),
+        Output("text-box:clientside-output", "children"),
+        [Input('text-box', "style")],
+    )
+    @app.callback([Output("text-box", 'style'), Output("graph-box", 'className'),],
+                  [Input('matrix-show-text', "value")])
+    def show_text(arg):
+        if 'txt' in arg:
+            return {}, 'six columns'
+        else:
+            return dict(display='none'), 'ten columns'
+
     @app.callback(Output("text-box", 'children'),
                   [Input('list-params-'+key, "value") for key in Matrix.properties] +
                   [Input('invalids-show', 'n_clicks'),Input('invalids-delete', 'n_clicks')])
@@ -387,7 +409,7 @@ def main(filename):
 
     external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
     app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-    app.layout = build_layout()
+    app.layout = build_layout(app)
     build_callbacks(app)
     print("---")
     app.run_server(debug=True)

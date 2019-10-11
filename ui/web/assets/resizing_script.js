@@ -12,8 +12,12 @@ window.dash_clientside.clientside = {
     },
 
     resize_graph: function(input_graph_style,) {
+        console.log("go resize"+input_graph_style);
         window.dispatchEvent(new Event("resize"));
-
+setTimeout(function() {
+            window.dispatchEvent(new Event("resize"));
+            console.log("fired resize");
+        }, 500);
         return null;
     },
 };
