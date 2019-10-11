@@ -26,7 +26,10 @@ name: matrix
 before:
   - vm do killall firefox
   - vm open $webpage
-  - sleep 10
+  - sleep 20
+  - xset s off -dpms
+  - vm exec xset s off -dpms
+
 after:
   - vm do killall firefox
 _type: matrix
@@ -39,7 +42,7 @@ $webpage:
 record_time: 30
 codec: gst.vp8.vaapivp8enc
 matrix:
-  framerate: 10, 30, 60
-  gst.prop=target-bitrate: 1000, 5000, 10000
+  framerate: 20, 45, 60
+  gst.prop=bitrate: 1000, 10000, 100000
   gst.prop=rate-control: vbr, cbr, cqp
   gst.prop=keyframe-period: 0, 20, 40

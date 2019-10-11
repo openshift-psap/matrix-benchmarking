@@ -2,3 +2,4 @@ benchmark.html
 benchmark.db
 __pycache__
 secure.yaml
+results/*

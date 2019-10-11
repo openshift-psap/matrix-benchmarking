@@ -55,17 +55,18 @@ grp_gst-vp8-9_intelvaapi_encoding:
     default: 0
   default-roi-delta-qp:
     type: int
-    desc: "The default delta-qp to apply to each Region of Interest(lower value means higher-quality, higher value means lower-quality)"
+    desc: "The default delta-qp to apply to each Region of Interest(lower value means higher-quality, higher value means lower-quality) | min: -10, max: 10"
     default: -10
     url: "https://gstreamer.freedesktop.org/documentation/vaapi/vaapivp8enc.html#vaapivp8enc:default-roi-delta-qp"
   keyframe-period:
     type: uint
     default: 30
     desc: "Maximal distance between two keyframes (0: auto-calculate)"
-    url: "Maximal distance between two keyframes (0: auto-calculate)"
+    url: "https://gstreamer.freedesktop.org/documentation/vaapi/vaapivp8enc.html#vaapivp8enc:keyframe-period"
   quality-level:
     type: uint
-    desc: "Encoding Quality Level (lower value means higher-quality/slow-encode, higher value means lower-quality/fast-encode)"
+    desc: "Encoding Quality Level (lower value means higher-quality/slow-encode, higher value means lower-quality/fast-encode) | min:1; max: 7"
+    url: "https://gstreamer.freedesktop.org/documentation/vaapi/vaapivp8enc.html#vaapivp8enc:quality-level"
     default: 4
   rate-control:
     type: enum
@@ -84,6 +85,10 @@ gst.vp8.vp8enc:
 
 gst.vp8.vaapivp8enc:
   _group: grp_gst-vp8-9_intelvaapi_encoding
+
+  encoder-reload:
+    type: enum
+    values: yes, no
 
 gst.vp9.vaapivp9enc:
   _group: grp_gst-vp8-9_intelvaapi_encoding
