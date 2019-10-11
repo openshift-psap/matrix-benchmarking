@@ -9,10 +9,24 @@ import dash_html_components as html
 from dash.dependencies import Output, Input, State, ClientsideFunction
 import plotly
 import plotly.graph_objs as go
+import plotly.subplots
 
 import datetime
 
 import measurement.perf_viewer
+
+COLORS = [
+    '#1f77b4',  # muted blue
+    '#ff7f0e',  # safety orange
+    '#2ca02c',  # cooked asparagus green
+    '#d62728',  # brick red
+    '#9467bd',  # muted purple
+    '#8c564b',  # chestnut brown
+    '#e377c2',  # raspberry yogurt pink
+    '#7f7f7f',  # middle gray
+    '#bcbd22',  # curry yellow-green
+    '#17becf'   # blue-teal
+]
 
 class TableStats():
     all_stats = []
@@ -226,17 +240,19 @@ def build_layout(app):
         tag = dcc.Dropdown(id='list-params-'+key, options=options,
                            **attr, searchable=False, clearable=False)
 
-        matrix_controls += [f"{key}: ", tag]
+        matrix_controls += [html.Span(f"{key}: ", id=f"label_{key}"), tag]
 
     invalids = [html.B("Invalids:"), html.Br(),
                 html.Button("Show", id="invalids-show"),
                 html.Button("Delete", id="invalids-delete")]
 
-    show_text = [html.Br(), html.B("Aspect:"), html.Br(),
-                 dcc.Checklist(id="matrix-show-text", value='txt',
-                               options=[{'label': 'Show text', 'value': 'txt'}])]
+    aspect = [html.Br(), html.B("Aspect:"), html.Br(),
+              dcc.Checklist(id="matrix-show-text", value='txt',
+                            options=[{'label': 'Show text', 'value': 'txt'}]),
+              html.Div(id='property-order')
+    ]
 
-    control_children = matrix_controls + invalids + show_text
+    control_children = matrix_controls + aspect + invalids
 
     graph_children = []
     for table_stat in TableStats.all_stats:
@@ -296,7 +312,7 @@ def build_callbacks(app):
     app.clientside_callback(
         ClientsideFunction(namespace="clientside", function_name="resize_graph"),
         Output("text-box:clientside-output", "children"),
-        [Input('text-box', "style")],
+        [Input('text-box', "style"), Input('graph-box', "style")],
     )
     @app.callback([Output("text-box", 'style'), Output("graph-box", 'className'),],
                   [Input('matrix-show-text', "value")])
@@ -308,7 +324,7 @@ def build_callbacks(app):
 
     @app.callback(Output("text-box", 'children'),
                   [Input('list-params-'+key, "value") for key in Matrix.properties] +
-                  [Input('invalids-show', 'n_clicks'),Input('invalids-delete', 'n_clicks')])
+                  [Input('invalids-show', 'n_clicks'), Input('invalids-delete', 'n_clicks')])
     def param_changed(*args):
         try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
         except IndexError: return # nothing triggered the script (on multiapp load)
@@ -331,6 +347,27 @@ def build_callbacks(app):
             Matrix.broken_files[:] = []
             return ret + [html.P(html.B("Local matrix state cleaned up."))]
 
+    @app.callback(Output('property-order', 'children'),
+                  [Input(f"label_{key}", 'n_clicks') for key in Matrix.properties],
+                  [State('property-order', 'children')])
+    def varname_click(*args):
+        current_str = args[-1]
+
+        try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
+        except IndexError: triggered_id = None # nothing triggered the script (on multiapp load)
+
+        current = current_str.split(" ") if current_str else list(Matrix.properties.keys())
+
+        if triggered_id: # label_keyframe-period.n_clicks
+            key = triggered_id.partition("_")[-1].rpartition(".")[0]
+            current.remove(key)
+            current.append(key)
+
+        try: current.remove("stats")
+        except ValueError: pass
+
+        return " ".join(current)
+
     for _table_stat in TableStats.all_stats:
         def create_callback(table_stat):
             @app.callback(Output(table_stat.id_name, 'style'),
@@ -343,12 +380,19 @@ def build_callbacks(app):
                 style["display"] = "block" if triggered_id and table_stat.name in stats_values else "none"
                 if style["display"] == "block":
                     print("Show",table_stat.name )
+                style["height"] = f"{100/len(stats_values) if stats_values else 100:.2f}vh"
+
                 return style
 
             @app.callback(Output(table_stat.id_name, 'figure'),
-                          [Input('list-params-'+key, "value") for key in Matrix.properties])
+                          [Input('list-params-'+key, "value") for key in Matrix.properties]
+                          +[Input('property-order', 'children')])
             def graph_figure(*args):
-                params = dict(zip([key for key in Matrix.properties], args))
+                order_str = args[-1]
+                var_order = order_str.split(" ")+['stats'] if order_str \
+                    else list(Matrix.properties.keys())
+
+                params = dict(zip(Matrix.properties.keys(), args[:-1]))
 
                 stats_values = params["stats"]
                 if not stats_values or table_stat.name not in stats_values:
@@ -357,43 +401,114 @@ def build_callbacks(app):
                 variables = {k:(Matrix.properties[k]) for k, v in params.items() \
                              if k != "stats" and v == "---"}
 
-                data = []
+                data = [[[], []]]
                 layout = go.Layout()
                 if len(variables) == 0:
                     layout.title = "Select at least 1 variable parameter..."
-                elif len(variables) <= 2:
-                    param_lists = [[(key, v) for v in value] for key, value in variables.items()]
 
-                    main_var, *second_var = variables.keys()
+                elif len(variables) <= 4:
+                    ordered_vars = sorted(variables.keys(), key=var_order.index)
+                    ordered_vars.reverse()
 
-                    layout.title = f"{table_stat.name} vs {main_var}" \
-                        + f"x {second_var[0]}" if second_var else ""
-                    layout.xaxis = dict(type='category', title=main_var)
+                    param_lists = [[(key, v) for v in variables[key]] for key in ordered_vars]
+
+                    *second_vars, legend_var = ordered_vars
+                    second_vars.reverse()
+
+                    layout.title = f"{table_stat.name} vs " + " x ".join(ordered_vars[:-1]) + " | " + ordered_vars[-1]
                     layout.yaxis = dict(title=table_stat.name+ f" ({table_stat.unit})")
 
+                    subplots = {}
+                    if second_vars:
+                        subplots_var = second_vars[-1]
+                        subplots_len = len(variables[subplots_var])
+
+                        showticks = len(second_vars) == 2
+                        for i, subplots_key in enumerate(sorted(variables[subplots_var])):
+                            subplots[subplots_key] = f"x{i+1}"
+                            ax = f"xaxis{i+1}"
+                            layout[ax] = dict(title=f"{subplots_var}={subplots_key}",
+                                              domain=[i/subplots_len, (i+1)/subplots_len],
+                                              type='category', showticklabels=showticks, tickangle=45)
+                    else:
+                        subplots_var = None
+                        subplots[subplots_var] = "x1"
+                        layout["xaxis1"] = dict(type='category', showticklabels=False)
+
                     x = defaultdict(list); y = defaultdict(list); y_err = defaultdict(list)
+                    legend_keys = set()
+                    legend_names = set()
                     for param_values in sorted(itertools.product(*param_lists)):
                         params.update(dict(param_values))
 
                         params["params"] = ";".join([f"{k}={params[k]}" for k in params_order])
+
                         key = " | ".join([params[k] for k in KEY_ORDER])
 
                         try: entry = Matrix.entry_map[key]
                         except KeyError: continue # missing experiment
 
-                        key = f"{second_var[0]}={params[second_var[0]]}" \
-                            if second_var else "_"
+                        x_key = " ".join([f'{v}={params[v]}' for v in reversed(second_vars) if v != subplots_var])
+                        legend_name = f"{legend_var}={params[legend_var]}"
+                        legend_key = (legend_name, params[subplots_var] if subplots_var else None)
 
-                        x[key].append(params[main_var])
-                        y[key].append(entry.stats[table_stat.name].value)
-                        y_err[key].append(entry.stats[table_stat.name].stdev)
+                        if len(variables) > 3 and x[legend_key]:
+                            prev_first_param = x[legend_key][-1].partition(" ")[0]
+                            first_param = x_key.partition(" ")[0]
 
-                    for key in x.keys():
-                        y_error = dict(type='data', visible=True,
-                                       array=y_err[key]) if any(y_err[key]) else None
+                            if prev_first_param != first_param:
+                                x[legend_key].append(None)
+                                y[legend_key].append(None)
+                                y_err[legend_key].append(None)
 
-                        data.append({'x': x[key], 'y': y[key], 'error_y' : y_error,
-                                     'type': 'bar', 'name': key})
+                        legend_keys.add(legend_key)
+
+                        legend_names.add(legend_name)
+                        x[legend_key].append(x_key)
+                        y[legend_key].append(entry.stats[table_stat.name].value)
+                        y_err[legend_key].append(entry.stats[table_stat.name].stdev)
+
+                    for legend_key in sorted(legend_keys):
+                        legend_name, subplots_key = legend_key
+                        ax = subplots[subplots_key]
+                        has_err = any(y_err[legend_key])
+
+                        color = COLORS[list(legend_names).index(legend_name)]
+                        plot_args = dict()
+
+                        if len(variables) <= 2:
+                            plot_args['type'] = 'bar'
+                            plot_args['marker'] = dict(color=color)
+                            if has_err:
+                                plot_args['error_y'] = dict(type='data', visible=True,
+                                                             array=y_err[legend_key])
+                        else:
+                            plot_args['type'] = 'line'
+                            plot_args['line'] = dict(color=color)
+
+                            if len(variables) < 4 and has_err:
+                                data.append(go.Scatter(
+                                    x=x[legend_key],
+                                    y=[(_y-_y_error if None not in (_y, _y_error) else None) \
+                                       for _y, _y_error in zip(y[legend_key], y_err[legend_key])],
+                                    showlegend=False, fill=None, hoverinfo="skip",
+                                    fillcolor='rgba(0,100,80,0.2)', line_color='rgba(255,255,255,0)',
+                                    name=legend_name + "(low)", xaxis=ax
+                                ))
+                                data.append(go.Scatter(
+                                    x=x[legend_key],
+                                    y=[(_y+_y_error if None not in (_y, _y_error) else None) \
+                                       for _y, _y_error in zip(y[legend_key], y_err[legend_key])],
+                                    showlegend=False, fill='tonexty', hoverinfo="skip",
+                                    fillcolor='rgba(0,100,80,0.2)', line_color='rgba(255,255,255,0)',
+                                    name=legend_name + "(high)", xaxis=ax
+                                ))
+
+                        data.append(dict(**plot_args, x=x[legend_key], y=y[legend_key],
+                                         xaxis=ax, name=legend_name,
+                                         showlegend=ax == "x1"))
+
+                    layout.legend.traceorder = 'normal'
                 else:
                     layout.title = f"Too many variable parameters ({', '.join(variables)}) ..."
 
