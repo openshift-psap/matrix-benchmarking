@@ -7,6 +7,12 @@ import flask
 import sys
 import logging
 
+try: import pandas
+except ImportError: pass
+
+try: import numpy
+except ImportError: pass
+
 import utils.yaml
 from . import matrix_view
 
