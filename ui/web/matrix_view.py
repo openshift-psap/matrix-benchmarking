@@ -140,11 +140,13 @@ class Matrix():
 
 FileEntry = types.SimpleNamespace
 
-KEY_ORDER = "webpage", "record_time", "codec", "params", "resolution"
+KEY_ORDER = "webpage", "record_time", "codec", "params", "resolution", "experiement"
 params_order = None
 
 def parse_data(filename):
     if not os.path.exists(filename): return
+    directory = filename.rpartition(os.sep)[0]
+    expe_name = filename.split(os.sep)[1] # eg, filename = 'results/current/matrix.csv'
 
     for line in open(filename).readlines():
         if not line.strip(): continue
@@ -155,6 +157,8 @@ def parse_data(filename):
         entry.key, _, entry.filename = line.strip().replace("gst.prop=", "").rpartition(" | ")
         entry.__dict__.update(dict(zip(KEY_ORDER, entry.key.split(" | "))))
 
+        entry.key += f" | {expe_name}"
+
         global params_order
         if params_order is None:
             params_order = [e.partition('=')[0] for e in \
@@ -164,7 +168,9 @@ def parse_data(filename):
             print(f"WARNING: duplicated key: {entry.key} ({entry.filename})")
             continue
 
-        if not os.path.exists(entry.filename): continue
+        filepath = os.sep.join([directory, entry.filename])
+        if not os.path.exists(filepath): continue
+        entry.filename = filepath
 
         parser = measurement.perf_viewer.parse_rec_file(open(entry.filename))
         _, quality_rows = next(parser)
@@ -201,6 +207,7 @@ def parse_data(filename):
         Matrix.properties["record_time"].add(entry.record_time)
         Matrix.properties["webpage"].add(entry.webpage)
         Matrix.properties["resolution"].add(entry.resolution)
+        Matrix.properties["experiement"].add(expe_name)
 
         for param in entry.params.split(";"):
             key, value = param.split("=")

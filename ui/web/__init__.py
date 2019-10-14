@@ -108,13 +108,16 @@ def construct_callbacks():
     # Dash doesn't support creating the callbacks AFTER the app is running,
     # can the Matrix callback IDs are dynamic (base on the name of the parameters)
     # So at the moment, only one file can be loaded, here in the startup...
-    matrix_view.parse_data("logs/matrix.csv")
+    import glob
+    for matrix_result in glob.glob("results/*/matrix.csv"):
+        matrix_view.parse_data(matrix_result)
+
     matrix_view.build_callbacks(main_app)
 
 def initialize_viewer(url, ui_state):
     from measurement import hot_connect
 
-    filename = "logs/"+url.rpartition("/")[-1]
+    filename = "results/current/"+url.rpartition("/")[-1]
 
     hot_connect.load_record_file(ui_state.DB.expe, filename)
 
