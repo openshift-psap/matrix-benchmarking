@@ -229,7 +229,7 @@ class Server():
     def _thr_run_dash(self):
         try:
 
-            main_app.run_server()
+            main_app.run_server() # host='0.0.0.0'
         except Exception as e:
             import traceback, sys, os, signal
             print(f"DASH: {e.__class__.__name__}: {e}")
