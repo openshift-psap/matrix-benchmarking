@@ -316,6 +316,10 @@ def process_selection(params):
             html.Ul(children)]
 
 def build_callbacks(app):
+    if not Matrix.properties:
+        print("WARNING: Matrix empty, cannot build its GUI")
+        return
+
     app.clientside_callback(
         ClientsideFunction(namespace="clientside", function_name="resize_graph"),
         Output("text-box:clientside-output", "children"),
