@@ -12,6 +12,7 @@ import plotly.graph_objs as go
 import plotly.subplots
 
 import datetime
+import statistics
 
 import measurement.perf_viewer
 
@@ -68,6 +69,25 @@ class TableStats():
         obj.do_process = obj.process_per_seconds
         return obj
 
+    @classmethod
+    def KeyFramesSize(clazz, *args, **kwargs):
+        obj = clazz(*args, **kwargs)
+        obj.do_process = obj.process_keylowframes_size(keyframes=True)
+        return obj
+
+    @classmethod
+    def LowFramesSize(clazz, *args, **kwargs):
+        obj = clazz(*args, **kwargs)
+
+        obj.do_process = obj.process_keylowframes_size(lowframes=True)
+        return obj
+
+    @classmethod
+    def KeyLowFramesSize(clazz, *args, **kwargs):
+        obj = clazz(*args, **kwargs)
+        obj.do_process = obj.process_keylowframes_size(lowframes=True, keyframes=True)
+        return obj
+
     def process(self, table_def, rows):
         class FutureValue():
             def __init__(self):
@@ -79,7 +99,7 @@ class TableStats():
             def value(myself):
                 if myself._value is not None: return myself._value
 
-                myself._value, myself._stdev = self.do_process(table_def, rows)
+                myself._value, *myself._stdev = self.do_process(table_def, rows)
                 return myself._value
 
             @property
@@ -91,8 +111,14 @@ class TableStats():
 
             def __str__(myself):
                 val = f"{myself.value:{self.fmt}}{self.unit}"
-                if myself.stdev:
-                    val += f" +/- {myself.stdev:{self.fmt}}{self.unit}"
+                if len(myself.stdev) == 1:
+                    val += f" +/- {myself.stdev[0]:{self.fmt}}{self.unit}"
+                elif len(myself.stdev) == 2:
+                    if myself.stdev[0]:
+                        val += f" + {myself.stdev[0]:{self.fmt}}"
+                    if myself.stdev[1]:
+                        val += f" - {myself.stdev[1]:{self.fmt}}"
+                    val += str(self.unit)
                 return val
 
         return FutureValue()
@@ -112,11 +138,50 @@ class TableStats():
         return (values_total / (end_time - start_time).seconds) / self.divisor, 0
 
     def process_average(self, table_def, rows):
-        import statistics
         row_id = table_def.partition("|")[2].split(";").index(self.field)
         values = [row[row_id] for row in rows]
 
         return statistics.mean(values) / self.divisor, statistics.stdev(values) / self.divisor
+
+    def process_keylowframes_size(self, keyframes=False, lowframes=False):
+        if not (keyframes or lowframes):
+            raise ValueError("Must have keyframes or lowframes.") # impossible to reach
+
+        def do_process(table_def, rows):
+            time_field, value_field = self.field
+
+            indexes = table_def.partition("|")[2].split(";")
+
+            time_row_id = indexes.index(time_field)
+            value_row_id = indexes.index(value_field)
+
+            values = [row[value_row_id] for row in rows]
+            mini, maxi = min(values), max(values)
+            split = (mini+maxi)/2
+            high_values = [v for v in values if v >= split]
+            low_values = [v for v in values if v < split]
+
+            if keyframes and lowframes:
+                return (statistics.mean(low_values) / self.divisor,
+                        statistics.mean(high_values) / self.divisor, 0)
+
+            if keyframes:
+                values = high_values
+            elif lowframes:
+                values = low_values
+            else:
+                assert False, "impossible to reach"
+
+            return statistics.mean(values) / self.divisor, statistics.stdev(values) / self.divisor
+
+        return do_process
+
+TableStats.KeyFramesSize("keyframe_size", "Frame Size: keyframes", "server.host",
+                      ("host.msg_ts", "host.frame_size"), ".0f", "KB/s", divisor=1000)
+TableStats.LowFramesSize("lowframe_size", "Frame Size: lowframes", "server.host",
+                      ("host.msg_ts", "host.frame_size"), ".0f", "KB/s", divisor=1000)
+TableStats.KeyLowFramesSize("keylowframe_size", "Frame Size: keys+lows", "server.host",
+                      ("host.msg_ts", "host.frame_size"), ".0f", "KB/s", divisor=1000)
 
 TableStats.PerSeconds("frame_size", "Frame Bandwidth", "server.host",
                       ("host.msg_ts", "host.frame_size"), ".0f", "KB/s", min_rows=10, divisor=1000)
@@ -491,25 +556,30 @@ def build_callbacks(app):
                             plot_args['type'] = 'bar'
                             plot_args['marker'] = dict(color=color)
                             if has_err:
-                                plot_args['error_y'] = dict(type='data', visible=True,
-                                                             array=y_err[legend_key])
+                                error_y = plot_args['error_y'] = dict(type='data', visible=True)
+                                error_y['array'] = [err[0] for err in y_err[legend_key]]
+
+                                if len(y_err[legend_key][0]) == 2:
+                                    error_y['arrayminus'] = [err[1] for err in y_err[legend_key]]
                         else:
                             plot_args['type'] = 'line'
                             plot_args['line'] = dict(color=color)
 
                             if len(variables) < 4 and has_err:
+                                y_err_above =  [(_y+_y_error[0] if None not in (_y, *_y_error) else None) \
+                                       for _y, _y_error in zip(y[legend_key], y_err[legend_key])]
+
+                                y_err_below =  [(_y-_y_error[-1] if None not in (_y, *_y_error) else None) \
+                                       for _y, _y_error in zip(y[legend_key], y_err[legend_key])]
+
                                 data.append(go.Scatter(
-                                    x=x[legend_key],
-                                    y=[(_y-_y_error if None not in (_y, _y_error) else None) \
-                                       for _y, _y_error in zip(y[legend_key], y_err[legend_key])],
+                                    x=x[legend_key], y=y_err_above,
                                     showlegend=False, fill=None, hoverinfo="skip",
                                     fillcolor='rgba(0,100,80,0.2)', line_color='rgba(255,255,255,0)',
                                     name=legend_name + "(low)", xaxis=ax
                                 ))
                                 data.append(go.Scatter(
-                                    x=x[legend_key],
-                                    y=[(_y+_y_error if None not in (_y, _y_error) else None) \
-                                       for _y, _y_error in zip(y[legend_key], y_err[legend_key])],
+                                    x=x[legend_key], y=y_err_below,
                                     showlegend=False, fill='tonexty', hoverinfo="skip",
                                     fillcolor='rgba(0,100,80,0.2)', line_color='rgba(255,255,255,0)',
                                     name=legend_name + "(high)", xaxis=ax
