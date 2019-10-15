@@ -24,11 +24,11 @@ after:
 ---
 name: matrix
 before:
-  - vm do killall firefox
+  - vm do killall firefox 2 > /dev/null
   - vm open $webpage
   - sleep 20
   - xset s off -dpms
-  - vm exec xset s off -dpms
+  - server exec xset s off -dpms
 
 after:
   - vm do killall firefox
