@@ -268,11 +268,11 @@ def parse_data(filename):
         if table_def is not None: # didn't break because not enough entries
             continue
 
+        Matrix.properties["experiement"].add(expe_name)
+        Matrix.properties["resolution"].add(entry.resolution)
         Matrix.properties["codec"].add(entry.codec)
         Matrix.properties["record_time"].add(entry.record_time)
         Matrix.properties["webpage"].add(entry.webpage)
-        Matrix.properties["resolution"].add(entry.resolution)
-        Matrix.properties["experiement"].add(expe_name)
 
         for param in entry.params.split(";"):
             key, value = param.split("=")
@@ -307,7 +307,11 @@ def build_layout(app):
             attr["value"] = options[0]['value']
         else:
             options.insert(0, {'label': "[ all ]", 'value': "---"})
-            attr["value"] = "---"
+
+            if key == "experiement" and "current" in values:
+                attr["value"] = "current"
+            else:
+                attr["value"] = "---"
 
         tag = dcc.Dropdown(id='list-params-'+key, options=options,
                            **attr, searchable=False, clearable=False)
