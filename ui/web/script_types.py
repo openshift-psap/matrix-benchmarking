@@ -1,9 +1,12 @@
 import dash_html_components as html
 import datetime
+import os
 import itertools, functools, operator
 
 from . import script
 from . import matrix_view
+
+DEFAULT_EXPE_NAME = "current"
 
 class SimpleScript(script.Script):
     def to_html(self):
@@ -159,6 +162,8 @@ class MatrixScript(script.Script):
         yield from matrix_to_html()
 
     def do_run_the_matrix(self, exe, webpage_name, res):
+        expe = DEFAULT_EXPE_NAME
+
         codec_name = self.yaml_desc["codec"]
         record_time = self.yaml_desc["record_time"]
         script_name = self.yaml_desc["name"]
@@ -168,8 +173,14 @@ class MatrixScript(script.Script):
         for name, values in self.yaml_desc["matrix"].items():
             param_lists.append([(name, value) for value in values.split(", ")])
 
+        # do fail in drymode if we cannot create the directories
+        try: os.mkdir("results")
+        except FileExistsError: pass
+        try: os.mkdir(f"results/{expe}/")
+        except FileExistsError: pass
+
         if not exe.dry:
-            log_filename = f"logs/{script_name}.csv"
+            log_filename = f"results/{expe}/{script_name}.csv"
             with open(log_filename, "a") as log_f:
                 print(f"# {datetime.datetime.now()}", file=log_f)
 
@@ -180,10 +191,11 @@ class MatrixScript(script.Script):
             param_str = ";".join([f"{k}={v}" for k, v in param_items]).replace('gst.prop=', '')
 
             file_key = " | ".join([webpage_name, f"{record_time}s", codec_name,
-                                   param_str, resolution_str])
+                                   param_str, resolution_str, expe])
             exe.log("---")
             exe.log(f"running {expe_cnt}/{total_expe}")
             exe.log("> "+file_key)
+
             if file_key in matrix_view.Matrix.entry_map:
                 # add filename here
                 exe.log(f">> already recorded, skipping.")
@@ -198,23 +210,22 @@ class MatrixScript(script.Script):
             exe.clear_graph()
             exe.clear_quality()
             exe.wait(2)
-            exe.append_quality(f"script: name: {script_name}")
-            exe.append_quality(f"script: webname: {webpage_name}")
-            exe.append_quality(f"script: codec: {codec_name}")
-            exe.append_quality(f"script: encoding: {', '.join([f'{k}={v}' for k, v in param_dict.items()])}")
+            exe.append_quality(f"name: {script_name}")
+            exe.append_quality(f"webname: {webpage_name}")
+            exe.append_quality(f"codec: {codec_name}")
+            exe.append_quality(f"encoding: {', '.join([f'{k}={v}' for k, v in param_dict.items()])}")
 
             exe.set_encoding("share_encoding", {})
             exe.set_encoding("share_resolution", {})
             exe.wait(1)
 
             exe.wait(record_time)
-
-            dest = f"logs/{script_name}_{record_time}s_" + \
-                datetime.datetime.today().strftime("%Y%m%d-%H%M%S") + ".rec"
+            filename = file_key.replace(' | ','--').replace(';', "_") + ".rec"
+            dest = f"results/{expe}/{filename}"
             exe.save_graph(dest)
 
-            log_entry = f"{file_key} | {dest}"
-            log_filename = f"logs/{script_name}.csv"
+            log_entry = f"{file_key} | {filename}"
+            log_filename = f"results/{expe}/{script_name}.csv"
 
             exe.log(f"write log: {log_filename} << {log_entry}")
 
@@ -273,8 +284,7 @@ class MatrixScript(script.Script):
 
 
     def do_run(self, exe):
-        if not matrix_view.Matrix.properties:
-            matrix_view.parse_data("logs/matrix.log")
+        matrix_view.parse_data(f"results/{DEFAULT_EXPE_NAME}/matrix.log", reloading=True)
 
         exe.log("Query frame resolution ...")
         resolution = self.get_resolution(exe)
@@ -284,7 +294,7 @@ class MatrixScript(script.Script):
                 exe.log("Something's wrong, bye!")
                 return
 
-        exe.log("resolution:", resolution)
+        exe.log("resolution:", " ".join([f"{k}={v}" for k, v in resolution.items()]))
 
         for name, url in self.yaml_desc.get("$webpage", {"none": "none"}).items():
             self.do_run_webpage(exe, name, url, resolution)

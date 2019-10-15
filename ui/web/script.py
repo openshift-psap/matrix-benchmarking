@@ -30,7 +30,7 @@ class Exec():
         os.system(cmd)
 
     def set_encoding(self, codec, params, force=False):
-        self.log("set_enc:", codec, params)
+        self.log("set_enc:", codec, ', '.join([f"{k}={v}" for k, v in params.items()]))
         if self.dry and not force: return
         control.set_encoder(codec, params)
 
@@ -47,7 +47,7 @@ class Exec():
 
     def append_quality(self, msg):
         quality_msg = (0, "script", msg)
-        self.log(f"append to quality: ", ":".join(quality_msg[1:]))
+        self.log(f"append to quality:", ": ".join(quality_msg[1:]))
         if self.dry: return
         quality.Quality.add_to_quality(*quality_msg)
 

@@ -208,7 +208,7 @@ FileEntry = types.SimpleNamespace
 KEY_ORDER = "webpage", "record_time", "codec", "params", "resolution", "experiement"
 params_order = None
 
-def parse_data(filename):
+def parse_data(filename, reloading=False):
     if not os.path.exists(filename): return
     directory = filename.rpartition(os.sep)[0]
     expe_name = filename.split(os.sep)[1] # eg, filename = 'results/current/matrix.csv'
@@ -230,7 +230,8 @@ def parse_data(filename):
                             entry.params.split(";")]
 
         if entry.key in Matrix.entry_map:
-            print(f"WARNING: duplicated key: {entry.key} ({entry.filename})")
+            if not reloading:
+                print(f"WARNING: duplicated key: {entry.key} ({entry.filename})")
             continue
 
         filepath = os.sep.join([directory, entry.filename])
