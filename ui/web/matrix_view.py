@@ -569,29 +569,54 @@ def build_callbacks(app):
                             plot_args['type'] = 'line'
                             plot_args['line'] = dict(color=color)
 
-                            if len(variables) < 4 and has_err:
-                                y_err_above =  [(_y+_y_error[0] if None not in (_y, *_y_error) else None) \
-                                       for _y, _y_error in zip(y[legend_key], y_err[legend_key])]
 
-                                y_err_below =  [(_y-_y_error[-1] if None not in (_y, *_y_error) else None) \
-                                       for _y, _y_error in zip(y[legend_key], y_err[legend_key])]
+                            if has_err:
+                                if len(variables) < 4:
+                                    y_err_above = [];  y_err_below = []
+                                    for _y, _y_error in zip(y[legend_key], y_err[legend_key]):
+                                        # above == below iff len(_y_error) == 1
+                                        y_err_above.append(_y+_y_error[0])
+                                        y_err_below.append(_y-_y_error[-1])
+
+                                    y_err_data = y_err_above+list(reversed(y_err_below))
+                                    x_err_data = x[legend_key]+list(reversed(x[legend_key]))
+                                else:
+                                    y_err_data = []; x_err_data = []
+
+                                    x_err_current = []; y_err_above = [];  y_err_below = []
+
+                                    for _x, _y, _y_error in zip(x[legend_key] + [None],
+                                                                y[legend_key] + [None],
+                                                                y_err[legend_key] + [None]):
+                                        if _x is not None:
+                                            # above == below iff len(_y_error) == 1
+                                            y_err_above.append(_y+_y_error[0])
+                                            y_err_below.append(_y-_y_error[-1])
+                                            x_err_current.append(_x)
+                                            continue
+                                        #import pdb;pdb.set_trace()
+                                        x_err_data += x_err_current \
+                                            + list(reversed(x_err_current)) \
+                                            + [x_err_current[0], None]
+
+                                        y_err_data += y_err_above \
+                                            + list(reversed(y_err_below)) \
+                                            + [y_err_above[0], None]
+                                        x_err_current = []; y_err_above = [];  y_err_below = []
 
                                 data.append(go.Scatter(
-                                    x=x[legend_key], y=y_err_above,
-                                    showlegend=False, fill=None, hoverinfo="skip",
-                                    fillcolor='rgba(0,100,80,0.2)', line_color='rgba(255,255,255,0)',
-                                    name=legend_name + "(low)", xaxis=ax
-                                ))
-                                data.append(go.Scatter(
-                                    x=x[legend_key], y=y_err_below,
-                                    showlegend=False, fill='tonexty', hoverinfo="skip",
-                                    fillcolor='rgba(0,100,80,0.2)', line_color='rgba(255,255,255,0)',
-                                    name=legend_name + "(high)", xaxis=ax
+                                    x=x_err_data, y=y_err_data,
+                                    legendgroup=legend_name + "(stdev)" if len(variables) >= 4 else "",
+                                    showlegend=(ax == "x1" and len(variables) >= 4), hoverinfo="skip",
+                                    fill='toself', fillcolor='rgba(0,100,80,0.2)',
+                                    line_color='rgba(0,0,0,0)',
+                                    name=legend_name + " (stdev)", xaxis=ax
                                 ))
 
                         data.append(dict(**plot_args, x=x[legend_key], y=y[legend_key],
+                                         legendgroup=legend_name,
                                          xaxis=ax, name=legend_name,
-                                         showlegend=ax == "x1"))
+                                         showlegend=(ax == "x1")))
 
                     layout.legend.traceorder = 'normal'
                 else:
