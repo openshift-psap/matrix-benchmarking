@@ -26,7 +26,7 @@ class Perf_Viewer(measurement.Measurement):
         else:
             self.input_f = input_f
 
-        self.perf_collect = measurement.perf_collect.Perf_Collect({}, self.experiment)
+        self.perf_collect = measurement.perf_collect.Perf_Collect({'machines':{}}, self.experiment)
 
     def setup(self):
         pass

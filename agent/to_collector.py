@@ -5,10 +5,11 @@ import struct
 import measurement
 
 class Server():
-    def __init__(self, expe, loop):
+    def __init__(self, port, expe, loop):
         self.expe = expe
         self.quality_buffer = []
         self.loop = loop
+        self.port = port
 
         self.new_clients = []
         self.current_clients = []
@@ -19,11 +20,10 @@ class Server():
         self.serv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         try:
-            PORT = 1230
-            self.serv_sock.bind(('0.0.0.0', PORT))
+            self.serv_sock.bind(('0.0.0.0', self.port))
         except OSError as e:
             if e.errno == 98:
-                print(f"Port {PORT} already in use. Is the SmartLocalAgent already running?")
+                print(f"Port {self.port} already in use. Is the SmartLocalAgent already running?")
 
             raise e
 

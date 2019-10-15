@@ -110,6 +110,13 @@ def prepare_cfg(key):
     cfg["run_as_collector"] = smart_cfg[key].get("run_as_collector", False)
     cfg["run_as_viewer"] = smart_cfg[key].get("run_as_viewer", False)
 
+    try:
+        cfg["port_to_collector"] = smart_cfg[key]["port_to_collector"]
+    except KeyError: pass # ignore here, not used for collector/viewer
+
+    machines_key = smart_cfg["setup"]["machines"]
+    cfg["machines"] = smart_cfg["machines"][machines_key]
+
     return cfg
 
 
@@ -117,13 +124,15 @@ def load_measurements(cfg, expe):
     measurements = []
     name_re = re.compile(r'^[a-z_][a-z0-9_]*$', re.I)
     for measurement_name in cfg['measurements']:
-        measurement_options = None
-
         if isinstance(measurement_name, dict):
             measurement_name, measurement_options = list(measurement_name.items())[0]
+        else:
+            measurement_options = {}
 
         if not name_re.match(measurement_name):
             raise Exception(f'Invalid module name: {measurement_name}')
+
+        measurement_options['machines'] = cfg['machines']
 
         measurement_module = importlib.import_module('measurement.' + measurement_name.lower())
         measurement_class = getattr(measurement_module, measurement_name)
@@ -174,8 +183,9 @@ def run(cfg):
         server = ui.web.Server(expe)
 
     else: # run as agent
-        print("\n* Starting the socket for the Perf Collector...")
-        server = agent.to_collector.Server(expe, loop)
+        port = cfg["port_to_collector"]
+        print(f"\n* Starting the socket for the Perf Collector on {port}...")
+        server = agent.to_collector.Server(port, expe, loop)
 
     AgentExperiment.new_table = server.new_table
     AgentExperiment.new_table_row = server.new_table_row

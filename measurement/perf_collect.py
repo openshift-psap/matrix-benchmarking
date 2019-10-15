@@ -48,7 +48,9 @@ class Perf_Collect(measurement.Measurement):
         self.current_table = None
         self.current_table_uname = None
 
-        self.host = cfg.get("host", DEFAULT_HOST)
+        host = cfg.get("host", DEFAULT_HOST)
+        self.host = cfg['machines'].get(host, host)
+
         self.port = cfg.get("port", DEFAULT_PORT)
         self.mode = cfg.get("mode", DEFAULT_MODE)
         self.tables = {}
@@ -120,9 +122,9 @@ class Perf_Collect(measurement.Measurement):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             self.sock.connect((self.host, self.port))
-        except ConnectionRefusedError:
+        except Exception as e:
             raise ConnectionRefusedError("Cannot connect to the SmartLocalAgent on "
-                            f"{self.host}:{self.port} ({self.mode})")
+                            f"{self.host}:{self.port} ({self.mode}) ({e.__class__.__name__}: {e})")
 
         self.initialize_localagent()
 

@@ -1,22 +1,18 @@
-default: host_agent
+setup:
+  machines: local
+
+machines:
+  local:
+    client: localhost
+    server: localhost
+    vm: 192.168.122.186
+  desktop:
+    client: localhost
+    server: 192.168.1.127
+    vm: 192.168.1.139
 
 # ---
 measurement_sets:
-  central:
-    - VMStat
-    - MPStat
-    - Intel_GPU_Top
-    - AgentInterface:
-        port: 1235
-        mode: server
-    - AgentInterface:
-        host: 192.168.122.186
-        port: 1236
-        mode: guest
-    - AgentInterface:
-        port: 1234
-        mode: client
-
   guest:
     - VMStat
     - MPStat
@@ -24,17 +20,6 @@ measurement_sets:
     - AgentInterface:
         port: 1236
         mode: guest
-
-  client_server:
-    - VMStat
-    - MPStat
-    - Intel_GPU_Top
-    - AgentInterface:
-        port: 1234
-        mode: client
-    - AgentInterface:
-        port: 1235
-        mode: server
 
   server:
     - VMStat
@@ -52,42 +37,39 @@ measurement_sets:
         port: 1234
         mode: client
 
+
   collector:
     - Perf_Collect:
         port: 1230
-        mode: client
+        host: vm
+        mode: guest
 
     - Perf_Collect:
         port: 1230
-        host: 192.168.1.127
+        host: server
         mode: server
 
     - Perf_Collect:
-        port: 1230
-        host: 192.168.1.139
-        mode: guest
+        port: 1231
+        host: client
+        mode: client
 
 # --- #
 
-client_server_agent:
-  measurement_sets:
-    - client_server
-
 guest_agent:
+  port_to_collector: 1230
   measurement_sets:
     - guest
 
 server_agent:
+  port_to_collector: 1230
   measurement_sets:
     - server
 
 client_agent:
+  port_to_collector: 1231
   measurement_sets:
     - client
-
-central_agent:
-  measurement_sets:
-    - central_agent
 
 collector:
   run_as_collector: True
