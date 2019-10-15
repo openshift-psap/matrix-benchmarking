@@ -116,8 +116,10 @@ def construct_callbacks():
 
 def initialize_viewer(url, ui_state):
     from measurement import hot_connect
+    import os
 
-    filename = "results/current/"+url.rpartition("/")[-1]
+    *_, expe, fname = url.split("/")
+    filename = os.sep.join(["results", expe, fname])
 
     hot_connect.load_record_file(ui_state.DB.expe, filename)
 
@@ -146,10 +148,10 @@ def construct_dispatcher():
 
         elif pathname in ("/viewer", "/viewer/"):
             import glob
-            children = [html.P(html.A(filename.rpartition("/")[-1],
-                                      href="/viewer/"+(filename.rpartition("/")[-1]),
+            children = [html.P(html.A(filename.partition("/")[-1],
+                                      href="/viewer/"+(filename.partition("/")[-1]),
                                       target="_blank")) \
-                        for filename in glob.glob("logs/*.rec")]
+                        for filename in glob.glob("results/*/*.rec")]
 
             return html.Div(children)
 

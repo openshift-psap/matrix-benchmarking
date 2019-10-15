@@ -191,12 +191,12 @@ class MatrixScript(script.Script):
             param_str = ";".join([f"{k}={v}" for k, v in param_items]).replace('gst.prop=', '')
 
             file_key = " | ".join([webpage_name, f"{record_time}s", codec_name,
-                                   param_str, resolution_str, expe])
+                                   param_str, resolution_str])
             exe.log("---")
             exe.log(f"running {expe_cnt}/{total_expe}")
             exe.log("> "+file_key)
 
-            if file_key in matrix_view.Matrix.entry_map:
+            if (file_key + " | " + expe) in matrix_view.Matrix.entry_map:
                 # add filename here
                 exe.log(f">> already recorded, skipping.")
 
@@ -220,7 +220,9 @@ class MatrixScript(script.Script):
             exe.wait(1)
 
             exe.wait(record_time)
-            filename = file_key.replace(' | ','--').replace(';', "_") + ".rec"
+            filename = file_key.replace(' | ','--') \
+                               .replace(';', "_") + ".rec"
+
             dest = f"results/{expe}/{filename}"
             exe.save_graph(dest)
 
@@ -234,8 +236,8 @@ class MatrixScript(script.Script):
             with open(log_filename, "a") as log_f:
                 print(log_entry, file=log_f)
 
-        exe.log(f"Performed {total_expe - expe_skipped} experiments.")
-        exe.log(f"Skipped {expe_skipped} experiments already recorded.")
+        exe.log(f"{webpage_name}: Performed {total_expe - expe_skipped} experiments.")
+        exe.log(f"{webpage_name}: Skipped {expe_skipped} experiments already recorded.")
 
     def get_resolution(self, exe):
         from . import UIState
