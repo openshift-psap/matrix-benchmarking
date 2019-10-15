@@ -79,7 +79,7 @@ class AgentExperiment():
         if not self.send_quality_cbs:
             print("No callback set for sending quality message: ", msg)
             return
-        print("Quality to send:", quality_msg)
+        print("Quality to send:", msg)
         for send_quality_cb in self.send_quality_cbs:
             send_quality_cb(msg)
 
