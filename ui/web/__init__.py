@@ -105,6 +105,8 @@ def construct_callbacks():
     config.construct_config_tab_callbacks(dataview_cfg)
     script.construct_script_tab_callbacks()
 
+    if running_as_collector: return
+
     # Dash doesn't support creating the callbacks AFTER the app is running,
     # can the Matrix callback IDs are dynamic (base on the name of the parameters)
     # So at the moment, only one file can be loaded, here in the startup...
@@ -172,6 +174,9 @@ def construct_dispatcher():
                 return html.Div(f"Error: {e}")
 
         elif pathname.startswith('/matrix'):
+            if running_as_collector:
+                return "Matrix visualiser not available, running as collector."
+
             return matrix_view.build_layout(main_app)
         else:
             if pathname == "/collector":
@@ -184,8 +189,9 @@ def construct_dispatcher():
             index = html.Ul(
                 ([html.Li(html.A("Performance Collector", href="/collector"))]
                  if running_as_collector else []) +
-                [html.Li(html.A("Viewer index", href="/viewer")),
-                 html.Li(html.A("Matrix visualizer", href="/matrix"))])
+                [html.Li(html.A("Viewer index", href="/viewer"))] +
+                ([html.Li(html.A("Matrix visualizer", href="/matrix"))]
+                 if not running_as_collector else []))
 
             return [msg, index]
 
