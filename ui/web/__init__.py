@@ -23,6 +23,8 @@ external_stylesheets = [
     'https://codepen.io/chriddyp/pen/bWLwgP.css' # see https://codepen.io/chriddyp/pen/bWLwgP for style/columnts
 ]
 
+LISTEN_ON = None
+
 class InitialState():
     GRAPH_REFRESH_INTERVAL = 1 #s
     QUALITY_REFRESH_INTERVAL = 0 #s
@@ -203,6 +205,17 @@ class Server():
 
         self._init_webapp(expe)
 
+    def configure(self, cfg, machines):
+        from . import control
+        global LISTEN_ON
+        LISTEN_ON = cfg.get('listen_on', None)
+
+        control.USE_VIRSH = cfg['use_virsh']
+        if control.USE_VIRSH:
+            control.VIRSH_VM_NAME = cfg['virsh_vm_name']
+        else:
+            control.QMP_ADDR = machines['server'], cfg['qmp_port']
+
     def start(self):
         self.thr.start()
 
@@ -234,8 +247,7 @@ class Server():
 
     def _thr_run_dash(self):
         try:
-
-            main_app.run_server() # host='0.0.0.0'
+            main_app.run_server(host=LISTEN_ON)
         except Exception as e:
             import traceback, sys, os, signal
             print(f"DASH: {e.__class__.__name__}: {e}")

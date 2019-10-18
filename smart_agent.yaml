@@ -1,5 +1,10 @@
 setup:
   machines: local
+  ui.web:
+    listen_on: localhost
+    use_virsh: false
+    virsh_vm_name: fedora30
+    qmp_port: 4444
 
 machines:
   local:

@@ -116,6 +116,7 @@ def prepare_cfg(key):
 
     machines_key = smart_cfg["setup"]["machines"]
     cfg["machines"] = smart_cfg["machines"][machines_key]
+    cfg["ui.web"] = smart_cfg["setup"]["ui.web"]
 
     return cfg
 
@@ -181,6 +182,7 @@ def run(cfg):
         import ui.web
         ui.web.AgentExperimentClass = AgentExperiment
         server = ui.web.Server(expe)
+        server.configure(cfg['ui.web'], cfg['machines'])
 
     else: # run as agent
         port = cfg["port_to_collector"]

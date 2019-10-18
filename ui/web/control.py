@@ -12,9 +12,9 @@ from . import quality
 
 control_center_boxes = defaultdict(list)
 
-USE_VIRSH = False
-VIRSH_VM_NAME = "fedora30"
-QMP_ADDR = "192.168.1.127", 4444
+USE_VIRSH = None
+VIRSH_VM_NAME = None
+QMP_ADDR = None
 
 def set_encoder(encoder_name, parameters):
     params_str = ";".join(f"{name+'=' if not name.startswith('_') else ''}{value}" for name, value in parameters.items() if value not in (None, "")) + ";"
