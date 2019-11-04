@@ -58,9 +58,10 @@ class SimpleScript(script.Script):
 
         first_record = True
         def init_recording(test_name):
+            exe.wait(5)
             exe.clear_graph()
             exe.clear_quality()
-            exe.wait(1)
+            exe.set_encoding("share_encoding", {})
             exe.append_quality(f"!running: {self.name}")
             exe.wait(1)
             exe.append_quality(f"!running: {self.name} / {test_name}")
@@ -113,11 +114,10 @@ class SimpleScript(script.Script):
                 exe.wait(record_time)
 
             exe.reset()
-            exe.wait(5)
 
         exe.append_quality(f"!finished: {self.name}")
 
-        dest = self.to_id() + "_" + datetime.datetime.today().strftime("%Y%m%d-%H%M") + ".rec"
+        dest = "results/simple/" + self.to_id() + "_" + datetime.datetime.today().strftime("%Y%m%d-%H%M") + ".rec"
         exe.save_graph(dest)
 
         for cmd in self.yaml_desc.get("after", []): exe.execute(cmd)

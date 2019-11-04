@@ -1,23 +1,20 @@
-name: vp8_keyframe-max-dist_target-bitrate
+name: simple-test
 description: shows 3D shapes in motion
 before:
   - vm do killall firefox
   - vm open https://webglsamples.org/video/video.html
   - sleep 10
 
-codec: gst:vp8
+codec: gst.vp8.vaapivp8enc
 
 run:
-  test1:
-    _gst.prop=keyframe-max-dist: 1, 2, 4, 8, 14, 20, 40, 80, 130, 200
-    framerate: 30
+  test_framerate:
+    _framerate: 15, 20, 25, 30, 35, 40, 45
+    gst.prop=keyframe-max-dist: 5
     gst.prop=target-bitrate: 4000
 
-  test:
-    _disabled: true
-    _gst.prop=target-bitrate: 1000, 2000, 4000, 8000, 16000, 32000, 64000, 128000, 256000, 512000
 
-record_time: 10
+record_time: 20
 
 after:
   - vm do killall firefox
