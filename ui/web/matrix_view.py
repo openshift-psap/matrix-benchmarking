@@ -49,6 +49,8 @@ class TableStats():
 
         TableStats.interesting_tables[table].append(self)
         TableStats.all_stats.append(self)
+        if self.name in TableStats.stats_by_name:
+            raise Exception(f"Duplicated name: {self.name}")
         TableStats.stats_by_name[self.name] = self
 
     def __str__(self):
@@ -188,9 +190,9 @@ TableStats.PerSeconds("frame_size", "Frame Bandwidth", "server.host",
 
 for name in ("server", "client", "guest"):
     TableStats.Average(f"{name}_gpu_video", f"{name.capitalize()} GPU Video",
-                       "server.gpu", "gpu.video", ".0f", "%")
-    TableStats.Average(f"{name}_gpu_render", f"{name.capitalize()} GPU Render", "server.gpu",
-                       "gpu.render", ".0f",  "%")
+                       f"{name}.gpu", "gpu.video", ".0f", "%")
+    TableStats.Average(f"{name}_gpu_render", f"{name.capitalize()} GPU Render",
+                       f"{name}.gpu", "gpu.render", ".0f",  "%")
 
     TableStats.Average(f"{name}_cpu", f"{name.capitalize()} CPU", f"{name}.{name}-pid",
                        f"{name}-pid.cpu_user", ".0f", "%")
@@ -528,6 +530,10 @@ def build_callbacks(app):
 
                         try: entry = Matrix.entry_map[key]
                         except KeyError: continue # missing experiment
+
+                        if table_stat.name not in entry.stats:
+                            print(f"{table_stat.name} for entry '{key}'")
+                            continue
 
                         x_key = " ".join([f'{v}={params[v]}' for v in reversed(second_vars) if v != subplots_var])
                         legend_name = f"{legend_var}={params[legend_var]}"
