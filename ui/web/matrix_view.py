@@ -340,9 +340,12 @@ def build_layout(app):
 
     graph_children += [html.Div(id="text-box:clientside-output")]
 
-    return html.Div([html.Div(children=control_children, className='two columns'),
-                     html.Div("nothing yet", id='text-box', className='four columns'),
-                     html.Div(children=graph_children, id='graph-box', className='six columns')])
+    return html.Div([
+        html.Div(children=control_children, className='two columns'),
+        html.Div("nothing yet", id='text-box', className='four columns'),
+        html.Div(children=graph_children, id='graph-box', className='six columns'),
+        html.P(id="graph-hover-info"),
+    ])
 
 def process_selection(params):
     variables = [k for k, v in params.items() if v == "---"]
@@ -451,6 +454,54 @@ def build_callbacks(app):
 
         return " ".join(current)
 
+    @app.callback(
+        Output('graph-hover-info', 'children'),
+        [Input(table_stat.id_name, 'clickData') for table_stat in TableStats.all_stats],
+        [State(table_stat.id_name, 'figure') for table_stat in TableStats.all_stats]
+       +[State('list-params-'+key, "value") for key in Matrix.properties])
+    def display_hover_data(*args):
+        nb_stats = len(TableStats.all_stats)
+        hoverData = args[:nb_stats]
+
+        try:
+            pos, data = [(i, d) for i, d in enumerate(hoverData) if d][0]
+        except IndexError:
+            return "Nothing so far ..."
+
+        figure = args[nb_stats:2*nb_stats][pos]
+        variables = dict(zip(Matrix.properties.keys(), args[2*nb_stats:]))
+
+        if not figure:
+            return "Error, figure not found ..."
+
+        x = data['points'][0]['x']
+        y = data['points'][0]['y']
+        idx = data['points'][0]['curveNumber']
+        legend = figure['data'][idx]['name']
+        ax = figure['data'][idx]['xaxis']
+
+        xaxis = 'xaxis' + (ax[1:] if ax != 'x' else '')
+        yaxis = figure['layout']['yaxis']['title']['text']
+
+        try: xaxis_name = figure['layout'][xaxis]['title']['text']
+        except KeyError: xaxis_name = ''
+
+        props = " ".join([x, legend, xaxis_name]).split()
+        for prop in props:
+            k, v = prop.split('=')
+            variables[k] = v
+
+        variables["params"] = ";".join([f"{k}={variables[k]}" for k in params_order])
+        key = " | ".join([variables[k] for k in KEY_ORDER])
+
+        try: entry = Matrix.entry_map[key]
+        except KeyError: import pdb;pdb.set_trace();return f"Error: record '{key}' not found in matrix ..."
+
+        link = html.A("view", target="_blank", href="/viewer/"+entry.filename)
+        value = f"{yaxis}: {y:.2f}"
+
+        return [f"{key} 🡆 {value} (", link, ")"]
+
     for _table_stat in TableStats.all_stats:
         def create_callback(table_stat):
             @app.callback(Output(table_stat.id_name, 'style'),
@@ -486,6 +537,8 @@ def build_callbacks(app):
 
                 data = [[[], []]]
                 layout = go.Layout()
+                layout.hovermode = 'closest'
+
                 if len(variables) == 0:
                     layout.title = "Select at least 1 variable parameter..."
 
