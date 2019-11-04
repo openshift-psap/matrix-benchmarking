@@ -489,7 +489,7 @@ def build_callbacks(app):
                 if len(variables) == 0:
                     layout.title = "Select at least 1 variable parameter..."
 
-                elif len(variables) <= 4:
+                else:
                     ordered_vars = sorted(variables.keys(), key=var_order.index)
                     ordered_vars.reverse()
 
@@ -573,9 +573,13 @@ def build_callbacks(app):
                                 if len(y_err[legend_key][0]) == 2:
                                     error_y['arrayminus'] = [err[1] for err in y_err[legend_key]]
                         else:
-                            plot_args['type'] = 'line'
-                            plot_args['line'] = dict(color=color)
-
+                            if len(variables) < 5:
+                                plot_args['type'] = 'line'
+                                plot_args['line'] = dict(color=color)
+                            else:
+                                plot_args['mode'] = 'markers'
+                                has_err = False
+                                plot_args['marker'] = dict(color=color)
 
                             if has_err:
                                 if len(variables) < 4:
@@ -626,8 +630,6 @@ def build_callbacks(app):
                                          showlegend=(ax == "x1")))
 
                     layout.legend.traceorder = 'normal'
-                else:
-                    layout.title = f"Too many variable parameters ({', '.join(variables)}) ..."
 
                 return { 'data': data, 'layout': layout}
 
