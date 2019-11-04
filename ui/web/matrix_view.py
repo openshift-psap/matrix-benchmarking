@@ -207,7 +207,7 @@ class Matrix():
 
 FileEntry = types.SimpleNamespace
 
-KEY_ORDER = "webpage", "record_time", "codec", "params", "resolution", "experiement"
+KEY_ORDER = "webpage", "record_time", "codec", "params", "resolution", "experiment"
 params_order = None
 
 def parse_data(filename, reloading=False):
@@ -271,7 +271,7 @@ def parse_data(filename, reloading=False):
         if table_def is not None: # didn't break because not enough entries
             continue
 
-        Matrix.properties["experiement"].add(expe_name)
+        Matrix.properties["experiment"].add(expe_name)
         Matrix.properties["resolution"].add(entry.resolution)
         Matrix.properties["codec"].add(entry.codec)
         Matrix.properties["record_time"].add(entry.record_time)
@@ -311,7 +311,7 @@ def build_layout(app):
         else:
             options.insert(0, {'label': "[ all ]", 'value': "---"})
 
-            if key == "experiement" and "current" in values:
+            if key == "experiment" and "current" in values:
                 attr["value"] = "current"
             else:
                 attr["value"] = "---"
