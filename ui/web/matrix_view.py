@@ -646,7 +646,7 @@ def build_callbacks(app):
                         x[legend_key].append(x_key)
                         y[legend_key].append(entry.stats[table_stat.name].value)
                         y_err[legend_key].append(entry.stats[table_stat.name].stdev)
-
+                    y_max = 0
                     for legend_key in sorted(legend_keys):
                         legend_name, subplots_key = legend_key
                         ax = subplots[subplots_key]
@@ -707,6 +707,7 @@ def build_callbacks(app):
                                             + [y_err_above[0], None]
                                         x_err_current = []; y_err_above = [];  y_err_below = []
 
+                                y_max = max([yval for yval in [y_max]+y_err_data if yval is not None])
                                 data.append(go.Scatter(
                                     x=x_err_data, y=y_err_data,
                                     legendgroup=legend_name + "(stdev)" if len(variables) >= 4 else "",
@@ -716,10 +717,17 @@ def build_callbacks(app):
                                     name=legend_name + " (stdev)", xaxis=ax
                                 ))
 
+                        y_max = max([yval for yval in [y_max]+y[legend_key] if yval is not None])
                         data.append(dict(**plot_args, x=x[legend_key], y=y[legend_key],
                                          legendgroup=legend_name,
                                          xaxis=ax, name=legend_name,
                                          showlegend=(ax == "x1")))
+                    if len(variables) > 2:
+                        # force y_min = 0 | y_max = max visible value (cannot set only y_min)
+                        # if len(variables) <= 2:
+                        #   bar plot start from 0, y_max hard to compute with error bars
+
+                        layout.yaxis.range = [0, y_max]
 
                     layout.legend.traceorder = 'normal'
 
