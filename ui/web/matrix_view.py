@@ -90,6 +90,12 @@ class TableStats():
         obj.do_process = obj.process_keylowframes_size(lowframes=True, keyframes=True)
         return obj
 
+    @classmethod
+    def AvgTimeDelta(clazz, *args, **kwargs):
+        obj = clazz(*args, **kwargs)
+        obj.do_process = obj.process_average_time_delta
+        return obj
+
     def process(self, table_def, rows):
         class FutureValue():
             def __init__(self):
@@ -144,6 +150,16 @@ class TableStats():
         values = [row[row_id] for row in rows]
 
         return statistics.mean(values) / self.divisor, statistics.stdev(values) / self.divisor
+
+    def process_average_time_delta(self, table_def, rows):
+        row_id = table_def.partition("|")[2].split(";").index(self.field)
+        values = [row[row_id] for row in rows]
+
+        ts = datetime.datetime.fromtimestamp
+        delta = [(ts(stop/1000000) - ts(start/1000000)).total_seconds() for
+                 start, stop in zip (values, values[1:])]
+
+        return statistics.mean(delta) / self.divisor, statistics.stdev(delta) / self.divisor
 
     def process_keylowframes_size(self, keyframes=False, lowframes=False):
         if not (keyframes or lowframes):
