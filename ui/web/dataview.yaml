@@ -104,7 +104,7 @@ Frames Size:
     y: client.frame_size
     _disabled: true
 
-Frame Rate:
+Frame Delta:
   Guest generation rate:
     table: guest.guest
     x: guest.msg_ts | as_us_timestamp
@@ -127,6 +127,25 @@ Frame Rate:
     table: client.client
     x: client.msg_ts | as_us_timestamp
     y: client.queue
+
+Frame Rate:
+  Guest frame generation rate:
+    table: guest.guest
+    x: guest.msg_ts | as_us_timestamp
+    y2: guest.framerate_actual > Actual Framerate
+    y: guest.framerate_requested > Requested Framerate
+
+  Server forward rate:
+    table: server.host
+    x: host.msg_ts | as_us_timestamp
+    y2: host.framerate_actual > Actual Framerate
+    y: host.framerate_requested > Requested Framerate
+
+  Client Reception rate:
+    table: client.client
+    x: client.msg_ts | as_us_timestamp
+    y2: client.framerate_actual> Actual Framerate
+    y: client.framerate_requested > Requested Framerate
 
 Frame Processing:
   Guest processing duration:

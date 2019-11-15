@@ -199,6 +199,11 @@ for name in ("server", "client", "guest"):
 
 TableStats.Average(f"client_queue", f"Client Queue", "client.client", "client.queue", ".2f", "")
 
+for agent_name, tbl_name in (("client", "client"), ("guest", "guest"), ("server", "host")):
+    TableStats.AvgTimeDelta(f"{agent_name}_frame_delta", f"{agent_name.capitalize()} Frames Δ", f"{agent_name}.{tbl_name}", f"{tbl_name}.msg_ts", ".2f", "ms")
+
+    TableStats.FramerateQuality(f"{agent_name}_framerate", f"{agent_name.capitalize()} Actual Framerate", f"{agent_name}.{tbl_name}", f"{tbl_name}.framerate_actual", ".0f", "fps")
+
 class Matrix():
     properties = defaultdict(set)
     entry_map = {}

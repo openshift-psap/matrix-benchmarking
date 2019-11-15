@@ -4,6 +4,7 @@ import asyncio
 import collections
 import threading
 import re
+from collections import deque
 
 import measurement
 import measurement.hot_connect
@@ -197,6 +198,7 @@ class AgentInterface(measurement.Measurement):
 
 def register_entry_handlers(agent):
     register_agent_info(agent)
+    register_quality_setting(agent)
 
     if agent.mode == "client":
         register_frame_stats(agent)
@@ -217,19 +219,23 @@ def register_frame_stats(agent):
         'client.time',
         'client.decode_duration',
         'client.queue',
+        'client.framerate_actual', 'client.framerate_requested'
     ])
 
     fmt = re.compile(r'frame mm_time (\d+) size (\d+) creation time (\d+) decoded time (\d+) queue (\d+) before (\d+)')
+
+    framerate_state = init_framerate_state()
+
     def process(entry):
-
-
         mm_time, frame_size, time, decode_duration, queue, before = \
             map(int, fmt.match(entry.msg).groups())
 
         time /= 1000000
         decode_duration /= 1000000
 
-        table.add(entry.time, mm_time, frame_size, time, decode_duration, queue)
+        framerate = process_framerate(framerate_state, entry.time)
+
+        table.add(entry.time, mm_time, frame_size, time, decode_duration, queue, *framerate)
 
     agent.processors["frames_stats"] = process
 
@@ -269,13 +275,18 @@ def register_stream_channel_data(agent):
         'host.msg_ts',
         'host.frame_size',
         'host.mm_time',
+        'host.framerate_actual', 'host.framerate_requested'
     ])
+
+    framerate_state = init_framerate_state()
 
     fmt = re.compile(r'Stream data packet size (\d+) mm_time (\d+)')
     def process(entry):
         frame_size, mm_time = fmt.match(entry.msg).groups()
 
-        table.add(entry.time, int(frame_size), int(mm_time))
+        framerate = process_framerate(framerate_state, entry.time)
+
+        table.add(entry.time, int(frame_size), int(mm_time), *framerate)
 
     agent.processors["stream_channel_data"] = process
     agent.processors["stream_device_data"] = None # ignore, identical to above
@@ -291,6 +302,64 @@ def register_guest_streaming_info(agent):
 
     agent.processors["streaming_info"] = process
 
+def time_length(pipe):
+    l = pipe[-1][0] - pipe[0][0]
+
+    return (pipe[-1][0] - pipe[0][0]) / 1000000
+
+def init_framerate_state():
+    state = collections.namedtuple('FramerateState', 'pipe prev target')
+    state.pipe = deque()
+    state.prev = None
+    state.target = target_framerate
+
+    return state
+
+PIPE_MIN_TIME_LENGTH = 2 #s
+
+PIPE_MAX_TIME_LENGTH = 5 #s
+target_framerate = None
+
+def process_framerate(state, time):
+    import statistics
+    prev = state.prev
+    ts = state.prev = time
+
+    if target_framerate != state.target:
+        state.prev = None
+        state.pipe = deque()
+        state.target = target_framerate
+        return None, target_framerate
+
+    if prev is None:
+        return None, target_framerate
+
+    delta = (ts - prev) / 1000000
+    fps = 1 / delta
+
+    state.pipe.append((ts, fps))
+
+    if time_length(state.pipe) < PIPE_MIN_TIME_LENGTH:
+        return None, target_framerate
+
+    while time_length(state.pipe) > PIPE_MAX_TIME_LENGTH:
+        state.pipe.popleft()
+
+    mean = statistics.mean((p[1] for p in state.pipe))
+
+    return mean, target_framerate
+
+def register_quality_setting(agent):
+    def process(entry):
+        print(f"{agent.mode}: Agent info received: '{entry.msg}'")
+        if entry.msg.startswith("encoding:framerate:"):
+            global target_framerate
+            target_framerate = int(entry.msg.rpartition(":")[-1])
+        else:
+            print("{agent.mode}: setting not recognized...")
+
+    agent.processors["quality_setting"] = process
+
 def register_guest_frame(agent):
     table = agent.experiment.create_table([
         'guest.msg_ts',
@@ -299,7 +368,10 @@ def register_guest_frame(agent):
         'guest.capture_duration',
         'guest.encode_duration',
         'guest.send_duration',
+        'guest.framerate_actual', 'guest.framerate_requested'
     ])
+
+    framerate_state = init_framerate_state()
 
     state = collections.namedtuple('State', 'start captured sent frame_bytes encoded'
                                    'width height codec')
@@ -334,10 +406,13 @@ def register_guest_frame(agent):
 
             if state.start is None: return # partial state, skip it
 
+            framerate = process_framerate(framerate_state, time)
+
             table.add(time,
                       state.start / 1000000, state.frame_bytes,
                       (state.captured - state.start) / 1000000,
                       (state.encoded - state.captured) / 1000000,
-                      (state.sent - state.encoded) / 1000000)
+                      (state.sent - state.encoded) / 1000000,
+                      *framerate)
 
     agent.processors["frame"] = process
