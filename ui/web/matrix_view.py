@@ -487,7 +487,7 @@ def build_callbacks(app):
         try:
             pos, data = [(i, d) for i, d in enumerate(hoverData) if d][0]
         except IndexError:
-            return "Nothing so far ..."
+            return "Nothing selected so far ..."
 
         figure = args[nb_stats:2*nb_stats][pos]
         variables = dict(zip(Matrix.properties.keys(), args[2*nb_stats:]))
@@ -516,7 +516,7 @@ def build_callbacks(app):
         key = " | ".join([variables[k] for k in KEY_ORDER])
 
         try: entry = Matrix.entry_map[key]
-        except KeyError: import pdb;pdb.set_trace();return f"Error: record '{key}' not found in matrix ..."
+        except KeyError: return f"Error: record '{key}' not found in matrix ..."
 
         link = html.A("view", target="_blank", href="/viewer/"+entry.filename)
         value = f"{yaxis}: {y:.2f}"
@@ -606,7 +606,7 @@ def build_callbacks(app):
                         except KeyError: continue # missing experiment
 
                         if table_stat.name not in entry.stats:
-                            print(f"{table_stat.name} for entry '{key}'")
+                            print(f"Stats not found: {table_stat.name} for entry '{key}' ")
                             continue
 
                         x_key = " ".join([f'{v}={params[v]}' for v in reversed(second_vars) if v != subplots_var])
@@ -679,7 +679,7 @@ def build_callbacks(app):
                                             y_err_below.append(_y-_y_error[-1])
                                             x_err_current.append(_x)
                                             continue
-                                        #import pdb;pdb.set_trace()
+
                                         x_err_data += x_err_current \
                                             + list(reversed(x_err_current)) \
                                             + [x_err_current[0], None]
