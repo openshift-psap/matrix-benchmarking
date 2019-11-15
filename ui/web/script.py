@@ -16,10 +16,13 @@ class Exec():
         self.script = script
         self.total_wait_time = 0
 
-    def log(self, *args):
+    def log(self, *args, ahead=False):
         msg = " ".join(map(str, args))
         if self.dry:
-            Script.messages.append(msg)
+            if ahead:
+                Script.messages.insert(0, msg)
+            else:
+                Script.messages.append(msg)
         else:
             print(datetime.datetime.now().strftime("%H:%M:%S"), msg)
             Script.messages.insert(0, msg)
@@ -86,7 +89,7 @@ class Script():
         if dry:
             exe.log(f"Running {self.name} (dry)")
             self.do_run(exe)
-            exe.log(f"Estimated time: {exe.total_wait_time/60:.0f}min{exe.total_wait_time%60}s")
+            exe.log(f"Estimated time: {exe.total_wait_time/60:.0f}min{exe.total_wait_time%60}s", ahead=True)
         elif Script.thr:
             exe.log("Failed, a script thread is already running ...")
         else:

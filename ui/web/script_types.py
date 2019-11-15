@@ -271,7 +271,7 @@ class MatrixScript(script.Script):
                     print(f"Failed to parse resolution ({msg}):", e)
                     return None
 
-            self.log(f"resolution not found, attempt {nb_loops}/{MAX_WAIT_LOOPS}")
+            exe.log(f"resolution not found, attempt {nb_loops}/{MAX_WAIT_LOOPS}")
             if nb_loops >= MAX_WAIT_LOOPS:
                 print("bye")
                 return None
@@ -296,7 +296,8 @@ class MatrixScript(script.Script):
                 exe.log("Something's wrong, bye!")
                 return
 
-        exe.log("resolution:", " ".join([f"{k}={v}" for k, v in resolution.items()]))
+        else:
+            exe.log("resolution:", " ".join([f"{k}={v}" for k, v in resolution.items()]))
 
         for name, url in self.yaml_desc.get("$webpage", {"none": "none"}).items():
             self.do_run_webpage(exe, name, url, resolution)
