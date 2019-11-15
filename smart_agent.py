@@ -284,5 +284,15 @@ def main():
 
     return 0
 
+def get_wsgi_application():
+    import ui.web
+    ui.web.AgentExperimentClass = AgentExperiment
+    server = ui.web.Server(expe=None)
+
+    AgentExperiment.new_table = server.new_table
+    AgentExperiment.new_table_row = server.new_table_row
+
+    return ui.web.main_app.server
+
 if __name__ == "__main__":
     sys.exit(main())
