@@ -151,10 +151,14 @@ class Perf_Collect(measurement.Measurement):
 
             def cast(elt):
                 try:
-                    return float(elt) if ("." in elt or "e" in elt) else int(elt)
+                    if elt == "None": return None
+                    if ("." in elt or "e" in elt): return float(elt)
+                    if elt.isdigit(): return int(elt)
+                    raise ValueError(elt)
+
                 except ValueError:
-                    import pdb;pdb.set_trace()
-                    pass
+                    print(f"Cannot parse {elt} in {line_tuple} for {self.current_table.header()}")
+
             if isinstance(self.current_table, Quality):
                 self.current_table.add(line_tuple)
             else:
