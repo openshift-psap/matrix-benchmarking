@@ -114,7 +114,7 @@ Frame Rate:
   Server forward rate:
     table: server.host
     x: host.msg_ts | as_us_timestamp
-    y: host.frame_size | as_delta > Forwarding time Δ
+    y: host.msg_ts | as_delta > Forwarding time Δ
     y2: setting | framerate | inverted > framerate requested
 
   Client Reception rate:
