@@ -365,7 +365,7 @@ def build_layout(app):
                 html.Button("Delete", id="invalids-delete")]
 
     aspect = [html.Br(), html.B("Aspect:"), html.Br(),
-              dcc.Checklist(id="matrix-show-text", value='txt',
+              dcc.Checklist(id="matrix-show-text", value='',
                             options=[{'label': 'Show text', 'value': 'txt'}]),
               html.Div(id='property-order')
     ]
@@ -381,8 +381,8 @@ def build_layout(app):
 
     return html.Div([
         html.Div(children=control_children, className='two columns'),
-        html.Div("nothing yet", id='text-box', className='four columns'),
-        html.Div(children=graph_children, id='graph-box', className='six columns'),
+        html.Div("nothing yet", id='text-box', className='three columns', style=dict(display='none')),
+        html.Div(children=graph_children, id='graph-box', className='ten columns'),
         html.P(id="graph-hover-info"),
     ])
 
@@ -437,13 +437,13 @@ def build_callbacks(app):
     app.clientside_callback(
         ClientsideFunction(namespace="clientside", function_name="resize_graph"),
         Output("text-box:clientside-output", "children"),
-        [Input('text-box', "style"), Input('graph-box', "style")],
+        [Input('text-box', "style"), Input('list-params-stats', "value")],
     )
     @app.callback([Output("text-box", 'style'), Output("graph-box", 'className'),],
                   [Input('matrix-show-text', "value")])
     def show_text(arg):
         if 'txt' in arg:
-            return {}, 'six columns'
+            return {}, 'seven columns'
         else:
             return dict(display='none'), 'ten columns'
 
