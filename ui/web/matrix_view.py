@@ -66,6 +66,12 @@ class TableStats():
         return obj
 
     @classmethod
+    def FramerateQuality(clazz, *args, **kwargs):
+        obj = clazz(*args, **kwargs)
+        obj.do_process = obj.process_framerate_quality
+        return obj
+
+    @classmethod
     def PerSeconds(clazz, *args, **kwargs):
         obj = clazz(*args, **kwargs)
         obj.do_process = obj.process_per_seconds
@@ -150,6 +156,18 @@ class TableStats():
         values = [row[row_id] for row in rows]
 
         return statistics.mean(values) / self.divisor, statistics.stdev(values) / self.divisor
+
+    def process_framerate_quality(self, table_def, rows):
+        quality_row_id = table_def.partition("|")[2].split(";").index(self.field)
+        target_row_id = table_def.partition("|")[2].split(";").index(self.field.replace("_quality", "_requested"))
+
+        actual_values = [row[quality_row_id] for row in rows]
+        target_values = [row[target_row_id] for row in rows]
+
+        actual_mean = statistics.mean(actual_values) / self.divisor
+        target_mean = statistics.mean(target_values) / self.divisor
+
+        return actual_mean, (target_mean - actual_mean), 0
 
     def process_average_time_delta(self, table_def, rows):
         row_id = table_def.partition("|")[2].split(";").index(self.field)
