@@ -1,5 +1,5 @@
 setup:
-  machines: local
+  machines: desktop
   ui.web:
     listen_on: localhost
     use_virsh: false
@@ -13,8 +13,8 @@ machines:
     vm: 192.168.122.186
   desktop:
     client: localhost
-    server: 192.168.1.127
-    vm: 192.168.1.139
+    server: 10.0.0.2
+    vm: 10.0.0.100
 
 # ---
 measurement_sets:
