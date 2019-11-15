@@ -1,31 +1,30 @@
-Memory:
-  Guest:
+System:
+  Guest Memory:
     table: guest.mem
     x: time | as_timestamp
     y: mem.free | as_B_to_GB > Free
     y_title: GB of RAM
 
-  Server:
+  Server Memory:
     table: server.mem
     x: time | as_timestamp
     y: mem.free | as_B_to_GB > Free
     y_title: GB of RAM
 
-  Client:
+  Client Memory:
     table: client.mem
     x: time | as_timestamp
     y: mem.free | as_B_to_GB > Free
     y_title: GB of RAM
 
-CPU:
-  Guest:
+  Guest CPU:
     table: guest.cpu
     x: time | as_timestamp
     y: cpu.idle > Idle
     y_max: 100
     y_title: '% of CPU usage'
 
-  Server:
+  Server CPU:
     table: server.cpu
     x: time | as_timestamp
     y: cpu.idle > Idle
@@ -33,7 +32,7 @@ CPU:
     y_max: 100
     y_title: '% of CPU usage'
 
-  Client:
+  Client CPU:
     table: client.cpu
     x: time | as_timestamp
     y: cpu.idle > Idle
