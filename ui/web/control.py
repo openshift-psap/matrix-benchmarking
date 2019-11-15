@@ -18,9 +18,16 @@ QMP_ADDR = None
 
 def set_encoder(encoder_name, parameters):
     params_str = ";".join(f"{name+'=' if not name.startswith('_') else ''}{value}" for name, value in parameters.items() if value not in (None, "")) + ";"
-    json_msg = json.dumps(dict(execute="set-spice",
-                               arguments={"guest-encoder": encoder_name,
-                                          "guest-encoder-params": params_str}))
+
+    args = {"guest-encoder": encoder_name,
+            "guest-encoder-params": params_str}
+    try:
+        args["target-fps"] = int(parameters["framerate"])
+    except KeyError: pass # no framerate available, ignore
+    except ValueError as e:
+        print("WARNING: invalid value for 'framerate':", e)
+
+    json_msg = json.dumps(dict(execute="set-spice", arguments=args))
 
     if USE_VIRSH:
         cmd = f"virsh qemu-monitor-command {VIRSH_VM_NAME} '{json_msg}'"
@@ -39,6 +46,8 @@ def set_encoder(encoder_name, parameters):
             resp += c
 
             if c == '\n':
+                if "error" in resp:
+                    print(resp)
                 to_read -= 1; resp = ""
                 if to_read == 0: break
         del qmp_sock
