@@ -220,7 +220,7 @@ TableStats.KeyLowFramesSize("keylowframe_size", "Frame Size: keys+lows", "server
                       ("host.msg_ts", "host.frame_size"), ".0f", "KB/s", divisor=1000)
 
 TableStats.PerSeconds("frame_size", "Frame Bandwidth", "server.host",
-                      ("host.msg_ts", "host.frame_size"), ".0f", "KB/s", min_rows=10, divisor=1000)
+                      ("host.msg_ts", "host.frame_size"), ".0f", "MB/s", min_rows=10, divisor=1000*1000)
 
 for name in ("server", "client", "guest"):
     TableStats.Average(f"{name}_gpu_video", f"{name.capitalize()} GPU Video",
