@@ -717,6 +717,20 @@ def build_callbacks(app):
                                     line_color='rgba(0,0,0,0)',
                                     name=legend_name + " (stdev)", xaxis=ax
                                 ))
+                        DO_LOCAL_SORT = True
+                        if len(variables) >= 5 and DO_LOCAL_SORT:
+                            #import pdb;pdb.set_trace()
+                            # sort x according to y's value order
+                            x[legend_key] = [_x for _y, _x in sorted(zip(y[legend_key], x[legend_key]),
+                                                                         key=lambda v: (v[0] is None, v[0]))]
+                            # sort y by value (that may be None)
+                            y[legend_key].sort(key=lambda x: (x is None, x))
+                            if not layout.title.text.endswith(" (sorted)"):
+                                layout.title.text += " (sorted)"
+
+                        # if 2 >= len(variables) > 5:
+                        #   need to sort and don't move the None location
+                        #   need to sort yerr as well
 
                         y_max = max([yval for yval in [y_max]+y[legend_key] if yval is not None])
                         data.append(dict(**plot_args, x=x[legend_key], y=y[legend_key],
