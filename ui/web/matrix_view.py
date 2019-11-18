@@ -301,6 +301,7 @@ def parse_data(filename, reloading=False):
                 if table_stat.min_rows and len(table_rows) < table_stat.min_rows:
                     keep = False
                     msg = f"{table_name} has only {len(table_rows)} rows (min: {table_stat.min_rows})"
+                    print("###", msg)
                     Matrix.broken_files.append((entry.filename, msg))
                     break
 
