@@ -251,8 +251,9 @@ def register_quality(agent):
     def process(entry):
         src, _, msg = entry.msg.partition(": ")
 
-        agent.quality_table.add(entry.time, src, msg.replace(",", "||"))
-
+        agent.quality_table.add(entry.time, src, msg.replace(", ", "||"))
+        if msg.startswith("#"):
+            msg = msg[:20] + "..." + msg[-20:]
         print(f"Quality received: '{src}' says '{msg}'")
 
     agent.processors["quality_interface"] = process

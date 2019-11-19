@@ -1,13 +1,70 @@
 import dash
 from dash.dependencies import Output, Input, State
 import dash_html_components as html
+from collections import defaultdict
 
 from . import InitialState, UIState
+
+pipeline_cnt = defaultdict(int)
+
+def g_strcompress(string):
+    """ Python version of glib::g_strcompress
+
+    Replaces all escaped characters with their one byte equivalent.
+    This function does the reverse conversion of g_strescape().
+    # https://github.com/GNOME/glib/blob/3dec72b946a527f4b1f35262bddd4afb060409b7/glib/gstrfuncs.c#L2087
+    """
+    ESCAPE = {'\\':'\\',
+              'b': '\b',
+              'f':'\f',
+              'n': '\n',
+              'r':'\r',
+              't':'\t',
+              'v':'\v',
+              '"':'"'}
+    string = string.replace("\\342\\200\\246", "…") # unicode is hard ...
+    escape_next = False
+    new_string = ""
+    for c in string:
+        if not escape_next and c == "\\":
+            escape_next = True
+            continue
+
+        if escape_next:
+            try:
+                c = ESCAPE[c]
+            except KeyError:
+                print(f"WARNING: Could not escape '\{c}'")
+                pass
+            escape_next = False
+        new_string += c
+    return new_string
 
 class Quality():
     @staticmethod
     def add_to_quality(ts, src, msg):
-        UIState().DB.quality.insert(0, (ts, src, msg))
+        if msg.startswith("#pipeline:"):
+            dest = f"/tmp/pipeline.{src}-{pipeline_cnt[src]}.dot"
+            pipeline_cnt[src] += 1
+
+            pipeline_escaped = msg[len("#pipeline:"):]
+            with open(dest+".raw", "w") as pipe_out:
+                pipe_out.write(pipeline_escaped)
+
+            pipeline = g_strcompress(pipeline_escaped)
+
+
+            with open(dest, "w") as pipe_out:
+                pipe_out.write(pipeline)
+
+            msg = f"<pipeline definition saved into {dest}>"
+            print(msg)
+
+        if msg.startswith("#"):
+            short = msg[:] + "..."
+            UIState().DB.quality.insert(0, (ts, src, short))
+        else:
+            UIState().DB.quality.insert(0, (ts, src, msg))
 
         if msg.startswith("!"):
             Quality.add_quality_to_plots(msg)
