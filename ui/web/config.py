@@ -1,3 +1,4 @@
+import os
 import dash
 from dash.dependencies import Output, Input, State
 import dash_core_components as dcc
@@ -69,9 +70,15 @@ def construct_config_tab_callbacks(dataview_cfg):
 
         if triggered_id == "graph-bt-save.n_clicks":
             if save is None: return
-            DEST = "logs/save.rec"
-            print("Saving into", DEST, "...")
-            UIState().DB.save_to_file(DEST)
+            top_dir = os.path.abspath(os.path.dirname(quality.__file__) + "/../..")
+
+            dirname = top_dir + "/results"
+            try: os.mkdir(dirname)
+            except FileExistsError: pass
+
+            dest = f"{dirname}/save.rec"
+            print("Saving into", dest, "...")
+            UIState().DB.save_to_file(dest)
             print("Saving: done")
 
             return ""
