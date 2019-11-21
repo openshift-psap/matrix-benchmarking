@@ -93,7 +93,7 @@ class Server():
         self.send_one(msg, client_sock)
 
         for row in table.rows:
-            self.send_one(str(row).encode("ascii"), client_sock)
+            self.send_one(", ".join(map(str, row)).encode("ascii"), client_sock)
 
     def initialize_new_client(self, client_sock):
         client_sock.send(struct.pack("I", len(self.expe.tables)))
@@ -127,7 +127,7 @@ class Server():
 
     def new_table_row(self, table, row):
         self.send_all(f"@{table.table_name}|1".encode("ascii"))
-        self.send_all(str(row).encode("ascii"))
+        self.send_all(", ".join(map(str, row)).encode("ascii"))
 
     def new_table(self, table):
         self.send_table_def(table)

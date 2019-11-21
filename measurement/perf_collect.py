@@ -21,8 +21,8 @@ class Quality():
 
     def add(self, values):
         ts = int(values[0])
-        src = values[1][1:-1]
-        msg = values[2][1:-1].replace("||", ",")
+        src = values[1]
+        msg = values[2].replace("||", ", ")
 
         self.expe.new_quality(ts, src, msg)
 
@@ -147,7 +147,7 @@ class Perf_Collect(measurement.Measurement):
                 import pdb;pdb.set_trace()
                 pass
         else:
-            line_tuple = line[1:-1].split(", ")
+            line_tuple = line.split(", ")
 
             def cast(elt):
                 try:
