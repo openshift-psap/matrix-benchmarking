@@ -358,7 +358,7 @@ def register_quality_setting(agent):
             global target_framerate
             target_framerate = int(entry.msg.rpartition(":")[-1])
         else:
-            print("{agent.mode}: setting not recognized...")
+            print(f"{agent.mode}: quality setting '{entry.msg}' not recognized...")
 
     agent.processors["quality_setting"] = process
 
