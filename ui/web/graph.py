@@ -17,6 +17,10 @@ class DB():
         self.quality_by_table = defaultdict(list)
         self.table_for_spec = {}
 
+        self.pipeline_idx = 0
+        self.pipelines = {} # pipeline -> id
+        self.pipelines_reversed = {} # id -> pipeline
+
     def new_table(self, table):
         self.table_contents[table] = []
 

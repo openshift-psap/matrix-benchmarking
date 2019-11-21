@@ -38,7 +38,7 @@ AgentExperimentClass = None # populated by smart_agent, cannot import it from he
 running_as_collector = False
 
 class _UIState():
-    def __init__(self, expe=None, viewer_mode=False):
+    def __init__(self, url, expe=None, viewer_mode=False):
         from . import graph, quality
 
         self.viewer_mode = viewer_mode
@@ -54,6 +54,8 @@ class _UIState():
 
         self.DB.init_quality_from_viewer()
 
+        self.url = url
+
 ui_states = {}
 class __UIState():
     def __init__(self):
@@ -61,8 +63,21 @@ class __UIState():
 
     def __call__(self):
         try:
-            key = flask.request.referrer.split("/", maxsplit=3)[-1] # http://host/{key}
-        except RuntimeError as e: # Working outside of request context
+            url = flask.request.url
+            if url.endswith("/_dash-update-component"): # common case
+                url = flask.request.referrer
+                if url is None:
+                    msg = "Warning: cannot get the proper URL ..."
+                    print(msg)
+                    raise RuntimeError(msg)
+                # url: http://host/{key}
+                key = url.split("/", maxsplit=3)[-1]
+            else:
+                # url: http://host/{key}/<whatever>
+                key = url.split("/", maxsplit=3)[-1].partition("/")[0]
+
+        except RuntimeError as e:
+            # Working outside of request context --> collector initialization
             if running_as_collector:
                 key = "collector"
             else: raise(e)
@@ -122,7 +137,10 @@ def initialize_viewer(url, ui_state):
     from measurement import hot_connect
     import os
 
-    *_, expe, fname = url.split("/")
+    *rest, expe, fname = url.split("/")
+    if not rest and expe == "viewer":
+        expe = ""
+
     filename = os.sep.join(["results", expe, fname])
 
     hot_connect.load_record_file(ui_state.DB.expe, filename)
@@ -155,13 +173,13 @@ def construct_dispatcher():
             children = [html.P(html.A(filename.partition("/")[-1],
                                       href="/viewer/"+(filename.partition("/")[-1]),
                                       target="_blank")) \
-                        for filename in glob.glob("results/*/*.rec")]
+                        for filename in glob.glob("results/*/*.rec") + glob.glob("results/*.rec") ]
 
             return html.Div(children)
 
-        elif pathname.startswith('/viewer/'):
+        elif pathname.startswith('/viewer/') and pathname.endswith(".rec"):
             try:
-                ui_state = _UIState(viewer_mode=True)
+                ui_state = _UIState(url, viewer_mode=True)
                 ui_states[url] = ui_state # must remain before init()
 
                 ui_state.layout = initialize_viewer(url, ui_state)
@@ -174,6 +192,23 @@ def construct_dispatcher():
                 traceback.print_exception(*sys.exc_info())
 
                 return html.Div(f"Error: {e}")
+        elif pathname.startswith('/viewer/') and ".rec/" in pathname:
+            # pathname  = /viewer/[<path>/]<file>/<other args>
+
+            _key, _, args = pathname[1:].partition(".rec/")
+            key = _key + ".rec"
+
+            if args.startswith("pipeline/"):
+                idx = int(args.partition("/")[-1])
+                try:
+                    db = ui_states[key].DB
+                except KeyError:
+                    return html.Div(f"Error: key '{key}' not found, is the viewer loaded?")
+
+                return dcc.Textarea(value=quality.get_pipeline(db, idx),
+                                    style=dict(width='100%', height='100vh'))
+            else:
+                return html.Div(f"Error: invalid url {pathname}")
 
         elif pathname.startswith('/matrix'):
             if running_as_collector:
@@ -239,7 +274,7 @@ class Server():
         if expe:
             global running_as_collector
             running_as_collector = True
-            ui_state = ui_states["collector"] = _UIState(expe, viewer_mode=False)
+            ui_state = ui_states["collector"] = _UIState("collector", expe, viewer_mode=False)
             ui_state.layout = construct_layout(ui_state)
 
         construct_dispatcher()

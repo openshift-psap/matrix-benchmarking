@@ -43,52 +43,66 @@ def g_strcompress(string):
 class Quality():
     @staticmethod
     def add_to_quality(ts, src, msg):
+        db = UIState().DB
+        db.quality.insert(0, (ts, src, msg))
+
         if msg.startswith("#pipeline:"):
-            dest = f"/tmp/pipeline.{src}-{pipeline_cnt[src]}.dot"
-            pipeline_cnt[src] += 1
-
-            pipeline_escaped = msg[len("#pipeline:"):]
-            with open(dest+".raw", "w") as pipe_out:
-                pipe_out.write(pipeline_escaped)
-
-            pipeline = g_strcompress(pipeline_escaped)
-
-
-            with open(dest, "w") as pipe_out:
-                pipe_out.write(pipeline)
-
-            msg = f"<pipeline definition saved into {dest}>"
-            print(msg)
-
-        if msg.startswith("#"):
-            short = msg[:] + "..."
-            UIState().DB.quality.insert(0, (ts, src, short))
-        else:
-            UIState().DB.quality.insert(0, (ts, src, msg))
+            db.pipelines[msg] = db.pipeline_idx
+            db.pipelines_reversed[db.pipeline_idx] = msg
+            db.pipeline_idx += 1
 
         if msg.startswith("!"):
             Quality.add_quality_to_plots(msg)
 
     @staticmethod
     def add_quality_to_plots(msg):
-        for table, content in UIState().DB.table_contents.items():
+        db = UIState().DB
+
+        for table, content in db.table_contents.items():
             if not content: continue
 
-            UIState().DB.quality_by_table[table].append((content[-1], msg))
+            db.quality_by_table[table].append((content[-1], msg))
 
     @staticmethod
     def clear():
         UIState().DB.quality[:] = []
 
-def construct_quality_callbacks():
+def get_pipeline(db, idx):
+    pipeline_escaped = db.pipelines_reversed[int(idx)]
+
+    return g_strcompress(pipeline_escaped[len("#pipeline:"):])
+
+def construct_quality_callbacks(url=None):
+    @UIState.app.server.route('/collector/pipeline/<idx>')
+    def download_pipeline(idx):
+        db = UIState().DB
+        if not db.pipelines:
+            return "No pipeline available, is the app initialized?"
+
+        try:
+            return get_pipeline(db, int(idx))
+        except Exception as e:
+            return str(e)
+
     @UIState.app.callback(Output("quality-box", 'children'),
                           [Input('quality-refresh', 'n_intervals')])
     def refresh_quality(*args):
         try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
         except IndexError: return # nothing triggered the script (on multiapp load)
+        db = UIState().DB
+        quality_html = []
+        for (ts, src, msg) in db.quality:
+            if msg.startswith("#pipeline:"):
+                pipeline_idx = db.pipelines[msg]
+                children = [src, ": ", html.A(f"Pipeline #{pipeline_idx} ({len(msg)} chars)",
+                                              target="_blank",
+                                              href=f"/{UIState().url}/pipeline/{pipeline_idx}")]
+            else:
+                children = f"{src}: {msg}"
+            quality_html.append(html.P(children, style={"margin-top": "0px", "margin-bottom": "0px"}))
 
-        return [html.P(f"{src}: {msg}", style={"margin-top": "0px", "margin-bottom": "0px"}) \
-                for (ts, src, msg) in UIState().DB.quality]
+        return quality_html
+
 
     @UIState.app.callback(Output("quality-refresh", 'n_intervals'),
                           [Input('quality-bt-clear', 'n_clicks'),
