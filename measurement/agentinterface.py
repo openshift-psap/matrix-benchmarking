@@ -185,10 +185,11 @@ class AgentInterface(measurement.Measurement):
             print(f"INFO: {self.mode}: no processor registered for message type {entry.name}. Dropping.")
             print(entry)
             return
-
+        import bdb
         try:
             if process is not None: # otherwise: ignore
                 process(entry)
+        except bdb.BdbQuit as e: raise e
         except Exception as e:
             print(f"WARNING: Failed to process entry {entry.name}: {e.__class__.__name__}: {e}")
             print(entry)
