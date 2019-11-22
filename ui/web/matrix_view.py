@@ -751,17 +751,3 @@ def build_callbacks(app):
 
         # must use internal function to save 'table_stat' closure context
         create_callback(_table_stat)
-
-
-def main(filename):
-    parse_data(filename)
-
-    external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-    app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-    app.layout = build_layout(app)
-    build_callbacks(app)
-    print("---")
-    app.run_server(debug=True)
-
-if __name__ == "__main__":
-    exit(main("results/current/matrix.csv"))
