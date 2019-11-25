@@ -78,6 +78,12 @@ class TableStats():
         return obj
 
     @classmethod
+    def PerFrame(clazz, *args, **kwargs):
+        obj = clazz(*args, **kwargs)
+        obj.do_process = obj.process_per_frame
+        return obj
+
+    @classmethod
     def KeyFramesSize(clazz, *args, **kwargs):
         obj = clazz(*args, **kwargs)
         obj.do_process = obj.process_keylowframes_size(keyframes=True)
@@ -155,7 +161,21 @@ class TableStats():
         start_time = datetime.datetime.fromtimestamp(rows[0][time_row_id]/1000000)
         end_time = datetime.datetime.fromtimestamp(rows[-1][time_row_id]/1000000)
 
-        return (values_total / (end_time - start_time).seconds) / self.divisor, 0
+        return (values_total / (end_time - start_time).total_seconds()) / self.divisor, 0
+
+    def process_per_frame(self, table_def, rows):
+        time_field, value_field = self.field
+
+        indexes = table_def.partition("|")[2].split(";")
+
+        time_row_id = indexes.index(time_field)
+        value_row_id = indexes.index(value_field)
+
+        values_total = sum(row[value_row_id] for row in rows)
+
+        nb_frames = len(rows)
+
+        return (values_total / nb_frames) / self.divisor, 0
 
     def process_average(self, table_def, rows):
         row_id = table_def.partition("|")[2].split(";").index(self.field)
@@ -262,7 +282,11 @@ for agent_name, tbl_name in (("client", "client"), ("guest", "guest"), ("server"
 
     TableStats.FramerateQuality(f"{agent_name}_framerate", f"{agent_name.capitalize()} Actual Framerate", f"{agent_name}.{tbl_name}", f"{tbl_name}.framerate_actual", ".0f", "fps")
 
+TableStats.PerSeconds("client_decode_per_s", "Client Decode time/s", "client.client",
+                      ("client.msg_ts", "client.decode_duration"), ".0f", "s/s", min_rows=10, divisor=1000*1000)
 
+TableStats.PerFrame("client_decode_per_f", "Client Decode time/frame", "client.client",
+                    ("client.msg_ts", "client.decode_duration"), ".0f", "s/frame", min_rows=10, divisor=1000*1000)
 
 class Matrix():
     properties = defaultdict(set)

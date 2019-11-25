@@ -6,6 +6,8 @@ import dash_html_components as html
 import plotly
 import plotly.graph_objs as go
 
+import datetime
+
 from . import InitialState, UIState
 from . import graph
 
@@ -100,9 +102,9 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
 
         nb_seconds_to_keep = args[-1]
         records_to_drop = 0
-        if nb_seconds_to_keep != 0:
+        if nb_seconds_to_keep != 0 and X and isinstance(X[0], datetime.datetime):
             for records_to_drop, v in enumerate(X):
-                if (X[-1] - v).seconds <= nb_seconds_to_keep: break
+                if (X[-1] - v).total_seconds() <= nb_seconds_to_keep: break
 
         X_cut = X[records_to_drop:]
         plots = []
