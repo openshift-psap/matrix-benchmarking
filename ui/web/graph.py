@@ -67,6 +67,104 @@ class GraphFormat():
         return GraphFormat.per_sec_N(Y_lst, X_lst, 60)
 
     @staticmethod
+    def key_frames_20(Y_lst, X_lst):
+        return GraphFormat.key_frames_N(Y_lst, X_lst, 20)
+
+    @staticmethod
+    def key_frames_40(Y_lst, X_lst):
+        return GraphFormat.key_frames_N(Y_lst, X_lst, 40)
+
+    @staticmethod
+    def key_frames_N(Y_lst, X_lst, PERIOD):
+        first_set = Y_lst[:PERIOD]
+        first_kf_pos = first_set.index(max(first_set))
+
+        current_kf = Y_lst[first_kf_pos]
+        new = [current_kf] * first_kf_pos
+        for pos, elt in enumerate(Y_lst):
+            if (pos % PERIOD) == first_kf_pos and pos != first_kf_pos:
+                current_kf = elt
+                new += [current_kf] * PERIOD
+
+        new += [current_kf] * (len(Y_lst)-len(new))
+
+        return new
+
+    @staticmethod
+    def as_key_frames_period(Y_lst, X_lst):
+        return GraphFormat.as_key_frames(Y_lst, X_lst, period=True)
+
+    @staticmethod
+    def as_key_frames(Y_lst, X_lst=None, period=False):
+        KEY_NORMAL_SIZE_RATIO = 33/100
+        MIN_KEYFRAME_PERIOD = 11
+
+        avg_frame_size = statistics.mean(Y_lst)
+        max_frame_size = max(Y_lst)
+        min_keyframe_size = avg_frame_size + (max_frame_size-avg_frame_size) * KEY_NORMAL_SIZE_RATIO
+
+        keyframe_positions = []
+        while True:
+            max_size = max(Y_lst)
+            max_pos = Y_lst.index(max_size)
+
+            Y_lst[max_pos] = 0
+
+            if max_size < min_keyframe_size:
+                # not big enough for a keyframe --> done
+                break
+
+            too_close = False
+            for kf_pos, kf_size in keyframe_positions:
+                if abs(kf_pos - max_pos) < MIN_KEYFRAME_PERIOD:
+                    # too close to previous KF
+                    too_close = True
+                    break
+
+            if too_close: continue
+
+            keyframe_positions.append([max_pos, max_size])
+
+
+        new = []
+        prev_pos = 0
+        for pos, val in sorted(keyframe_positions):
+            if period:
+                if not new:
+                    # skip the first one as it's partial
+                    value = None
+                    prev_pos = pos
+                else:
+                    kf_dist = pos - prev_pos
+                    if kf_dist >= MIN_KEYFRAME_PERIOD:
+                        prev_pos = pos
+                    else:
+                        print("ERROR, keyframe too close!", kf_dist) # should have been detected earlier on
+                        # do not change the position of the last keyframe, we're to close
+                        kf_dist = new[-1]
+
+                    value = kf_dist
+            else:
+                value = val
+
+            if not new:
+                new += [value] * pos
+            new += [value] * (pos-len(new))
+
+        if period:
+            last_val = None
+        else:
+            if keyframe_positions:
+                last_val = value
+            else:
+                last_val = 0
+
+        new += [last_val] * (len(Y_lst)-len(new))
+
+        return new
+
+
+    @staticmethod
     def per_sec_N(Y_lst, X_lst, n):
         from collections import deque
         cache = deque()
