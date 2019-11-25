@@ -73,13 +73,13 @@ class GraphFormat():
 
         def time_length(_cache):
             l = _cache[-1][0] - _cache[0][0]
-            return l.seconds
+            return l.total_seconds()
 
         enough = False
         new = []
         for x, y in zip(X_lst, Y_lst):
             cache.append((x, y))
-            while time_length(cache) > n:
+            while time_length(cache) >= n:
                 cache.popleft()
                 enough = True
 

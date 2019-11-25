@@ -344,7 +344,7 @@ def process_framerate(state, time):
     if time_length(state.pipe) < PIPE_MIN_TIME_LENGTH:
         return None, target_framerate
 
-    while time_length(state.pipe) > PIPE_MAX_TIME_LENGTH:
+    while time_length(state.pipe) >= PIPE_MAX_TIME_LENGTH:
         state.pipe.popleft()
 
     mean = statistics.mean((p[1] for p in state.pipe))
