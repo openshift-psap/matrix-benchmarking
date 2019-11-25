@@ -285,7 +285,8 @@ class DbTableForSpec():
         try:
             return list(field.modify(values, X))
         except Exception as e:
-            print(e)
+            print(f"Modifier '{field.modify.__name__}' failed, returning identity:", e)
+            return values
 
     def get_raw_x(self):
         idx = self.idx(self.graph_spec.x)
@@ -313,15 +314,17 @@ class FieldSpec():
 
         self.label = label if has_label else self.field_name
 
+        self.modify = lambda y,x:y # will be modified if necessary
+
         if self.field_name == "setting":
             self.modify = GraphFormat.get_setting_modifier(modif)
             return
 
-        try:
-            self.modify = getattr(GraphFormat, modif)
-        except AttributeError:
-            self.modify = lambda y,x:y
-
+        if modif:
+            try:
+                self.modify = getattr(GraphFormat, modif)
+            except AttributeError:
+                print(f"WARNING: modifier '{modif}' not found ... using identity")
 
 class GraphSpec():
     def __init__(self, graph_tab, graph_name, yaml_desc):
