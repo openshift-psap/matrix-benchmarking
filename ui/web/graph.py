@@ -51,7 +51,7 @@ class DB():
 
 class GraphFormat():
     @staticmethod
-    def as_B_to_GB(Y_lst, X_lst):
+    def as_KB_to_GB(Y_lst, X_lst):
         return [v/1000/1000 for v in Y_lst]
 
     @staticmethod

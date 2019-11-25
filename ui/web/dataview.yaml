@@ -2,19 +2,19 @@ System:
   Guest Memory:
     table: guest.mem
     x: time | as_timestamp
-    y: mem.free | as_B_to_GB > Free
+    y: mem.free | as_KB_to_GB > Free
     y_title: GB of RAM
 
   Server Memory:
     table: server.mem
     x: time | as_timestamp
-    y: mem.free | as_B_to_GB > Free
+    y: mem.free | as_KB_to_GB > Free
     y_title: GB of RAM
 
   Client Memory:
     table: client.mem
     x: time | as_timestamp
-    y: mem.free | as_B_to_GB > Free
+    y: mem.free | as_KB_to_GB > Free
     y_title: GB of RAM
 
   Guest CPU:
