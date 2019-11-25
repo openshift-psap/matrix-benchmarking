@@ -97,6 +97,12 @@ class TableStats():
         return obj
 
     @classmethod
+    def KeyFramePeriod(clazz, *args, **kwargs):
+        obj = clazz(*args, **kwargs)
+        obj.do_process = obj.process_keyframe_period
+        return obj
+
+    @classmethod
     def AvgTimeDelta(clazz, *args, **kwargs):
         obj = clazz(*args, **kwargs)
         obj.do_process = obj.process_average_time_delta
@@ -212,6 +218,21 @@ class TableStats():
 
         return do_process
 
+    def process_keyframe_period(self, table_def, rows):
+        from . import graph
+
+        row_id = table_def.partition("|")[2].split(";").index(self.field)
+        values = [row[row_id] for row in rows]
+
+        periods = graph.GraphFormat.as_key_frames(values, period=True)
+        if not any(periods):
+            return 0, 0, 0
+
+        #res = statistics.mean([p for p in periods if p is not None])
+        res = statistics.mode(periods)
+
+        return res, 0, 0
+
 TableStats.KeyFramesSize("keyframe_size", "Frame Size: keyframes", "server.host",
                       ("host.msg_ts", "host.frame_size"), ".0f", "KB/s", divisor=1000)
 TableStats.LowFramesSize("lowframe_size", "Frame Size: lowframes", "server.host",
@@ -221,6 +242,9 @@ TableStats.KeyLowFramesSize("keylowframe_size", "Frame Size: keys+lows", "server
 
 TableStats.PerSeconds("frame_size", "Frame Bandwidth", "server.host",
                       ("host.msg_ts", "host.frame_size"), ".0f", "MB/s", min_rows=10, divisor=1000*1000)
+
+TableStats.KeyFramePeriod("keyframe_period", "Keyframe Period", "server.host",
+                          "host.frame_size", ".0f", "frames")
 
 for name in ("server", "client", "guest"):
     TableStats.Average(f"{name}_gpu_video", f"{name.capitalize()} GPU Video",
@@ -237,6 +261,8 @@ for agent_name, tbl_name in (("client", "client"), ("guest", "guest"), ("server"
     TableStats.AvgTimeDelta(f"{agent_name}_frame_delta", f"{agent_name.capitalize()} Frames Δ", f"{agent_name}.{tbl_name}", f"{tbl_name}.msg_ts", ".2f", "ms")
 
     TableStats.FramerateQuality(f"{agent_name}_framerate", f"{agent_name.capitalize()} Actual Framerate", f"{agent_name}.{tbl_name}", f"{tbl_name}.framerate_actual", ".0f", "fps")
+
+
 
 class Matrix():
     properties = defaultdict(set)
