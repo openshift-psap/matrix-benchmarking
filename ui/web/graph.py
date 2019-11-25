@@ -55,6 +55,14 @@ class GraphFormat():
         return [v/1000/1000 for v in Y_lst]
 
     @staticmethod
+    def as_B_to_KB(Y_lst, X_lst):
+        return [v/1000 for v in Y_lst]
+
+    @staticmethod
+    def as_s_to_ms(Y_lst, X_lst):
+        return [v*1000 for v in Y_lst]
+
+    @staticmethod
     def per_sec_5(Y_lst, X_lst):
         return GraphFormat.per_sec_N(Y_lst, X_lst, 5)
 
@@ -332,6 +340,7 @@ class GraphSpec():
         self.graph_name = graph_name
         self.yaml_desc = yaml_desc
         self.table = yaml_desc["table"]
+        self.mode = yaml_desc.get("mode", "lines")
 
         self.x = FieldSpec(yaml_desc["x"])
 

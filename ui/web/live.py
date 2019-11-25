@@ -114,7 +114,7 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
                 plotly.graph_objs.Scatter(
                     x=X_cut, y=Y[records_to_drop:],
                     name=y_field.label,
-                    mode= 'lines'))
+                    mode=graph_spec.mode))
 
         layout = go.Layout()
         layout.hovermode = "closest"
