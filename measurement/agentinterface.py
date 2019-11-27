@@ -153,6 +153,7 @@ class AgentInterface(measurement.Measurement):
 
     def start(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(2)
         print("Connecting to", self.port)
         try:
             self.sock.connect((self.host, self.port))
