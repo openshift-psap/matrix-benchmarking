@@ -187,8 +187,8 @@ class TableStats():
         quality_row_id = table_def.partition("|")[2].split(";").index(self.field)
         target_row_id = table_def.partition("|")[2].split(";").index(self.field.replace("_quality", "_requested"))
 
-        actual_values = [row[quality_row_id] for row in rows]
-        target_values = [row[target_row_id] for row in rows]
+        actual_values = [row[quality_row_id] for row in rows if row[quality_row_id] is not None]
+        target_values = [row[target_row_id] for row in rows if row[target_row_id] is not None]
 
         actual_mean = statistics.mean(actual_values) / self.divisor
         target_mean = statistics.mean(target_values) / self.divisor
