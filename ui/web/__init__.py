@@ -36,6 +36,7 @@ dataview_cfg = None
 main_app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 AgentExperimentClass = None # populated by smart_agent, cannot import it from here
 running_as_collector = False
+machines = None
 
 class _UIState():
     def __init__(self, url, expe=None, viewer_mode=False):
@@ -245,7 +246,7 @@ class Server():
 
         self._init_webapp(expe)
 
-    def configure(self, cfg, machines):
+    def configure(self, cfg, _machines):
         from . import control
         global LISTEN_ON
         LISTEN_ON = cfg.get('listen_on', None)
@@ -254,7 +255,10 @@ class Server():
         if control.USE_VIRSH:
             control.VIRSH_VM_NAME = cfg['virsh_vm_name']
         else:
-            control.QMP_ADDR = machines['server'], cfg['qmp_port']
+            control.QMP_ADDR = _machines['server'], cfg['qmp_port']
+
+        global machines
+        machines = _machines
 
     def start(self):
         self.thr.start()
