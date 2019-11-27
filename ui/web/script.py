@@ -4,6 +4,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import os, time, datetime
 import threading
+import types
 
 import utils.yaml
 
@@ -11,13 +12,13 @@ from . import InitialState, UIState
 from . import quality, graph, control
 
 class PythonExec:
-    @staticmethod
-    def stress_test(resources):
-        #import pdb;pdb.set_trace()
+    stress_test_state = types.SimpleNamespace()
 
-        print("#"*10)
-        print("#", resources)
-        print("#"*10)
+    @staticmethod
+    def stress_test(exe, resources):
+        from . import machines
+        from . import stress_test
+        stress_test.stress_test(PythonExec.stress_test_state, exe, resources, machines)
 
 class Exec():
     def __init__(self, script, dry):
@@ -41,8 +42,7 @@ class Exec():
             fct_name, _, args = cmd[5:].partition(" ")
             fct = getattr(PythonExec, fct_name)
             self.log(f"python-exec: {fct.__qualname__}({args})")
-            fct(args)
-            if self.dry: return
+            fct(self, args)
         else:
             self.log("system-exec:", cmd)
             if self.dry: return

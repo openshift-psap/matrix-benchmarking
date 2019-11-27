@@ -27,11 +27,11 @@ codec: gst.vp8.vaapivp8enc
 scripted_properties:
   webpage:
     #aqua: https://webglsamples.org/aquarium/aquarium.html
-    cubemap: https://webglsamples.org/dynamic-cubemap/dynamic-cubemap.html
+    #cubemap: https://webglsamples.org/dynamic-cubemap/dynamic-cubemap.html
     still: https://www.redhat.com/
-
   resolution: 1920x1080, 1366x768, 848x480
-  #resources: normal, guest:Xcpu, server:Xcpu, client:Xcpu, guest:Xcpu/client:Xcpu
+  #resources: normal, vm:X*cpu, server:X*cpu, client:X*cpu, vm:X*cpu/client:X*cpu
+  resources: normal, cpu:X*vm/cpu:X*client/net:10ms+2.5M
 
 matrix:
   gst.prop=bitrate: 1000, 10000, 100000
@@ -65,4 +65,4 @@ scripts:
     before:
       - /py/ stress_test $resources
     after:
-      - /py/ stress_test reset
+      - /py/ stress_test normal
