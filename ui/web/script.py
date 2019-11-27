@@ -54,18 +54,18 @@ class Exec():
         if self.dry: return
         quality.Quality.add_to_quality(*quality_msg)
 
-    def clear_graph(self):
+    def clear_record(self):
         self.log(f"clear graphs")
         if self.dry: return
         UIState().DB.clear_graphs()
 
-    def save_graph(self, fname):
-        self.log(f"save graph into {fname}")
+    def save_record(self, fname):
+        self.log(f"save record into {fname}")
         if self.dry: return
         UIState().DB.save_to_file(fname)
 
-    def reset(self):
-        self.log(f"reset encoder params")
+    def reset_encoder(self):
+        self.log(f"reset encoder parameters")
         if self.dry: return
         control.set_encoder("reset", {})
 
@@ -89,6 +89,7 @@ class Script():
         if dry:
             exe.log(f"Running {self.name} (dry)")
             self.do_run(exe)
+            exe.log(f"Estimated time: {exe.total_wait_time/60:.0f}min{exe.total_wait_time%60}s")
             exe.log(f"Estimated time: {exe.total_wait_time/60:.0f}min{exe.total_wait_time%60}s", ahead=True)
         elif Script.thr:
             exe.log("Failed, a script thread is already running ...")

@@ -128,20 +128,25 @@ def construct_callbacks():
     # can the Matrix callback IDs are dynamic (base on the name of the parameters)
     # So at the moment, only one file can be loaded, here in the startup...
     import glob
-    for matrix_result in glob.glob("results/*/matrix.csv"):
+    from . import script_types
+    for matrix_result in glob.glob(f"{script_types.RESULTS_PATH}/*/matrix.csv"):
         matrix_view.parse_data(matrix_result)
 
     matrix_view.build_callbacks(main_app)
 
 def initialize_viewer(url, ui_state):
     from measurement import hot_connect
+    from . import script_types
+
     import os
+    _viewer, _result, path = url.split("/", maxsplit=2)
 
-    *rest, expe, fname = url.split("/")
-    if not rest and expe == "viewer":
-        expe = ""
+    if not (_viewer == "viewer" and _result == "results"):
+        raise RuntimeError(f"Invalid url prefix ... {_viewer}/{_result} ...")
 
-    filename = os.sep.join(["results", expe, fname])
+    filename = os.path.abspath(os.sep.join([script_types.RESULTS_PATH, path]))
+    if not filename.startswith(script_types.RESULTS_PATH):
+        raise RuntimeError(f"Filename abs path ({filename}) doesn't start with the right prefix {script_types.RESULTS_PATH} ...")
 
     hot_connect.load_record_file(ui_state.DB.expe, filename)
 

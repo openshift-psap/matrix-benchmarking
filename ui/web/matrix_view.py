@@ -295,39 +295,40 @@ class Matrix():
     broken_files = []
 
 FileEntry = types.SimpleNamespace
+Params = types.SimpleNamespace
 
-KEY_ORDER = "webpage", "record_time", "codec", "params", "resolution", "experiment"
-params_order = None
+key_order = None
 
 def parse_data(filename, reloading=False):
     if not os.path.exists(filename): return
     directory = filename.rpartition(os.sep)[0]
-    expe_name = filename.split(os.sep)[1] # eg, filename = 'results/current/matrix.csv'
+    expe = filename.split(os.sep)[1] # eg, filename = 'results/current/matrix.csv'
 
-    for line in open(filename).readlines():
-        if not line.strip(): continue
-        if line.startswith("#"): continue
+    for _line in open(filename).readlines():
+        line = _line[:-1].partition("#")[0].strip()
+        if not line: continue
+
         entry = FileEntry()
+        entry.params = Params()
 
-        # cubemap | 30s | gst.vp8.vaapivp8enc | framerate=10;target-bitrate=1000;rate-control=vbr;keyframe-period=0 | 1199x1919 | logs/matrix_30s_20191008-173112.rec
-        entry.key, _, entry.filename = line.strip().replace("gst.prop=", "").rpartition(" | ")
-        entry.__dict__.update(dict(zip(KEY_ORDER, entry.key.split(" | "))))
+        # codec=gst.vp8.vaapivp8enc_record-time=30s_resolution=1920x1080_webpage=cubemap | 1920x1080/cubemap | bitrate=1000_rate-control=cbr_keyframe-period=25_framerate=35.rec
+        script_key, file_path, file_name = line.split(" | ")
 
-        entry.key += f" | {expe_name}"
+        entry.key = "_".join([f"experiment={expe}", script_key, file_name[:-4]])
 
-        global params_order
-        if params_order is None:
-            params_order = [e.partition('=')[0] for e in \
-                            entry.params.split(";")]
+        entry.params.__dict__.update(dict([kv.split("=") for kv in entry.key.split("_")]))
+
+        global key_order
+        if key_order is None:
+            key_order = tuple(entry.params.__dict__)
 
         if entry.key in Matrix.entry_map:
             if not reloading:
                 print(f"WARNING: duplicated key: {entry.key} ({entry.filename})")
             continue
 
-        filepath = os.sep.join([directory, entry.filename])
-        if not os.path.exists(filepath): continue
-        entry.filename = filepath
+        entry.filename = os.sep.join([directory, file_path, file_name])
+        if not os.path.exists(entry.filename): continue
 
         parser = measurement.perf_viewer.parse_rec_file(open(entry.filename))
         _, quality_rows = next(parser)
@@ -361,17 +362,10 @@ def parse_data(filename, reloading=False):
         if table_def is not None: # didn't break because not enough entries
             continue
 
-        Matrix.properties["experiment"].add(expe_name)
-        Matrix.properties["resolution"].add(entry.resolution)
-        Matrix.properties["codec"].add(entry.codec)
-        Matrix.properties["record_time"].add(entry.record_time)
-        Matrix.properties["webpage"].add(entry.webpage)
-
-        for param in entry.params.split(";"):
-            key, value = param.split("=")
+        for param, value in entry.params.__dict__.items():
             try: value = int(value)
             except ValueError: pass # not a number, keep it as a string
-            Matrix.properties[key].add(value)
+            Matrix.properties[param].add(value)
 
         Matrix.entry_map[entry.key] = entry
 
@@ -454,8 +448,7 @@ def process_selection(params):
     children = []
     for entry_props in sorted(itertools.product(*param_lists)):
         entry_dict = dict(entry_props)
-        entry_dict["params"] = ";".join([f"{k}={entry_dict[k]}" for k in params_order])
-        key = " | ".join([entry_dict[k] for k in KEY_ORDER])
+        key = "_".join([f"{k}={entry_dict[k]}" for k in key_order])
 
         try: entry = Matrix.entry_map[key]
         except KeyError: continue
@@ -581,8 +574,7 @@ def build_callbacks(app):
             k, v = prop.split('=')
             variables[k] = v
 
-        variables["params"] = ";".join([f"{k}={variables[k]}" for k in params_order])
-        key = " | ".join([variables[k] for k in KEY_ORDER])
+        key = "_".join([f"{k}={variables[k]}" for k in key_order])
 
         try: entry = Matrix.entry_map[key]
         except KeyError: return f"Error: record '{key}' not found in matrix ..."
@@ -590,7 +582,7 @@ def build_callbacks(app):
         link = html.A("view", target="_blank", href="/viewer/"+entry.filename)
         value = f"{yaxis}: {y:.2f}"
 
-        return [f"{key} 🡆 {value} (", link, ")"]
+        return [f"{key.replace('_', ', ')} 🡆 {value} (", link, ")"]
 
     for _table_stat in TableStats.all_stats:
         def create_callback(table_stat):
@@ -667,9 +659,7 @@ def build_callbacks(app):
                     for param_values in sorted(itertools.product(*param_lists)):
                         params.update(dict(param_values))
 
-                        params["params"] = ";".join([f"{k}={params[k]}" for k in params_order])
-
-                        key = " | ".join([params[k] for k in KEY_ORDER])
+                        key = "_".join([f"{k}={params[k]}" for k in key_order])
 
                         try: entry = Matrix.entry_map[key]
                         except KeyError: continue # missing experiment

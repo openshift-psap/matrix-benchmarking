@@ -2,11 +2,13 @@ import dash_html_components as html
 import datetime
 import os
 import itertools, functools, operator
+import types
 
 from . import script
 from . import matrix_view
 
 DEFAULT_EXPE_NAME = "current"
+RESULTS_PATH = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/../../results")
 
 class SimpleScript(script.Script):
     def to_html(self):
@@ -59,7 +61,7 @@ class SimpleScript(script.Script):
         first_record = True
         def init_recording(test_name):
             exe.wait(5)
-            exe.clear_graph()
+            exe.clear_record()
             exe.clear_quality()
             exe.set_encoding("share_encoding", {})
             exe.append_quality(f"!running: {self.name}")
@@ -69,7 +71,7 @@ class SimpleScript(script.Script):
 
         for cmd in self.yaml_desc.get("before", []): exe.execute(cmd)
 
-        exe.reset()
+        exe.reset_encoder()
 
         for test_name, test_cfg in self.yaml_desc["run"].items():
             if test_cfg.get("_disabled", False):
@@ -113,12 +115,12 @@ class SimpleScript(script.Script):
 
                 exe.wait(record_time)
 
-            exe.reset()
+            exe.reset_encoder()
 
         exe.append_quality(f"!finished: {self.name}")
 
-        dest = "results/simple/" + self.to_id() + "_" + datetime.datetime.today().strftime("%Y%m%d-%H%M") + ".rec"
-        exe.save_graph(dest)
+        dest = "{RESULTS_PATH}/simple/" + self.to_id() + "_" + datetime.datetime.today().strftime("%Y%m%d-%H%M") + ".rec"
+        exe.save_record(dest)
 
         for cmd in self.yaml_desc.get("after", []): exe.execute(cmd)
 
@@ -132,112 +134,142 @@ class MatrixScript(script.Script):
         def keylist_to_html(key, yaml_desc=self.yaml_desc):
             if not key in yaml_desc: return
 
-            yield html.P(html.B(key+": "))
+            yield html.B(key+": ")
             lst = [html.Li(e) for e in yaml_desc[key]]
 
             yield html.Ul(lst)
 
-        def matrix_to_html():
-            yield html.P(html.B("matrix:"))
+        def scripts_to_html():
+            yield html.P(html.B("scripts".upper()))
+
+            scripts = []
+
+            for key in self.yaml_desc["scripted_properties"]:
+                elts = []
+                for action in ["before", "after"]:
+                    elts.append(html.Li([e for e in keylist_to_html(action, self.yaml_desc["scripts"][key])]))
+                scripts.append(html.Li([html.B(f"{key}:"), html.Ul(elts)]))
+
+            scripts += [html.Li([e for e in keylist_to_html(action, self.yaml_desc["scripts"])])
+                       for action in ["setup", "teardown"]]
+            yield html.Ul(scripts)
+
+        def matrix_to_html(key):
+            yield html.P(html.B(key+":"))
 
             params = []
-            for param, values in self.yaml_desc["matrix"].items():
-                items = values.split(", ")
-                params.append(html.Li([html.I(param.rpartition("=")[-1]), " → ", " | ".join(items)]))
+            for param, values in self.yaml_desc[key].items():
+                if isinstance(values, dict):
+                    items = []
+                    for name, value in values.items():
+                        # TODO: test if there's http in value before making a link
+                        items += [html.A(name, href=value), " | "]
+                    if items: items.pop() # remove last |
 
-            if "$webpage" in self.yaml_desc:
-                pages = []
-                for name, url in self.yaml_desc["$webpage"].items():
-                    pages.append(html.A(name, href=url))
-                    pages.append(" | ")
-                params.append(html.Li([html.I("$webpage"), " → ", html.Span(pages[:-1])]))
-
+                    params.append(html.Li([html.I(param), " → "] + items))
+                else:
+                    values = str(values)
+                    params.append(html.Li([html.I(param.rpartition("=")[-1]), " → ",
+                                           " | ".join(values.split(", "))]))
             yield html.Ul(params)
 
         yield from prop_to_html("name")
         yield from prop_to_html("record_time")
         yield from prop_to_html("codec")
-        yield from keylist_to_html("before")
-        yield from keylist_to_html("after")
-        yield from matrix_to_html()
+        yield html.Hr()
+        yield from matrix_to_html("matrix")
+        yield from matrix_to_html("scripted_properties")
+        yield html.Hr()
+        yield from scripts_to_html()
 
-    def do_run_the_matrix(self, exe, webpage_name, res):
-        expe = DEFAULT_EXPE_NAME
+    def do_scripts_setup(self, exe, script_items, context):
+        def do_setup(key, action, value=None):
+            if isinstance(value, tuple): value = value[1]
 
-        codec_name = self.yaml_desc["codec"]
-        record_time = self.yaml_desc["record_time"]
-        script_name = self.yaml_desc["name"]
-        resolution_str = 'x'.join([res["width"], res["height"]]) if res else "----x----"
+            for cmd in self.yaml_desc['scripts'][key][action]:
+                if value: cmd = cmd.replace(f"${key}", value)
+                exe.execute(cmd)
 
-        param_lists = []
-        for name, values in self.yaml_desc["matrix"].items():
-            param_lists.append([(name, value) for value in values.split(", ")])
+        for key, new_value in script_items:
+            current_value = getattr(context.params, key)
 
-        # do fail in drymode if we cannot create the directories
-        try: os.mkdir("results")
-        except FileExistsError: pass
-        try: os.mkdir(f"results/{expe}/")
-        except FileExistsError: pass
+            if current_value == new_value: continue
 
-        if not exe.dry:
-            log_filename = f"results/{expe}/{script_name}.csv"
-            with open(log_filename, "a") as log_f:
-                print(f"# {datetime.datetime.now()}", file=log_f)
+            if current_value:
+                exe.log(f"teardown({key})")
+                do_setup(key, "after")
 
-        expe_skipped = 0
-        total_expe = functools.reduce(operator.mul, map(len, param_lists), 1)
-        for expe_cnt, param_items in enumerate(itertools.product(*param_lists)):
+            if new_value:
+                exe.log(f"setup({key}, {new_value})")
+                do_setup(key, "before", new_value)
+
+            setattr(context.params, key, new_value)
+
+
+    def do_run_the_streaming_matrix(self, exe, param_matrix, context):
+        def scripted_property_to_named_value(key):
+            val = context.params.__dict__[key]
+            return val[0] if isinstance(val, tuple) else val
+        def param_to_named_value(key):
+            val = context.params.__dict__[key]
+            return val[0] if isinstance(val, tuple) else val
+
+        file_path = "/".join(scripted_property_to_named_value(key)
+                             for key in sorted(self.yaml_desc["scripted_properties"]))
+
+        fix_key = "_".join(f"{key}={param_to_named_value(key)}".replace("_", "-")
+                           for key in sorted(context.params.__dict__))
+
+        os.makedirs(f"{context.expe_dir}/{file_path}/", exist_ok=True)
+
+        for param_items in itertools.product(*param_matrix):
             param_dict = dict(param_items)
+
             param_str = ";".join([f"{k}={v}" for k, v in param_items]).replace('gst.prop=', '')
 
-            file_key = " | ".join([webpage_name, f"{record_time}s", codec_name,
-                                   param_str, resolution_str])
+            current_key = param_str.replace(';', "_")
+
+            file_key = " | ".join([fix_key, file_path, current_key])
+
+            context.expe_cnt.current_idx += 1
             exe.log("---")
-            exe.log(f"running {expe_cnt}/{total_expe}")
+            exe.log(f"running {context.expe_cnt.current_idx}/{context.expe_cnt.total}")
             exe.log("> "+file_key)
 
-            if (file_key + " | " + expe) in matrix_view.Matrix.entry_map:
+            if file_key in matrix_view.Matrix.entry_map:
                 # add filename here
                 exe.log(f">> already recorded, skipping.")
 
-                expe_skipped += 1
+                context.expe_cnt.expe_skipped += 1
                 continue
 
-            exe.reset()
+            exe.reset_encoder()
 
-            exe.set_encoding(codec_name, param_dict)
-            exe.wait(10)
-            exe.clear_graph()
+            exe.set_encoding(context.params.codec, param_dict)
+            exe.wait(2)
+            exe.clear_record()
             exe.clear_quality()
             exe.wait(2)
-            exe.append_quality(f"name: {script_name}")
-            exe.append_quality(f"webname: {webpage_name}")
-            exe.append_quality(f"codec: {codec_name}")
-            exe.append_quality(f"encoding: {', '.join([f'{k}={v}' for k, v in param_dict.items()])}")
+
+            for k in context.params.__dict__:
+                exe.append_quality(f"{k}: {scripted_property_to_named_value(k)}")
+
+            exe.append_quality(f"encoding: {param_str}")
 
             exe.set_encoding("share_encoding", {})
             exe.set_encoding("share_resolution", {})
             exe.wait(1)
 
-            exe.wait(record_time)
-            filename = file_key.replace(' | ','--') \
-                               .replace(';', "_") + ".rec"
+            exe.wait(int(self.yaml_desc["record_time"]))
 
-            dest = f"results/{expe}/{filename}"
-            exe.save_graph(dest)
+            dest = f"{context.expe_dir}/{file_path}/{file_key}.rec"
+            exe.save_record(dest)
 
-            log_entry = f"{file_key} | {filename}"
-            log_filename = f"results/{expe}/{script_name}.csv"
+            results_entry = file_key
+            exe.log(f"write result: {context.results_filename} << {results_entry}")
 
-            exe.log(f"write log: {log_filename} << {log_entry}")
-
-            if exe.dry: continue
-
-            with open(log_filename, "a") as log_f:
-                print(log_entry, file=log_f)
-
-        exe.log(f"{webpage_name}: Performed {total_expe - expe_skipped} experiments.")
-        exe.log(f"{webpage_name}: Skipped {expe_skipped} experiments already recorded.")
+            if not exe.dry:
+                print(results_entry, file=open(context.results_filename, "a"))
 
     def get_resolution(self, exe):
         from . import UIState
@@ -276,32 +308,64 @@ class MatrixScript(script.Script):
                 print("bye")
                 return None
 
-    def do_run_webpage(self, exe, name, url, resolution):
-        for cmd in self.yaml_desc.get("before", []):
-            exe.execute(cmd.replace("$webpage", url))
-
-        self.do_run_the_matrix(exe, name, resolution)
-
-        for cmd in self.yaml_desc.get("after", []): exe.execute(cmd)
-
 
     def do_run(self, exe):
-        matrix_view.parse_data(f"results/{DEFAULT_EXPE_NAME}/matrix.log", reloading=True)
+        exe.log("setup()")
+        for cmd in self.yaml_desc['scripts'].get("setup", []):
+            exe.execute(cmd)
 
-        exe.log("Query frame resolution ...")
-        resolution = self.get_resolution(exe)
-        if not resolution:
-            exe.log("Failed to get the resolution")
-            if not exe.dry:
-                exe.log("Something's wrong, bye!")
-                return
+        context = types.SimpleNamespace()
+        context.params = types.SimpleNamespace()
+        context.params.codec = self.yaml_desc["codec"]
+        context.params.record_time = f"{self.yaml_desc['record_time']}s"
 
-        else:
-            exe.log("resolution:", " ".join([f"{k}={v}" for k, v in resolution.items()]))
+        for script_propery in self.yaml_desc["scripted_properties"]:
+            context.params.__dict__[script_propery] = None
 
-        for name, url in self.yaml_desc.get("$webpage", {"none": "none"}).items():
-            self.do_run_webpage(exe, name, url, resolution)
-            exe.log("---")
+        param_matrix = [[(name, value) for value in str(values).split(", ")]
+                        for name, values in self.yaml_desc["matrix"].items()]
+
+        def values_to_list(values):
+            return (values.items() if isinstance(values, dict)
+                    else str(values).split(", "))
+
+        script_matrix = [[(name, value) for value in values_to_list(values)]
+                          for name, values in self.yaml_desc["scripted_properties"].items()]
+
+        context.expe_cnt = types.SimpleNamespace()
+        nb_param_expe = functools.reduce(operator.mul, map(len, param_matrix), 1)
+        nb_script_expe = functools.reduce(operator.mul, map(len, script_matrix), 1)
+        context.expe_cnt.total = nb_script_expe * nb_param_expe
+        context.expe_cnt.current_idx = 0
+        context.expe_cnt.skipped = 0
+
+        context.expe = DEFAULT_EXPE_NAME
+        context.script_name = self.yaml_desc["name"]
+        context.expe_dir = f"{RESULTS_PATH}/{context.expe}"
+        context.results_filename = f"{context.expe_dir}/{context.script_name}.csv"
+
+        exe.log("Loading previous matrix results ...")
+        #matrix_view.parse_data(context.results_filename, reloading=True)
+        exe.log("Loading previous matrix results: done")
+
+        # do fail in drymode if we cannot create the directories
+        os.makedirs(context.expe_dir, exist_ok=True)
+
+        if not exe.dry:
+            print(f"# {datetime.datetime.now()}", file=open(context.results_filename, "a"))
+
+        for script_items in itertools.product(*script_matrix):
+            exe.reset_encoder()
+            self.do_scripts_setup(exe, script_items, context)
+            self.do_run_the_streaming_matrix(exe, param_matrix, context)
+
+        self.do_scripts_setup(exe, [(k, None) for k, v in script_items], context)
+        exe.log("teardown()")
+        for cmd in self.yaml_desc['scripts'].get("teardown", []):
+            exe.execute(cmd)
+
+        exe.log(f"Performed {context.expe_cnt.total - context.expe_cnt.skipped} experiments.")
+        exe.log(f"Skipped {context.expe_cnt.skipped} experiments already recorded.")
 
 TYPES = {
     None: SimpleScript,

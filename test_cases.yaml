@@ -19,27 +19,50 @@ record_time: 20
 after:
   - vm do killall firefox
 ---
-name: matrix
-before:
-  - vm do killall firefox 2 > /dev/null
-  - vm open $webpage
-  - sleep 20
-  - xset s off -dpms
-  - server exec xset s off -dpms
-
-after:
-  - vm do killall firefox
 _type: matrix
-
-$webpage:
-  #aqua: https://webglsamples.org/aquarium/aquarium.html
-  cubemap: https://webglsamples.org/dynamic-cubemap/dynamic-cubemap.html
-  still: https://www.redhat.com/
-
+name: matrix
 record_time: 30
 codec: gst.vp8.vaapivp8enc
+
+scripted_properties:
+  webpage:
+    #aqua: https://webglsamples.org/aquarium/aquarium.html
+    cubemap: https://webglsamples.org/dynamic-cubemap/dynamic-cubemap.html
+    still: https://www.redhat.com/
+
+  resolution: 1920x1080, 1366x768, 848x480
+  #resources: normal, guest:Xcpu, server:Xcpu, client:Xcpu, guest:Xcpu/client:Xcpu
+
 matrix:
-  framerate: 20, 45, 60
   gst.prop=bitrate: 1000, 10000, 100000
-  gst.prop=rate-control: vbr, cbr, cqp
-  gst.prop=keyframe-period: 0, 20, 40
+  gst.prop=rate-control: vbr, cbr
+  gst.prop=keyframe-period: 25, 60 #0, 20, 40
+  framerate: 25, 35 #20, 30, 45, 60
+
+scripts:
+  setup:
+    - xset s off -dpms
+    - server exec xset s off -dpms
+  teardown:
+    - xset s on +dpms
+    - server exec xset s on +dpms
+
+  webpage:
+    before:
+      - vm do killall firefox 2 > /dev/null
+      - vm open $webpage
+      - sleep 20
+    after:
+      - vm do killall firefox 2 > /dev/null
+
+  resolution:
+    before:
+      - vm resolution $resolution
+    after:
+      - vm resolution 1200x1920
+
+  resources:
+    before:
+      - server stress-test $resources
+    after:
+      - server stress-test reset
