@@ -10,6 +10,15 @@ import utils.yaml
 from . import InitialState, UIState
 from . import quality, graph, control
 
+class PythonExec:
+    @staticmethod
+    def stress_test(resources):
+        #import pdb;pdb.set_trace()
+
+        print("#"*10)
+        print("#", resources)
+        print("#"*10)
+
 class Exec():
     def __init__(self, script, dry):
         self.dry = dry
@@ -28,9 +37,16 @@ class Exec():
             Script.messages.insert(0, msg)
 
     def execute(self, cmd):
-        self.log("exec:", cmd)
-        if self.dry: return
-        os.system(cmd)
+        if cmd.startswith("/py/"):
+            fct_name, _, args = cmd[5:].partition(" ")
+            fct = getattr(PythonExec, fct_name)
+            self.log(f"python-exec: {fct.__qualname__}({args})")
+            fct(args)
+            if self.dry: return
+        else:
+            self.log("system-exec:", cmd)
+            if self.dry: return
+            os.system(cmd)
 
     def set_encoding(self, codec, params, force=False):
         self.log("set_enc:", codec, ', '.join([f"{k}={v}" for k, v in params.items()]))

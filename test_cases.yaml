@@ -63,6 +63,6 @@ scripts:
 
   resources:
     before:
-      - server stress-test $resources
+      - /py/ stress_test $resources
     after:
-      - server stress-test reset
+      - /py/ stress_test reset
