@@ -25,10 +25,7 @@ record_time: 30
 codec: gst.vp8.vaapivp8enc
 
 scripted_properties:
-  webpage:
-    #aqua: https://webglsamples.org/aquarium/aquarium.html
-    #cubemap: https://webglsamples.org/dynamic-cubemap/dynamic-cubemap.html
-    still: https://www.redhat.com/
+  gst-videotestsrc: smpte, snow, ball
   resolution: 1920x1080, 1366x768, 848x480
   #resources: normal, vm:X*cpu, server:X*cpu, client:X*cpu, vm:X*cpu/client:X*cpu
   resources: normal, cpu:X*vm/cpu:X*client/net:10ms+2.5M
@@ -47,13 +44,14 @@ scripts:
     - xset s on +dpms
     - server exec xset s on +dpms
 
-  webpage:
+  gst-videotestsrc:
     before:
-      - vm do killall firefox 2 > /dev/null
-      - vm open $webpage
-      - sleep 20
+      # https://gstreamer.freedesktop.org/documentation/videotestsrc/index.html
+      - vm do gst-launch-1.0 -v videotestsrc pattern=$gst-videotestsrc ! video/x-raw,width=1920,height=1080 ! autovideosink >/dev/null &
+      - sleep 1
+      - vm do wmctrl -r ':ACTIVE:' -b toggle,fullscreen
     after:
-      - vm do killall firefox 2 > /dev/null
+      - vm do pkill gst-launch-1.0
 
   resolution:
     before:
