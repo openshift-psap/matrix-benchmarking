@@ -549,7 +549,7 @@ def build_callbacks(app):
         try:
             pos, data = [(i, d) for i, d in enumerate(hoverData) if d][0]
         except IndexError:
-            return "Nothing selected so far ..."
+            return "Nothing selected for plotting ... (see that 'stat' dropdown list)"
 
         figure = args[nb_stats:2*nb_stats][pos]
         variables = dict(zip(Matrix.properties.keys(), args[2*nb_stats:]))
