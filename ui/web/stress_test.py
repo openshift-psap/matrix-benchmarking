@@ -1,5 +1,6 @@
 import subprocess
 import time
+import atexit
 
 def run_cmd(state, exe, cmd, addr=None):
     remote_cmd = f"ssh -t -t {addr} {cmd}" if addr else cmd
@@ -104,6 +105,12 @@ def stress_test(state, exe, resources, machines):
     if not hasattr(state, "current"):
         state.current = None
         state.running = []
+
+        def cleanup():
+            print("stress-test: do exit cleanups")
+            do_killall(state, exe)
+
+        atexit.register(cleanup)
 
     def normal():
         state.current = None

@@ -3,6 +3,7 @@ import datetime
 import os
 import itertools, functools, operator
 import types
+import atexit
 
 from . import script
 from . import matrix_view
@@ -126,6 +127,18 @@ class SimpleScript(script.Script):
 
         exe.log("done!")
 
+do_at_exit = {}
+def exit_cleanup():
+    if do_at_exit:
+        print("scripts: do exit cleanups for", ", ".join(do_at_exit))
+
+    for key, cleanup in do_at_exit.items():
+        print(f"scripts: cleaning up for '{key}' ...")
+        try: cleanup(key)
+        except Exception as e: print(e)
+
+atexit.register(exit_cleanup)
+
 class MatrixScript(script.Script):
     def to_html(self):
         def prop_to_html(key):
@@ -198,10 +211,14 @@ class MatrixScript(script.Script):
             if current_value:
                 exe.log(f"teardown({key})")
                 do_setup(key, "after")
+                del do_at_exit[key]
 
             if new_value:
                 exe.log(f"setup({key}, {new_value})")
                 do_setup(key, "before", new_value)
+
+                def at_exit(_key): do_setup(_key, "after")
+                do_at_exit[key] = at_exit
 
             setattr(context.params, key, new_value)
 
@@ -315,6 +332,11 @@ class MatrixScript(script.Script):
         for cmd in self.yaml_desc['scripts'].get("setup", []):
             exe.execute(cmd)
 
+        def teardown(_not_used=None):
+            for cmd in self.yaml_desc['scripts'].get("teardown", []):
+                exe.execute(cmd)
+        do_at_exit["__vm"] = teardown
+
         context = types.SimpleNamespace()
         context.params = types.SimpleNamespace()
         context.params.codec = self.yaml_desc["codec"]
@@ -363,8 +385,8 @@ class MatrixScript(script.Script):
 
         self.do_scripts_setup(exe, [(k, None) for k, v in script_items], context)
         exe.log("teardown()")
-        for cmd in self.yaml_desc['scripts'].get("teardown", []):
-            exe.execute(cmd)
+        teardown()
+        del do_at_exit["__vm"]
 
         exe.log(f"Performed {context.expe_cnt.total - context.expe_cnt.skipped} experiments.")
         exe.log(f"Skipped {context.expe_cnt.skipped} experiments already recorded.")
