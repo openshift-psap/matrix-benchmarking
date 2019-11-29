@@ -108,7 +108,11 @@ def prepare_cfg(key):
             cfg["measurements"].append(measure)
 
     cfg["run_as_collector"] = smart_cfg[key].get("run_as_collector", False)
+    cfg["run_headless"] = smart_cfg[key].get("run_headless", False)
     cfg["run_as_viewer"] = smart_cfg[key].get("run_as_viewer", False)
+    if cfg["run_as_viewer"] and cfg["run_headless"]:
+        print(f"ERROR: viewer cannot run headless (key: '{key}')")
+        raise RuntimeError()
 
     try:
         cfg["port_to_collector"] = smart_cfg[key]["port_to_collector"]
@@ -118,8 +122,10 @@ def prepare_cfg(key):
     cfg["machines"] = smart_cfg["machines"][machines_key]
     cfg["ui.web"] = smart_cfg["setup"]["ui.web"]
 
-    return cfg
+    if cfg["run_headless"]:
+        cfg["ui.web"]["headless"] = smart_cfg[key]["headless"]['ui.web']
 
+    return cfg
 
 def load_measurements(cfg, expe):
     measurements = []
@@ -172,6 +178,7 @@ def checkup_mods(measurements, deads, loop):
 
 def run(cfg):
     run_as_collector = cfg["run_as_collector"]
+    run_headless = cfg["run_headless"]
     run_as_viewer = cfg["run_as_viewer"]
 
     loop = asyncio.get_event_loop()
@@ -181,7 +188,7 @@ def run(cfg):
     if run_as_collector or run_as_viewer:
         import ui.web
         ui.web.AgentExperimentClass = AgentExperiment
-        server = ui.web.Server(expe)
+        server = ui.web.Server(expe, headless=run_headless)
         server.configure(cfg['ui.web'], cfg['machines'])
 
     else: # run as agent

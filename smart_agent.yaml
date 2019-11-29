@@ -83,3 +83,12 @@ collector:
 
 viewer:
   run_as_viewer: True
+
+headless:
+  run_as_collector: True
+  run_headless: True
+  measurement_sets:
+    - collector
+  headless:
+    ui.web:
+      script: matrix

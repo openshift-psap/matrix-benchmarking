@@ -240,11 +240,26 @@ def construct_dispatcher():
 
 
 class Server():
-    def __init__(self, expe=None):
-        self.thr = threading.Thread(target=self._thr_run_dash)
+    def __init__(self, expe=None, headless=False):
+
+        thr_fct = self._thr_run_headless_and_quit if headless \
+            else self._thr_run_dash
+
+        self.thr = threading.Thread(target=thr_fct)
         self.thr.daemon = True
 
-        self._init_webapp(expe)
+        from . import graph
+        global dataview_cfg
+        dataview_cfg = graph.DataviewCfg(utils.yaml.load_multiple("ui/web/dataview.yaml"))
+
+        if headless:
+            assert expe is not None, "No expe received in headless collector mode ..."
+
+        if expe:
+            self._init_collector(expe, headless)
+
+        if not headless:
+            self._init_webapp(expe)
 
     def configure(self, cfg, _machines):
         from . import control
@@ -259,6 +274,8 @@ class Server():
 
         global machines
         machines = _machines
+
+        self.cfg = cfg
 
     def start(self):
         self.thr.start()
@@ -275,17 +292,14 @@ class Server():
     def periodic_checkup(self):
         pass
 
-    def _init_webapp(self, expe):
-        from . import graph
-        global dataview_cfg
-        dataview_cfg = graph.DataviewCfg(utils.yaml.load_multiple("ui/web/dataview.yaml"))
-
-        if expe:
-            global running_as_collector
-            running_as_collector = True
-            ui_state = ui_states["collector"] = _UIState("collector", expe, viewer_mode=False)
+    def _init_collector(self, expe, headless=False):
+        global running_as_collector
+        running_as_collector = True
+        ui_state = ui_states["collector"] = _UIState("collector", expe, viewer_mode=False)
+        if not headless:
             ui_state.layout = construct_layout(ui_state)
 
+    def _init_webapp(self, expe):
         construct_dispatcher()
         construct_callbacks()
 
@@ -297,3 +311,35 @@ class Server():
             print(f"DASH: {e.__class__.__name__}: {e}")
             traceback.print_exception(*sys.exc_info())
             os.kill(os.getpid(), signal.SIGINT)
+
+    def _thr_run_headless_and_quit(self):
+        try:
+            self._thr_run_headless()
+        except Exception as e:
+            raise e
+        finally:
+            import signal, os
+            os.kill(os.getpid(), signal.SIGTERM)
+
+    def _thr_run_headless(self):
+        from . import script
+
+        class message_to_print():
+            def append(self, msg): print(msg)
+            def insert(self, pos, msg): pass
+            def clear(self): pass
+
+        script.Script.messages = message_to_print()
+
+        script.Script.load()
+        try:
+            script_name = self.cfg['headless']['script']
+            script_to_run = script.Script.all_scripts[script_name]
+        except KeyError:
+            print("ERROR: script not found '{script_name}'...")
+            return
+        import sys
+        dry = "run" not in sys.argv
+        thr = script_to_run.run(dry=dry)
+        if thr:
+            thr.join()

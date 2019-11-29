@@ -31,8 +31,8 @@ class Exec():
         if self.dry:
             if ahead:
                 Script.messages.insert(0, msg)
-            else:
-                Script.messages.append(msg)
+            Script.messages.append(msg)
+
         else:
             print(datetime.datetime.now().strftime("%H:%M:%S"), msg)
             Script.messages.insert(0, msg)
@@ -90,6 +90,27 @@ class Script():
     messages = []
     thr = None
 
+    @staticmethod
+    def load(fname="test_cases.yaml"):
+        from . import script_types
+
+        Script.all_scripts.clear()
+
+        all_yaml_desc = utils.yaml.load_all(fname)
+
+        for script_yaml_desc in all_yaml_desc:
+            if not script_yaml_desc: continue
+            if script_yaml_desc.get("disabled", False) is True: continue
+            _type = script_yaml_desc.get("_type")
+            try:
+                script_type = script_types.TYPES[_type]
+            except KeyError:
+                print(f"WARNING: script: invalid script type ({_type})")
+                continue
+
+            script = script_type(script_yaml_desc)
+            Script.all_scripts[script.to_id()] = script
+
     def __init__(self, yaml_desc):
         self.yaml_desc = yaml_desc
         self.name = yaml_desc["name"]
@@ -105,13 +126,12 @@ class Script():
         if dry:
             exe.log(f"Running {self.name} (dry)")
             self.do_run(exe)
-            exe.log(f"Estimated time: {exe.total_wait_time/60:.0f}min{exe.total_wait_time%60}s")
             exe.log(f"Estimated time: {exe.total_wait_time/60:.0f}min{exe.total_wait_time%60}s", ahead=True)
         elif Script.thr:
             exe.log("Failed, a script thread is already running ...")
         else:
             def run_thr(exe):
-                Script.messages[:] = []
+                Script.messages.clear()
                 exe.log(f"Running {self.name}!")
                 self.do_run(exe)
                 Script.thr = None
@@ -120,25 +140,11 @@ class Script():
             Script.thr.daemon = True
             Script.thr.start()
 
+            return Script.thr
+
+
 def construct_script_inner_tabs():
-    from . import script_types
-
-    Script.all_scripts.clear()
-
-    all_yaml_desc = utils.yaml.load_all("test_cases.yaml")
-
-    for script_yaml_desc in all_yaml_desc:
-        if not script_yaml_desc: continue
-        if script_yaml_desc.get("disabled", False) is True: continue
-        try:
-            script_type = script_types.TYPES[script_yaml_desc.get("_type")]
-        except KeyError:
-            yield dcc.Tab(label="Invalid script")
-            return
-
-        script = script_type(script_yaml_desc)
-        Script.all_scripts[script.to_id()] = script
-
+    for script in Script.all_scripts.values():
         yield dcc.Tab(value=script.to_id(), label=script.name,
                       children=list(script.to_html()))
 
@@ -177,6 +183,8 @@ def construct_script_tab_callbacks():
                           [Input('script-bt-reload', 'n_clicks')])
     def reload_scripts(*args):
         print("Script: reloading")
+        Script.load()
+
         return list(construct_script_inner_tabs())
 
     @UIState.app.callback(Output("script-msg-box", 'children'),
