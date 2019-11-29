@@ -302,7 +302,8 @@ key_order = None
 def parse_data(filename, reloading=False):
     if not os.path.exists(filename): return
     directory = filename.rpartition(os.sep)[0]
-    expe = filename.split(os.sep)[1] # eg, filename = 'results/current/matrix.csv'
+    from . import script_types
+    expe = filename[len(script_types.RESULTS_PATH)+1:].partition("/")[0]
 
     for _line in open(filename).readlines():
         line = _line[:-1].partition("#")[0].strip()
@@ -312,9 +313,10 @@ def parse_data(filename, reloading=False):
         entry.params = Params()
 
         # codec=gst.vp8.vaapivp8enc_record-time=30s_resolution=1920x1080_webpage=cubemap | 1920x1080/cubemap | bitrate=1000_rate-control=cbr_keyframe-period=25_framerate=35.rec
-        script_key, file_path, file_name = line.split(" | ")
 
-        entry.key = "_".join([f"experiment={expe}", script_key, file_name[:-4]])
+        script_key, file_path, file_key = line.split(" | ")
+
+        entry.key = "_".join([f"experiment={expe}", script_key, file_key])
 
         entry.params.__dict__.update(dict([kv.split("=") for kv in entry.key.split("_")]))
 
@@ -322,13 +324,19 @@ def parse_data(filename, reloading=False):
         if key_order is None:
             key_order = tuple(entry.params.__dict__)
 
-        if entry.key in Matrix.entry_map:
-            if not reloading:
-                print(f"WARNING: duplicated key: {entry.key} ({entry.filename})")
-            continue
+        entry.filename = os.sep.join([directory, file_path, file_key+".rec"])
+        entry.linkname = os.sep.join(["results", expe, file_path, file_key+".rec"])
 
-        entry.filename = os.sep.join([directory, file_path, file_name])
         if not os.path.exists(entry.filename): continue
+
+        try:
+            dup_entry = Matrix.entry_map[entry.key]
+            if not reloading and dup_entry.filename != entry.filename:
+                print(f"WARNING: duplicated key: {entry.key} ({entry.filename})")
+                print(f"\t 1: {dup_entry.filename}")
+                print(f"\t 2: {entry.filename}")
+                continue
+        except KeyError: pass # not duplicated
 
         parser = measurement.perf_viewer.parse_rec_file(open(entry.filename))
         _, quality_rows = next(parser)
@@ -351,7 +359,7 @@ def parse_data(filename, reloading=False):
             for table_stat in TableStats.interesting_tables[table_name]:
                 if table_stat.min_rows and len(table_rows) < table_stat.min_rows:
                     keep = False
-                    msg = f"{table_name} has only {len(table_rows)} rows (min: {table_stat.min_rows})"
+                    msg = f"{entry.linkname}: {table_name} has only {len(table_rows)} rows (min: {table_stat.min_rows})"
                     print("###", msg)
                     Matrix.broken_files.append((entry.filename, msg))
                     break
@@ -456,7 +464,7 @@ def process_selection(params):
         title = " ".join(f"{k}={v}" for k, v in entry_dict.items() if k not in ("params", "stats") and len(params[k]) > 1)
         if not title: title = "Single match"
 
-        link = html.A("view", target="_blank", href="/viewer/"+entry.filename)
+        link = html.A("view", target="_blank", href="/viewer/"+entry.linkname)
 
         entry_stats = []
         for stat_name, stat_value in entry.stats.items():
@@ -579,7 +587,8 @@ def build_callbacks(app):
         try: entry = Matrix.entry_map[key]
         except KeyError: return f"Error: record '{key}' not found in matrix ..."
 
-        link = html.A("view", target="_blank", href="/viewer/"+entry.filename)
+
+        link = html.A("view", target="_blank", href="/viewer/"+entry.linkname)
         value = f"{yaxis}: {y:.2f}"
 
         return [f"{key.replace('_', ', ')} 🡆 {value} (", link, ")"]

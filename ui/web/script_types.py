@@ -229,19 +229,20 @@ class MatrixScript(script.Script):
 
             current_key = param_str.replace(';', "_")
 
-            file_key = " | ".join([fix_key, file_path, current_key])
+            file_entry = " | ".join([fix_key, file_path, current_key])
+            file_key = "_".join([fix_key, current_key])
 
             context.expe_cnt.current_idx += 1
             exe.log("---")
             exe.log(f"running {context.expe_cnt.current_idx}/{context.expe_cnt.total}")
             exe.log("> "+file_key)
 
-            if file_key in matrix_view.Matrix.entry_map:
-                # add filename here
-                exe.log(f">> already recorded, skipping.")
-
-                context.expe_cnt.expe_skipped += 1
+            try:
+                previous_entry = matrix_view.Matrix.entry_map[f'experiment={DEFAULT_EXPE_NAME}_{file_key}']
+                exe.log(f">> already recorded, skipping | {previous_entry.filename}")
+                context.expe_cnt.skipped += 1
                 continue
+            except KeyError: pass # no previous entry, run!
 
             exe.reset_encoder()
 
@@ -262,14 +263,14 @@ class MatrixScript(script.Script):
 
             exe.wait(int(self.yaml_desc["record_time"]))
 
-            dest = f"{context.expe_dir}/{file_path}/{file_key}.rec"
+            dest = f"{context.expe_dir}/{file_path}/{current_key}.rec"
+
             exe.save_record(dest)
 
-            results_entry = file_key
-            exe.log(f"write result: {context.results_filename} << {results_entry}")
+            exe.log(f"write result: {context.results_filename} << {file_entry}")
 
             if not exe.dry:
-                print(results_entry, file=open(context.results_filename, "a"))
+                print(file_entry, file=open(context.results_filename, "a"))
 
     def get_resolution(self, exe):
         from . import UIState
@@ -345,7 +346,8 @@ class MatrixScript(script.Script):
         context.results_filename = f"{context.expe_dir}/{context.script_name}.csv"
 
         exe.log("Loading previous matrix results ...")
-        #matrix_view.parse_data(context.results_filename, reloading=True)
+
+        matrix_view.parse_data(context.results_filename, reloading=True)
         exe.log("Loading previous matrix results: done")
 
         # do fail in drymode if we cannot create the directories

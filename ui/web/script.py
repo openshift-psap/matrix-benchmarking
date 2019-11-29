@@ -76,9 +76,17 @@ class Exec():
         UIState().DB.clear_graphs()
 
     def save_record(self, fname):
+        if os.path.exists(fname):
+            self.log(f"WARNING: record destination '{fname}' already exists ...")
+            fname = fname + "_" + datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+
         self.log(f"save record into {fname}")
-        if self.dry: return
-        UIState().DB.save_to_file(fname)
+        if self.dry:
+            # make sure that we can create this file
+            open(fname, "w")
+            os.unlink(fname)
+        else:
+            UIState().DB.save_to_file(fname)
 
     def reset_encoder(self):
         self.log(f"reset encoder parameters")
