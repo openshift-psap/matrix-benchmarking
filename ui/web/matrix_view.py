@@ -30,11 +30,131 @@ COLORS = [
     '#17becf'   # blue-teal
 ]
 
+class HeatmapPlot():
+    def __init__(self, name, table, title, x, y):
+        self.name = "Heat: "+name
+        self.id_name = name
+        TableStats._register_stat(self)
+        self.table = table
+        self.title = title
+        self.x = x
+        self.y = y
+
+    def do_plot(self, params, param_lists, variables):
+        table_def = None
+        fig = go.Figure()
+        all_x = []
+        all_y = []
+
+        if len(variables) > 4:
+            return {'layout': {'title': f"Too many variables selected ({len(variables)} > 4)"}}
+
+        for i, param_values in enumerate(sorted(itertools.product(*param_lists))):
+            params.update(dict(param_values))
+
+            key = "_".join([f"{k}={params[k]}" for k in key_order])
+
+            try: entry = Matrix.entry_map[key]
+            except KeyError: continue # missing experiment
+
+            if table_def is None:
+                for table_key in entry.tables:
+                    if not table_key.startswith(f"#{self.table}|"): continue
+                    table_def = table_key
+                    break
+                else:
+                    return {'layout': {'title': f"Error: no table named '{table_key}'"}}
+
+            table_fields = table_def.partition("|")[-1].split(";")
+            try:
+                x_row_id = table_fields.index(self.x[0])
+                y_row_id = table_fields.index(self.y[0])
+            except ValueError:
+                return {'layout': {'title': f"Error: Could not find {self.x}/{self.y} in '{table_def}'"}}
+            table_rows = entry.tables[table_def]
+            x = [row[x_row_id] * self.x[2] for row in table_rows[1]]
+            y = [row[y_row_id] * self.y[2] for row in table_rows[1]]
+            name =  ", ".join(f"{k}={params[k]}" for k in variables)
+            if not name: name = "single selection"
+            all_x += x
+            all_y += y
+
+            if len(variables) < 3:
+                fig.add_trace(go.Scatter(
+                    xaxis = 'x', yaxis = 'y', mode = 'markers',
+                    marker = dict(color = COLORS[i % len(COLORS)], size = 3 ),
+                    name=name, legendgroup=name,
+                    x = x, y = y,
+                    hoverlabel= {'namelength' :-1}
+                ))
+
+            fig.add_trace(go.Histogram(
+                xaxis = 'x2', marker = dict(color=COLORS[i % len(COLORS)]), showlegend=False, opacity=0.75,
+                histnorm='percent',
+                y = y, legendgroup=name, name=name,
+                hoverlabel= {'namelength' :-1},
+            ))
+            fig.add_trace(go.Histogram(
+                yaxis = 'y2', marker = dict(color=COLORS[i % len(COLORS)]), showlegend=False, opacity=0.75,
+                x = x, legendgroup=name, name=name,
+                histnorm='percent',
+                hoverlabel= {'namelength' :-1}
+            ))
+
+        #NB_BINS = 40
+        fig.add_trace(go.Histogram2d(
+            xaxis='x', yaxis='y',
+            x=all_x, y=all_y, name='heatmap', histnorm='percent',
+            #nbinsx=NB_BINS*2, nbinsy=NB_BINS,
+            showscale=False,
+            colorscale=[[0, '#e5ecf6'], # carefully chosen with gimp to match the plot background color
+                        [0.1, '#e5ecf6'], # more or less hide the first 10%
+                        [0.5, 'rgb(242,211,56)'], [0.75, 'rgb(242,143,56)'], [1, 'rgb(217,30,30)']]
+        ))
+
+        fig.update_layout(
+            meta={"type": 'HeatmapPlot'},
+            barmode='overlay',
+            xaxis=dict(
+                zeroline=True, showgrid=False, rangemode='tozero',
+                domain=[0,0.85],
+                title=self.x[1],
+            ),
+            yaxis=dict(
+                zeroline=True, showgrid =False, rangemode='tozero',
+                domain=[0,0.85],
+                title=self.y[1],
+            ),
+            xaxis2=dict(
+                zeroline=True, showgrid=False,
+                domain=[0.85,1],
+                title='% of frames',
+            ),
+            yaxis2=dict(
+                zeroline=True, showgrid=False,
+                domain=[0.85,1],
+                title='% of frames',
+            ),
+            bargap=0, hovermode='closest',
+            showlegend=True, title=self.title + " (in %)",
+        )
+        return fig
+
+
 class TableStats():
     all_stats = []
     stats_by_name = {}
 
     interesting_tables = defaultdict(list)
+
+    @classmethod
+    def _register_stat(clazz, stat_obj):
+        clazz.all_stats.append(stat_obj)
+
+        if stat_obj.name in clazz.stats_by_name:
+            raise Exception(f"Duplicated name: {stat_obj.name}")
+
+        clazz.stats_by_name[stat_obj.name] = stat_obj
 
     def __init__(self, id_name, name, table, field, fmt, unit, min_rows=0, divisor=1):
         self.id_name = id_name
@@ -48,11 +168,8 @@ class TableStats():
 
         self.do_process = None
 
+        TableStats._register_stat(self)
         TableStats.interesting_tables[table].append(self)
-        TableStats.all_stats.append(self)
-        if self.name in TableStats.stats_by_name:
-            raise Exception(f"Duplicated name: {self.name}")
-        TableStats.stats_by_name[self.name] = self
 
     def __str__(self):
         return self.name
@@ -254,6 +371,10 @@ class TableStats():
         res = statistics.mode(periods)
 
         return res, 0, 0
+
+HeatmapPlot("Frame Size/Decoding", 'client.client', "Frame Size vs Decode duration",
+            ("client.frame_size", "Frame size (in KB)", 0.001),
+            ("client.decode_duration", "Decode duration (in ms)", 1000))
 
 TableStats.KeyFramesSize("keyframe_size", "Frame Size: keyframes", "server.host",
                       ("host.msg_ts", "host.frame_size"), ".0f", "KB/s", divisor=1000)
@@ -577,12 +698,40 @@ def build_callbacks(app):
         y = data['points'][0]['y']
         idx = data['points'][0]['curveNumber']
         legend = figure['data'][idx]['name']
-        ax = figure['data'][idx]['xaxis']
 
-        try: xaxis_name = figure['layout'][xaxis]['title']['text']
-        except KeyError: xaxis_name = ''
+        try:
+            meta = figure['layout']['meta']
+            if isinstance(meta, list):
+                if len(meta) > 1: return f"Meta list is too long, strange ... {meta}"
+                meta = meta[0]
+            plot_type = meta["type"]
+        except KeyError: plot_type = None
 
-        props = " ".join([x, legend, xaxis_name]).split()
+        if plot_type == "HeatmapPlot":
+            name = figure['data'][idx]['name']
+
+            if name == 'heatmap':
+                z = data['points'][0]['z']
+                return f"Cannot get link to viewer for Heatmap layer. [x: {x}, y: {y}, z: {z:.0f}%]"
+
+            props = name.split(", ") if name else []
+
+            value = f"[x: {x}, y: {y}]"
+
+        elif plot_type in ("default", None):
+            ax = figure['data'][idx]['xaxis']
+
+            xaxis = 'xaxis' + (ax[1:] if ax != 'x' else '')
+            yaxis = figure['layout']['yaxis']['title']['text']
+
+            try: xaxis_name = figure['layout'][xaxis]['title']['text']
+            except KeyError: xaxis_name = ''
+
+            props = " ".join([x, legend, xaxis_name]).split()
+            value = f"{yaxis}: {y:.2f}"
+        else:
+            return f"Plot type '{plot_type}'not recognized ..."
+
         for prop in props:
             k, v = prop.split('=')
             variables[k] = v
@@ -634,13 +783,13 @@ def build_callbacks(app):
 
             @app.callback(Output(table_stat.id_name, 'figure'),
                           [Input('list-params-'+key, "value") for key in Matrix.properties]
-                          +[Input('property-order', 'children')])
+                          +[Input("lbl_params", "n_clicks")]+[Input('property-order', 'children')])
             def graph_figure(*args):
                 order_str = args[-1]
                 var_order = order_str.split(" ")+['stats'] if order_str \
                     else list(Matrix.properties.keys())
 
-                params = dict(zip(Matrix.properties.keys(), args[:-1]))
+                params = dict(zip(Matrix.properties.keys(), args[:len(Matrix.properties)]))
 
                 stats_values = params["stats"]
                 if not stats_values or table_stat.name not in stats_values:
@@ -649,19 +798,26 @@ def build_callbacks(app):
                 variables = {k:(Matrix.properties[k]) for k, v in params.items() \
                              if k != "stats" and v == "---"}
 
+                ordered_vars = sorted(variables.keys(), key=var_order.index)
+                ordered_vars.reverse()
+
+                param_lists = [[(key, v) for v in variables[key]] for key in ordered_vars]
+
+                try: do_plot = table_stat.do_plot
+                except AttributeError: pass
+                else: return do_plot(params, param_lists, variables)
+
+                # default plot
+
                 data = [[[], []]]
                 layout = go.Layout()
                 layout.hovermode = 'closest'
+                layout.meta = {"type": 'default'},
 
                 if len(variables) == 0:
                     layout.title = "Select at least 1 variable parameter..."
 
                 else:
-                    ordered_vars = sorted(variables.keys(), key=var_order.index)
-                    ordered_vars.reverse()
-
-                    param_lists = [[(key, v) for v in variables[key]] for key in ordered_vars]
-
                     *second_vars, legend_var = ordered_vars
                     second_vars.reverse()
 
@@ -792,7 +948,6 @@ def build_callbacks(app):
                                 ))
                         DO_LOCAL_SORT = True
                         if len(variables) >= 5 and DO_LOCAL_SORT:
-                            #import pdb;pdb.set_trace()
                             # sort x according to y's value order
                             x[legend_key] = [_x for _y, _x in sorted(zip(y[legend_key], x[legend_key]),
                                                                          key=lambda v: (v[0] is None, v[0]))]
