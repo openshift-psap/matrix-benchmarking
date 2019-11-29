@@ -656,6 +656,7 @@ def build_callbacks(app):
                     x = defaultdict(list); y = defaultdict(list); y_err = defaultdict(list)
                     legend_keys = set()
                     legend_names = set()
+                    legends_visible = []
                     for param_values in sorted(itertools.product(*param_lists)):
                         params.update(dict(param_values))
 
@@ -772,11 +773,14 @@ def build_callbacks(app):
                         #   need to sort and don't move the None location
                         #   need to sort yerr as well
 
+                        showlegend = legend_name not in legends_visible
+                        if showlegend: legends_visible.append(legend_name)
+
                         y_max = max([yval for yval in [y_max]+y[legend_key] if yval is not None])
                         data.append(dict(**plot_args, x=x[legend_key], y=y[legend_key],
                                          legendgroup=legend_name,
                                          xaxis=ax, name=legend_name,
-                                         showlegend=(ax == "x1")))
+                                         showlegend=showlegend))
                     if len(variables) > 2:
                         # force y_min = 0 | y_max = max visible value (cannot set only y_min)
                         # if len(variables) <= 2:
