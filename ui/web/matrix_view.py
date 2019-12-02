@@ -204,6 +204,7 @@ class TableStats():
         delta = [(ts(stop/1000000) - ts(start/1000000)).total_seconds() for
                  start, stop in zip (values, values[1:])]
 
+        if len(delta) < 2: return 0, 0, 0
         return statistics.mean(delta) / self.divisor, statistics.stdev(delta) / self.divisor
 
     def process_keylowframes_size(self, keyframes=False, lowframes=False):
