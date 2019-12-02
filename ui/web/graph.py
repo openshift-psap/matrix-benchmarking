@@ -345,7 +345,8 @@ class GraphSpec():
         self.x = FieldSpec(yaml_desc["x"])
 
         self.all_y_axis = []
-        for ax in "y", "y2", "y3", "y4":
+        for ax in [k for k in yaml_desc.keys()
+                   if k.startswith("y") and (not k[1:] or k[1:].isnumeric())]:
             try:
                 self.all_y_axis.append(FieldSpec(yaml_desc[ax]))
             except KeyError: pass
