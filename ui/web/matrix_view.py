@@ -11,6 +11,7 @@ import plotly
 import plotly.graph_objs as go
 import plotly.subplots
 
+import urllib.parse
 import datetime
 import statistics
 
@@ -388,8 +389,10 @@ def parse_data(filename, reloading=False):
     for key, values in Matrix.properties.items():
         print(f"{key:20s}: {', '.join(map(str, values))}")
 
-def build_layout(app):
-    matrix_controls = [html.B("Parameters:"), html.Br()]
+def build_layout(app, search):
+    defaults = urllib.parse.parse_qs(search[1:]) if search else {}
+
+    matrix_controls = [html.B("Parameters:", id="lbl_params"), html.Br()]
     for key, values in Matrix.properties.items():
         options = [{'label': i, 'value': i} for i in sorted(values)]
 
@@ -408,6 +411,11 @@ def build_layout(app):
             else:
                 attr["value"] = "---"
 
+        try:
+            default_value = defaults[key]
+            attr["value"] = default_value[0] if len(default_value) == 1 else default_value
+        except KeyError: pass
+
         tag = dcc.Dropdown(id='list-params-'+key, options=options,
                            **attr, searchable=False, clearable=False)
 
@@ -420,10 +428,11 @@ def build_layout(app):
     aspect = [html.Br(), html.B("Aspect:"), html.Br(),
               dcc.Checklist(id="matrix-show-text", value='',
                             options=[{'label': 'Show text', 'value': 'txt'}]),
-              html.Div(id='property-order')
+              html.Div(defaults.get("property-order", [''])[0], id='property-order')
     ]
 
-    control_children = matrix_controls + aspect + invalids
+    permalink = [html.P(dcc.Link('Permalink', href='', id='permalink'))]
+    control_children = matrix_controls + aspect + invalids + permalink
 
     graph_children = []
     for table_stat in TableStats.all_stats:
@@ -537,7 +546,7 @@ def build_callbacks(app):
 
         if triggered_id: # label_keyframe-period.n_clicks
             key = triggered_id.partition("_")[-1].rpartition(".")[0]
-            current.remove(key)
+            if key in current: current.remove(key)
             current.append(key)
 
         try: current.remove("stats")
@@ -589,9 +598,27 @@ def build_callbacks(app):
 
 
         link = html.A("view", target="_blank", href="/viewer/"+entry.linkname)
-        value = f"{yaxis}: {y:.2f}"
 
         return [f"{key.replace('_', ', ')} 🡆 {value} (", link, ")"]
+
+    @app.callback(Output("permalink", 'href'),
+                  [Input('list-params-'+key, "value") for key in Matrix.properties]
+                  +[Input('property-order', 'children')])
+    def get_permalink(*args):
+        try: triggered_id = dash.callback_context.triggered
+        except IndexError: return dash.no_update # nothing triggered the script (on multiapp load)
+        params = dict(zip(Matrix.properties.keys(), args[:len(Matrix.properties)]))
+
+        def val(k, v):
+            if isinstance(v, list): return "&".join(f"{k}={vv}" for vv in v)
+            else: return f"{k}={v}"
+
+        search = "?"+"&".join(val(k, v) for k, v in params.items() \
+                            if v not in ('---', None) and len(Matrix.properties[k]) != 1)
+        if args[-1]:
+            search += f"&property-order={args[-1]}"
+        return search
+
 
     for _table_stat in TableStats.all_stats:
         def create_callback(table_stat):

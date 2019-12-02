@@ -163,8 +163,8 @@ def construct_dispatcher():
     ])
 
     @main_app.callback(Output('page-content', 'children'),
-                       [Input('url', 'pathname')])
-    def display_page(pathname):
+                       [Input('url', 'pathname'), Input('url', 'search')])
+    def display_page(pathname, search):
         if pathname is None: return
         url = flask.request.referrer.split("/", maxsplit=3)[-1] # http://host/{key}
 
@@ -220,7 +220,7 @@ def construct_dispatcher():
             if running_as_collector:
                 return "Matrix visualiser not available, running as collector."
 
-            return matrix_view.build_layout(main_app)
+            return matrix_view.build_layout(main_app, search)
         else:
             if pathname == "/collector":
                 msg = "Performance collector not available, running as viewer."
