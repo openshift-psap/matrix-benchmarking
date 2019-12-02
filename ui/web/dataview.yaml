@@ -88,9 +88,10 @@ Frames Size:
     table: guest.guest
     x: guest.msg_ts | as_us_timestamp
     y: guest.frame_size
-    y2: guest.frame_size | as_key_frames > key frames
-    y3: guest.frame_size | as_key_frames_period > key frames period
-    #y4: guest.frame_size | key_frames_20 > key frames (20)
+    y2: guest.frame_size | as_key_frames > key frames (detected)
+    y4: guest.frame_size | key_frames_from_qual > key frames (from settings)
+    y3: guest.frame_size | as_key_frames_period > key frames period (detected)
+    y5: setting | keyframe-period > keyframe-period setting
 
   Host frame size:
     table: host.host

@@ -75,28 +75,33 @@ class GraphFormat():
         return GraphFormat.per_sec_N(Y_lst, X_lst, 60)
 
     @staticmethod
-    def key_frames_20(Y_lst, X_lst):
-        return GraphFormat.key_frames_N(Y_lst, X_lst, 20)
-
-    @staticmethod
     def key_frames_40(Y_lst, X_lst):
         return GraphFormat.key_frames_N(Y_lst, X_lst, 40)
+
+    @staticmethod
+    def key_frames_from_qual(Y_lst, X_lst):
+        db = UIState().DB
+        for ts, src, msg in db.quality:
+            try: pos = msg.index("keyframe-period=")
+            except ValueError: continue
+
+            #msg: 'encoding: bitrate=10000;rate-control=vbr;keyframe-period=60;framerate=35
+
+            keyframe_period = int(msg[pos+len("keyframe-period="):].partition(";")[0])
+
+            break
+        else: return None
+
+        return GraphFormat.key_frames_N(Y_lst, X_lst, keyframe_period)
 
     @staticmethod
     def key_frames_N(Y_lst, X_lst, PERIOD):
         first_set = Y_lst[:PERIOD]
         first_kf_pos = first_set.index(max(first_set))
 
-        current_kf = Y_lst[first_kf_pos]
-        new = [current_kf] * first_kf_pos
-        for pos, elt in enumerate(Y_lst):
-            if (pos % PERIOD) == first_kf_pos and pos != first_kf_pos:
-                current_kf = elt
-                new += [current_kf] * PERIOD
+        return [elt if ((pos % PERIOD) == first_kf_pos) else 0
+                for pos, elt in enumerate(Y_lst)]
 
-        new += [current_kf] * (len(Y_lst)-len(new))
-
-        return new
 
     @staticmethod
     def as_key_frames_period(Y_lst, X_lst):
@@ -155,17 +160,10 @@ class GraphFormat():
             else:
                 value = val
 
-            if not new:
-                new += [value] * pos
-            new += [value] * (pos-len(new))
+            padding = value if period else 0
+            new += [padding] * (pos-len(new)) + [value]
 
-        if period:
-            last_val = None
-        else:
-            if keyframe_positions:
-                last_val = value
-            else:
-                last_val = 0
+        last_val = None if period else 0
 
         new += [last_val] * (len(Y_lst)-len(new))
 
@@ -236,6 +234,7 @@ class GraphFormat():
                     if qual_msg.startswith("!encoding:") and name in qual_msg:
                         params = qual_msg.partition("params:")[-1].split(';')
                         for param in params:
+                            if param.startswith("gst.prop="): param = param.partition("=")[-1]
                             if not param.startswith(name): continue
                             last_value= int(param.split("=")[1])
                             for op in operations:
