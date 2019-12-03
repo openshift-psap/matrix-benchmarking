@@ -579,9 +579,6 @@ def build_callbacks(app):
         legend = figure['data'][idx]['name']
         ax = figure['data'][idx]['xaxis']
 
-        xaxis = 'xaxis' + (ax[1:] if ax != 'x' else '')
-        yaxis = figure['layout']['yaxis']['title']['text']
-
         try: xaxis_name = figure['layout'][xaxis]['title']['text']
         except KeyError: xaxis_name = ''
 
