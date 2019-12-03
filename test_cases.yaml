@@ -47,9 +47,9 @@ scripts:
   gst-videotestsrc:
     before:
       # https://gstreamer.freedesktop.org/documentation/videotestsrc/index.html
-      - vm do gst-launch-1.0 -v videotestsrc pattern=$gst-videotestsrc ! video/x-raw,width=1920,height=1080 ! autovideosink >/dev/null &
-      - sleep 1
-      - vm do wmctrl -r ':ACTIVE:' -b toggle,fullscreen
+      - '[ "$gst-videotestsrc" != "nothing" ] && vm do gst-launch-1.0 -v videotestsrc pattern=$gst-videotestsrc ! video/x-raw,width=1920,height=1080 ! autovideosink >/dev/null &'
+      - '[ "$gst-videotestsrc" != "nothing" ] && sleep 1'
+      - '[ "$gst-videotestsrc" != "nothing" ] && vm do wmctrl -r ":ACTIVE:" -b toggle,fullscreen'
     after:
       - vm do pkill gst-launch-1.0
 
