@@ -24,6 +24,7 @@ def graph_list(graph_tab):
 
         height = max((1/len(graph_tab.graphs)*GRAPH_MAX_VH_HEIGHT), GRAPH_MIN_VH_HEIGHT)
         yield dcc.Graph(id=graph_spec.to_id(),
+                        config=dict(showTips=False),
                         style={"height":f"{height:.0f}vh"})
 
         yield html.Div(id=graph_spec.to_id()+":clientside-output")
@@ -113,7 +114,7 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
             y_max = max([y for y in Y if y is not None] + [y_max])
 
             plots.append(
-                plotly.graph_objs.Scatter(
+                plotly.graph_objs.Scatter(hoverlabel= {'namelength' :-1},
                     x=X_cut, y=Y[records_to_drop:],
                     name=y_field.label,
                     mode=graph_spec.mode))

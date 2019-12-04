@@ -558,7 +558,7 @@ def build_layout(app, search):
 
     graph_children = []
     for table_stat in TableStats.all_stats:
-        graph_children += [dcc.Graph(id=table_stat.id_name, style={"display": "none"})]
+        graph_children += [dcc.Graph(id=table_stat.id_name, style={"display": "none"}, config=dict(showTips=False))]
 
 
     graph_children += [html.Div(id="text-box:clientside-output")]
@@ -967,7 +967,7 @@ def build_callbacks(app):
                         data.append(dict(**plot_args, x=x[legend_key], y=y[legend_key],
                                          legendgroup=legend_name,
                                          xaxis=ax, name=legend_name,
-                                         showlegend=showlegend))
+                                         showlegend=showlegend, hoverlabel= {'namelength' :-1}))
                     if len(variables) > 2:
                         # force y_min = 0 | y_max = max visible value (cannot set only y_min)
                         # if len(variables) <= 2:
