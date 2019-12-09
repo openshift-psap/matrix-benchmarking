@@ -1,6 +1,7 @@
 import dash
 from dash.dependencies import Output, Input, State
 import dash_html_components as html
+import dash_core_components as dcc
 from collections import defaultdict
 
 from . import InitialState, UIState
@@ -67,20 +68,47 @@ class Quality():
     def clear():
         UIState().DB.quality[:] = []
 
-def get_pipeline(db, idx):
+def get_pipeline(db, idx, ext, raw=False):
     pipeline_escaped = db.pipelines_reversed[int(idx)]
 
-    return g_strcompress(pipeline_escaped[len("#pipeline:"):])
+    pipeline = g_strcompress(pipeline_escaped[len("#pipeline:"):])
+
+    if pipeline == "too long":
+        return "ERROR: pipeline data was too long for the client-server channel..."
+
+    if ext == "dot":
+        if raw: return 'text/plain', pipeline
+
+        return dcc.Textarea(value=pipeline,
+                            style=dict(width='100%', height='100vh'))
+
+    from subprocess import Popen, PIPE
+    import base64
+
+    p = Popen(['dot', '-Tpng'], stdin=PIPE, stdout=PIPE)
+    p.stdin.write(pipeline.encode('ascii'))
+    p.stdin.close()
+
+    data = p.stdout.read()
+    if raw: return 'image/png', data
+
+    b64_data = base64.b64encode(data).decode('ascii')
+
+    return html.Img(src='data:image/png;base64,'+b64_data)
+
 
 def construct_quality_callbacks(url=None):
-    @UIState.app.server.route('/collector/pipeline/<idx>')
-    def download_pipeline(idx):
+    @UIState.app.server.route('/collector/pipeline/<idx>.<ext>')
+    def download_pipeline(idx, ext):
         db = UIState().DB
         if not db.pipelines:
             return "No pipeline available, is the app initialized?"
 
         try:
-            return get_pipeline(db, int(idx))
+            mimetype, data = get_pipeline(db, int(idx), ext, raw=True)
+
+            import flask
+            return flask.Response(data, mimetype=mimetype)
         except Exception as e:
             return str(e)
 
@@ -94,9 +122,12 @@ def construct_quality_callbacks(url=None):
         for (ts, src, msg) in db.quality:
             if msg.startswith("#pipeline:"):
                 pipeline_idx = db.pipelines[msg]
-                children = [src, ": ", html.A(f"Pipeline #{pipeline_idx} ({len(msg)} chars)",
-                                              target="_blank",
-                                              href=f"/{UIState().url}/pipeline/{pipeline_idx}")]
+                link = f"/{UIState().url}/pipeline/{pipeline_idx}"
+                children = [src, f": Pipeline #{pipeline_idx}  ({len(msg)} chars) ",
+                            html.A("[dot]", target="_blank", href=link+".dot"),
+                            " ",
+                            html.A("[png]", target="_blank", href=link+".png"),
+                            ]
             else:
                 children = f"{src}: {msg}"
             quality_html.append(html.P(children, style={"margin-top": "0px", "margin-bottom": "0px"}))

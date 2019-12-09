@@ -205,14 +205,11 @@ def construct_dispatcher():
             key = _key + ".rec"
 
             if args.startswith("pipeline/"):
-                idx = int(args.partition("/")[-1])
-                try:
-                    db = ui_states[key].DB
-                except KeyError:
-                    return html.Div(f"Error: key '{key}' not found, is the viewer loaded?")
+                try: db = ui_states[key].DB
+                except KeyError: return html.Div(f"Error: key '{key}' not found, is the viewer loaded?")
+                idx, _, ext = args.partition("/")[-1].partition(".")
 
-                return dcc.Textarea(value=quality.get_pipeline(db, idx),
-                                    style=dict(width='100%', height='100vh'))
+                return quality.get_pipeline(db, int(idx), ext)
             else:
                 return html.Div(f"Error: invalid url {pathname}")
 
