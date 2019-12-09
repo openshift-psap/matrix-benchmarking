@@ -16,6 +16,34 @@ USE_VIRSH = None
 VIRSH_VM_NAME = None
 QMP_ADDR = None
 
+def send_qmp(set_spice_args):
+    json_msg = json.dumps(dict(execute="set-spice",
+                               arguments=set_spice_args))
+
+    if USE_VIRSH:
+        cmd = f"virsh qemu-monitor-command {VIRSH_VM_NAME} '{json_msg}'"
+        os.system(cmd)
+        return
+
+    qmp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    qmp_sock.connect(QMP_ADDR)
+    qmp_sock.send('{"execute":"qmp_capabilities"}'.encode('ascii'))
+    qmp_sock.send(json_msg.encode("ascii"))
+    resp = ""
+    to_read = 3
+    while True:
+        c = qmp_sock.recv(1).decode('ascii')
+        if not c: break
+        resp += c
+
+        if c == '\n':
+            if "error" in resp:
+                print(resp)
+            to_read -= 1; resp = ""
+            if to_read == 0: break
+    del qmp_sock
+
 def set_encoder(encoder_name, parameters):
     params_str = ";".join(f"{name+'=' if not name.startswith('_') else ''}{value}" for name, value in parameters.items() if value not in (None, "")) + ";"
 
@@ -27,30 +55,7 @@ def set_encoder(encoder_name, parameters):
     except ValueError as e:
         print("WARNING: invalid value for 'framerate':", e)
 
-    json_msg = json.dumps(dict(execute="set-spice", arguments=args))
-
-    if USE_VIRSH:
-        cmd = f"virsh qemu-monitor-command {VIRSH_VM_NAME} '{json_msg}'"
-        os.system(cmd)
-    else:
-        qmp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        qmp_sock.connect(QMP_ADDR)
-        qmp_sock.send('{"execute":"qmp_capabilities"}'.encode('ascii'))
-        qmp_sock.send(json_msg.encode("ascii"))
-        resp = ""
-        to_read = 3
-        while True:
-            c = qmp_sock.recv(1).decode('ascii')
-            if not c: break
-            resp += c
-
-            if c == '\n':
-                if "error" in resp:
-                    print(resp)
-                to_read -= 1; resp = ""
-                if to_read == 0: break
-        del qmp_sock
+    send_qmp(set_spice_args=args)
 
     quality.Quality.add_to_quality(None, "ui", f"Set encoder: {encoder_name} || {params_str}")
 
