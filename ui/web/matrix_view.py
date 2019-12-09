@@ -184,9 +184,15 @@ class TableStats():
         return obj
 
     @classmethod
-    def FramerateQuality(clazz, *args, **kwargs):
+    def AgentActualFramerate(clazz, *args, **kwargs):
         obj = clazz(*args, **kwargs)
-        obj.do_process = obj.process_framerate_quality
+        obj.do_process = obj.process_agent_framerate
+        return obj
+
+    @classmethod
+    def ActualFramerate(clazz, *args, **kwargs):
+        obj = clazz(*args, **kwargs)
+        obj.do_process = obj.process_actual_framerate
         return obj
 
     @classmethod
@@ -301,7 +307,7 @@ class TableStats():
 
         return statistics.mean(values) / self.divisor, statistics.stdev(values) / self.divisor
 
-    def process_framerate_quality(self, table_def, rows):
+    def process_agent_framerate(self, table_def, rows):
         quality_row_id = table_def.partition("|")[2].split(";").index(self.field)
         target_row_id = table_def.partition("|")[2].split(";").index(self.field.replace("_quality", "_requested"))
 
@@ -323,6 +329,12 @@ class TableStats():
 
         if len(delta) < 2: return 0, 0, 0
         return statistics.mean(delta) / self.divisor, statistics.stdev(delta) / self.divisor
+
+    def process_actual_framerate(self, table_def, rows):
+        avt_delta, *dev = self.process_average_time_delta(table_def, rows)
+
+        return 1/avt_delta, 0
+
 
     def process_keylowframes_size(self, keyframes=False, lowframes=False):
         if not (keyframes or lowframes):
@@ -402,8 +414,9 @@ TableStats.Average(f"client_queue", f"Client Queue", "client.client", "client.qu
 
 for agent_name, tbl_name in (("client", "client"), ("guest", "guest"), ("server", "host")):
     TableStats.AvgTimeDelta(f"{agent_name}_frame_delta", f"{agent_name.capitalize()} Frames Δ", f"{agent_name}.{tbl_name}", f"{tbl_name}.msg_ts", ".2f", "ms")
+    TableStats.ActualFramerate(f"{agent_name}_framerate", f"{agent_name.capitalize()} Framerate", f"{agent_name}.{tbl_name}", f"{tbl_name}.msg_ts", ".0f", "FPS")
 
-    TableStats.FramerateQuality(f"{agent_name}_framerate", f"{agent_name.capitalize()} Actual Framerate", f"{agent_name}.{tbl_name}", f"{tbl_name}.framerate_actual", ".0f", "fps")
+    TableStats.AgentActualFramerate(f"{agent_name}_framerate_agent", f"{agent_name.capitalize()} Agent Framerate", f"{agent_name}.{tbl_name}", f"{tbl_name}.framerate_actual", ".0f", "fps")
 
 TableStats.PerSeconds("client_decode_per_s", "Client Decode time/s", "client.client",
                       ("client.msg_ts", "client.decode_duration"), ".0f", "s/s", min_rows=10, divisor=1000*1000)
