@@ -289,6 +289,8 @@ class DbTableForSpec():
         idx = self.idx(field)
 
         values = [(row[idx]) for row in self.content]
+        if not values: return []
+
         try:
             return list(field.modify(values, X))
         except Exception as e:
