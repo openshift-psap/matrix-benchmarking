@@ -53,6 +53,22 @@ class Exec():
         if self.dry and not force: return
         control.set_encoder(codec, params)
 
+    def request(self, msg, client=False, agent=False, force=False):
+        if not (client or agent):
+            print(f"ERROR: send '{msg}' to nobody ...")
+            return
+
+        whom = (['agent'] if agent else []) + (['client'] if client else [])
+        self.log(f"request: send '{msg}' to {', '.join(whom)}")
+
+        if self.dry and not force: return
+
+        rq = dict()
+        if client: rq['client-request'] = msg
+        if agent: rq['streaming-agent-request'] = msg
+
+        control.send_qmp(rq)
+
     def wait(self, nb_sec):
         self.log(f"wait {nb_sec} seconds")
         self.total_wait_time += nb_sec

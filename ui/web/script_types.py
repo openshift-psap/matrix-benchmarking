@@ -64,9 +64,9 @@ class SimpleScript(script.Script):
             exe.wait(5)
             exe.clear_record()
             exe.clear_quality()
+            exe.request("share_pipeline", client=True, agent=True)
             exe.set_encoding("share_encoding", {})
             exe.append_quality(f"!running: {self.name}")
-            exe.wait(1)
             exe.append_quality(f"!running: {self.name} / {test_name}")
             exe.wait(1)
 
@@ -274,6 +274,7 @@ class MatrixScript(script.Script):
 
             exe.append_quality(f"encoding: {param_str}")
 
+            exe.request("share_pipeline", client=True, agent=True)
             exe.set_encoding("share_encoding", {})
             exe.set_encoding("share_resolution", {})
             exe.wait(1)
