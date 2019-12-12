@@ -85,6 +85,8 @@ class GraphFormat():
     @staticmethod
     def key_frames_from_qual(Y_lst, X_lst):
         db = UIState().DB
+        if not db.quality: return []
+
         for ts, src, msg in db.quality:
             try: pos = msg.index("keyframe-period=")
             except ValueError: continue
@@ -94,7 +96,7 @@ class GraphFormat():
             keyframe_period = int(msg[pos+len("keyframe-period="):].partition(";")[0])
 
             break
-        else: return None
+        else: return []
 
         return GraphFormat.key_frames_N(Y_lst, X_lst, keyframe_period)
 
