@@ -129,6 +129,17 @@ Frame Delta:
     x: client.msg_ts | as_us_timestamp
     y: client.queue
 
+  Client frames dropped:
+    table: client.frames_dropped
+    x: frames_dropped.msg_ts | as_us_timestamp
+    y2: frames_dropped.total
+
+  Client frames time in queue:
+    table: client.frames_time_to_drop
+    x: frames_time_to_drop.msg_ts | as_us_timestamp
+    y2: frames_time_to_drop.in_queue_time | as_us_to_ms > Time in queue (in ms)
+
+
 Frame Rate:
   Guest frame generation rate:
     table: guest.guest
@@ -178,3 +189,9 @@ Frame Processing:
     table: client.client
     x: client.msg_ts | as_us_timestamp
     y: client.queue
+
+  Client frames dropped:
+    table: client.frames_dropped
+    x: frames_dropped.msg_ts | as_us_timestamp
+    y: frames_dropped.total
+    y2: frames_dropped.count

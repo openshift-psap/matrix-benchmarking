@@ -204,6 +204,7 @@ def register_entry_handlers(agent):
 
     if agent.mode == "client":
         register_frame_stats(agent)
+        register_frames_dropped(agent)
 
     elif agent.mode == "server":
         register_quality(agent)
@@ -213,8 +214,41 @@ def register_entry_handlers(agent):
         register_guest_frame(agent)
         register_guest_streaming_info(agent)
 
-def register_frame_stats(agent):
+def register_frames_dropped(agent):
     table = agent.experiment.create_table([
+        'frames_dropped.msg_ts',
+        'frames_dropped.count',
+        'frames_dropped.total',
+    ])
+
+    table = agent.experiment.create_table([
+        'frames_time_to_drop.msg_ts',
+        'frames_time_to_drop.in_queue_time',
+    ])
+
+    drop_tracking_fmt = re.compile(r'drop frame after (\d+) in queue')
+
+    drop_summary_fmt = re.compile(r'dropped (\d+) frames')
+
+    total = 0
+    def process(entry):
+        nonlocal total
+        if entry.msg.startswith("dropped"):
+            dropped, = map(int, drop_summary_fmt.match(entry.msg).groups())
+            total += dropped
+
+            table.add(entry.time, dropped, total)
+        elif entry.msg.startswith("drop frame"):
+            in_queue_time, = map(int, drop_tracking_fmt.match(entry.msg).groups())
+
+            table.add(entry.time, in_queue_time)
+        else:
+            raise RuntimeError("Unknown 'frames_dropped' message")
+
+    agent.processors["frames_dropped"] = process
+
+def register_frame_stats(agent):
+    stats_table = agent.experiment.create_table([
         'client.msg_ts',
         'client.mm_time',
         'client.frame_size',
@@ -224,22 +258,35 @@ def register_frame_stats(agent):
         'client.framerate_actual', 'client.framerate_requested'
     ])
 
-    fmt = re.compile(r'frame mm_time (\d+) size (\d+) creation time (\d+) decoded time (\d+) queue (\d+) before (\d+)')
+    info_table = agent.experiment.create_table([
+        'new_frame.msg_ts',
+        'new_frame.frame_size',
+    ])
+
+    fmt_stats = re.compile(r'frame mm_time (\d+) size (\d+) creation time (\d+) decoded time (\d+) queue (\d+) before (\d+)')
+    fmt_info = re.compile(r'frame size (\d+)')
 
     framerate_state = init_framerate_state()
 
-    def process(entry):
-        mm_time, frame_size, time, decode_duration, queue, before = \
-            map(int, fmt.match(entry.msg).groups())
+    def process_stats(entry):
+        mm_time, frame_size, time, decode_duration, queue = \
+            map(int, fmt_stats.match(entry.msg).groups())
 
         time /= 1000000
         decode_duration /= 1000000
 
         framerate = process_framerate(framerate_state, entry.time)
 
-        table.add(entry.time, mm_time, frame_size, time, decode_duration, queue, *framerate)
+        stats_table.add(entry.time, mm_time, frame_size, time,
+                        decode_duration, queue, *framerate)
 
-    agent.processors["frames_stats"] = process
+    def process_info(entry):
+        frame_size, = map(int, fmt_info.match(entry.msg).groups())
+
+        info_table.add(entry.time, frame_size)
+
+    agent.processors["frames_stats"] = process_stats
+    agent.processors["frames_info"] = process_info
 
 
 def register_quality(agent):
@@ -419,3 +466,4 @@ def register_guest_frame(agent):
                       *framerate)
 
     agent.processors["frame"] = process
+    agent.processors["frame_gst"] = process
