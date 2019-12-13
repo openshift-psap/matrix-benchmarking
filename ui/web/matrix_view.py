@@ -451,6 +451,9 @@ TableStats.PerSeconds("client_decode_per_s", "Client Decode time/s", "client.cli
 TableStats.PerFrame("client_decode_per_f", "Client Decode time/frame", "client.client",
                     ("client.msg_ts", "client.decode_duration"), ".0f", "s/frame", min_rows=10, divisor=1000*1000)
 
+TableStats.Average("client_decode", "Client Decode Duration", "client.client",
+                   "client.decode_duration", ".0f", "s")
+
 TableStats.Average(f"guest_send_duration", f"Guest Send Duration", "guest.guest",
                    "guest.send_duration", ".0f", "s")
 
