@@ -576,6 +576,7 @@ def build_layout(app, search):
             attr["value"] = options[0]['value']
         else:
             options.insert(0, {'label': "[ all ]", 'value': "---"})
+            attr["searchable"] = False
 
             if key == "experiment" and "current" in values:
                 attr["value"] = "current"
@@ -588,7 +589,7 @@ def build_layout(app, search):
         except KeyError: pass
 
         tag = dcc.Dropdown(id='list-params-'+key, options=options,
-                           **attr, searchable=False, clearable=False)
+                           **attr, clearable=False)
 
         matrix_controls += [html.Span(f"{key}: ", id=f"label_{key}"), tag]
 
