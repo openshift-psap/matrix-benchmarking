@@ -416,14 +416,14 @@ HeatmapPlot("Frame Size/Decoding", 'client.client', "Frame Size vs Decode durati
             ("client.decode_duration", "Decode duration (in ms)", 1000))
 
 TableStats.KeyFramesSize("keyframe_size", "Frame Size: keyframes", "server.host",
-                      ("host.msg_ts", "host.frame_size"), ".0f", "KB/s", divisor=1000)
+                      ("host.msg_ts", "host.frame_size"), ".0f", "KB", divisor=1000)
 TableStats.LowFramesSize("lowframe_size", "Frame Size: lowframes", "server.host",
-                      ("host.msg_ts", "host.frame_size"), ".0f", "KB/s", divisor=1000)
+                      ("host.msg_ts", "host.frame_size"), ".0f", "KB", divisor=1000)
 TableStats.KeyLowFramesSize("keylowframe_size", "Frame Size: keys+lows", "server.host",
-                      ("host.msg_ts", "host.frame_size"), ".0f", "KB/s", divisor=1000)
+                      ("host.msg_ts", "host.frame_size"), ".0f", "KB", divisor=1000)
 
 TableStats.PerSeconds("frame_size", "Frame Bandwidth", "server.host",
-                      ("host.msg_ts", "host.frame_size"), ".0f", "MB/s", min_rows=10, divisor=1000*1000)
+                      ("host.msg_ts", "host.frame_size"), ".2f", "MB/s", min_rows=10, divisor=1000*1000)
 
 TableStats.KeyFramePeriod("keyframe_period", "Keyframe Period", "server.host",
                           "host.frame_size", ".0f", "frames")
