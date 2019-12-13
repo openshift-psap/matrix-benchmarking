@@ -40,7 +40,7 @@ class HeatmapPlot():
         self.x = x
         self.y = y
 
-    def do_plot(self, params, param_lists, variables):
+    def do_plot(self, params, param_lists, variables, cfg):
         table_def = None
         fig = go.Figure()
         all_x = []
@@ -593,6 +593,9 @@ def build_layout(app, search):
 
         matrix_controls += [html.Span(f"{key}: ", id=f"label_{key}"), tag]
 
+    config = [html.B("Configuration:", id='config_title'), html.Br(),
+              dcc.Input(id='custom_config', placeholder='Config settings', debounce=True),
+              html.Div(id='custom_config_saved')]
 
     aspect = [html.Br(), html.B("Aspect:"), html.Br(),
               dcc.Checklist(id="matrix-show-text", value='',
@@ -601,7 +604,7 @@ def build_layout(app, search):
     ]
 
     permalink = [html.P(dcc.Link('Permalink', href='', id='permalink'))]
-    control_children = matrix_controls + aspect + permalink
+    control_children = matrix_controls + config + aspect + permalink
 
     graph_children = []
     for table_stat in TableStats.all_stats:
@@ -700,11 +703,46 @@ def build_callbacks(app):
         else:
             return dict(display='none'), 'ten columns'
 
+    @app.callback([Output('custom_config_saved', 'children'),
+                   Output('custom_config_saved', 'data'),
+                   Output('custom_config', 'value')],
+                  [Input('config_title', 'n_clicks')],
+                  [State('custom_config_saved', 'data'),
+                   State('custom_config', 'value')])
+    def save_config(*args):
+        title_click, data, value = args
+        if data is None: data = []
+
+        if not value:
+            return dash.no_update, dash.no_update, dash.no_update
+        if value in data:
+            return dash.no_update, dash.no_update, ''
+
+        if value.startswith("_"):
+            if value[1:] not in data:
+                print(f"WARNING: tried to remove '{value[1:]}' but it's not in '{', '.join(data)}'")
+                return dash.no_update, dash.no_update, dash.no_update
+            data.remove(value[1:])
+        else:
+            k, _, v = value.partition("=")
+            for d in data[:]:
+                if d.startswith(k + "="): data.remove(d)
+
+            data.append(value)
+
+        return list([html.P(e) for e in data]), data, ''
+
     @app.callback(Output("text-box", 'children'),
                   [Input('list-params-'+key, "value") for key in Matrix.properties])
     def param_changed(*args):
         try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
         except IndexError: return # nothing triggered the script (on multiapp load)
+
+        if triggered_id == "custom_config.value":
+            if not config or config.startswith("_"):
+                return dash.no_update
+            if config_saved and config in config_saved:
+                return dash.no_update
 
         if triggered_id.startswith("list-params-"):
             return process_selection(dict(zip(Matrix.properties, args)))
@@ -838,8 +876,30 @@ def build_callbacks(app):
 
             @app.callback(Output(table_stat.id_name, 'figure'),
                           [Input('list-params-'+key, "value") for key in Matrix.properties]
-                          +[Input("lbl_params", "n_clicks")]+[Input('property-order', 'children')])
+                          +[Input("lbl_params", "n_clicks")]+[Input('property-order', 'children')]
+                          +[Input('custom_config', 'value'), Input('custom_config_saved', 'data')]
+            )
             def graph_figure(*args):
+                try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
+                except IndexError: return # nothing triggered the script (on multiapp load)
+
+                *args, config, config_saved = args
+
+                if triggered_id == "custom_config.value":
+                    if not config or config.startswith("_"):
+                        return dash.no_update
+                    if config_saved and config in config_saved:
+                        return dash.no_update
+
+                cfg = {}
+                lst = (config_saved if config_saved else []) + ([config] if config else [])
+
+                for cf in lst:
+                    k, _, v = cf.partition("=")
+                    if k.startswith("_"): continue
+                    v = int(v) if v.isdigit() else v
+                    cfg[k] = v
+
                 order_str = args[-1]
                 var_order = order_str.split(" ")+['stats'] if order_str \
                     else list(Matrix.properties.keys())
@@ -860,7 +920,7 @@ def build_callbacks(app):
 
                 try: do_plot = table_stat.do_plot
                 except AttributeError: pass
-                else: return do_plot(params, param_lists, variables)
+                else: return do_plot(params, param_lists, variables, cfg)
 
                 # default plot
 
