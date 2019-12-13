@@ -70,14 +70,16 @@ def construct_config_tab_callbacks(dataview_cfg):
 
         if triggered_id == "graph-bt-save.n_clicks":
             if save is None: return
-            top_dir = os.path.abspath(os.path.dirname(quality.__file__) + "/../..")
 
-            dirname = top_dir + "/results"
+            from . import script_types
+
+            dirname = script_types.RESULTS_PATH
+
             try: os.mkdir(dirname)
             except FileExistsError: pass
 
             dest = f"{dirname}/save.rec"
-            print("Saving into", dest, "...")
+            print("Saving into http://localhost:8050/viewer/results/", dest, "...")
             UIState().DB.save_to_file(dest)
             print("Saving: done")
 
