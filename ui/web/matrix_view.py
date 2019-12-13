@@ -184,6 +184,12 @@ class TableStats():
         return obj
 
     @classmethod
+    def StartStopDiff(clazz, *args, **kwargs):
+        obj = clazz(*args, **kwargs)
+        obj.do_process = obj.process_start_stop_diff
+        return obj
+
+    @classmethod
     def AgentActualFramerate(clazz, *args, **kwargs):
         obj = clazz(*args, **kwargs)
         obj.do_process = obj.process_agent_framerate
@@ -307,6 +313,13 @@ class TableStats():
 
         return statistics.mean(values) / self.divisor, statistics.stdev(values) / self.divisor
 
+    def process_start_stop_diff(self, table_def, rows):
+        if not rows: return 0
+
+        row_id = table_def.partition("|")[2].split(";").index(self.field)
+
+        return rows[-1][row_id] - rows[0][row_id]
+
     def process_agent_framerate(self, table_def, rows):
         quality_row_id = table_def.partition("|")[2].split(";").index(self.field)
         target_row_id = table_def.partition("|")[2].split(";").index(self.field.replace("_quality", "_requested"))
@@ -427,6 +440,9 @@ TableStats.PerFrame("client_decode_per_f", "Client Decode time/frame", "client.c
 TableStats.Average(f"guest_send_duration", f"Guest Send Duration", "guest.guest",
                    "guest.send_duration", ".0f", "s")
 
+
+TableStats.StartStopDiff(f"frames_dropped", f"Client Frames Dropped", "client.frames_dropped",
+                         "frames_dropped.count", "d", "frames")
 class Matrix():
     properties = defaultdict(set)
     entry_map = {}
