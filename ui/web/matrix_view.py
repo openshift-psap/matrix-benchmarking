@@ -74,6 +74,20 @@ class HeatmapPlot():
             table_rows = entry.tables[table_def]
             x = [row[x_row_id] * self.x[2] for row in table_rows[1]]
             y = [row[y_row_id] * self.y[2] for row in table_rows[1]]
+
+            if 'heat.min_x' in cfg or 'heat.max_x' in cfg:
+                min_x = cfg.get('heat.min_x', min(x))
+                max_x = cfg.get('heat.max_x', max(x))
+
+                new_x = []
+                new_y = []
+                for _x, _y in zip(x, y):
+                    if not (min_x <= _x <= max_x): continue
+                    new_x.append(_x)
+                    new_y.append(_y)
+                x = new_x
+                y = new_y
+
             name =  ", ".join(f"{k}={params[k]}" for k in variables)
             if not name: name = "single selection"
             all_x += x
