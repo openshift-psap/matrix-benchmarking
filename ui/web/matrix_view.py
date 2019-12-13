@@ -593,9 +593,6 @@ def build_layout(app, search):
 
         matrix_controls += [html.Span(f"{key}: ", id=f"label_{key}"), tag]
 
-    invalids = [html.B("Invalids:"), html.Br(),
-                html.Button("Show", id="invalids-show"),
-                html.Button("Delete", id="invalids-delete")]
 
     aspect = [html.Br(), html.B("Aspect:"), html.Br(),
               dcc.Checklist(id="matrix-show-text", value='',
@@ -604,7 +601,7 @@ def build_layout(app, search):
     ]
 
     permalink = [html.P(dcc.Link('Permalink', href='', id='permalink'))]
-    control_children = matrix_controls + aspect + invalids + permalink
+    control_children = matrix_controls + aspect + permalink
 
     graph_children = []
     for table_stat in TableStats.all_stats:
@@ -662,6 +659,29 @@ def process_selection(params):
             html.P([html.B("Variables: "), ', '.join(variables)]),
             html.Ul(children)]
 
+# not used, here for reference ...
+def treat_invalids():
+    invalids = [html.B("Invalids:"), html.Br(),
+                html.Button("Show", id="invalids-show"),
+                html.Button("Delete", id="invalids-delete")]
+
+    @app.callback([Input('invalids-show', 'n_clicks'), Input('invalids-delete', 'n_clicks')])
+    def do():
+        if triggered_id.startswith("invalids-show"):
+            return ([html.P(html.B(f"Found {len(Matrix.broken_files)} invalid record files:"))]
+                    +[html.P(f"{fname} | {msg}") for fname, msg in Matrix.broken_files])
+
+        if triggered_id.startswith("invalids-delete"):
+            ret = []
+            for fname, msg in Matrix.broken_files:
+                try:
+                    os.unlink(fname)
+                    ret += [html.P(f"{fname}: Deleted")]
+                except Exception as e:
+                    ret += [html.P(html.B(f"{fname}: Failed: {e}"))]
+            Matrix.broken_files[:] = []
+            return ret + [html.P(html.B("Local matrix state cleaned up."))]
+
 def build_callbacks(app):
     if not Matrix.properties:
         print("WARNING: Matrix empty, cannot build its GUI")
@@ -681,8 +701,7 @@ def build_callbacks(app):
             return dict(display='none'), 'ten columns'
 
     @app.callback(Output("text-box", 'children'),
-                  [Input('list-params-'+key, "value") for key in Matrix.properties] +
-                  [Input('invalids-show', 'n_clicks'), Input('invalids-delete', 'n_clicks')])
+                  [Input('list-params-'+key, "value") for key in Matrix.properties])
     def param_changed(*args):
         try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
         except IndexError: return # nothing triggered the script (on multiapp load)
@@ -690,20 +709,6 @@ def build_callbacks(app):
         if triggered_id.startswith("list-params-"):
             return process_selection(dict(zip(Matrix.properties, args)))
 
-        if triggered_id.startswith("invalids-show"):
-            return ([html.P(html.B(f"Found {len(Matrix.broken_files)} invalid record files:"))]
-                    +[html.P(f"{fname} | {msg}") for fname, msg in Matrix.broken_files])
-
-        if triggered_id.startswith("invalids-delete"):
-            ret = []
-            for fname, msg in Matrix.broken_files:
-                try:
-                    os.unlink(fname)
-                    ret += [html.P(f"{fname}: Deleted")]
-                except Exception as e:
-                    ret += [html.P(html.B(f"{fname}: Failed: {e}"))]
-            Matrix.broken_files[:] = []
-            return ret + [html.P(html.B("Local matrix state cleaned up."))]
 
     @app.callback(Output('property-order', 'children'),
                   [Input(f"label_{key}", 'n_clicks') for key in Matrix.properties],
