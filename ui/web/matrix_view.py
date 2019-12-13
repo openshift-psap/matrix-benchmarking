@@ -255,7 +255,12 @@ class TableStats():
             def value(myself):
                 if myself._value is not None: return myself._value
 
-                myself._value, *myself._stdev = self.do_process(table_def, rows)
+                v = self.do_process(table_def, rows)
+                try:
+                    myself._value, *myself._stdev = v
+                except TypeError: # cannot unpack non-iterable ... object
+                    myself._value = v
+
                 return myself._value
 
             @property
@@ -266,13 +271,18 @@ class TableStats():
                 return myself._stdev
 
             def __str__(myself):
+                if myself.value is None: return "N/A"
+
                 val = f"{myself.value:{self.fmt}}{self.unit}"
-                if len(myself.stdev) == 1:
-                    val += f" +/- {myself.stdev[0]:{self.fmt}}{self.unit}"
+                if not myself.stdev:
+                    pass
+                elif len(myself.stdev) == 1:
+                    if myself.stdev[0] is not None:
+                        val += f" +/- {myself.stdev[0]:{self.fmt}}{self.unit}"
                 elif len(myself.stdev) == 2:
-                    if myself.stdev[0]:
+                    if myself.stdev[0] is not None:
                         val += f" + {myself.stdev[0]:{self.fmt}}"
-                    if myself.stdev[1]:
+                    if myself.stdev[1] is not None:
                         val += f" - {myself.stdev[1]:{self.fmt}}"
                     val += str(self.unit)
                 return val
@@ -280,6 +290,8 @@ class TableStats():
         return FutureValue()
 
     def process_per_seconds(self, table_def, rows):
+        if not rows: return None, None
+
         time_field, value_field = self.field
 
         indexes = table_def.partition("|")[2].split(";")
@@ -288,6 +300,7 @@ class TableStats():
         value_row_id = indexes.index(value_field)
 
         values_total = sum(row[value_row_id] for row in rows)
+
         start_time = datetime.datetime.fromtimestamp(rows[0][time_row_id]/1000000)
         end_time = datetime.datetime.fromtimestamp(rows[-1][time_row_id]/1000000)
 
@@ -311,6 +324,7 @@ class TableStats():
         row_id = table_def.partition("|")[2].split(";").index(self.field)
         values = [row[row_id] for row in rows]
 
+        if not values: return None, None, None
         return statistics.mean(values) / self.divisor, statistics.stdev(values) / self.divisor
 
     def process_start_stop_diff(self, table_def, rows):
@@ -514,9 +528,9 @@ def parse_data(filename, reloading=False):
             for table_stat in TableStats.interesting_tables[table_name]:
                 if table_stat.min_rows and len(table_rows) < table_stat.min_rows:
                     keep = False
-                    msg = f"{entry.linkname}: {table_name} has only {len(table_rows)} rows (min: {table_stat.min_rows})"
-                    print("###", msg)
-                    Matrix.broken_files.append((entry.filename, msg))
+                    msg = f"{table_name} has only {len(table_rows)} rows (min: {table_stat.min_rows})"
+                    print("### ", "http://localhost:8050/viewer/"+entry.linkname, msg)
+                    Matrix.broken_files.append((entry.filename, entry.linkname + msg))
                     break
 
             if not keep: break # not enough rows, skip the record
@@ -954,9 +968,13 @@ def build_callbacks(app):
                                                                 y[legend_key] + [None],
                                                                 y_err[legend_key] + [None]):
                                         if _x is not None:
-                                            # above == below iff len(_y_error) == 1
-                                            y_err_above.append(_y+_y_error[0])
-                                            y_err_below.append(_y-_y_error[-1])
+                                            if _y is not None:
+                                                # above == below iff len(_y_error) == 1
+                                                y_err_above.append(_y+_y_error[0])
+                                                y_err_below.append(_y-_y_error[-1])
+                                            else:
+                                                y_err_above.append(None)
+                                                y_err_below.append(None)
                                             x_err_current.append(_x)
                                             continue
 
