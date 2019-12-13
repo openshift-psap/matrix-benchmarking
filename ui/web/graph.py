@@ -232,8 +232,10 @@ class GraphFormat():
             try: current_qual = next(qual)
             except StopIteration: qual = None
             new = []
-            last_value = 0
-            name, *operations = operation_name.split(" | ")
+            last_value = None
+
+            name, *operations = operation_name
+
             for x_raw in X_raw:
                 while qual and current_qual[0][X_idx] == x_raw:
                     qual_msg = current_qual[1]
@@ -292,15 +294,27 @@ class DbTableForSpec():
         if field.field_name == "setting":
             return field.modify(self.table, X, self.get_raw_x(), self.idx(self.graph_spec.x))
 
-        idx = self.idx(field)
+        try:
+            idx = self.idx(field)
+        except ValueError:
+            print(f"ERROR: could not find field '{field.field_name}' to plot '{field.label}' ...")
+            return []
 
-        values = [(row[idx]) for row in self.content]
+        try:
+            values = [(row[idx]) for row in self.content]
+        except IndexError:
+            print(f"ERROR: IndexError while trying to plot '{field.field_name}' ({field.label.strip()}) ...")
+            print(f"INFO: the table certainly doesn't always have at least {idx+1} columns ...")
+            return []
+
         if not values: return []
 
         try:
             return list(field.modify(values, X))
         except Exception as e:
             print(f"Modifier '{field.modify.__name__}' failed, returning identity:", e)
+            import traceback
+            traceback.print_exc()
             return values
 
     def get_raw_x(self):
@@ -323,9 +337,8 @@ class FieldSpec():
     def __init__(self, yaml_desc):
         field_modif, has_label, label = yaml_desc.partition(">")
 
-        self.field_name, _, modif = field_modif.partition("|")
+        self.field_name, *modif = field_modif.split("|")
         self.field_name = self.field_name.strip()
-        modif = modif.strip()
 
         self.label = label if has_label else self.field_name
 
@@ -335,11 +348,23 @@ class FieldSpec():
             self.modify = GraphFormat.get_setting_modifier(modif)
             return
 
-        if modif:
-            try:
-                self.modify = getattr(GraphFormat, modif)
-            except AttributeError:
-                print(f"WARNING: modifier '{modif}' not found ... using identity")
+        if not modif:
+            return
+
+        modifiers = []
+        try:
+            for mod in modif:
+                modifiers.append(getattr(GraphFormat, mod.strip()))
+        except AttributeError:
+            print(f"WARNING: modifier '{mod}' not found ... using identity")
+        else:
+            def apply_modifiers(y, x):
+                for mod_fct in modifiers:
+                    y = mod_fct(y, x)
+                return y
+
+            self.modify = apply_modifiers
+
 
 class GraphSpec():
     def __init__(self, graph_tab, graph_name, yaml_desc):

@@ -100,29 +100,35 @@ Frames Size:
     _disabled: true
 
   Client frame size:
-    table: host.client
+    table: client.client
     x: client.msg_ts | as_us_timestamp
     y: client.frame_size
-    _disabled: true
+
 
 Frame Delta:
   Guest generation rate:
     table: guest.guest
     x: guest.msg_ts | as_us_timestamp
-    y: guest.msg_ts | as_delta > Generation time Δ
-    y2: setting | framerate | inverted > framerate requested
+    y: guest.msg_ts | as_delta | as_s_to_ms > Generation time Δ
+    y2: setting | framerate | inverted | as_s_to_ms > framerate requested
 
   Server forward rate:
     table: server.host
     x: host.msg_ts | as_us_timestamp
-    y: host.msg_ts | as_delta > Forwarding time Δ
-    y2: setting | framerate | inverted > framerate requested
+    y: host.msg_ts | as_delta | as_s_to_ms > Forwarding time Δ
+    y2: setting | framerate | inverted | as_s_to_ms > framerate requested
 
   Client Reception rate:
+    table: client.new_frame
+    x: new_frame.msg_ts | as_us_timestamp
+    y: new_frame.frame_size | as_delta | as_s_to_ms > Reception time Δ (in ms)
+    y2: setting | framerate | inverted | as_s_to_ms > 1/framerate requested
+
+  Client Decoding rate:
     table: client.client
     x: client.msg_ts | as_us_timestamp
-    y: client.queue | as_delta > Reception time Δ
-    y2: setting | framerate | inverted > 1/framerate requested
+    y: client.queue | as_delta | as_s_to_ms  > Decoding time Δ (in ms)
+    y2: setting | framerate | inverted| as_s_to_ms  > 1/framerate requested
 
   Client queue:
     table: client.client
