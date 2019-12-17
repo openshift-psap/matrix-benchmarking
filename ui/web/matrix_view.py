@@ -372,10 +372,13 @@ class TableStats():
         return statistics.mean(delta) / self.divisor, statistics.stdev(delta) / self.divisor
 
     def process_actual_framerate(self, table_def, rows):
-        avt_delta, *dev = self.process_average_time_delta(table_def, rows)
+        row_id = table_def.partition("|")[2].split(";").index(self.field)
+        values = [row[row_id] for row in rows]
 
-        return 1/avt_delta, 0
+        ts = datetime.datetime.fromtimestamp
+        fps =  (len(values) - 1) / (ts(values[-1]/1000000) - ts(values[0]/1000000)).total_seconds()
 
+        return fps
 
     def process_keylowframes_size(self, keyframes=False, lowframes=False):
         if not (keyframes or lowframes):
