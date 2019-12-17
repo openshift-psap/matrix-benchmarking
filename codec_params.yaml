@@ -82,6 +82,7 @@ grp_gst-vp8-9_intelvaapi_encoding:
 
 gst.vp8.vp8enc:
   _group: grp_gst-vp8-9_sw_encoding
+  _disabled: true
 
 gst.vp8.vaapivp8enc:
   _group: grp_gst-vp8-9_intelvaapi_encoding

@@ -177,6 +177,7 @@ def construct_control_center_tab(codec_cfg):
         all_options = {}
         for name, options in codec_cfg.items():
             if not options: continue
+            if "_disabled" in options: continue
 
             if codec_name == name: pass # keep
             elif name == "_all": pass # keep
@@ -201,12 +202,13 @@ def construct_control_center_tab(codec_cfg):
                 options = options.copy()
                 del options["_prefix"]
                 for param_option in options.values():
-                    param_option["_prefix"] = prefix
-
+                    try: param_option["_prefix"] = prefix
+                    except TypeError: pass # '<type>' object does not support item assignment
 
             all_options.update(options)
 
         for opt_name, opt_props in all_options.items():
+            if opt_name.startswith("_"): continue
             yield from get_option_box(codec_name, opt_name, opt_props)
 
         yield from get_option_box(codec_name, "custom", {"desc": "format: (key=value;)*"})
