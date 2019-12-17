@@ -216,9 +216,9 @@ class TableStats():
         return obj
 
     @classmethod
-    def PerSeconds(clazz, *args, **kwargs):
+    def PerSecond(clazz, *args, **kwargs):
         obj = clazz(*args, **kwargs)
-        obj.do_process = obj.process_per_seconds
+        obj.do_process = obj.process_per_second
         return obj
 
     @classmethod
@@ -303,7 +303,7 @@ class TableStats():
 
         return FutureValue()
 
-    def process_per_seconds(self, table_def, rows):
+    def process_per_second(self, table_def, rows):
         if not rows: return None, None
 
         time_field, value_field = self.field
@@ -436,7 +436,7 @@ TableStats.LowFramesSize("lowframe_size", "Frame Size: lowframes", "server.host"
 TableStats.KeyLowFramesSize("keylowframe_size", "Frame Size: keys+lows", "server.host",
                       ("host.msg_ts", "host.frame_size"), ".0f", "KB", divisor=1000)
 
-TableStats.PerSeconds("frame_size", "Frame Bandwidth", "server.host",
+TableStats.PerSecond("frame_size", "Frame Bandwidth", "server.host",
                       ("host.msg_ts", "host.frame_size"), ".2f", "MB/s", min_rows=10, divisor=1000*1000)
 
 TableStats.KeyFramePeriod("keyframe_period", "Keyframe Period", "server.host",
@@ -459,7 +459,7 @@ for agent_name, tbl_name in (("client", "client"), ("guest", "guest"), ("server"
 
     TableStats.AgentActualFramerate(f"{agent_name}_framerate_agent", f"{agent_name.capitalize()} Agent Framerate", f"{agent_name}.{tbl_name}", f"{tbl_name}.framerate_actual", ".0f", "fps")
 
-TableStats.PerSeconds("client_decode_per_s", "Client Decode time/s", "client.client",
+TableStats.PerSecond("client_decode_per_s", "Client Decode time/s", "client.client",
                       ("client.msg_ts", "client.decode_duration"), ".0f", "s/s", min_rows=10, divisor=1000*1000)
 
 TableStats.PerFrame("client_decode_per_f", "Client Decode time/frame", "client.client",
