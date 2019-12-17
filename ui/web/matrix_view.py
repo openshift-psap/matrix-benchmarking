@@ -445,6 +445,13 @@ TableStats.PerSecond("frame_size", "Frame Bandwidth", "server.host",
 TableStats.KeyFramePeriod("keyframe_period", "Keyframe Period", "server.host",
                           "host.frame_size", ".0f", "frames")
 
+TableStats.Average("client_time_in_queue_avg", "Client time in queue (avg)",
+                   "client.frames_time_to_drop", "frames_time_to_drop.in_queue_time", ".0f", "ms",
+                   divisor=1000)
+
+TableStats.PerSecond("client_time_in_queue_persec", "Client time in queue (per second)", "client.frames_time_to_drop",
+                     ("frames_time_to_drop.msg_ts", "frames_time_to_drop.in_queue_time"), ".0f", "ms/sec", divisor=1000)
+
 for name in ("server", "client", "guest"):
     TableStats.Average(f"{name}_gpu_video", f"{name.capitalize()} GPU Video",
                        f"{name}.gpu", "gpu.video", ".0f", "%")
