@@ -40,7 +40,22 @@ class HeatmapPlot():
         self.x = x
         self.y = y
 
-    def do_plot(self, params, param_lists, variables, cfg):
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        name = figure['data'][click_info.idx]['name']
+
+        if name == 'heatmap':
+            z = data['points'][0]['z']
+            return (f"Cannot get link to viewer for Heatmap layer. "
+                    f"Try to hide it with double clicks ... "
+                    f"[x: {click_info.x}, y: {click_info.y}, z: {z:.0f}%]")
+
+        props = name.split(", ") if name else []
+
+        value = f"[x: {click_info.x}, y: {click_info.y}]"
+
+        return TableStats.props_to_hoverlink(variables, props, value)
+
+    def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
         table_def = None
         fig = go.Figure()
         all_x = []
@@ -115,11 +130,9 @@ class HeatmapPlot():
                 hoverlabel= {'namelength' :-1}
             ))
 
-        #NB_BINS = 40
         fig.add_trace(go.Histogram2d(
             xaxis='x', yaxis='y',
             x=all_x, y=all_y, name='heatmap', histnorm='percent',
-            #nbinsx=NB_BINS*2, nbinsy=NB_BINS,
             showscale=False,
             colorscale=[[0, '#e5ecf6'], # carefully chosen with gimp to match the plot background color
                         [0.1, '#e5ecf6'], # more or less hide the first 10%
@@ -127,7 +140,7 @@ class HeatmapPlot():
         ))
 
         fig.update_layout(
-            meta={"type": 'HeatmapPlot'},
+            meta=dict(name=self.name),
             barmode='overlay',
             xaxis=dict(
                 zeroline=True, showgrid=False, rangemode='tozero',
@@ -428,6 +441,249 @@ class TableStats():
 
         return res, 0, 0
 
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        ax = figure['data'][click_info.idx]['xaxis']
+
+        xaxis = 'xaxis' + (ax[1:] if ax != 'x' else '')
+        yaxis = figure['layout']['yaxis']['title']['text']
+
+        try: xaxis_name = figure['layout'][xaxis]['title']['text']
+        except KeyError: xaxis_name = ''
+
+        props = " ".join([click_info.x, click_info.legend, xaxis_name]).split()
+        value = f"{yaxis}: {click_info.y:.2f}"
+
+        return TableStats.props_to_hoverlink(variables, props, value)
+
+    @staticmethod
+    def props_to_hoverlink(variables, props, value):
+        for prop in props:
+            k, v = prop.split('=')
+            variables[k] = v
+
+        key = "_".join([f"{k}={variables[k]}" for k in key_order])
+
+        try: entry = Matrix.entry_map[key]
+        except KeyError: return f"Error: record '{key}' not found in matrix ..."
+
+        link = html.A("view", target="_blank", href="/viewer/"+entry.linkname)
+
+        return [f"{key.replace('_', ', ')} 🡆 {value} (", link, ")"]
+
+    def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
+        data = [[[], []]]
+        layout = go.Layout()
+        layout.hovermode = 'closest'
+        layout.meta = dict(name=self.name),
+
+        if len(variables) == 0:
+            layout.title = "Select at least 1 variable parameter..."
+            return {'data': data, 'layout': layout}
+
+        *second_vars, legend_var = ordered_vars
+        second_vars.reverse()
+
+        layout.title = f"{self.name} vs " + " x ".join(ordered_vars[:-1]) + " | " + ordered_vars[-1]
+        layout.yaxis = dict(title=self.name+ f" ({self.unit})")
+        layout.plot_bgcolor='rgb(245,245,240)'
+        subplots = {}
+        if second_vars:
+            subplots_var = second_vars[-1]
+            subplots_len = len(variables[subplots_var])
+
+            showticks = len(second_vars) == 2
+            for i, subplots_key in enumerate(sorted(variables[subplots_var])):
+                subplots[subplots_key] = f"x{i+1}"
+                ax = f"xaxis{i+1}"
+                layout[ax] = dict(title=f"{subplots_var}={subplots_key}",
+                                  domain=[i/subplots_len, (i+1)/subplots_len],
+                                  type='category', showticklabels=showticks, tickangle=45)
+        else:
+            subplots_var = None
+            subplots[subplots_var] = "x1"
+            layout["xaxis1"] = dict(type='category', showticklabels=False)
+
+        x = defaultdict(list); y = defaultdict(list); y_err = defaultdict(list)
+        legend_keys = set()
+        legend_names = set()
+        legends_visible = []
+        for param_values in sorted(itertools.product(*param_lists)):
+            params.update(dict(param_values))
+
+            key = "_".join([f"{k}={params[k]}" for k in key_order])
+
+            try: entry = Matrix.entry_map[key]
+            except KeyError: continue # missing experiment
+
+            if self.name not in entry.stats:
+                print(f"Stats not found: {self.name} for entry '{key}' ")
+                continue
+
+            x_key = " ".join([f'{v}={params[v]}' for v in reversed(second_vars) if v != subplots_var])
+            legend_name = f"{legend_var}={params[legend_var]}"
+            legend_key = (legend_name, params[subplots_var] if subplots_var else None)
+
+            if len(variables) > 3 and x[legend_key]:
+                prev_first_param = x[legend_key][-1].partition(" ")[0]
+                first_param = x_key.partition(" ")[0]
+
+                if prev_first_param != first_param:
+                    x[legend_key].append(None)
+                    y[legend_key].append(None)
+                    y_err[legend_key].append(None)
+
+            legend_keys.add(legend_key)
+
+            legend_names.add(legend_name)
+            x[legend_key].append(x_key)
+            y[legend_key].append(entry.stats[self.name].value)
+            y_err[legend_key].append(entry.stats[self.name].stdev)
+
+        # ---
+        def prepare_histogram(legend_key, color):
+            plot_args['type'] = 'bar'
+            plot_args['marker'] = dict(color=color)
+
+        def plot_histogram_err(legend_key):
+            error_y = plot_args['error_y'] = dict(type='data', visible=True)
+            error_y['array'] = [err[0] for err in y_err[legend_key]]
+
+            if len(y_err[legend_key][0]) == 2:
+                error_y['arrayminus'] = [err[1] for err in y_err[legend_key]]
+
+        # ---
+
+        def prepare_scatter(legend_key, color):
+            if len(variables) < 5:
+                plot_args['type'] = 'line'
+                plot_args['line'] = dict(color=color)
+            else:
+                plot_args['mode'] = 'markers'
+                plot_args['marker'] = dict(color=color)
+
+        def prepare_scatter_short_err(legend_key):
+            y_err_above = [];  y_err_below = []
+            for _y, _y_error in zip(y[legend_key], y_err[legend_key]):
+                # above == below iff len(_y_error) == 1
+                y_err_above.append(_y+_y_error[0])
+                y_err_below.append(_y-_y_error[-1])
+
+            y_err_data = y_err_above+list(reversed(y_err_below))
+            x_err_data = x[legend_key]+list(reversed(x[legend_key]))
+
+            return x_err_data, y_err_data
+
+        def prepare_scatter_long_err(legend_key):
+            y_err_data = []; x_err_data = []
+
+            x_err_current = []; y_err_above = [];  y_err_below = []
+
+            for _x, _y, _y_error in zip(x[legend_key] + [None],
+                                        y[legend_key] + [None],
+                                        y_err[legend_key] + [None]):
+                if _x is not None:
+                    if _y is not None:
+                        # above == below iff len(_y_error) == 1
+                        y_err_above.append(_y+_y_error[0])
+                        y_err_below.append(_y-_y_error[-1])
+                    else:
+                        y_err_above.append(None)
+                        y_err_below.append(None)
+                    x_err_current.append(_x)
+                    continue
+
+                x_err_data += x_err_current \
+                    + list(reversed(x_err_current)) \
+                    + [x_err_current[0], None]
+
+                y_err_data += y_err_above \
+                    + list(reversed(y_err_below)) \
+                    + [y_err_above[0], None]
+                x_err_current = []; y_err_above = [];  y_err_below = []
+
+            return x_err_data, y_err_data
+
+        def plot_scatter_err(legend_key, err_data, y_max):
+            x_err_data, y_err_data = err_data
+
+            data.append(go.Scatter(
+                x=x_err_data, y=y_err_data,
+                legendgroup=legend_name + ("(stdev)" if len(variables) >= 4 else ""),
+                showlegend=(ax == "x1" and len(variables) >= 4), hoverinfo="skip",
+                fill='toself', fillcolor='rgba(0,100,80,0.2)',
+                line_color='rgba(0,0,0,0)', xaxis=ax,
+                name=legend_name + (" (stdev)" if len(variables) >= 4 else "")
+            ))
+
+            return max([yval for yval in [y_max]+y_err_data if yval is not None])
+
+        y_max = 0
+        for legend_key in sorted(legend_keys):
+            legend_name, subplots_key = legend_key
+            ax = subplots[subplots_key]
+            has_err = any(y_err[legend_key])
+
+            color = COLORS[list(legend_names).index(legend_name)]
+            plot_args = dict()
+
+            if len(variables) <= 2:
+                prepare_histogram(legend_key, color)
+            else:
+                prepare_scatter(legend_key, color)
+
+            if has_err and len(variables) < 5:
+                if len(variables) <= 2:
+                    err_data = plot_histogram_err(legend_key)
+                else:
+                    if len(variables) < 4:
+                        err_data = prepare_scatter_short_err(legend_key)
+                    else:
+                        err_data = prepare_scatter_long_err(legend_key)
+
+                    y_max = plot_scatter_err(legend_key, err_data, y_max)
+
+
+            DO_LOCAL_SORT = True
+            if len(variables) >= 5 and DO_LOCAL_SORT:
+                # sort x according to y's value order
+                x[legend_key] = [_x for _y, _x in sorted(zip(y[legend_key], x[legend_key]),
+                                                             key=lambda v: (v[0] is None, v[0]))]
+                # sort y by value (that may be None)
+                y[legend_key].sort(key=lambda x: (x is None, x))
+                if not layout.title.text.endswith(" (sorted)"):
+                    layout.title.text += " (sorted)"
+
+            # if 2 >= len(variables) > 5:
+            #   need to sort and don't move the None location
+            #   need to sort yerr as well
+
+            showlegend = legend_name not in legends_visible
+            if showlegend: legends_visible.append(legend_name)
+
+            y_max = max([yval for yval in [y_max]+y[legend_key] if yval is not None])
+            data.append(dict(**plot_args, x=x[legend_key], y=y[legend_key],
+                             legendgroup=legend_name,
+                             xaxis=ax, name=legend_name,
+                             showlegend=showlegend, hoverlabel= {'namelength' :-1}))
+        if len(variables) > 2:
+            # force y_min = 0 | y_max = max visible value (cannot set only y_min)
+            # if len(variables) <= 2:
+            #   bar plot start from 0, y_max hard to compute with error bars
+
+            layout.yaxis.range = [0, y_max]
+
+        layout.legend.traceorder = 'normal'
+
+        return { 'data': data, 'layout': layout}
+
+
+
+for who in "client", "guest":
+    Who = who.capitalize()
+    Regression(f"fps_vs_{who}_cpu", "framerate", f"FPS vs {Who} CPU", f"{Who} Framerate", f"{Who} CPU")
+    Regression(f"fps_vs_{who}_gpu_video", "framerate", f"FPS vs {Who} GPU Video", f"{Who} Framerate", f"{Who} GPU Video")
+    Regression(f"fps_vs_{who}_gpu_render", "framerate", f"FPS vs {Who} GPU Render", f"{Who} Framerate", f"{Who} GPU Render")
+
 HeatmapPlot("Frame Size/Decoding", 'client.client', "Frame Size vs Decode duration",
             ("client.frame_size", "Frame size (in KB)", 0.001),
             ("client.decode_duration", "Decode duration (in ms)", 1000))
@@ -464,10 +720,13 @@ for name in ("server", "client", "guest"):
 TableStats.Average(f"client_queue", f"Client Queue", "client.client", "client.queue", ".2f", "")
 
 for agent_name, tbl_name in (("client", "client"), ("guest", "guest"), ("server", "host")):
-    TableStats.AvgTimeDelta(f"{agent_name}_frame_delta", f"{agent_name.capitalize()} Frames Δ", f"{agent_name}.{tbl_name}", f"{tbl_name}.msg_ts", ".2f", "ms")
-    TableStats.ActualFramerate(f"{agent_name}_framerate", f"{agent_name.capitalize()} Framerate", f"{agent_name}.{tbl_name}", f"{tbl_name}.msg_ts", ".0f", "FPS")
+    TableStats.AvgTimeDelta(f"{agent_name}_frame_delta", f"{agent_name.capitalize()} Frames Δ",
+                            f"{agent_name}.{tbl_name}", f"{tbl_name}.msg_ts", ".2f", "ms")
+    TableStats.ActualFramerate(f"{agent_name}_framerate", f"{agent_name.capitalize()} Framerate",
+                               f"{agent_name}.{tbl_name}", f"{tbl_name}.msg_ts", ".0f", "FPS")
 
-    TableStats.AgentActualFramerate(f"{agent_name}_framerate_agent", f"{agent_name.capitalize()} Agent Framerate", f"{agent_name}.{tbl_name}", f"{tbl_name}.framerate_actual", ".0f", "fps")
+    TableStats.AgentActualFramerate(f"{agent_name}_framerate_agent", f"{agent_name.capitalize()} Agent Framerate",
+                                    f"{agent_name}.{tbl_name}", f"{tbl_name}.framerate_actual", ".0f", "fps")
 
 TableStats.PerSecond("client_decode_per_s", "Client Decode time/s", "client.client",
                       ("client.msg_ts", "client.decode_duration"), ".0f", "s/s", min_rows=10, divisor=1000*1000)
@@ -802,8 +1061,13 @@ def build_callbacks(app):
         nb_stats = len(TableStats.all_stats)
         hoverData = args[:nb_stats]
 
-        try: pos, data = [(i, d) for i, d in enumerate(hoverData) if d][0]
-        except IndexError: return "" # nothing clicked
+        try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
+        except IndexError: return # nothing triggered the script (on multiapp load)
+
+        stat_id_name = triggered_id.rpartition(".")[0] # eg: client_framerate_agent.clickData
+
+        pos = [s.id_name for s in TableStats.all_stats].index(stat_id_name)
+        data = hoverData[pos]
 
         figure = args[nb_stats:2*nb_stats][pos]
         variables = dict(zip(Matrix.properties.keys(), args[2*nb_stats:]))
@@ -811,57 +1075,22 @@ def build_callbacks(app):
         if not figure:
             return "Error, figure not found ..."
 
-        x = data['points'][0]['x']
-        y = data['points'][0]['y']
-        idx = data['points'][0]['curveNumber']
-        legend = figure['data'][idx]['name']
+        click_info = types.SimpleNamespace()
+        click_info.x = data['points'][0]['x']
+        click_info.y = data['points'][0]['y']
+        click_info.idx = data['points'][0]['curveNumber']
+        click_info.legend = figure['data'][click_info.idx]['name']
 
-        try:
-            meta = figure['layout']['meta']
-            if isinstance(meta, list):
-                if len(meta) > 1: return f"Meta list is too long, strange ... {meta}"
-                meta = meta[0]
-            plot_type = meta["type"]
-        except KeyError: plot_type = None
+        meta = figure['layout'].get('meta')
+        if isinstance(meta, list): meta = meta[0]
 
-        if plot_type == "HeatmapPlot":
-            name = figure['data'][idx]['name']
+        if not meta:
+            return f"Error: no meta found for this graph ..."
+        if 'name' not in meta:
+            return f"Error: meta found for this graph has no name ..."
 
-            if name == 'heatmap':
-                z = data['points'][0]['z']
-                return f"Cannot get link to viewer for Heatmap layer. [x: {x}, y: {y}, z: {z:.0f}%]"
-
-            props = name.split(", ") if name else []
-
-            value = f"[x: {x}, y: {y}]"
-
-        elif plot_type in ("default", None):
-            ax = figure['data'][idx]['xaxis']
-
-            xaxis = 'xaxis' + (ax[1:] if ax != 'x' else '')
-            yaxis = figure['layout']['yaxis']['title']['text']
-
-            try: xaxis_name = figure['layout'][xaxis]['title']['text']
-            except KeyError: xaxis_name = ''
-
-            props = " ".join([x, legend, xaxis_name]).split()
-            value = f"{yaxis}: {y:.2f}"
-        else:
-            return f"Plot type '{plot_type}'not recognized ..."
-
-        for prop in props:
-            k, v = prop.split('=')
-            variables[k] = v
-
-        key = "_".join([f"{k}={variables[k]}" for k in key_order])
-
-        try: entry = Matrix.entry_map[key]
-        except KeyError: return f"Error: record '{key}' not found in matrix ..."
-
-
-        link = html.A("view", target="_blank", href="/viewer/"+entry.linkname)
-
-        return [f"{key.replace('_', ', ')} 🡆 {value} (", link, ")"]
+        obj = TableStats.stats_by_name[meta['name']]
+        return obj.do_hover(meta.get('value'), variables, figure, data, click_info)
 
     @app.callback(Output("permalink", 'href'),
                   [Input('list-params-'+key, "value") for key in Matrix.properties]
@@ -942,186 +1171,7 @@ def build_callbacks(app):
 
                 param_lists = [[(key, v) for v in variables[key]] for key in ordered_vars]
 
-                try: do_plot = table_stat.do_plot
-                except AttributeError: pass
-                else: return do_plot(params, param_lists, variables, cfg)
-
-                # default plot
-
-                data = [[[], []]]
-                layout = go.Layout()
-                layout.hovermode = 'closest'
-                layout.meta = {"type": 'default'},
-
-                if len(variables) == 0:
-                    layout.title = "Select at least 1 variable parameter..."
-
-                else:
-                    *second_vars, legend_var = ordered_vars
-                    second_vars.reverse()
-
-                    layout.title = f"{table_stat.name} vs " + " x ".join(ordered_vars[:-1]) + " | " + ordered_vars[-1]
-                    layout.yaxis = dict(title=table_stat.name+ f" ({table_stat.unit})")
-
-                    subplots = {}
-                    if second_vars:
-                        subplots_var = second_vars[-1]
-                        subplots_len = len(variables[subplots_var])
-
-                        showticks = len(second_vars) == 2
-                        for i, subplots_key in enumerate(sorted(variables[subplots_var])):
-                            subplots[subplots_key] = f"x{i+1}"
-                            ax = f"xaxis{i+1}"
-                            layout[ax] = dict(title=f"{subplots_var}={subplots_key}",
-                                              domain=[i/subplots_len, (i+1)/subplots_len],
-                                              type='category', showticklabels=showticks, tickangle=45)
-                    else:
-                        subplots_var = None
-                        subplots[subplots_var] = "x1"
-                        layout["xaxis1"] = dict(type='category', showticklabels=False)
-
-                    x = defaultdict(list); y = defaultdict(list); y_err = defaultdict(list)
-                    legend_keys = set()
-                    legend_names = set()
-                    legends_visible = []
-                    for param_values in sorted(itertools.product(*param_lists)):
-                        params.update(dict(param_values))
-
-                        key = "_".join([f"{k}={params[k]}" for k in key_order])
-
-                        try: entry = Matrix.entry_map[key]
-                        except KeyError: continue # missing experiment
-
-                        if table_stat.name not in entry.stats:
-                            print(f"Stats not found: {table_stat.name} for entry '{key}' ")
-                            continue
-
-                        x_key = " ".join([f'{v}={params[v]}' for v in reversed(second_vars) if v != subplots_var])
-                        legend_name = f"{legend_var}={params[legend_var]}"
-                        legend_key = (legend_name, params[subplots_var] if subplots_var else None)
-
-                        if len(variables) > 3 and x[legend_key]:
-                            prev_first_param = x[legend_key][-1].partition(" ")[0]
-                            first_param = x_key.partition(" ")[0]
-
-                            if prev_first_param != first_param:
-                                x[legend_key].append(None)
-                                y[legend_key].append(None)
-                                y_err[legend_key].append(None)
-
-                        legend_keys.add(legend_key)
-
-                        legend_names.add(legend_name)
-                        x[legend_key].append(x_key)
-                        y[legend_key].append(entry.stats[table_stat.name].value)
-                        y_err[legend_key].append(entry.stats[table_stat.name].stdev)
-                    y_max = 0
-                    for legend_key in sorted(legend_keys):
-                        legend_name, subplots_key = legend_key
-                        ax = subplots[subplots_key]
-                        has_err = any(y_err[legend_key])
-
-                        color = COLORS[list(legend_names).index(legend_name)]
-                        plot_args = dict()
-
-                        if len(variables) <= 2:
-                            plot_args['type'] = 'bar'
-                            plot_args['marker'] = dict(color=color)
-                            if has_err:
-                                error_y = plot_args['error_y'] = dict(type='data', visible=True)
-                                error_y['array'] = [err[0] for err in y_err[legend_key]]
-
-                                if len(y_err[legend_key][0]) == 2:
-                                    error_y['arrayminus'] = [err[1] for err in y_err[legend_key]]
-                        else:
-                            if len(variables) < 5:
-                                plot_args['type'] = 'line'
-                                plot_args['line'] = dict(color=color)
-                            else:
-                                plot_args['mode'] = 'markers'
-                                has_err = False
-                                plot_args['marker'] = dict(color=color)
-
-                            if has_err:
-                                if len(variables) < 4:
-                                    y_err_above = [];  y_err_below = []
-                                    for _y, _y_error in zip(y[legend_key], y_err[legend_key]):
-                                        # above == below iff len(_y_error) == 1
-                                        y_err_above.append(_y+_y_error[0])
-                                        y_err_below.append(_y-_y_error[-1])
-
-                                    y_err_data = y_err_above+list(reversed(y_err_below))
-                                    x_err_data = x[legend_key]+list(reversed(x[legend_key]))
-                                else:
-                                    y_err_data = []; x_err_data = []
-
-                                    x_err_current = []; y_err_above = [];  y_err_below = []
-
-                                    for _x, _y, _y_error in zip(x[legend_key] + [None],
-                                                                y[legend_key] + [None],
-                                                                y_err[legend_key] + [None]):
-                                        if _x is not None:
-                                            if _y is not None:
-                                                # above == below iff len(_y_error) == 1
-                                                y_err_above.append(_y+_y_error[0])
-                                                y_err_below.append(_y-_y_error[-1])
-                                            else:
-                                                y_err_above.append(None)
-                                                y_err_below.append(None)
-                                            x_err_current.append(_x)
-                                            continue
-
-                                        x_err_data += x_err_current \
-                                            + list(reversed(x_err_current)) \
-                                            + [x_err_current[0], None]
-
-                                        y_err_data += y_err_above \
-                                            + list(reversed(y_err_below)) \
-                                            + [y_err_above[0], None]
-                                        x_err_current = []; y_err_above = [];  y_err_below = []
-
-                                y_max = max([yval for yval in [y_max]+y_err_data if yval is not None])
-                                data.append(go.Scatter(
-                                    x=x_err_data, y=y_err_data,
-                                    legendgroup=legend_name + "(stdev)" if len(variables) >= 4 else "",
-                                    showlegend=(ax == "x1" and len(variables) >= 4), hoverinfo="skip",
-                                    fill='toself', fillcolor='rgba(0,100,80,0.2)',
-                                    line_color='rgba(0,0,0,0)',
-                                    name=legend_name + " (stdev)", xaxis=ax
-                                ))
-                        DO_LOCAL_SORT = True
-                        if len(variables) >= 5 and DO_LOCAL_SORT:
-                            # sort x according to y's value order
-                            x[legend_key] = [_x for _y, _x in sorted(zip(y[legend_key], x[legend_key]),
-                                                                         key=lambda v: (v[0] is None, v[0]))]
-                            # sort y by value (that may be None)
-                            y[legend_key].sort(key=lambda x: (x is None, x))
-                            if not layout.title.text.endswith(" (sorted)"):
-                                layout.title.text += " (sorted)"
-
-                        # if 2 >= len(variables) > 5:
-                        #   need to sort and don't move the None location
-                        #   need to sort yerr as well
-
-                        showlegend = legend_name not in legends_visible
-                        if showlegend: legends_visible.append(legend_name)
-
-                        y_max = max([yval for yval in [y_max]+y[legend_key] if yval is not None])
-                        data.append(dict(**plot_args, x=x[legend_key], y=y[legend_key],
-                                         legendgroup=legend_name,
-                                         xaxis=ax, name=legend_name,
-                                         showlegend=showlegend, hoverlabel= {'namelength' :-1}))
-                    if len(variables) > 2:
-                        # force y_min = 0 | y_max = max visible value (cannot set only y_min)
-                        # if len(variables) <= 2:
-                        #   bar plot start from 0, y_max hard to compute with error bars
-
-                        layout.yaxis.range = [0, y_max]
-
-                    layout.legend.traceorder = 'normal'
-
-                return { 'data': data, 'layout': layout}
-
+                return table_stat.do_plot(ordered_vars, params, param_lists, variables, cfg)
 
         # must use internal function to save 'table_stat' closure context
         create_callback(_table_stat)
