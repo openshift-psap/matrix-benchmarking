@@ -30,6 +30,103 @@ COLORS = [
     '#17becf'   # blue-teal
 ]
 
+class Regression():
+    def __init__(self, id_name, key_var, name, x_key, y_key):
+        self.name = "Reg: " + name
+        self.id_name = id_name
+        self.x_key = x_key
+        self.y_key = y_key
+        self.key_var = key_var
+
+        TableStats._register_stat(self)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return [html.P(f) for f in meta_value]
+
+    def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
+        fig = go.Figure()
+
+        x = defaultdict(list)
+        y = defaultdict(list)
+
+        reg_x, reg_y = defaultdict(list), defaultdict(list)
+
+        other_vars = ordered_vars[:]
+        try: other_vars.remove(self.key_var)
+        except ValueError:
+            return { 'data': [], 'layout': dict(title="ERROR: Framerate parameter must be variable ...")}
+
+        for param_values in sorted(itertools.product(*param_lists)):
+            params.update(dict(param_values))
+
+            key = "_".join([f"{k}={params[k]}" for k in key_order])
+
+            try: entry = Matrix.entry_map[key]
+            except KeyError:
+                print(f"{key} missing")
+                continue # missing experiment
+
+            try:
+                _x = entry.stats[self.x_key].value
+                _y = entry.stats[self.y_key].value
+            except KeyError:
+                print(f"{self.x_key} or {self.y_key} missing values for ", key)
+                continue
+
+            legend_key = f"{self.key_var}={params[self.key_var]}"
+            x[legend_key].append(_x)
+            y[legend_key].append(_y)
+
+            reg_key = "all" if not other_vars else \
+                 " | ".join(f"{k}={params[k]}" for k in other_vars)
+            reg_x[reg_key].append(_x)
+            reg_y[reg_key].append(_y)
+
+        for i, legend_key in enumerate(x.keys()):
+            fig.add_trace(go.Scatter(x=x[legend_key], y=y[legend_key], mode='markers', name=legend_key,
+                                     hoverlabel= {'namelength' :-1}, legendgroup=self.key_var,
+                                     marker=dict(symbol="cross", size=15, color=COLORS[i])))
+
+        fig.update_layout(yaxis=dict(zeroline=True, showgrid=False, rangemode='tozero',
+                                     title=self.y_key),
+                          xaxis=dict(title=self.x_key))
+
+        import scipy
+        import scipy.stats
+        import numpy as np
+
+        x_range = None
+        formulae = []
+        for i, reg_key in enumerate(reg_x.keys()):
+            all_x = reg_x[reg_key]
+            all_y = reg_y[reg_key]
+
+            # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.linregress.html
+            slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(all_x, all_y)
+
+            line = slope*np.array(all_x)+intercept
+            fig.add_trace(go.Scatter(x=all_x, y=line, mode='lines', text="toto", hovertext="text",
+                                     name=reg_key, line=dict(color=COLORS[i])))
+
+            if not x_range: x_range = [all_x[0], all_x[-1]]
+            x_range = [min(x_range[0], min(all_x)), max(x_range[1], max(all_x))]
+
+            # need to change here: if slope/intercept too low, they appear as 0.00 !
+            formulae.append(f"{reg_key} |" +
+                            f"{self.y_key} = {slope:.2f} * {self.x_key} + {intercept:.2f} " +
+                            f"| r={r_value:.3f}, p={p_value:.3f}, stdev={std_err:.3f} ")
+
+        text_x_pos = x_range[0] + (x_range[1]-x_range[0])/2
+        text = '<br>'.join(formulae)
+
+        fig.update_layout(
+            meta=dict(name=self.name, value=formulae),
+        )
+
+        fig.update_layout(title=f"{self.y_key} vs {self.x_key} | {' x '.join(other_vars)}")
+
+        return fig
+
 class HeatmapPlot():
     def __init__(self, name, table, title, x, y):
         self.name = "Heat: "+name
@@ -676,13 +773,17 @@ class TableStats():
 
         return { 'data': data, 'layout': layout}
 
-
-
 for who in "client", "guest":
     Who = who.capitalize()
     Regression(f"fps_vs_{who}_cpu", "framerate", f"FPS vs {Who} CPU", f"{Who} Framerate", f"{Who} CPU")
     Regression(f"fps_vs_{who}_gpu_video", "framerate", f"FPS vs {Who} GPU Video", f"{Who} Framerate", f"{Who} GPU Video")
     Regression(f"fps_vs_{who}_gpu_render", "framerate", f"FPS vs {Who} GPU Render", f"{Who} Framerate", f"{Who} GPU Render")
+
+Regression(f"fps_vs_decode_time", "framerate", f"FPS vs Client Decode Time",
+           f"Client Framerate", f"Client Decode time/s")
+
+Regression(f"fps_vs_time_in_queue", "framerate", f"FPS vs Time in Client Queue",
+           f"Client Framerate", f"Client time in queue (per second)")
 
 HeatmapPlot("Frame Size/Decoding", 'client.client', "Frame Size vs Decode duration",
             ("client.frame_size", "Frame size (in KB)", 0.001),
