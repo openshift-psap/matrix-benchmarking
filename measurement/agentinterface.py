@@ -255,21 +255,23 @@ def register_frame_stats(agent):
         'client.creation_time',
         'client.decode_duration',
         'client.queue', 'client.queue_before',
+        'client.keyframe',
         'client.framerate_actual', 'client.framerate_requested'
     ])
 
     info_table = agent.experiment.create_table([
         'new_frame.msg_ts',
         'new_frame.frame_size',
+        'new_frame.keyframe'
     ])
 
-    fmt_stats = re.compile(r'frame mm_time (\d+) size (\d+) creation time (\d+) decoded time (\d+) queue (\d+) before (\d+)')
-    fmt_info = re.compile(r'frame size (\d+)')
+    fmt_stats = re.compile(r'frame mm_time (\d+) size (\d+) creation time (\d+) decoded time (\d+) queue (\d+) before (\d+) keyframe (\d+)')
+    fmt_info = re.compile(r'frame size (\d+) keyframe (\d+)')
 
     framerate_state = init_framerate_state()
 
     def process_stats(entry):
-        mm_time, frame_size, creation_time, decode_duration, queue, before = \
+        mm_time, frame_size, creation_time, decode_duration, queue, before, keyframe = \
             map(int, fmt_stats.match(entry.msg).groups())
 
         creation_time /= 1000000
@@ -278,12 +280,12 @@ def register_frame_stats(agent):
         framerate = process_framerate(framerate_state, entry.time)
 
         stats_table.add(entry.time, mm_time, frame_size, creation_time,
-                        decode_duration, queue, before, *framerate)
+                        decode_duration, queue, before, keyframe, *framerate)
 
     def process_info(entry):
-        frame_size, = map(int, fmt_info.match(entry.msg).groups())
+        frame_size, keyframe= map(int, fmt_info.match(entry.msg).groups())
 
-        info_table.add(entry.time, frame_size)
+        info_table.add(entry.time, frame_size, keyframe)
 
     agent.processors["frames_stats"] = process_stats
     agent.processors["frames_info"] = process_info
