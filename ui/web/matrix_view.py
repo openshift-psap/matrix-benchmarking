@@ -1220,6 +1220,11 @@ def build_callbacks(app):
                 try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
                 except IndexError: triggered_id = None # nothing triggered the script (on multiapp load)
 
+                if not isinstance(stats_values, list):
+                    # only 1 elt in stats_values dropdown, a str is returned instead of a list.
+                    # That makes the following silly ...
+                    stats_values = [stats_values]
+
                 style = {}
                 style["display"] = "block" if triggered_id and table_stat.name in stats_values else "none"
                 if style["display"] == "block":
