@@ -254,12 +254,13 @@ class MatrixScript(script.Script):
             exe.log(f"running {context.expe_cnt.current_idx}/{context.expe_cnt.total}")
             exe.log("> "+file_key)
 
-            try:
-                previous_entry = matrix_view.Matrix.entry_map[f'experiment={DEFAULT_EXPE_NAME}_{file_key}']
+            key = f'experiment={DEFAULT_EXPE_NAME}_{file_key}'
+            try: previous_entry = matrix_view.Matrix.entry_map[key]
+            except KeyError: pass # no previous entry, run!
+            else:
                 exe.log(f">> already recorded, skipping | {previous_entry.filename}")
                 context.expe_cnt.skipped += 1
                 continue
-            except KeyError: pass # no previous entry, run!
 
             exe.reset_encoder()
 
