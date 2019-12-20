@@ -127,6 +127,155 @@ class Regression():
 
         return fig, [html.P(f) for f in formulae]
 
+class Report():
+    def __init__(self, id_name, name):
+        self.id_name = id_name
+        self.name = name
+        TableStats._register_stat(self)
+        self.no_graph = True
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "" # nothing can be done here ...
+
+    def do_report(self, *args):
+        return f"nothing configured to generate the report for {self.name} ..."
+
+    @classmethod
+    def ClientFPS_Decode(clazz, *args, **kwargs):
+        obj = clazz("report_client_fps_decode", "Report: Client FPS vs Decoding", *args, **kwargs)
+
+        obj.do_report = lambda *_args: obj.report_fps_decode(*_args)
+
+        return obj
+
+    @classmethod
+    def ClientFPS_CGPU(clazz, *args, **kwargs):
+        obj = clazz("report_client_fps_cgpu", "Report: Client FPS vs CPU/GPU", *args, **kwargs)
+
+        obj.do_report = lambda *_args: obj.report_fps_cgpu("client", *_args)
+
+        return obj
+
+    @classmethod
+    def GuestFPS_CGPU(clazz, *args, **kwargs):
+        obj = clazz("report_guest_fps_cgpu", "Report: Guest FPS vs CPU/GPU", *args, **kwargs)
+
+        obj.do_report = lambda *_args: obj.report_fps_cgpu("guest", *_args)
+
+        return obj
+
+    @staticmethod
+    def prepare_args(args, what, value):
+        ordered_vars, params, param_lists, variables, cfg = args
+
+        _ordered_vars = ordered_vars[:]
+        try: _ordered_vars.remove(what)
+        except ValueError: pass # 'what' wasn't in the list
+
+        _variables = dict(variables)
+        if what:
+            params[what] = value
+            _variables[what] = {value}
+
+        _param_lists = [[(key, v) for v in _variables[key]] for key in ordered_vars]
+
+        return _ordered_vars, params, _param_lists, _variables, cfg
+
+    def do_plot(self, *args):
+        ordered_vars, params, param_lists, variables, cfg = args
+
+        print("Generate", self.name, "...")
+
+        header = [html.P("---")]
+        for k, v in params.items():
+            if k == "stats": continue
+            if v != "---": header.insert(0, html.Span([html.B(k), "=", v, ", "]))
+            else: header.append(html.P([html.B(k), "=",
+                                       ", ".join(map(str, variables[k]))]))
+        header += [html.Hr()]
+        header.insert(0, html.H1(self.name))
+
+        report = self.do_report(*args)
+
+        print("Generate: done!")
+
+        return {}, header + report
+
+    def report_fps_decode(self, *args):
+        ordered_vars, params, param_lists, variables, cfg = args
+
+        if 'framerate' not in ordered_vars:
+            return [], "ERROR: Framerate must not be set for this report."
+
+        def do_plot(stat_name, what, value):
+            _args = Report.prepare_args(args, what, value)
+            reg_stats = TableStats.stats_by_name[stat_name].do_plot(*_args)
+
+            return [dcc.Graph(figure=reg_stats[0])] + reg_stats[1] + [html.Hr()]
+
+        what = ordered_vars[0]
+        if what == "framerate": what = None
+
+        # --- Decode time --- #
+
+        report = [html.H2(f"Decode Time" + (f" (by {what})" if what else ""))]
+
+        for value in variables.get(what, [params[what]]) if what else "":
+            if what:
+                report += [html.P(html.B(f"{what}={value}"))]
+
+            report += do_plot("Reg: FPS vs Client Decode Time", what, value)
+
+        # --- Decode Time in Queue --- #
+
+        report += [html.H2(f"Time in Queue" + (f" (by {what})" if what else ""))]
+
+        for value in variables.get(what, [params[what]]) if what else [""]:
+            if what:
+                report += [html.P(html.B(f"{what}={value}"))]
+
+            report += do_plot("Reg: FPS vs Time in Client Queue", what, value)
+
+        return report
+
+    def report_fps_cgpu(self, src, *args):
+        ordered_vars, params, param_lists, variables, cfg = args
+
+        if 'framerate' not in ordered_vars:
+            return [], "ERROR: Framerate must not be set for this report."
+
+        def do_plot(stat_name, what, value):
+            _args = Report.prepare_args(args, what, value)
+            reg_stats = TableStats.stats_by_name[stat_name].do_plot(*_args)
+
+            return [dcc.Graph(figure=reg_stats[0])] + reg_stats[1] + [html.Hr()]
+
+        what = ordered_vars[0]
+        if what == "framerate": what = None
+
+        # --- CPU --- #
+
+        report = [html.H2("CPU Usage" + (f" (by {what})" if what else ""))]
+
+        for value in variables.get(what, [params[what]]) if what else [""]:
+            if what:
+                report += [html.P(html.B(f"{what}={value}"))]
+
+            report += do_plot(f"Reg: FPS vs {src.capitalize()} CPU", what, value)
+
+        # --- GPU --- #
+
+        report += [html.H2(f"GPU Usage"+ (f" (by {what})" if what else ""))]
+
+        for value in variables.get(what, [params[what]]) if what else [""]:
+            if what:
+                report += [html.P(html.B(f"{what}={value}", what))]
+
+            for gpu in "Render", "Video":
+                report += do_plot(f"Reg: FPS vs {src.capitalize()} GPU {gpu}", what, value)
+
+        return report
+
 class HeatmapPlot():
     def __init__(self, name, table, title, x, y):
         self.name = "Heat: "+name
@@ -772,6 +921,10 @@ class TableStats():
         layout.legend.traceorder = 'normal'
 
         return { 'data': data, 'layout': layout}, ""
+
+Report.ClientFPS_CGPU()
+Report.GuestFPS_CGPU()
+Report.ClientFPS_Decode()
 
 for who in "client", "guest":
     Who = who.capitalize()
