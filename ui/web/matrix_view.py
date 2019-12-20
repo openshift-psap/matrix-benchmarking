@@ -41,7 +41,7 @@ class Regression():
         TableStats._register_stat(self)
 
     def do_hover(self, meta_value, variables, figure, data, click_info):
-        return [html.P(f) for f in meta_value]
+        return ""
 
     def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
         fig = go.Figure()
@@ -125,7 +125,7 @@ class Regression():
 
         fig.update_layout(title=f"{self.y_key} vs {self.x_key} | {' x '.join(other_vars)}")
 
-        return fig
+        return fig, [html.P(f) for f in formulae]
 
 class HeatmapPlot():
     def __init__(self, name, table, title, x, y):
@@ -262,7 +262,7 @@ class HeatmapPlot():
             bargap=0, hovermode='closest',
             showlegend=True, title=self.title + " (in %)",
         )
-        return fig
+        return fig, ""
 
 
 class TableStats():
@@ -771,7 +771,7 @@ class TableStats():
 
         layout.legend.traceorder = 'normal'
 
-        return { 'data': data, 'layout': layout}
+        return { 'data': data, 'layout': layout}, ""
 
 for who in "client", "guest":
     Who = who.capitalize()
@@ -992,7 +992,9 @@ def build_layout(app, search):
 
     graph_children = []
     for table_stat in TableStats.all_stats:
-        graph_children += [dcc.Graph(id=table_stat.id_name, style={"display": "none"}, config=dict(showTips=False))]
+        graph_children += [dcc.Graph(id=table_stat.id_name, style={"display": "none"},
+                                     config=dict(showTips=False)),
+                           html.P(id=table_stat.id_name+'-txt')]
 
 
     graph_children += [html.Div(id="text-box:clientside-output")]
@@ -1214,7 +1216,8 @@ def build_callbacks(app):
 
     for _table_stat in TableStats.all_stats:
         def create_callback(table_stat):
-            @app.callback(Output(table_stat.id_name, 'style'),
+            @app.callback([Output(table_stat.id_name, 'style'),
+                           Output(table_stat.id_name+"-txt", 'style')],
                           [Input('list-params-stats', "value")])
             def graph_style(stats_values):
                 try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
@@ -1225,30 +1228,39 @@ def build_callbacks(app):
                     # That makes the following silly ...
                     stats_values = [stats_values]
 
-                style = {}
-                style["display"] = "block" if triggered_id and table_stat.name in stats_values else "none"
-                if style["display"] == "block":
-                    print("Show",table_stat.name )
-                style["height"] = f"{100/len(stats_values) if stats_values else 100:.2f}vh"
+                graph_style = {}
+                graph_style["display"] = "block" if triggered_id and table_stat.name in stats_values else "none"
+                if graph_style["display"] == "block":
+                    print("Show", table_stat.name)
+                graph_style["height"] = f"{100/len(stats_values) if stats_values else 100:.2f}vh"
 
-                return style
+                text_style = {"display": graph_style["display"]}
 
-            @app.callback(Output(table_stat.id_name, 'figure'),
+                try:
+                    if table_stat.no_graph: # may raise AttributeError
+                        graph_style["display"] = 'none'
+
+                except AttributeError: pass
+
+                return graph_style, text_style
+
+            @app.callback([Output(table_stat.id_name, 'figure'),
+                           Output(table_stat.id_name+"-txt", 'children')],
                           [Input('list-params-'+key, "value") for key in Matrix.properties]
                           +[Input("lbl_params", "n_clicks")]+[Input('property-order', 'children')]
                           +[Input('custom_config', 'value'), Input('custom_config_saved', 'data')]
             )
             def graph_figure(*args):
                 try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
-                except IndexError: return # nothing triggered the script (on multiapp load)
+                except IndexError: return dash.no_update, ""# nothing triggered the script (on multiapp load)
 
                 *args, config, config_saved = args
 
                 if triggered_id == "custom_config.value":
                     if not config or config.startswith("_"):
-                        return dash.no_update
+                        return dash.no_update, dash.no_update
                     if config_saved and config in config_saved:
-                        return dash.no_update
+                        return dash.no_update, dash.no_update
 
                 cfg = {}
                 lst = (config_saved if config_saved else []) + ([config] if config else [])
@@ -1267,7 +1279,7 @@ def build_callbacks(app):
 
                 stats_values = params["stats"]
                 if not stats_values or table_stat.name not in stats_values:
-                    return dash.no_update
+                    return dash.no_update, dash.no_update
 
                 variables = {k:(Matrix.properties[k]) for k, v in params.items() \
                              if k != "stats" and v == "---"}
