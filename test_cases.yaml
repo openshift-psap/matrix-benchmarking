@@ -25,16 +25,19 @@ record_time: 30
 codec: gst.vp8.vaapivp8enc
 
 scripted_properties:
-  gst-videotestsrc: smpte, snow, ball
-  resolution: 1920x1080, 1366x768, 848x480
-  #resources: normal, vm:X*cpu, server:X*cpu, client:X*cpu, vm:X*cpu/client:X*cpu
-  resources: normal, cpu:X*vm/cpu:X*client/net:10ms+2.5M
+  #display: gst_smpte, gst_snow, gst_ball
+  display:
+    vlc_google_map, vlc_mix, vlc_mix-quick, vlc_wipeout
+
+  resolution: 1920x1080, 1366x768 #, 848x480
+  #resources: normal, vm:X*cpu, server:X*cpu, client:X*cpu, vm:X*cpu^client:X*cpu
+  #resources: normal, cpu:1*client, cpu:2*client, cpu:X*client #net:0ms+2.5M, net:0ms+1M, net:0ms+0.5M #, cpu:1*client, cpu:2*client, cpu:X*client #, cpu:X*client, cpu:X*server, cpu:X*vm^cpu:X*client  # ^net:10ms+2.5M
 
 matrix:
-  gst.prop=bitrate: 1000, 10000, 100000
-  gst.prop=rate-control: vbr, cbr
-  gst.prop=keyframe-period: 25, 60 #0, 20, 40
-  framerate: 25, 35 #20, 30, 45, 60
+  gst.prop=bitrate: 32000
+  gst.prop=rate-control: cbr #cqp #vbr #, cbr
+  gst.prop=keyframe-period: 600000 #0, 20, 40
+  framerate: 20, 25, 30, 35, 40 #20, 30, 45, 60
 
 scripts:
   setup:
@@ -44,20 +47,17 @@ scripts:
     - xset s on +dpms
     - server exec xset s on +dpms
 
-  gst-videotestsrc:
+  display:
     before:
-      # https://gstreamer.freedesktop.org/documentation/videotestsrc/index.html
-      - '[ "$gst-videotestsrc" != "nothing" ] && vm do gst-launch-1.0 -v videotestsrc pattern=$gst-videotestsrc ! video/x-raw,width=1920,height=1080 ! autovideosink >/dev/null &'
-      - '[ "$gst-videotestsrc" != "nothing" ] && sleep 1'
-      - '[ "$gst-videotestsrc" != "nothing" ] && vm do wmctrl -r ":ACTIVE:" -b toggle,fullscreen'
+      - vm display start $display
     after:
-      - vm do pkill gst-launch-1.0
+      - vm display stop $display
 
   resolution:
     before:
       - vm resolution $resolution
     after:
-      - vm resolution 1200x1920
+      - vm resolution 1920x1200
 
   resources:
     before:
