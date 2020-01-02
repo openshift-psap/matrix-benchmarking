@@ -130,11 +130,11 @@ class SimpleScript(script.Script):
 do_at_exit = {}
 def exit_cleanup():
     if do_at_exit:
-        print("scripts: do exit cleanups for", ", ".join(do_at_exit))
+        print("scripts: do exit cleanups for", ", ".join(map(str, do_at_exit)))
 
     for key, cleanup in do_at_exit.items():
         print(f"scripts: cleaning up for '{key}' ...")
-        try: cleanup(key)
+        try: cleanup()
         except Exception as e: print(e)
 
 atexit.register(exit_cleanup)
@@ -196,31 +196,41 @@ class MatrixScript(script.Script):
         yield from scripts_to_html()
 
     def do_scripts_setup(self, exe, script_items, context):
-        def do_setup(key, action, value=None):
+        def do_setup(key, action, value):
             if isinstance(value, tuple): value = value[1]
 
             for cmd in self.yaml_desc['scripts'][key][action]:
                 if value: cmd = cmd.replace(f"${key}", value)
+                if "$" in cmd: import pdb;pdb.set_trace()
                 exe.execute(cmd)
 
         for key, new_value in script_items:
             current_value = getattr(context.params, key)
+            if isinstance(new_value, tuple):
+                new_name = new_value[0]
+                new_value = new_value[1] if new_value[1] else new_name
+            else:
+                new_name = new_value
 
             if current_value == new_value: continue
 
             if current_value:
                 exe.log(f"teardown({key})")
-                do_setup(key, "after")
+
+                do_at_exit[key]()
                 del do_at_exit[key]
 
             if new_value:
                 exe.log(f"setup({key}, {new_value})")
                 do_setup(key, "before", new_value)
 
-                def at_exit(_key): do_setup(_key, "after")
-                do_at_exit[key] = at_exit
+                def at_exit(_key, _new_value):
+                    do_setup(_key, "after", _new_value)
 
-            setattr(context.params, key, new_value)
+                import functools # otherwise key/new_value arrive wrong in `at_exit`
+                do_at_exit[key] = functools.partial(at_exit, key, new_value)
+
+            setattr(context.params, key, new_name)
 
 
     def do_run_the_streaming_matrix(self, exe, param_matrix, context):
@@ -334,7 +344,7 @@ class MatrixScript(script.Script):
         for cmd in self.yaml_desc['scripts'].get("setup", []):
             exe.execute(cmd)
 
-        def teardown(_not_used=None):
+        def teardown():
             for cmd in self.yaml_desc['scripts'].get("teardown", []):
                 exe.execute(cmd)
         do_at_exit["__vm"] = teardown
