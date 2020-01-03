@@ -79,7 +79,7 @@ def construct_config_tab_callbacks(dataview_cfg):
             except FileExistsError: pass
 
             dest = f"{dirname}/save.rec"
-            print("Saving into http://localhost:8050/viewer/results/", dest, "...")
+            print(f"Saving into http://localhost:8050/viewer/results/save.rec", "...")
             UIState().DB.save_to_file(dest)
             print("Saving: done")
 
