@@ -108,8 +108,13 @@ class Server():
         clients, self.new_clients = self.new_clients, [] # should be atomic
 
         for client in clients:
-            self.initialize_new_client(client)
-            self.send_quality_backlog(client)
+            try:
+                self.initialize_new_client(client)
+                self.send_quality_backlog(client)
+            except Exception as e:
+                print(f"Client {client} disconnected during initialization ({e})")
+                continue
+
             self.current_clients.append(client)
 
     def send_one(self, msg, client_sock):
