@@ -21,13 +21,21 @@ after:
 ---
 _type: matrix
 name: matrix
-record_time: 30
+record_time: 40
 codec: gst.vp8.vaapivp8enc
 
 scripted_properties:
   #display: gst_smpte, gst_snow, gst_ball
   display:
-    vlc_google_map, vlc_mix, vlc_mix-quick, vlc_wipeout
+    vlc_google_map:
+    vlc_wipeout:
+    vlc_primordial_soup:
+    webgl_wipeout: https://phoboslab.org/wipeout/
+    webgl_aquarium: https://webglsamples.org/aquarium/aquarium.html
+    webgl_cubemap: https://webglsamples.org/dynamic-cubemap/dynamic-cubemap.html
+    webgl_lots_of_objects: https://webglsamples.org/google-io/2011/lots-of-objects-google.html
+    webgl_sprites: https://webglsamples.org/sprites/index.html
+    nothing:
 
   resolution: 1920x1080, 1366x768 #, 848x480
   #resources: normal, vm:X*cpu, server:X*cpu, client:X*cpu, vm:X*cpu^client:X*cpu
