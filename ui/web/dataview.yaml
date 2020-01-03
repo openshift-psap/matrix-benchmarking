@@ -147,6 +147,12 @@ Frame Delta:
 
 
 Frame Rate:
+  Guest frame capture rate:
+    table: guest.capture
+    x: capture.msg_ts | as_us_timestamp
+    y: capture.msg_ts | as_fps_5s > Capture Framerate (5s)
+    y2: setting | framerate > framerate requested
+
   Guest frame generation rate:
     table: guest.guest
     x: guest.msg_ts | as_us_timestamp
@@ -170,7 +176,7 @@ Frame Processing:
     table: guest.guest
     x: guest.msg_ts | as_us_timestamp
     y: guest.capture_duration
-    _y10: guest.capture_duration | per_sec_20 > capture per_second (over 20s)
+    y10: guest.capture_duration | per_sec_1 > capture per_second (over 1s)
     y2: guest.encode_duration
     _y20: guest.encode_duration | per_sec_20 > encode per_second (over 20s)
     y3: guest.send_duration

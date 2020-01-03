@@ -413,6 +413,10 @@ def register_quality_setting(agent):
     agent.processors["quality_setting"] = process
 
 def register_guest_frame(agent):
+    table_capture = agent.experiment.create_table([
+        'capture.msg_ts',
+    ])
+
     table = agent.experiment.create_table([
         'guest.msg_ts',
         'guest.time',
@@ -440,6 +444,7 @@ def register_guest_frame(agent):
             state.sent = None
             state.frame_bytes = None
             state.encoded = None
+            table_capture.add(time)
 
         elif verb == 'Encoding':
             state.captured = time

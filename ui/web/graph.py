@@ -206,6 +206,37 @@ class GraphFormat():
         return Y_lst
 
     @staticmethod
+    def inverted(Y_lst, X_lst):
+        return [1/y for y in Y_lst]
+
+    @staticmethod
+    def as_fps_5s(Y_lst, X_lst):
+        return GraphFormat.as_fps_N(Y_lst, X_lst, 5)
+
+    def as_fps_N(Y_lst, X_lst, n):
+        from collections import deque
+        cache = deque()
+
+        def time_length(_cache):
+            l = _cache[-1][0] - _cache[0][0]
+            return l.total_seconds()
+
+        enough = False
+        new = []
+        for x, y in zip(X_lst, Y_lst):
+            cache.append((x, y))
+            while time_length(cache) >= n:
+                cache.popleft()
+                enough = True
+
+            if not enough:
+                new.append(None)
+            else:
+                new.append(len(cache) / n)
+
+        return new
+
+    @staticmethod
     def as_delta(Y_lst, X_lst):
         new = [(stop-start).total_seconds() for start, stop in zip (X_lst, X_lst[1:])]
         if new: new.append(new[-1]) # so that len(new) == len(Y_lst)

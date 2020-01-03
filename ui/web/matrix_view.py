@@ -982,6 +982,9 @@ for agent_name, tbl_name in (("client", "client"), ("guest", "guest"), ("server"
     TableStats.AgentActualFramerate(f"{agent_name}_framerate_agent", f"{agent_name.capitalize()} Agent Framerate",
                                     f"{agent_name}.{tbl_name}", f"{tbl_name}.framerate_actual", ".0f", "fps")
 
+TableStats.ActualFramerate(f"guest_capture_framerate", f"Guest Capture Framerate",
+                           f"guest.capture", f"capture.msg_ts", ".0f", "FPS")
+
 TableStats.PerSecond("client_decode_per_s", "Client Decode time/s", "client.client",
                       ("client.msg_ts", "client.decode_duration"), ".0f", "s/s", min_rows=10, divisor=1000*1000)
 
