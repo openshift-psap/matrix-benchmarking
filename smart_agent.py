@@ -270,7 +270,7 @@ def prepare_gracefull_shutdown():
     import signal
     loop = asyncio.get_event_loop()
 
-    for s in (signal.SIGHUP, signal.SIGTERM, signal.SIGINT):
+    for s in (signal.SIGTERM, signal.SIGINT):
         loop.add_signal_handler(s, lambda s=s: asyncio.create_task(shutdown(s, loop)))
 
 def main():
