@@ -13,8 +13,8 @@ machines:
     vm: 192.168.122.186
   desktop:
     client: localhost
-    server: 10.0.0.2
-    vm: 10.0.0.100
+    server: 172.16.0.2
+    vm: 172.16.0.10
 
 # ---
 measurement_sets:
