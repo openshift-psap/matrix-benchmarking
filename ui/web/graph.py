@@ -67,6 +67,10 @@ class GraphFormat():
         return [v/1000 for v in Y_lst]
 
     @staticmethod
+    def per_sec_1(Y_lst, X_lst):
+        return GraphFormat.per_sec_N(Y_lst, X_lst, 1)
+
+    @staticmethod
     def per_sec_5(Y_lst, X_lst):
         return GraphFormat.per_sec_N(Y_lst, X_lst, 5)
 

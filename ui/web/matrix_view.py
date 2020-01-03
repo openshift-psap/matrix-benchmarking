@@ -17,18 +17,20 @@ import statistics
 
 import measurement.perf_viewer
 
-COLORS = [
-    '#1f77b4',  # muted blue
-    '#ff7f0e',  # safety orange
-    '#2ca02c',  # cooked asparagus green
-    '#d62728',  # brick red
-    '#9467bd',  # muted purple
-    '#8c564b',  # chestnut brown
-    '#e377c2',  # raspberry yogurt pink
-    '#7f7f7f',  # middle gray
-    '#bcbd22',  # curry yellow-green
-    '#17becf'   # blue-teal
-]
+def COLORS(idx):
+    colors = [
+        '#1f77b4',  # muted blue
+        '#ff7f0e',  # safety orange
+        '#2ca02c',  # cooked asparagus green
+        '#d62728',  # brick red
+        '#9467bd',  # muted purple
+        '#8c564b',  # chestnut brown
+        '#e377c2',  # raspberry yogurt pink
+        '#7f7f7f',  # middle gray
+        '#bcbd22',  # curry yellow-green
+        '#17becf'   # blue-teal
+    ]
+    return colors[idx % len(colors)]
 
 class Regression():
     def __init__(self, id_name, key_var, name, x_key, y_key):
@@ -48,13 +50,14 @@ class Regression():
 
         x = defaultdict(list)
         y = defaultdict(list)
+        text = defaultdict(list)
 
         reg_x, reg_y = defaultdict(list), defaultdict(list)
 
         other_vars = ordered_vars[:]
         try: other_vars.remove(self.key_var)
         except ValueError:
-            return { 'data': [], 'layout': dict(title="ERROR: Framerate parameter must be variable ...")}
+            return { 'data': [], 'layout': dict(title="ERROR: Framerate parameter must be variable ...")}, []
 
         for param_values in sorted(itertools.product(*param_lists)):
             params.update(dict(param_values))
@@ -74,22 +77,29 @@ class Regression():
                 continue
 
             legend_key = f"{self.key_var}={params[self.key_var]}"
-            x[legend_key].append(_x)
-            y[legend_key].append(_y)
 
             reg_key = "all" if not other_vars else \
                  " | ".join(f"{k}={params[k]}" for k in other_vars)
+
+            x[reg_key].append(_x)
+            y[reg_key].append(_y)
+            text[reg_key].append(legend_key)
+
             reg_x[reg_key].append(_x)
             reg_y[reg_key].append(_y)
 
         for i, legend_key in enumerate(x.keys()):
             fig.add_trace(go.Scatter(x=x[legend_key], y=y[legend_key], mode='markers', name=legend_key,
-                                     hoverlabel= {'namelength' :-1}, legendgroup=self.key_var,
-                                     marker=dict(symbol="cross", size=15, color=COLORS[i])))
+                                     hovertext=text[legend_key],hoverinfo="text+x+y", hoverlabel= {'namelength' :-1},
+                                     legendgroup=legend_key,
+                                     marker=dict(symbol="cross", size=15, color=COLORS(i))))
+
+        x_title = self.x_key + f" ({TableStats.stats_by_name[self.x_key].unit})"
+        y_title = self.y_key + f" ({TableStats.stats_by_name[self.y_key].unit})"
 
         fig.update_layout(yaxis=dict(zeroline=True, showgrid=False, rangemode='tozero',
-                                     title=self.y_key),
-                          xaxis=dict(title=self.x_key))
+                                     title=y_title),
+                          xaxis=dict(title=x_title))
 
         import scipy
         import scipy.stats
@@ -106,15 +116,15 @@ class Regression():
 
             line = slope*np.array(all_x)+intercept
             fig.add_trace(go.Scatter(x=all_x, y=line, mode='lines', text="toto", hovertext="text",
-                                     name=reg_key, line=dict(color=COLORS[i])))
+                                     legendgroup=reg_key,
+                                     name=reg_key, line=dict(color=COLORS(i))))
 
             if not x_range: x_range = [all_x[0], all_x[-1]]
             x_range = [min(x_range[0], min(all_x)), max(x_range[1], max(all_x))]
 
             # need to change here: if slope/intercept too low, they appear as 0.00 !
-            formulae.append(f"{reg_key} |" +
-                            f"{self.y_key} = {slope:.2f} * {self.x_key} + {intercept:.2f} " +
-                            f"| r={r_value:.3f}, p={p_value:.3f}, stdev={std_err:.3f} ")
+            formulae.append(f"{self.y_key} = {slope:+.2f} * {self.x_key} {intercept:+.2f} " +
+                            f"| r={r_value:+.3f}, p={p_value:+.3f}, stdev={std_err:+.3f} | {reg_key}")
 
         text_x_pos = x_range[0] + (x_range[1]-x_range[0])/2
         text = '<br>'.join(formulae)
@@ -149,18 +159,18 @@ class Report():
         return obj
 
     @classmethod
-    def ClientFPS_CGPU(clazz, *args, **kwargs):
-        obj = clazz("report_client_fps_cgpu", "Report: Client FPS vs CPU/GPU", *args, **kwargs)
+    def FPS_CPU(clazz, *args, **kwargs):
+        obj = clazz("report_fps_cpu", "Report: Guest/Client FPS vs CPU", *args, **kwargs)
 
-        obj.do_report = lambda *_args: obj.report_fps_cgpu("client", *_args)
+        obj.do_report = lambda *_args: obj.report_fps_cpu(*_args)
 
         return obj
 
     @classmethod
-    def GuestFPS_CGPU(clazz, *args, **kwargs):
-        obj = clazz("report_guest_fps_cgpu", "Report: Guest FPS vs CPU/GPU", *args, **kwargs)
+    def FPS_GPU(clazz, *args, **kwargs):
+        obj = clazz("report_fps_gpu", "Report: Guest/Client FPS vs GPU", *args, **kwargs)
 
-        obj.do_report = lambda *_args: obj.report_fps_cgpu("guest", *_args)
+        obj.do_report = lambda *_args: obj.report_fps_gpu(*_args)
 
         return obj
 
@@ -215,10 +225,10 @@ class Report():
 
         what = ordered_vars[0]
         if what == "framerate": what = None
-
+        by_what = f" (by {what})" if what else ""
         # --- Decode time --- #
 
-        report = [html.H2(f"Decode Time" + (f" (by {what})" if what else ""))]
+        report = [html.H2(f"Decode Time" + by_what)]
 
         for value in variables.get(what, [params[what]]) if what else "":
             if what:
@@ -228,7 +238,7 @@ class Report():
 
         # --- Decode Time in Queue --- #
 
-        report += [html.H2(f"Time in Queue" + (f" (by {what})" if what else ""))]
+        report += [html.H2(f"Time in Queue" + by_what)]
 
         for value in variables.get(what, [params[what]]) if what else [""]:
             if what:
@@ -236,9 +246,62 @@ class Report():
 
             report += do_plot("Reg: FPS vs Time in Client Queue", what, value)
 
+        # --- Client Queue --- #
+
+        report += [html.H2(f"Client Queue Size")]
+        report += do_plot("Client Queue", None, None)
+
+        # --- Decode Duration --- #
+
+        report += [html.H2(f"Decode Duration")]
+        report += do_plot("Client Decode Duration", None, None)
+
+        # --- Time between arriving frames --- #
+
+        report += [html.H2(f"1/time between arriving frames")]
+        report += do_plot("Client Framerate", None, None)
+
+        # --- Frame Bandwidth --- #
+
+        report += [html.H2(f"Frame Bandwidth" + by_what)]
+
+        for value in variables.get(what, [params[what]]) if what else [""]:
+            if what:
+                report += [html.P(html.B(f"{what}={value}"))]
+            report += do_plot("Reg: FPS vs Frame Bandwidth", what, value)
+
         return report
 
-    def report_fps_cgpu(self, src, *args):
+    def report_fps_gpu(self, *args):
+        ordered_vars, params, param_lists, variables, cfg = args
+
+        if 'framerate' not in ordered_vars:
+            return [], "ERROR: Framerate must not be set for this report."
+
+        def do_plot(stat_name, what, value):
+            _args = Report.prepare_args(args, what, value)
+            reg_stats = TableStats.stats_by_name[stat_name].do_plot(*_args)
+
+            return [dcc.Graph(figure=reg_stats[0])] + reg_stats[1] + [html.Hr()]
+
+        what = ordered_vars[0]
+        if what == "framerate": what = None
+
+        # --- GPU --- #
+        report = []
+        for src in "client", "guest":
+            report += [html.H2(f"{src.capitalize()} GPU Usage"+ (f" (by {what})" if what else ""))]
+
+            for value in variables.get(what, [params[what]]) if what else [""]:
+                if what:
+                    report += [html.P(html.B(f"{what}={value}", what))]
+
+                for gpu in "Render", "Video":
+                    report += do_plot(f"Reg: FPS vs {src.capitalize()} GPU {gpu}", what, value)
+
+        return report
+
+    def report_fps_cpu(self, *args):
         ordered_vars, params, param_lists, variables, cfg = args
 
         if 'framerate' not in ordered_vars:
@@ -254,25 +317,16 @@ class Report():
         if what == "framerate": what = None
 
         # --- CPU --- #
+        report = []
 
-        report = [html.H2("CPU Usage" + (f" (by {what})" if what else ""))]
+        for src in "client", "guest":
+            report += [html.H2(f"{src.capitalize()} CPU Usage" + (f" (by {what})" if what else ""))]
 
-        for value in variables.get(what, [params[what]]) if what else [""]:
-            if what:
-                report += [html.P(html.B(f"{what}={value}"))]
+            for value in variables.get(what, [params[what]]) if what else [""]:
+                if what:
+                    report += [html.P(html.B(f"{what}={value}"))]
 
-            report += do_plot(f"Reg: FPS vs {src.capitalize()} CPU", what, value)
-
-        # --- GPU --- #
-
-        report += [html.H2(f"GPU Usage"+ (f" (by {what})" if what else ""))]
-
-        for value in variables.get(what, [params[what]]) if what else [""]:
-            if what:
-                report += [html.P(html.B(f"{what}={value}", what))]
-
-            for gpu in "Render", "Video":
-                report += do_plot(f"Reg: FPS vs {src.capitalize()} GPU {gpu}", what, value)
+                report += do_plot(f"Reg: FPS vs {src.capitalize()} CPU", what, value)
 
         return report
 
@@ -357,20 +411,20 @@ class HeatmapPlot():
             if len(variables) < 3:
                 fig.add_trace(go.Scatter(
                     xaxis = 'x', yaxis = 'y', mode = 'markers',
-                    marker = dict(color = COLORS[i % len(COLORS)], size = 3 ),
+                    marker = dict(color = COLORS(i), size = 3 ),
                     name=name, legendgroup=name,
                     x = x, y = y,
                     hoverlabel= {'namelength' :-1}
                 ))
 
             fig.add_trace(go.Histogram(
-                xaxis = 'x2', marker = dict(color=COLORS[i % len(COLORS)]), showlegend=False, opacity=0.75,
+                xaxis = 'x2', marker = dict(color=COLORS(i)), showlegend=False, opacity=0.75,
                 histnorm='percent',
                 y = y, legendgroup=name, name=name,
                 hoverlabel= {'namelength' :-1},
             ))
             fig.add_trace(go.Histogram(
-                yaxis = 'y2', marker = dict(color=COLORS[i % len(COLORS)]), showlegend=False, opacity=0.75,
+                yaxis = 'y2', marker = dict(color=COLORS(i)), showlegend=False, opacity=0.75,
                 x = x, legendgroup=name, name=name,
                 histnorm='percent',
                 hoverlabel= {'namelength' :-1}
@@ -422,6 +476,8 @@ class TableStats():
 
     @classmethod
     def _register_stat(clazz, stat_obj):
+        print(stat_obj.name)
+
         clazz.all_stats.append(stat_obj)
 
         if stat_obj.name in clazz.stats_by_name:
@@ -869,7 +925,7 @@ class TableStats():
             ax = subplots[subplots_key]
             has_err = any(y_err[legend_key])
 
-            color = COLORS[list(legend_names).index(legend_name)]
+            color = COLORS(list(legend_names).index(legend_name))
             plot_args = dict()
 
             if len(variables) <= 2:
@@ -920,10 +976,10 @@ class TableStats():
 
         layout.legend.traceorder = 'normal'
 
-        return { 'data': data, 'layout': layout}, ""
+        return { 'data': data, 'layout': layout}, [""]
 
-Report.ClientFPS_CGPU()
-Report.GuestFPS_CGPU()
+Report.FPS_CPU()
+Report.FPS_GPU()
 Report.ClientFPS_Decode()
 
 for who in "client", "guest":
@@ -937,6 +993,9 @@ Regression(f"fps_vs_decode_time", "framerate", f"FPS vs Client Decode Time",
 
 Regression(f"fps_vs_time_in_queue", "framerate", f"FPS vs Time in Client Queue",
            f"Client Framerate", f"Client time in queue (per second)")
+
+Regression(f"fps_vs_bandwidth", "framerate", f"FPS vs Frame Bandwidth",
+           f"Client Framerate", f"Frame Bandwidth")
 
 HeatmapPlot("Frame Size/Decoding", 'client.client', "Frame Size vs Decode duration",
             ("client.frame_size", "Frame size (in KB)", 0.001),

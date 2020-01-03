@@ -88,10 +88,10 @@ Frames Size:
     table: guest.guest
     x: guest.msg_ts | as_us_timestamp
     y: guest.frame_size
-    y2: guest.frame_size | as_key_frames > key frames (detected)
-    y4: guest.frame_size | key_frames_from_qual > key frames (from settings)
-    y3: guest.frame_size | as_key_frames_period > key frames period (detected)
-    y5: setting | keyframe-period > keyframe-period setting
+    _y2: guest.frame_size | as_key_frames > key frames (detected)
+    _y4: guest.frame_size | key_frames_from_qual > key frames (from settings)
+    _y3: guest.frame_size | as_key_frames_period > key frames period (detected)
+    _y5: setting | keyframe-period > keyframe-period setting
 
   Host frame size:
     table: host.host
@@ -128,7 +128,7 @@ Frame Delta:
     table: client.client
     x: client.msg_ts | as_us_timestamp
     y: client.queue | as_delta | as_s_to_ms  > Decoding time Δ (in ms)
-    y2: setting | framerate | inverted| as_s_to_ms  > 1/framerate requested
+    y2: setting | framerate | inverted | as_s_to_ms  > 1/framerate requested
 
   Client queue:
     table: client.client
@@ -176,7 +176,7 @@ Frame Processing:
     table: guest.guest
     x: guest.msg_ts | as_us_timestamp
     y: guest.capture_duration
-    y10: guest.capture_duration | per_sec_1 > capture per_second (over 1s)
+    _y10: guest.capture_duration | per_sec_1 > capture per_second (over 1s)
     y2: guest.encode_duration
     _y20: guest.encode_duration | per_sec_20 > encode per_second (over 20s)
     y3: guest.send_duration
