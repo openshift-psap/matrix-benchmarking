@@ -10,6 +10,7 @@ from dash.dependencies import Output, Input, State, ClientsideFunction
 import plotly
 import plotly.graph_objs as go
 import plotly.subplots
+import flask
 
 import urllib.parse
 import datetime
@@ -471,6 +472,7 @@ class HeatmapPlot():
 class TableStats():
     all_stats = []
     stats_by_name = {}
+    graph_figure = {}
 
     interesting_tables = defaultdict(list)
 
@@ -773,7 +775,7 @@ class TableStats():
         return [f"{key.replace('_', ', ')} 🡆 {value} (", link, ")"]
 
     def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
-        data = [[[], []]]
+        data = []
         layout = go.Layout()
         layout.hovermode = 'closest'
         layout.meta = dict(name=self.name),
@@ -1159,10 +1161,24 @@ def parse_data(filename, reloading=False):
     for key, values in Matrix.properties.items():
         print(f"{key:20s}: {', '.join(map(str, values))}")
 
-def build_layout(app, search):
+def get_permalink(args, full=False):
+    params = dict(zip(Matrix.properties.keys(), args[:len(Matrix.properties)]))
+
+    def val(k, v):
+        if isinstance(v, list): return "&".join(f"{k}={vv}" for vv in v)
+        else: return f"{k}={v}"
+
+    search = "?"+"&".join(val(k, v) for k, v in params.items() \
+                            if v not in ('---', None) and (full or len(Matrix.properties[k]) != 1))
+    if args[-1]:
+        search += f"&property-order={args[-1]}"
+    return search
+
+def build_layout(search, serializing=False):
     defaults = urllib.parse.parse_qs(search[1:]) if search else {}
 
     matrix_controls = [html.B("Parameters:", id="lbl_params"), html.Br()]
+    serial_params = []
     for key, values in Matrix.properties.items():
         options = [{'label': i, 'value': i} for i in sorted(values)]
 
@@ -1187,6 +1203,10 @@ def build_layout(app, search):
             attr["value"] = default_value[0] if len(default_value) == 1 else default_value
         except KeyError: pass
 
+        if serializing:
+            attr["disabled"] = True
+            serial_params.append(attr["value"])
+
         tag = dcc.Dropdown(id='list-params-'+key, options=options,
                            **attr, clearable=False)
 
@@ -1197,22 +1217,62 @@ def build_layout(app, search):
               html.Div(id='custom_config_saved')]
 
     aspect = [html.Br(), html.B("Aspect:"), html.Br(),
-              dcc.Checklist(id="matrix-show-text", value='',
+              dcc.Checklist(id="matrix-show-text", value=[''],
                             options=[{'label': 'Show text', 'value': 'txt'}]),
               html.Div(defaults.get("property-order", [''])[0], id='property-order')
     ]
 
-    permalink = [html.P(dcc.Link('Permalink', href='', id='permalink'))]
-    control_children = matrix_controls + config + aspect + permalink
+    permalink = [html.P(html.A('Permalink', href='', id='permalink'))]
+    download = [html.P(html.A('Download', href='', id='download', target="_blank"))]
+
+    control_children = matrix_controls
+
+    if not serializing:
+        control_children += config + aspect + permalink + download
+    else:
+        control_children += [html.I(["Saved on ",
+                                    str(datetime.datetime.today()).rpartition(":")[0]])]
+
+        permalink = "/matrix/"+get_permalink((
+            serial_params # [Input('list-params-'+key, "value") for key in Matrix.properties]
+            + [defaults.get("property-order", [''])[0]] # Input('property-order', 'children')
+        ), full=True)
+
+        control_children += [html.P(["from ",
+                                     html.A("this page", target="_blank", href=permalink),
+                                     "."])]
 
     graph_children = []
     for table_stat in TableStats.all_stats:
-        graph_children += [dcc.Graph(id=table_stat.id_name, style={"display": "none"},
+        if serializing and table_stat.name not in defaults.get("stats", []):
+            continue
+
+        style = {} if serializing else {"display": "none"}
+
+        graph_children += [dcc.Graph(id=table_stat.id_name, style=style,
                                      config=dict(showTips=False)),
                            html.P(id=table_stat.id_name+'-txt')]
+        if serializing:
+            print("Generate", table_stat.id_name)
 
+            figure_text = TableStats.graph_figure[table_stat.name](*(
+                serial_params # [Input('list-params-'+key, "value") for key in Matrix.properties]
+                + [0] # Input("lbl_params", "n_clicks")
+                + defaults.get("property-order", ['']) # Input('property-order', 'children')
+                + [''] # Input('custom_config', 'value') # not saved yet
+                + [''] # Input('custom_config_saved', 'data') # not saved yet
+            ))
+
+            graph, text = graph_children[-2:]
+            graph.figure = figure_text[0]
+            graph.style['height'] = '100vh'
+            if not graph.figure:
+                graph.style['display'] = 'none'
+
+            text.children = figure_text[1]
 
     graph_children += [html.Div(id="text-box:clientside-output")]
+
 
     return html.Div([
         html.Div(children=control_children, className='two columns'),
@@ -1290,6 +1350,24 @@ def build_callbacks(app):
     if not Matrix.properties:
         print("WARNING: Matrix empty, cannot build its GUI")
         return
+
+    @app.server.route('/matrix/dl')
+    def download_graph():
+        search = (b"?"+flask.request.query_string).decode('ascii')
+        layout = build_layout(search, serializing=True)
+
+        import dill
+        data = dill.dumps(layout)
+        query = urllib.parse.parse_qs(search[1:])
+
+        fname = '__'.join(TableStats.stats_by_name[stat_name].id_name
+                          for stat_name in query['stats']) \
+                              if query.get('stats') else "nothing"
+
+        resp = flask.Response(data, mimetype="application/octet-stream")
+        resp.headers["Content-Disposition"] = f'attachment; filename="{fname}.dill"'
+
+        return resp
 
     app.clientside_callback(
         ClientsideFunction(namespace="clientside", function_name="resize_graph"),
@@ -1410,24 +1488,16 @@ def build_callbacks(app):
         obj = TableStats.stats_by_name[meta['name']]
         return obj.do_hover(meta.get('value'), variables, figure, data, click_info)
 
-    @app.callback(Output("permalink", 'href'),
+    @app.callback([Output("permalink", 'href'), Output("download", 'href')],
                   [Input('list-params-'+key, "value") for key in Matrix.properties]
                   +[Input('property-order', 'children')])
-    def get_permalink(*args):
+    def get_permalink_cb(*args):
         try: triggered_id = dash.callback_context.triggered
-        except IndexError: return dash.no_update # nothing triggered the script (on multiapp load)
-        params = dict(zip(Matrix.properties.keys(), args[:len(Matrix.properties)]))
+        except IndexError: return dash.no_update, dash.no_update # nothing triggered the script (on multiapp load)
 
-        def val(k, v):
-            if isinstance(v, list): return "&".join(f"{k}={vv}" for vv in v)
-            else: return f"{k}={v}"
+        search = get_permalink(args)
 
-        search = "?"+"&".join(val(k, v) for k, v in params.items() \
-                            if v not in ('---', None) and len(Matrix.properties[k]) != 1)
-        if args[-1]:
-            search += f"&property-order={args[-1]}"
-        return search
-
+        return search, "/matrix/dl"+search
 
     for _table_stat in TableStats.all_stats:
         def create_callback(table_stat):
@@ -1465,11 +1535,17 @@ def build_callbacks(app):
                           +[Input("lbl_params", "n_clicks")]+[Input('property-order', 'children')]
                           +[Input('custom_config', 'value'), Input('custom_config_saved', 'data')]
             )
-            def graph_figure(*args):
-                try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
-                except IndexError: return dash.no_update, ""# nothing triggered the script (on multiapp load)
+            def graph_figure_cb(*args):
+                return graph_figure(*args)
 
-                *args, config, config_saved = args
+            def graph_figure(*_args):
+                if dash.callback_context.triggered:
+                    try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
+                    except IndexError: return dash.no_update, ""# nothing triggered the script (on multiapp load)
+                    except dash.exceptions.MissingCallbackContextException: triggered_id = '<manually triggered>'
+                else: triggered_id = '<manually triggered>'
+
+                *args, config, config_saved = _args
 
                 if triggered_id == "custom_config.value":
                     if not config or config.startswith("_"):
@@ -1505,6 +1581,8 @@ def build_callbacks(app):
                 param_lists = [[(key, v) for v in variables[key]] for key in ordered_vars]
 
                 return table_stat.do_plot(ordered_vars, params, param_lists, variables, cfg)
+
+            TableStats.graph_figure[table_stat.name] = graph_figure
 
         # must use internal function to save 'table_stat' closure context
         create_callback(_table_stat)
