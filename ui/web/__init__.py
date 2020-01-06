@@ -20,7 +20,8 @@ log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 external_stylesheets = [
-    'https://codepen.io/chriddyp/pen/bWLwgP.css' # see https://codepen.io/chriddyp/pen/bWLwgP for style/columnts
+    # 'https://codepen.io/chriddyp/pen/bWLwgP.css' # served via assets/bWLwgP.css and automatically included
+    # see https://codepen.io/chriddyp/pen/bWLwgP for style/columnts
 ]
 
 LISTEN_ON = None
