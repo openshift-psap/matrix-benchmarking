@@ -176,13 +176,14 @@ def construct_dispatcher():
             return UIState().layout
 
         elif pathname in ("/viewer", "/viewer/"):
-            import glob
-            children = [html.P(html.A(filename.partition("/")[-1],
-                                      href="/viewer/"+(filename.partition("/")[-1]),
+            from pathlib import Path
+            from . import script_types
+            path = script_types.RESULTS_PATH
+            children = [html.P(html.A(str(filename)[len(path)+1:],
+                                      href="/viewer/"+(str(filename)[len(path)+1:]),
                                       target="_blank")) \
-                        for filename in glob.glob("results/*/*.rec") + glob.glob("results/*.rec") ]
-
-            return html.Div(children)
+                        for filename in Path(path).rglob('*.rec') ]
+            return html.Div([html.H3("Saved records")] + children)
 
         elif pathname.startswith('/viewer/') and pathname.endswith(".rec"):
             try:
@@ -218,7 +219,28 @@ def construct_dispatcher():
             if running_as_collector:
                 return "Matrix visualiser not available, running as collector."
 
-            return matrix_view.build_layout(main_app, search)
+            return matrix_view.build_layout(search)
+        elif pathname.startswith('/saved'):
+            from . import script_types
+
+            path = f"{script_types.RESULTS_PATH}/../saved"
+
+            if pathname.endswith(".dill"):
+                filepath = pathname[len("/saved/"):]
+                if '..' in filepath: return "invalid path ..."
+                import dill
+                try:
+                    return dill.load(open(path+"/"+filepath, 'rb'))
+                except Exception as e:
+                    return f"Failed to open '{pathname}' ... ({e.__class__.__name__})"
+            else:
+                from pathlib import Path
+                children = [html.P(html.A(str(filename)[len(path)+1:],
+                                          href="/saved/"+(str(filename)[len(path)+1:]),
+                                          target="_blank")) \
+                            for filename in Path(path).rglob('*.dill')]
+
+                return html.Div([html.H3("Saved graphs")] + children)
         else:
             if pathname == "/collector":
                 msg = "Performance collector not available, running as viewer."
@@ -230,7 +252,8 @@ def construct_dispatcher():
             index = html.Ul(
                 ([html.Li(html.A("Performance Collector", href="/collector"))]
                  if running_as_collector else []) +
-                [html.Li(html.A("Viewer index", href="/viewer"))] +
+                [html.Li(html.A("Saved records (viewer index)", href="/viewer"))] +
+                [html.Li(html.A("Saved graphs (loaded index)", href="/saved"))] +
                 ([html.Li(html.A("Matrix visualizer", href="/matrix"))]
                  if not running_as_collector else []))
 
