@@ -487,7 +487,7 @@ class TableStats():
 
         clazz.stats_by_name[stat_obj.name] = stat_obj
 
-    def __init__(self, id_name, name, table, field, fmt, unit, min_rows=0, divisor=1):
+    def __init__(self, id_name, name, table, field, fmt, unit, min_rows=0, divisor=1, **kwargs):
         self.id_name = id_name
         self.name = name
         self.table = table
@@ -496,6 +496,7 @@ class TableStats():
         self.fmt = fmt
         self.min_rows = min_rows
         self.divisor = divisor
+        self.kwargs = kwargs
 
         self.do_process = None
 
@@ -656,6 +657,9 @@ class TableStats():
         values = [row[row_id] for row in rows]
 
         if not values: return None, None, None
+        if self.kwargs.get("invert"):
+            return 1/ (statistics.mean(values) / self.divisor), None, None
+
         return statistics.mean(values) / self.divisor, statistics.stdev(values) / self.divisor
 
     def process_start_stop_diff(self, table_def, rows):
@@ -1020,6 +1024,11 @@ TableStats.Average("client_time_in_queue_avg", "Client time in queue (avg)",
                    "client.frames_time_to_drop", "frames_time_to_drop.in_queue_time", ".0f", "ms",
                    divisor=1000)
 
+for what in "capture", "encode", "send":
+    TableStats.Average(f"guest_{what}_duration", f"Guest {what.capitalize()} Duration (avg)",
+                       "guest.guest", f"guest.{what}_duration", ".0f", "FPS", invert=True)
+
+
 TableStats.PerSecond("client_time_in_queue_persec", "Client time in queue (per second)", "client.frames_time_to_drop",
                      ("frames_time_to_drop.msg_ts", "frames_time_to_drop.in_queue_time"), ".0f", "ms/sec", divisor=1000)
 
@@ -1054,9 +1063,6 @@ TableStats.PerFrame("client_decode_per_f", "Client Decode time/frame", "client.c
 
 TableStats.Average("client_decode", "Client Decode Duration", "client.client",
                    "client.decode_duration", ".0f", "s")
-
-TableStats.Average(f"guest_send_duration", f"Guest Send Duration", "guest.guest",
-                   "guest.send_duration", ".0f", "s")
 
 
 TableStats.StartStopDiff(f"frames_dropped", f"Client Frames Dropped", "client.frames_dropped",
