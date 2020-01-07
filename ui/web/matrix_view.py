@@ -18,6 +18,10 @@ import statistics
 
 import measurement.perf_viewer
 
+NB_GRAPHS = 3
+GRAPH_IDS = [f"graph-{i}" for i in range(NB_GRAPHS)]
+TEXT_IDS = [f"graph-{i}-txt" for i in range(NB_GRAPHS)]
+
 def COLORS(idx):
     colors = [
         '#1f77b4',  # muted blue
@@ -58,7 +62,7 @@ class Regression():
         other_vars = ordered_vars[:]
         try: other_vars.remove(self.key_var)
         except ValueError:
-            return { 'data': [], 'layout': dict(title="ERROR: Framerate parameter must be variable ...")}, []
+            return { 'data': [], 'layout': dict(title="ERROR: Framerate parameter must be variable ...")}, [""]
 
         for param_values in sorted(itertools.product(*param_lists)):
             params.update(dict(param_values))
@@ -216,7 +220,7 @@ class Report():
         ordered_vars, params, param_lists, variables, cfg = args
 
         if 'framerate' not in ordered_vars:
-            return [], "ERROR: Framerate must not be set for this report."
+            return [[], "ERROR: Framerate must not be set for this report."]
 
         def do_plot(stat_name, what, value):
             _args = Report.prepare_args(args, what, value)
@@ -472,7 +476,7 @@ class HeatmapPlot():
 class TableStats():
     all_stats = []
     stats_by_name = {}
-    graph_figure = {}
+    graph_figure = None
 
     interesting_tables = defaultdict(list)
 
@@ -658,7 +662,7 @@ class TableStats():
 
         if not values: return None, None, None
         if self.kwargs.get("invert"):
-            return 1/ (statistics.mean(values) / self.divisor), None, None
+            return 1/ (statistics.mean(values) / self.divisor), 0, 0
 
         return statistics.mean(values) / self.divisor, statistics.stdev(values) / self.divisor
 
@@ -1245,19 +1249,17 @@ def build_layout(search, serializing=False):
                                      "."])]
 
     graph_children = []
-    for table_stat in TableStats.all_stats:
-        if serializing and table_stat.name not in defaults.get("stats", []):
-            continue
+    if serializing:
+        stats = defaults.get("stats", [])
+        for stats_name in stats:
+            print("Generate", stats_name)
+            table_stat = TableStats.stats_by_name[stats_name]
 
-        style = {} if serializing else {"display": "none"}
+            graph_children += [dcc.Graph(id=table_stat.id_name, style={},
+                                         config=dict(showTips=False)),
+                               html.P(id=table_stat.id_name+'-txt')]
 
-        graph_children += [dcc.Graph(id=table_stat.id_name, style=style,
-                                     config=dict(showTips=False)),
-                           html.P(id=table_stat.id_name+'-txt')]
-        if serializing:
-            print("Generate", table_stat.id_name)
-
-            figure_text = TableStats.graph_figure[table_stat.name](*(
+            figure_text = TableStats.graph_figure(*(
                 serial_params # [Input('list-params-'+key, "value") for key in Matrix.properties]
                 + [0] # Input("lbl_params", "n_clicks")
                 + defaults.get("property-order", ['']) # Input('property-order', 'children')
@@ -1268,13 +1270,18 @@ def build_layout(search, serializing=False):
             graph, text = graph_children[-2:]
             graph.figure = figure_text[0]
             graph.style['height'] = '100vh'
+            graph.style["height"] = f"{100/(min(NB_GRAPHS, len(stats))):.2f}vh"
             if not graph.figure:
                 graph.style['display'] = 'none'
 
             text.children = figure_text[1]
+    else:
+        for graph_id in GRAPH_IDS:
+            graph_children += [dcc.Graph(id=graph_id, style={'display': 'none'},
+                                         config=dict(showTips=False)),
+                               html.P(id=graph_id+"-txt")]
 
     graph_children += [html.Div(id="text-box:clientside-output")]
-
 
     return html.Div([
         html.Div(children=control_children, className='two columns'),
@@ -1445,8 +1452,8 @@ def build_callbacks(app):
 
     @app.callback(
         Output('graph-hover-info', 'children'),
-        [Input(table_stat.id_name, 'clickData') for table_stat in TableStats.all_stats],
-        [State(table_stat.id_name, 'figure') for table_stat in TableStats.all_stats]
+        [Input(graph_id, 'clickData') for graph_id in GRAPH_IDS],
+        [State(graph_id, 'figure') for graph_id in GRAPH_IDS]
        +[State('list-params-'+key, "value") for key in Matrix.properties])
     def display_hover_data(*args):
         nb_stats = len(TableStats.all_stats)
@@ -1494,10 +1501,10 @@ def build_callbacks(app):
 
         return search, "/matrix/dl"+search
 
-    for _table_stat in TableStats.all_stats:
-        def create_callback(table_stat):
-            @app.callback([Output(table_stat.id_name, 'style'),
-                           Output(table_stat.id_name+"-txt", 'style')],
+    for _graph_idx, _graph_id in enumerate(GRAPH_IDS):
+        def create_callback(graph_idx, graph_id):
+            @app.callback([Output(graph_id, 'style'),
+                           Output(graph_id+"-txt", 'style')],
                           [Input('list-params-stats', "value")])
             def graph_style(stats_values):
                 try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
@@ -1508,24 +1515,28 @@ def build_callbacks(app):
                     # That makes the following silly ...
                     stats_values = [stats_values]
 
-                graph_style = {}
-                graph_style["display"] = "block" if triggered_id and table_stat.name in stats_values else "none"
-                if graph_style["display"] == "block":
-                    print("Show", table_stat.name)
-                graph_style["height"] = f"{100/len(stats_values) if stats_values else 100:.2f}vh"
+                if (graph_idx != "graph-for-dl" and (graph_idx + 1) > len(stats_values)
+                    or not triggered_id):
+                    return {"display": 'none'},  {"display": 'none'},
 
-                text_style = {"display": graph_style["display"]}
+                graph_style = {}
+
+                graph_style["display"] = "block"
+                graph_style["height"] = f"{100/(min(NB_GRAPHS, len(stats_values))) if stats_values else 100:.2f}vh"
+                text_style = {"display": "block"}
+
+                table_stat = TableStats.stats_by_name[stats_values[graph_idx]]
+                print("Show", table_stat.name)
 
                 try:
                     if table_stat.no_graph: # may raise AttributeError
                         graph_style["display"] = 'none'
-
                 except AttributeError: pass
 
                 return graph_style, text_style
 
-            @app.callback([Output(table_stat.id_name, 'figure'),
-                           Output(table_stat.id_name+"-txt", 'children')],
+            @app.callback([Output(graph_id, 'figure'),
+                           Output(graph_id+"-txt", 'children')],
                           [Input('list-params-'+key, "value") for key in Matrix.properties]
                           +[Input("lbl_params", "n_clicks")]+[Input('property-order', 'children')]
                           +[Input('custom_config', 'value'), Input('custom_config_saved', 'data')]
@@ -1564,8 +1575,16 @@ def build_callbacks(app):
                 params = dict(zip(Matrix.properties.keys(), args[:len(Matrix.properties)]))
 
                 stats_values = params["stats"]
-                if not stats_values or table_stat.name not in stats_values:
+                if not isinstance(stats_values, list):
+                    # only 1 elt in stats_values dropdown, a str is returned instead of a list.
+                    # That makes the following silly ...
+                    stats_values = [stats_values]
+
+                if graph_idx != "graph-for-dl" and (not stats_values
+                                                    or (graph_idx + 1) > len(stats_values)):
                     return dash.no_update, dash.no_update
+
+                table_stat = TableStats.stats_by_name[stats_values[graph_idx]]
 
                 variables = {k:(Matrix.properties[k]) for k, v in params.items() \
                              if k != "stats" and v == "---"}
@@ -1577,7 +1596,9 @@ def build_callbacks(app):
 
                 return table_stat.do_plot(ordered_vars, params, param_lists, variables, cfg)
 
-            TableStats.graph_figure[table_stat.name] = graph_figure
+            if graph_id == "graph-for-dl":
+                TableStats.graph_figure = graph_figure
 
         # must use internal function to save 'table_stat' closure context
-        create_callback(_table_stat)
+        create_callback(_graph_idx, _graph_id)
+    create_callback(0, "graph-for-dl")
