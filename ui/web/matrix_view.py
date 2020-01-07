@@ -1222,11 +1222,7 @@ def build_layout(search, serializing=False):
               dcc.Input(id='custom_config', placeholder='Config settings', debounce=True),
               html.Div(id='custom_config_saved')]
 
-    aspect = [html.Br(), html.B("Aspect:"), html.Br(),
-              dcc.Checklist(id="matrix-show-text", value=[''],
-                            options=[{'label': 'Show text', 'value': 'txt'}]),
-              html.Div(defaults.get("property-order", [''])[0], id='property-order')
-    ]
+    aspect = [html.Div(defaults.get("property-order", [''])[0], id='property-order')]
 
     permalink = [html.P(html.A('Permalink', href='', id='permalink'))]
     download = [html.P(html.A('Download', href='', id='download', target="_blank"))]
@@ -1378,15 +1374,8 @@ def build_callbacks(app):
     app.clientside_callback(
         ClientsideFunction(namespace="clientside", function_name="resize_graph"),
         Output("text-box:clientside-output", "children"),
-        [Input('text-box', "style"), Input('list-params-stats', "value")],
+        [Input('permalink', "href"), Input('list-params-stats', "value")],
     )
-    @app.callback([Output("text-box", 'style'), Output("graph-box", 'className'),],
-                  [Input('matrix-show-text', "value")])
-    def show_text(arg):
-        if 'txt' in arg:
-            return {}, 'seven columns'
-        else:
-            return dict(display='none'), 'ten columns'
 
     @app.callback([Output('custom_config_saved', 'children'),
                    Output('custom_config_saved', 'data'),
