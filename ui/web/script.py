@@ -147,6 +147,7 @@ class Script():
 
     def run(self, dry):
         exe = Exec(self, dry)
+        def connected(): return UIState().DB.expe.agents_connected()
         if dry:
             exe.log(f"Running {self.name} (dry)")
             self.do_run(exe)
@@ -157,7 +158,15 @@ class Script():
             def run_thr(exe):
                 Script.messages.clear()
                 exe.log(f"Running {self.name}!")
+                TOTAL_AGENTS_CNT = 3
+                while len(connected()) != TOTAL_AGENTS_CNT:
+                    print(f"Agents connected: {','.join(connected())}")
+                    print(f"Waiting to have {TOTAL_AGENTS_CNT} ...")
+                    time.sleep(1)
+
+                exe.log(f"Agents connected: {', '.join(connected())}")
                 self.do_run(exe)
+                exe.log(f"Agents connected: {', '.join(connected())}")
                 Script.thr = None
 
             Script.thr = threading.Thread(target=run_thr, args=(exe,))

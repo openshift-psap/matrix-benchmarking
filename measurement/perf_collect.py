@@ -117,6 +117,8 @@ class Perf_Collect(measurement.Measurement):
 
     def setup(self):
         self.experiment.send_quality_cbs.append(self.send_quality)
+        assert not self.mode in self.experiment.agent_status, "Agent already registered ..."
+        self.experiment.agent_status[self.mode] = self
 
     def start(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -133,6 +135,7 @@ class Perf_Collect(measurement.Measurement):
 
     def stop(self):
         self.live = None
+        del self.experiment.agent_status[self.mode]
 
     def process_line(self, buf):
         line = buf.decode("ascii")

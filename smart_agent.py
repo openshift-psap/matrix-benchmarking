@@ -62,6 +62,7 @@ class AgentExperiment():
         self.quality = None
         self.new_quality_cb = None
         self.send_quality_cbs = []
+        self.agent_status = {}
 
     def create_table(self, fields, mode=None):
         table = AgentTable(fields, mode)
@@ -95,6 +96,9 @@ class AgentExperiment():
     def new_quality(self, ts, src, msg):
         if self.new_quality_cb:
             self.new_quality_cb(ts, src, msg)
+
+    def agents_connected(self):
+        return [k for k, v in self.agent_status.items() if v.live and v.live.alive]
 
 def prepare_cfg(key):
     cfg = {}
