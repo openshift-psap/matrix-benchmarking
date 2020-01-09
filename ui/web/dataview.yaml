@@ -175,12 +175,10 @@ Frame Processing:
   Guest processing duration:
     table: guest.guest
     x: guest.msg_ts | as_us_timestamp
-    y: guest.capture_duration
-    _y10: guest.capture_duration | per_sec_1 > capture per_second (over 1s)
-    y2: guest.encode_duration
-    _y20: guest.encode_duration | per_sec_20 > encode per_second (over 20s)
-    y3: guest.send_duration
-    _y30: guest.send_duration | per_sec_20 > send per_second (over 20s)
+    y: guest.sleep_duration
+    y2: guest.capture_duration
+    y3: guest.encode_duration
+    y4: guest.send_duration
 
   Client processing duration:
     table: client.client

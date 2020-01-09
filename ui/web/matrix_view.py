@@ -1028,9 +1028,10 @@ TableStats.Average("client_time_in_queue_avg", "Client time in queue (avg)",
                    "client.frames_time_to_drop", "frames_time_to_drop.in_queue_time", ".0f", "ms",
                    divisor=1000)
 
-for what in "capture", "encode", "send":
+for what in "sleep", "capture", "encode", "send":
+    invert = False
     TableStats.Average(f"guest_{what}_duration", f"Guest {what.capitalize()} Duration (avg)",
-                       "guest.guest", f"guest.{what}_duration", ".0f", "FPS", invert=True)
+                       "guest.guest", f"guest.{what}_duration", ".0f", "FPS" if invert else "s", invert=invert)
 
 
 TableStats.PerSecond("client_time_in_queue_persec", "Client time in queue (per second)", "client.frames_time_to_drop",

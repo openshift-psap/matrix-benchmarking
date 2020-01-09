@@ -32,12 +32,18 @@ class AgentTable():
         if self.table_name == "quality":
             self.rows = []
 
-    def add(self, *row):
+    def add(self, *row, **kw_row):
         if not AgentExperiment.new_table_row:
             if AgentExperiment.new_table_row is None:
                 print("Warning: nothing to do with the table rows ...")
                 AgentExperiment.new_table_row = False
             return
+
+        if kw_row:
+            row = list(row)
+            for table_field in self.fields[len(row):]:
+                fieldname = table_field.partition(".")[-1]
+                row.append(kw_row[fieldname])
 
         AgentExperiment.new_table_row(self, row)
 

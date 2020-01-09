@@ -280,7 +280,7 @@ def register_frame_stats(agent):
         framerate = process_framerate(framerate_state, entry.time)
 
         stats_table.add(entry.time, mm_time, frame_size, creation_time,
-                        decode_duration, queue, before, keyframe, *framerate)
+                        decode_duration, queue, before, keyframe, *framerate.values())
 
     def process_info(entry):
         frame_size, keyframe= map(int, fmt_info.match(entry.msg).groups())
@@ -338,7 +338,7 @@ def register_stream_channel_data(agent):
 
         framerate = process_framerate(framerate_state, entry.time)
 
-        table.add(entry.time, int(frame_size), int(mm_time), *framerate)
+        table.add(entry.time, int(frame_size), int(mm_time), *framerate.values())
 
     agent.processors["stream_channel_data"] = process
     agent.processors["stream_device_data"] = None # ignore, identical to above
@@ -377,14 +377,18 @@ def process_framerate(state, time):
     prev = state.prev
     ts = state.prev = time
 
+    def ret(framerate):
+        return dict(framerate_actual=framerate,
+                    framerate_requested=target_framerate)
+
     if target_framerate != state.target:
         state.prev = None
         state.pipe = deque()
         state.target = target_framerate
-        return None, target_framerate
+        return ret(None)
 
     if prev is None:
-        return None, target_framerate
+        return ret(None)
 
     delta = (ts - prev) / 1000000
     fps = 1 / delta
@@ -392,14 +396,14 @@ def process_framerate(state, time):
     state.pipe.append((ts, fps))
 
     if time_length(state.pipe) < PIPE_MIN_TIME_LENGTH:
-        return None, target_framerate
+        return ret(None)
 
     while time_length(state.pipe) >= PIPE_MAX_TIME_LENGTH:
         state.pipe.popleft()
 
     mean = statistics.mean((p[1] for p in state.pipe))
 
-    return mean, target_framerate
+    return ret(mean)
 
 def register_quality_setting(agent):
     def process(entry):
@@ -413,14 +417,11 @@ def register_quality_setting(agent):
     agent.processors["quality_setting"] = process
 
 def register_guest_frame(agent):
-    table_capture = agent.experiment.create_table([
-        'capture.msg_ts',
-    ])
-
     table = agent.experiment.create_table([
         'guest.msg_ts',
-        'guest.time',
         'guest.frame_size',
+        'guest.time',
+        'guest.sleep_duration',
         'guest.capture_duration',
         'guest.encode_duration',
         'guest.send_duration',
@@ -429,7 +430,7 @@ def register_guest_frame(agent):
 
     framerate_state = init_framerate_state()
 
-    state = collections.namedtuple('State', 'start captured sent frame_bytes encoded'
+    state = collections.namedtuple('State', 'start prev_time capture encode send frame_bytes'
                                    'width height codec')
     state.start = None
     frame_fmt = re.compile(r'Frame of (\d+) bytes')
@@ -438,39 +439,55 @@ def register_guest_frame(agent):
 
         verb = entry.msg.split()[0]
 
-        if verb == 'Capturing':
+        if entry.name == "frame" and verb == 'Capturing':
             state.start = time
-            state.captured = None
-            state.sent = None
+            state.prev_time = time
+
+            state.sleep = None
+            state.capture = None
+            state.encode = None
+            state.send = None
+
             state.frame_bytes = None
-            state.encoded = None
-            table_capture.add(time)
 
-        elif verb == 'Encoding':
-            state.captured = time
+            return
 
-        elif verb == 'Captured':
-            # old logs do not have encoding
-            if state.captured is None:
-                state.captured = time
-            state.encoded = time
+        if state.start is None: return # partial state, skip it
 
-        elif verb == 'Frame':
+        def dist():  return (time - state.prev_time) / 1000000
+
+        # if one event is missing (eg, gst_frame.Capturing or frame.Encoding),
+        # then its time is included in the next event.
+
+        if verb == 'Frame':
             state.frame_bytes = int(frame_fmt.match(entry.msg).group(1))
 
-        elif verb == 'Sent':
-            state.sent = time
+        elif entry.name == "gst_frame" and verb == 'Capturing':
+            state.sleep = dist()
 
-            if state.start is None: return # partial state, skip it
+        elif verb == 'Encoding':
+            state.capture = dist()
+
+        elif verb == 'Captured':
+            state.encode = dist()
+
+        elif verb == 'Sent':
+            state.send = dist()
 
             framerate = process_framerate(framerate_state, time)
 
-            table.add(time,
-                      state.start / 1000000, state.frame_bytes,
-                      (state.captured - state.start) / 1000000,
-                      (state.encoded - state.captured) / 1000000,
-                      (state.sent - state.encoded) / 1000000,
-                      *framerate)
+            table.add(
+                msg_ts = time,
+                frame_size = state.frame_bytes,
+                time = state.start / 1000000,
+                sleep_duration = state.sleep,
+                capture_duration = state.capture,
+                encode_duration = state.encode,
+                send_duration = state.send,
+                **framerate)
+
+            state.start = None
+        state.prev_time = time
 
     agent.processors["frame"] = process
-    agent.processors["frame_gst"] = process
+    agent.processors["gst_frame"] = process
