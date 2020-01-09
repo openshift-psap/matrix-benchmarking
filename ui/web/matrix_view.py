@@ -38,6 +38,14 @@ def COLORS(idx):
     return colors[idx % len(colors)]
 
 class Regression():
+    @staticmethod
+    def res_in_pix(res):
+        "px" # docstring
+
+        x, y = map(int, res.split("x"))
+
+        return x*y
+
     def __init__(self, id_name, key_var, name, x_key, y_key):
         self.name = "Reg: " + name
         self.id_name = id_name
@@ -64,6 +72,17 @@ class Regression():
         except ValueError:
             return { 'data': [], 'layout': dict(title="ERROR: Framerate parameter must be variable ...")}, [""]
 
+        def name_units(ax_key):
+            if ax_key.startswith("param:"):
+                _, var, *modifiers = ax_key.split(":")
+                unit = getattr(Regression, modifiers[-1]).__doc__
+                return var.title(), unit
+            else:
+                return ax_key, TableStats.stats_by_name[ax_key].unit
+
+        x_name, x_unit = name_units(self.x_key)
+        y_name, y_unit = name_units(self.y_key)
+
         for param_values in sorted(itertools.product(*param_lists)):
             params.update(dict(param_values))
 
@@ -74,9 +93,18 @@ class Regression():
                 print(f"{key} missing")
                 continue # missing experiment
 
+            def value(ax_key):
+                if ax_key.startswith("param:"):
+                    _, var, *modifiers = ax_key.split(":")
+                    val = params[var]
+                    for mod in modifiers:
+                        val = getattr(Regression, mod)(val)
+                    return val
+                else:
+                    return entry.stats[ax_key].value
             try:
-                _x = entry.stats[self.x_key].value
-                _y = entry.stats[self.y_key].value
+                _x = value(self.x_key)
+                _y = value(self.y_key)
             except KeyError:
                 print(f"{self.x_key} or {self.y_key} missing values for ", key)
                 continue
@@ -99,8 +127,8 @@ class Regression():
                                      legendgroup=legend_key,
                                      marker=dict(symbol="cross", size=15, color=COLORS(i))))
 
-        x_title = self.x_key + f" ({TableStats.stats_by_name[self.x_key].unit})"
-        y_title = self.y_key + f" ({TableStats.stats_by_name[self.y_key].unit})"
+        x_title = f"{x_name} ({x_unit})"
+        y_title = f"{y_name} ({y_unit})"
 
         fig.update_layout(yaxis=dict(zeroline=True, showgrid=False, rangemode='tozero',
                                      title=y_title),
@@ -128,7 +156,7 @@ class Regression():
             x_range = [min(x_range[0], min(all_x)), max(x_range[1], max(all_x))]
 
             # need to change here: if slope/intercept too low, they appear as 0.00 !
-            formulae.append(f"{self.y_key} = {slope:+.2f} * {self.x_key} {intercept:+.2f} " +
+            formulae.append(f"{y_name} = {slope:+.2f} * {x_name} {intercept:+.2f} " +
                             f"| r={r_value:+.3f}, p={p_value:+.3f}, stdev={std_err:+.3f} | {reg_key}")
 
         text_x_pos = x_range[0] + (x_range[1]-x_range[0])/2
@@ -138,7 +166,7 @@ class Regression():
             meta=dict(name=self.name, value=formulae),
         )
 
-        fig.update_layout(title=f"{self.y_key} vs {self.x_key} | {' x '.join(other_vars)}")
+        fig.update_layout(title=f"{y_name} vs {x_name} | {' x '.join(other_vars)}")
 
         return fig, [html.P(f) for f in formulae]
 
@@ -156,26 +184,29 @@ class Report():
         return f"nothing configured to generate the report for {self.name} ..."
 
     @classmethod
-    def ClientFPS_Decode(clazz, *args, **kwargs):
-        obj = clazz("report_client_fps_decode", "Report: Client FPS vs Decoding", *args, **kwargs)
+    def Decode(clazz, key_var, *args, **kwargs):
+        obj = clazz(f"report_{key_var}_decode", f"Report: Decoding vs {key_var.title()}",
+                    *args, **kwargs)
 
-        obj.do_report = lambda *_args: obj.report_fps_decode(*_args)
-
-        return obj
-
-    @classmethod
-    def FPS_CPU(clazz, *args, **kwargs):
-        obj = clazz("report_fps_cpu", "Report: Guest/Client FPS vs CPU", *args, **kwargs)
-
-        obj.do_report = lambda *_args: obj.report_fps_cpu(*_args)
+        obj.do_report = lambda *_args: obj.report_decode(key_var, *_args)
 
         return obj
 
     @classmethod
-    def FPS_GPU(clazz, *args, **kwargs):
-        obj = clazz("report_fps_gpu", "Report: Guest/Client FPS vs GPU", *args, **kwargs)
+    def CPU(clazz, key_var, *args, **kwargs):
+        obj = clazz(f"report_{key_var}_cpu", f"Report: Guest/Client CPU vs {key_var.title()}",
+                    *args, **kwargs)
 
-        obj.do_report = lambda *_args: obj.report_fps_gpu(*_args)
+        obj.do_report = lambda *_args: obj.report_cpu(key_var, *_args)
+
+        return obj
+
+    @classmethod
+    def GPU(clazz, key_var, *args, **kwargs):
+        obj = clazz(f"report_{key_var}_gpu", f"Report: Guest/Client GPU vs {key_var.title()}",
+                    *args, **kwargs)
+
+        obj.do_report = lambda *_args: obj.report_gpu(key_var, *_args)
 
         return obj
 
@@ -216,11 +247,11 @@ class Report():
 
         return {}, header + report
 
-    def report_fps_decode(self, *args):
+    def report_decode(self, key_var, *args):
         ordered_vars, params, param_lists, variables, cfg = args
 
-        if 'framerate' not in ordered_vars:
-            return [[], "ERROR: Framerate must not be set for this report."]
+        if key_var not in ordered_vars:
+            return [[], f"ERROR: {key_var} must not be set for this report."]
 
         def do_plot(stat_name, what, value):
             _args = Report.prepare_args(args, what, value)
@@ -229,17 +260,17 @@ class Report():
             return [dcc.Graph(figure=reg_stats[0])] + reg_stats[1] + [html.Hr()]
 
         what = ordered_vars[0]
-        if what == "framerate": what = None
+        if what == key_var: what = None
         by_what = f" (by {what})" if what else ""
         # --- Decode time --- #
 
         report = [html.H2(f"Decode Time" + by_what)]
 
-        for value in variables.get(what, [params[what]]) if what else "":
+        for value in variables.get(what, [params[what]]) if what else [""]:
             if what:
                 report += [html.P(html.B(f"{what}={value}"))]
 
-            report += do_plot("Reg: FPS vs Client Decode Time", what, value)
+            report += do_plot(f"Reg: Client Decode Time vs {key_var.title()}", what, value)
 
         # --- Decode Time in Queue --- #
 
@@ -249,7 +280,7 @@ class Report():
             if what:
                 report += [html.P(html.B(f"{what}={value}"))]
 
-            report += do_plot("Reg: FPS vs Time in Client Queue", what, value)
+            report += do_plot(f"Reg: Time in Client Queue vs {key_var.title()}", what, value)
 
         # --- Client Queue --- #
 
@@ -273,15 +304,15 @@ class Report():
         for value in variables.get(what, [params[what]]) if what else [""]:
             if what:
                 report += [html.P(html.B(f"{what}={value}"))]
-            report += do_plot("Reg: FPS vs Frame Bandwidth", what, value)
+            report += do_plot(f"Reg: Frame Bandwidth vs {key_var.title()}", what, value)
 
         return report
 
-    def report_fps_gpu(self, *args):
+    def report_gpu(self, key_var, *args):
         ordered_vars, params, param_lists, variables, cfg = args
 
-        if 'framerate' not in ordered_vars:
-            return [], "ERROR: Framerate must not be set for this report."
+        if key_var not in ordered_vars:
+            return [], f"ERROR: {key_var} must not be set for this report."
 
         def do_plot(stat_name, what, value):
             _args = Report.prepare_args(args, what, value)
@@ -290,7 +321,7 @@ class Report():
             return [dcc.Graph(figure=reg_stats[0])] + reg_stats[1] + [html.Hr()]
 
         what = ordered_vars[0]
-        if what == "framerate": what = None
+        if what == key_var: what = None
 
         # --- GPU --- #
         report = []
@@ -302,15 +333,15 @@ class Report():
                     report += [html.P(html.B(f"{what}={value}", what))]
 
                 for gpu in "Render", "Video":
-                    report += do_plot(f"Reg: FPS vs {src.capitalize()} GPU {gpu}", what, value)
+                    report += do_plot(f"Reg: {src.capitalize()} GPU {gpu} vs {key_var.title()}", what, value)
 
         return report
 
-    def report_fps_cpu(self, *args):
+    def report_cpu(self, key_var, *args):
         ordered_vars, params, param_lists, variables, cfg = args
 
-        if 'framerate' not in ordered_vars:
-            return [], "ERROR: Framerate must not be set for this report."
+        if key_var not in ordered_vars:
+            return [], f"ERROR: {key_var} must not be set for this report."
 
         def do_plot(stat_name, what, value):
             _args = Report.prepare_args(args, what, value)
@@ -319,7 +350,7 @@ class Report():
             return [dcc.Graph(figure=reg_stats[0])] + reg_stats[1] + [html.Hr()]
 
         what = ordered_vars[0]
-        if what == "framerate": what = None
+        if what == key_var: what = None
 
         # --- CPU --- #
         report = []
@@ -331,7 +362,7 @@ class Report():
                 if what:
                     report += [html.P(html.B(f"{what}={value}"))]
 
-                report += do_plot(f"Reg: FPS vs {src.capitalize()} CPU", what, value)
+                report += do_plot(f"Reg: {src.capitalize()} CPU vs {key_var.title()}", what, value)
 
         return report
 
@@ -664,7 +695,7 @@ class TableStats():
         if self.kwargs.get("invert"):
             return 1/ (statistics.mean(values) / self.divisor), 0, 0
 
-        return statistics.mean(values) / self.divisor, statistics.stdev(values) / self.divisor
+        return statistics.mean(values) / self.divisor, (statistics.stdev(values) / self.divisor)
 
     def process_start_stop_diff(self, table_def, rows):
         if not rows: return 0
@@ -988,24 +1019,27 @@ class TableStats():
 
         return { 'data': data, 'layout': layout}, [""]
 
-Report.FPS_CPU()
-Report.FPS_GPU()
-Report.ClientFPS_Decode()
+for what in "framerate", "resolution":
+    Report.CPU(what)
+    Report.GPU(what)
+    Report.Decode(what)
 
 for who in "client", "guest":
     Who = who.capitalize()
-    Regression(f"fps_vs_{who}_cpu", "framerate", f"FPS vs {Who} CPU", f"{Who} Framerate", f"{Who} CPU")
-    Regression(f"fps_vs_{who}_gpu_video", "framerate", f"FPS vs {Who} GPU Video", f"{Who} Framerate", f"{Who} GPU Video")
-    Regression(f"fps_vs_{who}_gpu_render", "framerate", f"FPS vs {Who} GPU Render", f"{Who} Framerate", f"{Who} GPU Render")
+    for what_param, what_x in ("framerate", f"{Who} Framerate"), ("resolution", "param:resolution:res_in_pix"):
+        for y_name in "CPU", "GPU Video", "GPU Render":
+            y_id = y_name.lower().replace(" ", "_")
+            Regression(f"{what_param}_vs_{who}_{y_id}", what_param, f"{Who} {y_name} vs {what_param.title()}", what_x, f"{Who} {y_name}")
 
-Regression(f"fps_vs_decode_time", "framerate", f"FPS vs Client Decode Time",
-           f"Client Framerate", f"Client Decode time/s")
+for what_param, what_x in ("framerate", f"Client Framerate"), ("resolution", "param:resolution:res_in_pix"):
+    Regression(f"{what_param}_vs_decode_time", what_param, f"Client Decode Time vs {what_param.title()}",
+               what_x, f"Client Decode time/s")
 
-Regression(f"fps_vs_time_in_queue", "framerate", f"FPS vs Time in Client Queue",
-           f"Client Framerate", f"Client time in queue (per second)")
+    Regression(f"{what_param}_vs_time_in_queue", what_param, f"Time in Client Queue vs {what_param.title()}",
+               what_x, f"Client time in queue (per second)")
 
-Regression(f"fps_vs_bandwidth", "framerate", f"FPS vs Frame Bandwidth",
-           f"Client Framerate", f"Frame Bandwidth")
+    Regression(f"{what_param}_vs_bandwidth", what_param, f"Frame Bandwidth vs {what_param.title()}",
+               what_x, f"Frame Bandwidth")
 
 HeatmapPlot("Frame Size/Decoding", 'client.client', "Frame Size vs Decode duration",
             ("client.frame_size", "Frame size (in KB)", 0.001),
@@ -1169,8 +1203,13 @@ def parse_data(filename, reloading=False):
         for table_stat in TableStats.all_stats:
             Matrix.properties["stats"].add(table_stat.name)
 
+    import re
+    def atoi(text): return int(text) if text.isdigit() else text
+    def natural_keys(text): return [atoi(c) for c in re.split(r'(\d+)', str(text))]
+
     for key, values in Matrix.properties.items():
-        print(f"{key:20s}: {', '.join(map(str, values))}")
+        Matrix.properties[key] = sorted(values, key=natural_keys)
+        print(f"{key:20s}: {', '.join(map(str, Matrix.properties[key]))}")
 
 def get_permalink(args, full=False):
     params = dict(zip(Matrix.properties.keys(), args[:len(Matrix.properties)]))
@@ -1576,6 +1615,9 @@ def build_callbacks(app):
                 params = dict(zip(Matrix.properties.keys(), args[:len(Matrix.properties)]))
 
                 stats_values = params["stats"]
+                if not stats_values:
+                    return {}, ""
+
                 if not isinstance(stats_values, list):
                     # only 1 elt in stats_values dropdown, a str is returned instead of a list.
                     # That makes the following silly ...
