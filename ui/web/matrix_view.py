@@ -37,7 +37,119 @@ def COLORS(idx):
     ]
     return colors[idx % len(colors)]
 
+class EncodingStacked():
+    def __init__(self):
+        self.name = "Stack: Encoding"
+        self.id_name = "stack_encoding"
+
+        TableStats._register_stat(self)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing ..."
+
+    def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
+        fig = go.Figure()
+        layout = go.Layout(meta=dict(name=self.name))
+
+        second_vars = ordered_vars[:]
+        second_vars.reverse()
+
+        layout.title = f"{self.name} vs " + " x ".join(ordered_vars[:-1]) + " | " + ordered_vars[-1]
+        layout.plot_bgcolor='rgb(245,245,240)'
+        subplots = {}
+        if second_vars:
+            subplots_var = second_vars[-1]
+            subplots_len = len(variables[subplots_var])
+
+            showticks = len(second_vars) == 2
+            for i, subplots_key in enumerate(sorted(variables[subplots_var])):
+                subplots[subplots_key] = f"x{i+1}"
+                ax = f"xaxis{i+1}"
+                layout[ax] = dict(title=f"{subplots_var}={subplots_key}",
+                                  domain=[i/subplots_len, (i+1)/subplots_len],
+                                  type='category', showticklabels=showticks, tickangle=45)
+        else:
+            subplots_var = None
+            subplots[subplots_var] = "x1"
+            layout["xaxis1"] = dict(type='category', showticklabels=False)
+
+        x = defaultdict(list); y = defaultdict(list);
+        fps_target = defaultdict(dict);
+        fps_actual = defaultdict(dict);
+
+        legend_keys = set()
+        legend_names = set()
+        legends_visible = []
+
+        for param_values in sorted(itertools.product(*param_lists)):
+            params.update(dict(param_values))
+
+            key = "_".join([f"{k}={params[k]}" for k in key_order])
+
+            try: entry = Matrix.entry_map[key]
+            except KeyError: continue # missing experiment
+
+            x_key = " ".join([f'{v}={params[v]}' for v in reversed(second_vars)])
+
+            subplots_key = params[subplots_var] if subplots_var else None
+            ax = subplots[subplots_key]
+
+            fps_target[ax][x_key] = 1/params['framerate']
+            fps_actual[ax][x_key] = 1/entry.stats["Guest Framerate"].value
+
+            for what in "sleep", "capture", "encode", "send":
+                What = what.title()
+                name = f"Guest {What} Duration (avg)"
+                if name not in entry.stats:
+                    print(f"Stats not found: {name} for entry '{key}' ")
+                    continue
+
+                legend_name = f"{What} time"
+                legend_key = (legend_name, ax)
+
+                legend_keys.add(legend_key)
+                legend_names.add(legend_name)
+                x[legend_key].append(x_key)
+                y[legend_key].append(entry.stats[name].value)
+
+        for legend_key in sorted(legend_keys):
+            legend_name, ax = legend_key
+
+            color = COLORS(list(legend_names).index(legend_name))
+            plot_args = dict()
+
+            plot_args['type'] = 'bar'
+            plot_args['marker'] = dict(color=color)
+
+            showlegend = legend_name not in legends_visible
+            if showlegend: legends_visible.append(legend_name)
+
+            fig.add_trace(dict(**plot_args, x=x[legend_key], y=y[legend_key],
+                             legendgroup=legend_name, name=legend_name, xaxis=ax,
+                             showlegend=showlegend, hoverlabel= {'namelength' :-1}))
+
+        for legend_name, fps_values_dict, mode in (('Target FPS', fps_target, dict(mode='lines+markers', line=dict(color='black'), marker=dict(symbol="cross", size=10, color="black"))),
+                                                   ('Actual FPS', fps_actual, dict(mode='markers', marker=dict(symbol="x", size=10, color="purple")))):
+
+            for ax, val_dict in fps_values_dict.items():
+                showlegend = legend_name not in legends_visible
+                if showlegend: legends_visible.append(legend_name)
+
+                fig.add_trace(go.Scatter(x=list(val_dict.keys()), y=list(val_dict.values()), xaxis=ax,
+                                         **mode,
+                                         name=legend_name, legendgroup=legend_name, showlegend=showlegend, ))
+
+        layout.barmode = 'stack'
+        fig.update_layout(yaxis=dict(title="Time (in s)"))
+        fig.update_layout(layout)
+        return fig, []
+
 class Regression():
+    @staticmethod
+    def FPS(val):
+        "FPS"
+        return val
+
     @staticmethod
     def res_in_pix(res):
         "px" # docstring
@@ -75,7 +187,11 @@ class Regression():
         def name_units(ax_key):
             if ax_key.startswith("param:"):
                 _, var, *modifiers = ax_key.split(":")
-                unit = getattr(Regression, modifiers[-1]).__doc__
+                if not modifiers:
+                    unit = 'n/a'
+                else:
+                    unit = getattr(Regression, modifiers[-1]).__doc__
+
                 return var.title(), unit
             else:
                 return ax_key, TableStats.stats_by_name[ax_key].unit
@@ -148,7 +264,7 @@ class Regression():
             slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(all_x, all_y)
 
             line = slope*np.array(all_x)+intercept
-            fig.add_trace(go.Scatter(x=all_x, y=line, mode='lines', text="toto", hovertext="text",
+            fig.add_trace(go.Scatter(x=all_x, y=line, mode='lines', hovertext="text",
                                      legendgroup=reg_key,
                                      name=reg_key, line=dict(color=COLORS(i))))
 
@@ -1024,6 +1140,8 @@ for what in "framerate", "resolution":
     Report.GPU(what)
     Report.Decode(what)
 
+EncodingStacked()
+
 for who in "client", "guest":
     Who = who.capitalize()
     for what_param, what_x in ("framerate", f"{Who} Framerate"), ("resolution", "param:resolution:res_in_pix"):
@@ -1038,8 +1156,9 @@ for what_param, what_x in ("framerate", f"Client Framerate"), ("resolution", "pa
     Regression(f"{what_param}_vs_time_in_queue", what_param, f"Time in Client Queue vs {what_param.title()}",
                what_x, f"Client time in queue (per second)")
 
+    if what_x == "Client Framerate": what_x = "param:framerate:FPS"
     Regression(f"{what_param}_vs_bandwidth", what_param, f"Frame Bandwidth vs {what_param.title()}",
-               what_x, f"Frame Bandwidth")
+               what_x, f"Frame Size (avg)")
 
 HeatmapPlot("Frame Size/Decoding", 'client.client', "Frame Size vs Decode duration",
             ("client.frame_size", "Frame size (in KB)", 0.001),
@@ -1052,8 +1171,11 @@ TableStats.LowFramesSize("lowframe_size", "Frame Size: lowframes", "server.host"
 TableStats.KeyLowFramesSize("keylowframe_size", "Frame Size: keys+lows", "server.host",
                       ("host.msg_ts", "host.frame_size"), ".0f", "KB", divisor=1000)
 
-TableStats.PerSecond("frame_size", "Frame Bandwidth", "server.host",
+TableStats.PerSecond("frame_size_per_sec", "Frame Bandwidth (per sec)", "server.host",
                       ("host.msg_ts", "host.frame_size"), ".2f", "MB/s", min_rows=10, divisor=1000*1000)
+
+TableStats.Average("frame_size", "Frame Size (avg)", "server.host",
+                   "host.frame_size", ".2f", "KB", min_rows=10, divisor=1000)
 
 TableStats.KeyFramePeriod("keyframe_period", "Keyframe Period", "server.host",
                           "host.frame_size", ".0f", "frames")
