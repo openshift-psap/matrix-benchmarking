@@ -1,7 +1,0 @@
-#! /usr/bin/env python3
-
-from ui import main_window
-import sys
-
-if __name__ == "__main__":
-   exit(main_window.main(sys.argv))
