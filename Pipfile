@@ -6,14 +6,11 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-argparse = "*"
+dash = "*"
 pyyaml = "*"
-vext = {gi = "*"}
-colorama = "*"
-pipenv = "*"
-matplotlib = "*"
-psycopg2 = "*"
+dill = "*"
+numpy = "*"
 scipy = "*"
 
 [requires]
-python_version = "3"
+python_version = "3.7"
