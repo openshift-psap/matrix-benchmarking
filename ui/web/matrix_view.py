@@ -376,7 +376,7 @@ class Report():
         ordered_vars, params, param_lists, variables, cfg = args
 
         if key_var not in ordered_vars:
-            return [[], f"ERROR: {key_var} must not be set for this report."]
+            return [f"ERROR: {key_var} must not be set for this report."]
 
         def do_plot(stat_name, what, value):
             _args = Report.prepare_args(args, what, value)
@@ -437,7 +437,7 @@ class Report():
         ordered_vars, params, param_lists, variables, cfg = args
 
         if key_var not in ordered_vars:
-            return [], f"ERROR: {key_var} must not be set for this report."
+            return [ f"ERROR: {key_var} must not be set for this report."]
 
         def do_plot(stat_name, what, value):
             _args = Report.prepare_args(args, what, value)
@@ -466,7 +466,7 @@ class Report():
         ordered_vars, params, param_lists, variables, cfg = args
 
         if key_var not in ordered_vars:
-            return [], f"ERROR: {key_var} must not be set for this report."
+            return [f"ERROR: {key_var} must not be set for this report."]
 
         def do_plot(stat_name, what, value):
             _args = Report.prepare_args(args, what, value)
