@@ -1346,10 +1346,6 @@ def parse_data(filename, reloading=False):
         for table_stat in TableStats.all_stats:
             Matrix.properties["stats"].add(table_stat.name)
 
-    for key, values in Matrix.properties.items():
-        Matrix.properties[key] = sorted(values, key=natural_keys)
-        print(f"{key:20s}: {', '.join(map(str, Matrix.properties[key]))}")
-
 def get_permalink(args, full=False):
     params = dict(zip(Matrix.properties.keys(), args[:len(Matrix.properties)]))
 
@@ -1364,6 +1360,11 @@ def get_permalink(args, full=False):
     return search
 
 def build_layout(search, serializing=False):
+    for key, values in Matrix.properties.items():
+        print("sort", key)
+        Matrix.properties[key] = sorted(values, key=natural_keys)
+        print(f"{key:20s}: {', '.join(map(str, Matrix.properties[key]))}")
+
     defaults = urllib.parse.parse_qs(search[1:]) if search else {}
 
     matrix_controls = [html.B("Parameters:", id="lbl_params"), html.Br()]
