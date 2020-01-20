@@ -8,7 +8,7 @@ from . import mpstat
 class Intel_GPU_Top(mpstat.SysStat):
     def __init__(self, cfg, experiment):
         self.cmd = 'sudo intel_gpu_top -J -s 1000'
-        self.check_cmd = 'sudo intel_gpu_top -h'
+        self.check_cmd = 'intel_gpu_top -h'
 
         mpstat.SysStat.__init__(self, cfg, experiment)
 
@@ -31,6 +31,8 @@ class Intel_GPU_Top(mpstat.SysStat):
                        *entries)
 
     def stop(self):
+        if not self.live: return
+
         if self.process.poll() is None:
             subprocess.check_call("sudo killall intel_gpu_top".split())
 

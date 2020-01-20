@@ -176,7 +176,8 @@ def checkup_mods(measurements, deads, loop):
 
             try:
                 mod.start()
-                mod.live.connect(loop, mod.process_line)
+                if mod.live:
+                    mod.live.connect(loop, mod.process_line)
             except Exception as e:
                 print("###", e.__class__.__name__+":", e)
                 if VERBOSE:
