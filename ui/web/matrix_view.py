@@ -746,8 +746,14 @@ class TableStats():
             @property
             def value(myself):
                 if myself._value is not None: return myself._value
+                try:
+                    v = self.do_process(table_def, rows)
+                except Exception as e:
+                    print(f"ERROR: Failed to process with {self.do_process}:")
+                    print(table_def)
+                    print(e)
 
-                v = self.do_process(table_def, rows)
+                    return 0
                 try:
                     myself._value, *myself._stdev = v
                 except TypeError: # cannot unpack non-iterable ... object
