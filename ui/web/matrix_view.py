@@ -805,7 +805,8 @@ class TableStats():
 
     def process_average(self, table_def, rows):
         row_id = table_def.partition("|")[2].split(";").index(self.field)
-        values = [row[row_id] for row in rows]
+        values = [row[row_id] for row in rows if row[row_id]]
+
 
         if not values: return None, None, None
         if self.kwargs.get("invert"):
