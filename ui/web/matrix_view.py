@@ -18,6 +18,10 @@ import statistics
 
 import measurement.perf_viewer
 
+import re
+def atoi(text): return int(text) if text.isdigit() else text
+def natural_keys(text): return [atoi(c) for c in re.split(r'(\d+)', str(text))]
+
 NB_GRAPHS = 3
 GRAPH_IDS = [f"graph-{i}" for i in range(NB_GRAPHS)]
 TEXT_IDS = [f"graph-{i}-txt" for i in range(NB_GRAPHS)]
@@ -60,9 +64,10 @@ class EncodingStacked():
         if second_vars:
             subplots_var = second_vars[-1]
             subplots_len = len(variables[subplots_var])
+            variables[subplots_var].sort(key=natural_keys)
 
             showticks = len(second_vars) == 2
-            for i, subplots_key in enumerate(sorted(variables[subplots_var])):
+            for i, subplots_key in enumerate(variables[subplots_var]):
                 subplots[subplots_key] = f"x{i+1}"
                 ax = f"xaxis{i+1}"
                 layout[ax] = dict(title=f"{subplots_var}={subplots_key}",
@@ -112,7 +117,11 @@ class EncodingStacked():
                 x[legend_key].append(x_key)
                 y[legend_key].append(entry.stats[name].value)
 
-        for legend_key in sorted(legend_keys):
+
+        legend_keys = sorted(list(legend_keys), key=natural_keys)
+        legend_names = sorted(list(legend_names), key=natural_keys)
+
+        for legend_key in legend_keys:
             legend_name, ax = legend_key
 
             color = COLORS(list(legend_names).index(legend_name))
@@ -950,9 +959,10 @@ class TableStats():
         if second_vars:
             subplots_var = second_vars[-1]
             subplots_len = len(variables[subplots_var])
+            variables[subplots_var].sort(key=natural_keys)
 
             showticks = len(second_vars) == 2
-            for i, subplots_key in enumerate(sorted(variables[subplots_var])):
+            for i, subplots_key in enumerate(variables[subplots_var]):
                 subplots[subplots_key] = f"x{i+1}"
                 ax = f"xaxis{i+1}"
                 layout[ax] = dict(title=f"{subplots_var}={subplots_key}",
@@ -1078,7 +1088,10 @@ class TableStats():
             return max([yval for yval in [y_max]+y_err_data if yval is not None])
 
         y_max = 0
-        for legend_key in sorted(legend_keys):
+        legend_keys = sorted(list(legend_keys), key=natural_keys)
+        legend_names = sorted(list(legend_names), key=natural_keys)
+
+        for legend_key in legend_keys:
             legend_name, subplots_key = legend_key
             ax = subplots[subplots_key]
             has_err = any(y_err[legend_key])
@@ -1326,10 +1339,6 @@ def parse_data(filename, reloading=False):
         for table_stat in TableStats.all_stats:
             Matrix.properties["stats"].add(table_stat.name)
 
-    import re
-    def atoi(text): return int(text) if text.isdigit() else text
-    def natural_keys(text): return [atoi(c) for c in re.split(r'(\d+)', str(text))]
-
     for key, values in Matrix.properties.items():
         Matrix.properties[key] = sorted(values, key=natural_keys)
         print(f"{key:20s}: {', '.join(map(str, Matrix.properties[key]))}")
@@ -1353,7 +1362,7 @@ def build_layout(search, serializing=False):
     matrix_controls = [html.B("Parameters:", id="lbl_params"), html.Br()]
     serial_params = []
     for key, values in Matrix.properties.items():
-        options = [{'label': i, 'value': i} for i in sorted(values)]
+        options = [{'label': i, 'value': i} for i in sorted(values, key=natural_keys)]
 
         attr = {}
         if key == "stats":
