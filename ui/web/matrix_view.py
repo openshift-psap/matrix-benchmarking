@@ -1264,6 +1264,7 @@ def parse_data(filename, reloading=False):
     directory = filename.rpartition(os.sep)[0]
     from . import script_types
     expe = filename[len(script_types.RESULTS_PATH)+1:].partition("/")[0]
+    expe_name = expe.replace("_", "-")
 
     for _line in open(filename).readlines():
         line = _line[:-1].partition("#")[0].strip()
@@ -1276,7 +1277,7 @@ def parse_data(filename, reloading=False):
 
         script_key, file_path, file_key = line.split(" | ")
 
-        entry.key = "_".join([f"experiment={expe}", script_key, file_key])
+        entry.key = "_".join([f"experiment={expe_name}", script_key, file_key])
 
         entry.params.__dict__.update(dict([kv.split("=") for kv in entry.key.split("_")]))
 
