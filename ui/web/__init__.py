@@ -180,7 +180,7 @@ def construct_dispatcher():
             from . import script_types
             path = script_types.RESULTS_PATH
             children = [html.P(html.A(str(filename)[len(path)+1:],
-                                      href="/viewer/"+(str(filename)[len(path)+1:]),
+                                      href="/viewer/results/"+(str(filename)[len(path)+1:]),
                                       target="_blank")) \
                         for filename in Path(path).rglob('*.rec') ]
             return html.Div([html.H3("Saved records")] + children)
