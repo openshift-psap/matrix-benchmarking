@@ -1619,19 +1619,16 @@ def build_callbacks(app):
         [State(graph_id, 'figure') for graph_id in GRAPH_IDS]
        +[State('list-params-'+key, "value") for key in Matrix.properties])
     def display_hover_data(*args):
-        nb_stats = len(TableStats.all_stats)
-        hoverData = args[:nb_stats]
+        hoverData = args[:NB_GRAPHS]
 
         try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
         except IndexError: return # nothing triggered the script (on multiapp load)
 
-        stat_id_name = triggered_id.rpartition(".")[0] # eg: client_framerate_agent.clickData
-
-        pos = [s.id_name for s in TableStats.all_stats].index(stat_id_name)
+        pos = int(triggered_id.rpartition(".")[0].split("-")[1])
         data = hoverData[pos]
 
-        figure = args[nb_stats:2*nb_stats][pos]
-        variables = dict(zip(Matrix.properties.keys(), args[2*nb_stats:]))
+        figure = args[NB_GRAPHS:2*NB_GRAPHS][pos]
+        variables = dict(zip(Matrix.properties.keys(), args[2*NB_GRAPHS:]))
 
         if not figure:
             return "Error, figure not found ..."
