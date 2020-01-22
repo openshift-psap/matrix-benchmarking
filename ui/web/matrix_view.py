@@ -68,10 +68,10 @@ class EncodingStacked():
         if second_vars:
             subplots_var = second_vars[-1]
             subplots_len = len(variables[subplots_var])
-            variables[subplots_var].sort(key=natural_keys)
+            subplots_var_values = sorted(variables[subplots_var], key=natural_keys)
 
             showticks = len(second_vars) == 2
-            for i, subplots_key in enumerate(variables[subplots_var]):
+            for i, subplots_key in enumerate(subplots_var_values):
                 subplots[subplots_key] = f"x{i+1}"
                 ax = f"xaxis{i+1}"
                 layout[ax] = dict(title=f"{subplots_var}={subplots_key}",
@@ -98,7 +98,7 @@ class EncodingStacked():
             try: entry = Matrix.entry_map[key]
             except KeyError: continue # missing experiment
 
-            x_key = " ".join([f'{v}={params[v]}' for v in reversed(second_vars)])
+            x_key = " ".join([f'{v}={params[v]}' for v in reversed(second_vars) if v != subplots_var])
 
             subplots_key = params[subplots_var] if subplots_var else None
             ax = subplots[subplots_key]
@@ -141,8 +141,8 @@ class EncodingStacked():
                              legendgroup=legend_name, name=legend_name, xaxis=ax,
                              showlegend=showlegend, hoverlabel= {'namelength' :-1}))
 
-        for legend_name, fps_values_dict, mode in (('Target FPS', fps_target, dict(mode='lines+markers', line=dict(color='black'), marker=dict(symbol="cross", size=10, color="black"))),
-                                                   ('Actual FPS', fps_actual, dict(mode='markers', marker=dict(symbol="x", size=10, color="purple")))):
+        for legend_name, fps_values_dict, mode in (('Actual FPS', fps_actual, dict(mode='lines+markers', marker=dict(symbol="x", size=10, color="purple"))),
+                                                   ('Target FPS', fps_target, dict(mode='markers', line=dict(color='black'), marker=dict(symbol="cross", size=10, color="black"))),):
 
             for ax, val_dict in fps_values_dict.items():
                 showlegend = legend_name not in legends_visible
