@@ -271,8 +271,11 @@ def register_frame_stats(agent):
     framerate_state = init_framerate_state()
 
     def process_stats(entry):
+        match = fmt_stats.match(entry.msg)
+        if match is None: return
+
         mm_time, frame_size, creation_time, decode_duration, queue, before, keyframe = \
-            map(int, fmt_stats.match(entry.msg).groups())
+            map(int, match.groups())
 
         creation_time /= 1000000
         decode_duration /= 1000000
