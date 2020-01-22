@@ -3,6 +3,10 @@ import os
 import types
 import itertools, functools, operator
 
+import scipy
+import scipy.stats
+import numpy as np
+
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -258,10 +262,6 @@ class Regression():
         fig.update_layout(yaxis=dict(zeroline=True, showgrid=False, rangemode='tozero',
                                      title=y_title),
                           xaxis=dict(title=x_title))
-
-        import scipy
-        import scipy.stats
-        import numpy as np
 
         x_range = None
         formulae = []
