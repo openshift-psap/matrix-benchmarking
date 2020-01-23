@@ -26,6 +26,15 @@ import re
 def atoi(text): return int(text) if text.isdigit() else text
 def natural_keys(text): return [atoi(c) for c in re.split(r'(\d+)', str(text))]
 
+PROPERTY_RENAME = {
+    "gop-size": "keyframe-period",
+    "rc-mode": "rate-control"
+}
+
+VALUE_TRANSLATE = {
+    "gop-size": {"-1": "600000"},
+}
+
 NB_GRAPHS = 3
 GRAPH_IDS = [f"graph-{i}" for i in range(NB_GRAPHS)]
 TEXT_IDS = [f"graph-{i}-txt" for i in range(NB_GRAPHS)]
@@ -1276,14 +1285,20 @@ def parse_data(filename, reloading=False):
         # codec=gst.vp8.vaapivp8enc_record-time=30s_resolution=1920x1080_webpage=cubemap | 1920x1080/cubemap | bitrate=1000_rate-control=cbr_keyframe-period=25_framerate=35.rec
 
         script_key, file_path, file_key = line.split(" | ")
+        entry_key = "_".join([f"experiment={expe_name}", script_key, file_key])
 
-        entry.key = "_".join([f"experiment={expe_name}", script_key, file_key])
+        for kv in entry_key.split("_"):
+            k, v = kv.split("=")
 
-        entry.params.__dict__.update(dict([kv.split("=") for kv in entry.key.split("_")]))
+            v = VALUE_TRANSLATE.get(k, {}).get(v, v)
+            k = PROPERTY_RENAME.get(k, k)
+            entry.params.__dict__[k] = v
 
         global key_order
         if key_order is None:
             key_order = tuple(entry.params.__dict__)
+
+        entry.key = "_".join([f"{k}={entry.params.__dict__.get(k)}" for k in key_order])
 
         entry.filename = os.sep.join([directory, file_path, file_key+".rec"])
         entry.linkname = os.sep.join(["results", expe, file_path, file_key+".rec"])
