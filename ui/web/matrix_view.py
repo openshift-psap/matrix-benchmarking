@@ -974,10 +974,9 @@ class TableStats():
         if second_vars:
             subplots_var = second_vars[-1]
             subplots_len = len(variables[subplots_var])
-            variables[subplots_var].sort(key=natural_keys)
 
             showticks = len(second_vars) == 2
-            for i, subplots_key in enumerate(variables[subplots_var]):
+            for i, subplots_key in enumerate(sorted(variables[subplots_var], key=natural_keys)):
                 subplots[subplots_key] = f"x{i+1}"
                 ax = f"xaxis{i+1}"
                 layout[ax] = dict(title=f"{subplots_var}={subplots_key}",
@@ -1376,7 +1375,6 @@ def get_permalink(args, full=False):
 
 def build_layout(search, serializing=False):
     for key, values in Matrix.properties.items():
-        print("sort", key)
         Matrix.properties[key] = sorted(values, key=natural_keys)
         print(f"{key:20s}: {', '.join(map(str, Matrix.properties[key]))}")
 
