@@ -121,31 +121,36 @@ def construct_control_center_tab(codec_cfg):
         tag_cb_field = "value"
         need_value_cb = False
         opt_type = opt_props.get("type", "str")
+        default = opt_props.get("default")
+        default_str = f" | default: {default}" if default is not None else ""
 
-        if opt_type.startswith("int["): # int[start:end:step]=default
-            range_str, _, default = opt_type[4:].partition("]=")
-            _min, _max, _step = map(int, range_str.split(":"))
+        if opt_type.startswith("int["): # int[start:end:step]
+            _min, _max, _step = map(int, opt_type[4:-1].split(":"))
             marks = {_min:_min, _max:_max}
+            if default is None: default = 0
+
             tag = dcc.Slider(min=_min, max=_max, step=_step, value=int(default), marks=marks)
             need_value_cb = True
 
-        elif opt_type.startswith("int") or opt_type == "uint":
-            default = int(opt_type.partition("=")[-1]) if opt_type.startswith("int=") else ""
+        elif opt_type in ("int", "uint", "float", "ufloat"):
 
-            tag = dcc.Input(placeholder=f'Enter a numeric value for "{opt_name}"',
-                                    type='number', value=default, style={"width": "100%"})
+            tag = dcc.Input(placeholder=f'Enter a numeric value for "{opt_name}"'+default_str,
+                                    type='number', style={"width": "100%"})
             need_value_cb = False
 
         elif opt_type == "enum":
             options = [{'label': enum, 'value': enum} for enum in [""] + opt_props['values'].split(", ")]
-            tag = dcc.Dropdown(options=options, searchable=False)
+
+            tag = dcc.Dropdown(options=options,
+                               placeholder=f'Enter a value for "{opt_name}"'+default_str,
+                               searchable=False)
 
         if tag is None:
             if opt_type != "str":
                 raise Exception(f"Option not handled ... {opt_name}->{opt_props}")
 
-            tag = dcc.Input(placeholder=f'Enter a value for "{opt_name}"', type='text',
-                            style={"width": "100%"})
+            tag = dcc.Input(placeholder=f'Enter a value for "{opt_name}"'+default_str,
+                            type='text', style={"width": "100%"})
 
         tag_id = f"{codec_name}-opt:{opt_name.lower()}".replace(".", "_")
         tag.id = tag_id

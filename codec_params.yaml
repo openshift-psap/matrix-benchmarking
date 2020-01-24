@@ -9,7 +9,8 @@ template_group:
 _all:
   _group: true
   framerate:
-    type: int[0:120:5]=30
+    type: int[0:120:5]
+    default: 30
 
 grp_gst:
   _group: true
@@ -101,8 +102,69 @@ gst.vp9.vaapivp9enc:
     url: "https://gstreamer.freedesktop.org/documentation/vaapi/vaapivp9enc.html#vaapivp9enc:cpb-length"
 
 gst.h264.vaapih264enc:
+  _disabled: true
 gst.mjpeg.vaapimpeg2enc:
+  _disabled: true
 native:mjpeg:
+  _disabled: true
   quality:
     _prefix: mjpeg.
-    type: int[0:100:5]=100
+    type: int[0:100:5]
+    default: 100
+
+nv.plug.h264:
+  _prefix: nv.
+  profile:
+    type: uint
+    desc: "[min: 1, max:100]"
+    default: 77
+    url: "..."
+
+  qp:
+    type: uint
+    desc: "[min: 1, max:51]"
+    default: 26
+    url: "..."
+
+  ratecontrol:
+    type: enum
+    values: vbr, cbr, constqp, cbrldhq, cbrhq, vbrhq
+    desc: ""
+    default: vbr
+    url: "..."
+
+  blocking:
+    type: enum
+    values: 0, 1
+    default: 0
+    url: "..."
+
+  slices:
+    type: int
+    desc: "-1, max: 16"
+    default: -1
+    url: "..."
+
+  gop:
+    type: ufloat
+    desc: "0 infinite"
+    default: 5
+    url: "..."
+
+  max-num-ref-frames:
+    type: uint
+    desc: ""
+    default: 0
+    url: "..."
+
+  max-bitrate:
+    type: ufloat
+    desc: ""
+    default: 12
+    url: "..."
+
+  average-bitrate:
+    type: ufloat
+    desc: ""
+    default: 0
+    url: "..."
