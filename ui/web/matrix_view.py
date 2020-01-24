@@ -161,6 +161,16 @@ class EncodingStacked():
                                          **mode,
                                          name=legend_name, legendgroup=legend_name, showlegend=showlegend, ))
 
+        FPS = [30, 45, 60]
+        fig.add_trace(go.Scatter(
+            x=["_"]*len(FPS), name="FPS indicators",
+            y=[1/fps for fps in FPS],
+            mode="text", #marker=dict(symbol="circle", size=7, color="black"),
+            text=[f"{fps} FPS" for fps in FPS],
+            xaxis=ax,
+        ))
+
+
         layout.barmode = 'stack'
         fig.update_layout(yaxis=dict(title="Time (in s)"))
         fig.update_layout(layout)
