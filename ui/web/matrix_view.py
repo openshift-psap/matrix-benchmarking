@@ -98,7 +98,7 @@ class EncodingStacked():
             subplots[subplots_var] = "x1"
             layout["xaxis1"] = dict(type='category', showticklabels=False)
 
-        x = defaultdict(list); y = defaultdict(list);
+        x = defaultdict(list); y = defaultdict(list); y_err = defaultdict(list);
         fps_target = defaultdict(dict);
         fps_actual = defaultdict(dict);
 
@@ -119,8 +119,8 @@ class EncodingStacked():
             subplots_key = params[subplots_var] if subplots_var else None
             ax = subplots[subplots_key]
 
-            fps_target[ax][x_key] = 1/params['framerate']
-            fps_actual[ax][x_key] = 1/entry.stats["Guest Framerate"].value
+            fps_target[ax][x_key] = 1/int(params['framerate']) * 1000
+            fps_actual[ax][x_key] = 1/entry.stats["Guest Framerate"].value * 1000
 
             for what in "sleep", "capture", "encode", "send":
                 What = what.title()
@@ -135,8 +135,9 @@ class EncodingStacked():
                 legend_keys.add(legend_key)
                 legend_names.add(legend_name)
                 x[legend_key].append(x_key)
-                y[legend_key].append(entry.stats[name].value)
-
+                stats = entry.stats[name]
+                y[legend_key].append(stats.value * 1000 if stats.value else 0)
+                y_err[legend_key].append(stats.stdev[0] * 1000 if stats.value else 0)
 
         legend_keys = sorted(list(legend_keys), key=natural_keys)
         legend_names = sorted(list(legend_names), key=natural_keys)
@@ -153,9 +154,12 @@ class EncodingStacked():
             showlegend = legend_name not in legends_visible
             if showlegend: legends_visible.append(legend_name)
 
+            show_err = bool(cfg.get('stack.stdev'))
             fig.add_trace(dict(**plot_args, x=x[legend_key], y=y[legend_key],
+                               error_y=dict(type='data', array=y_err[legend_key], visible=show_err),
                              legendgroup=legend_name, name=legend_name, xaxis=ax,
                              showlegend=showlegend, hoverlabel= {'namelength' :-1}))
+
 
         for legend_name, fps_values_dict, mode in (('Actual FPS', fps_actual, dict(mode='lines+markers', marker=dict(symbol="x", size=10, color="purple"))),
                                                    ('Target FPS', fps_target, dict(mode='markers', line=dict(color='black'), marker=dict(symbol="cross", size=10, color="black"))),):
@@ -171,7 +175,7 @@ class EncodingStacked():
         FPS = [30, 45, 60]
         fig.add_trace(go.Scatter(
             x=["_"]*len(FPS), name="FPS indicators",
-            y=[1/fps for fps in FPS],
+            y=[1/fps*1000  for fps in FPS],
             mode="text", #marker=dict(symbol="circle", size=7, color="black"),
             text=[f"{fps} FPS" for fps in FPS],
             xaxis=ax,
@@ -179,7 +183,7 @@ class EncodingStacked():
 
 
         layout.barmode = 'stack'
-        fig.update_layout(yaxis=dict(title="Time (in s)"))
+        fig.update_layout(yaxis=dict(title="Time (in ms)"))
         fig.update_layout(layout)
         return fig, []
 
