@@ -27,8 +27,15 @@ def atoi(text): return int(text) if text.isdigit() else text
 def natural_keys(text): return [atoi(c) for c in re.split(r'(\d+)', str(text))]
 
 PROPERTY_RENAME = {
+    # gst.nvenc
+
     "gop-size": "keyframe-period",
-    "rc-mode": "rate-control"
+    "rc-mode": "rate-control",
+
+    # native nvidia plugin
+    "ratecontrol": "rate-control",
+    "max-bitrate": "bitrate",
+    "gop": "keyframe-period",
 }
 
 VALUE_TRANSLATE = {

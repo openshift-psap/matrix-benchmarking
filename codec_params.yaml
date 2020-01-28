@@ -87,6 +87,7 @@ gst.vp8.vp8enc:
 
 gst.vp8.vaapivp8enc:
   _group: grp_gst-vp8-9_intelvaapi_encoding
+  _disabled: true
 
   encoder-reload:
     type: enum
@@ -94,6 +95,7 @@ gst.vp8.vaapivp8enc:
 
 gst.vp9.vaapivp9enc:
   _group: grp_gst-vp8-9_intelvaapi_encoding
+  _disabled: true
 
   cpb-length:
     type: uint

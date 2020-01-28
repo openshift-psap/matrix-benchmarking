@@ -252,7 +252,8 @@ class MatrixScript(script.Script):
         for param_items in itertools.product(*param_matrix):
             param_dict = dict(param_items)
 
-            param_str = ";".join([f"{k}={v}" for k, v in param_items]).replace('gst.prop=', '')
+            param_str = ";".join([f"{k}={v}" for k, v in param_items])
+            param_str = param_str.replace('gst.prop=', '').replace('nv.', '')
 
             current_key = param_str.replace(';', "_")
 

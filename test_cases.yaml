@@ -22,33 +22,49 @@ after:
 _type: matrix
 name: matrix
 record_time: 40
-codec: gst.vp8.vaapivp8enc
+#codec: gst.h264.vaapih264enc
+#codec: gst.h264.nvh264enc
+codec: nv.plug.h264
+#codec: gst.vp8.vaapivp8enc
 
 scripted_properties:
-  #display: gst_smpte, gst_snow, gst_ball
   display:
-    vlc_google_map:
+    #gst_ball:
+    img_lady_1920:
     vlc_wipeout:
-    vlc_primordial_soup:
     webgl_wipeout: https://phoboslab.org/wipeout/
-    webgl_aquarium: https://webglsamples.org/aquarium/aquarium.html
+    #webgl_aquarium: https://webglsamples.org/aquarium/aquarium.html
     webgl_cubemap: https://webglsamples.org/dynamic-cubemap/dynamic-cubemap.html
-    webgl_lots_of_objects: https://webglsamples.org/google-io/2011/lots-of-objects-google.html
-    webgl_sprites: https://webglsamples.org/sprites/index.html
-    nothing:
-
-  resolution: 1920x1080, 1366x768 #, 848x480
-  #resources: normal, vm:X*cpu, server:X*cpu, client:X*cpu, vm:X*cpu^client:X*cpu
-  #resources: normal, cpu:1*client, cpu:2*client, cpu:X*client #net:0ms+2.5M, net:0ms+1M, net:0ms+0.5M #, cpu:1*client, cpu:2*client, cpu:X*client #, cpu:X*client, cpu:X*server, cpu:X*vm^cpu:X*client  # ^net:10ms+2.5M
+    #webgl_lots_of_objects: https://webglsamples.org/google-io/2011/lots-of-objects-google.html
+    #webgl_sprites: https://webglsamples.org/sprites/index.html
+  #resolution: 1920x1080
 
 matrix:
-  gst.prop=bitrate: 32000
-  gst.prop=rate-control: cbr #cqp #vbr #, cbr
-  gst.prop=keyframe-period: 600000 #0, 20, 40
-  framerate: 20, 25, 30, 35, 40 #20, 30, 45, 60
+  framerate: 200
+  nv.ratecontrol: cbr
+  nv.max-bitrate: 8, 16, 32, 64
+  nv.gop: 0
+  nv.blocking: 0
+
+nvh264enc_matrix:
+  gst.prop=bitrate: 8000, 16000, 32000, 64000
+  gst.prop=gop-size:  -1 #30, 300, -1
+  gst.prop=rc-mode: cbr
+
+vaapi_matrix:
+  gst.prop=bitrate: 8000, 16000, 32000, 64000
+  gst.prop=rate-control: cbr
+  gst.prop=keyframe-period: 30, 300, 600000
+
+nvplug_matrix:
+  nv.ratecontrol: cbr
+  nv.max-bitrate: 8, 16, 32, 64
+  nv.gop: 0
+  nv.blocking: 0
 
 scripts:
   setup:
+    - vm resolution 1920x1080
     - xset s off -dpms
     - server exec xset s off -dpms
   teardown:
