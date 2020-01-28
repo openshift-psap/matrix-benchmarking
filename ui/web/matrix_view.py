@@ -1390,8 +1390,17 @@ def get_permalink(args, full=False):
 
     search = "?"+"&".join(val(k, v) for k, v in params.items() \
                             if v not in ('---', None) and (full or len(Matrix.properties[k]) != 1))
-    if args[-1]:
-        search += f"&property-order={args[-1]}"
+    *_, custom_cfg, custom_cfg_saved, props_order = args
+    if props_order:
+        search += f"&property-order={props_order}"
+
+    if custom_cfg_saved or custom_cfg:
+        lst = custom_cfg_saved[:] if custom_cfg_saved else []
+        if custom_cfg and not custom_cfg in lst:
+            lst.insert(0, custom_cfg)
+
+        search += ("&" + "&".join([f"cfg={cfg}" for cfg in lst])) if lst else ""
+
     return search
 
 def build_layout(search, serializing=False):
@@ -1436,9 +1445,13 @@ def build_layout(search, serializing=False):
 
         matrix_controls += [html.Span(f"{key}: ", id=f"label_{key}"), tag]
 
-    config = [html.B("Configuration:", id='config_title'), html.Br(),
-              dcc.Input(id='custom_config', placeholder='Config settings', debounce=True),
-              html.Div(id='custom_config_saved')]
+
+    cfg_data = defaults.get('cfg', [])
+    cfg_children = list([html.P(e) for e in cfg_data])
+
+    config = [html.B("Configuration:", id='config-title'), html.Br(),
+              dcc.Input(id='custom-config', placeholder='Config settings', debounce=True),
+              html.Div(id='custom-config-saved', children=cfg_children, **{'data-label': cfg_data})]
 
     aspect = [html.Div(defaults.get("property-order", [''])[0], id='property-order')]
 
@@ -1455,7 +1468,9 @@ def build_layout(search, serializing=False):
 
         permalink = "/matrix/"+get_permalink((
             serial_params # [Input('list-params-'+key, "value") for key in Matrix.properties]
-            + [defaults.get("property-order", [''])[0]] # Input('property-order', 'children')
+            + [''] # custom-config useless here
+            + [cfg_data]
+            + [defaults.get("property-order", [''])[0]]
         ), full=True)
 
         control_children += [html.P(["from ",
@@ -1477,8 +1492,10 @@ def build_layout(search, serializing=False):
                 serial_params # [Input('list-params-'+key, "value") for key in Matrix.properties]
                 + [0] # Input("lbl_params", "n_clicks")
                 + defaults.get("property-order", ['']) # Input('property-order', 'children')
-                + [''] # Input('custom_config', 'value') # not saved yet
-                + [''] # Input('custom_config_saved', 'data') # not saved yet
+                + [None] # Input('config-title', 'n_clicks') | None->not clicked yet
+                + [''] # Input('custom-config', 'value')
+                + [''] # Input('custom-config-saved', 'data')
+                + [defaults.get("cfg", [''])] # State('custom-config-saved', 'data-label')
             ))
 
             graph, text = graph_children[-2:]
@@ -1598,18 +1615,18 @@ def build_callbacks(app):
         [Input('permalink', "href"), Input('list-params-stats', "value")],
     )
 
-    @app.callback([Output('custom_config_saved', 'children'),
-                   Output('custom_config_saved', 'data'),
-                   Output('custom_config', 'value')],
-                  [Input('config_title', 'n_clicks')],
-                  [State('custom_config_saved', 'data'),
-                   State('custom_config', 'value')])
+    @app.callback([Output('custom-config-saved', 'children'),
+                   Output('custom-config-saved', 'data'),
+                   Output('custom-config', 'value')],
+                  [Input('config-title', 'n_clicks')],
+                  [State('custom-config-saved', 'data'),
+                   State('custom-config', 'value')])
     def save_config(*args):
         title_click, data, value = args
         if data is None: data = []
 
         if not value:
-            return dash.no_update, dash.no_update, dash.no_update
+            return dash.no_update, dash.no_update, ''
         if value in data:
             return dash.no_update, dash.no_update, ''
 
@@ -1620,10 +1637,11 @@ def build_callbacks(app):
             data.remove(value[1:])
         else:
             k, _, v = value.partition("=")
+
             for d in data[:]:
                 if d.startswith(k + "="): data.remove(d)
-
-            data.append(value)
+            if v:
+                data.append(value)
 
         return list([html.P(e) for e in data]), data, ''
 
@@ -1633,7 +1651,7 @@ def build_callbacks(app):
         try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
         except IndexError: return # nothing triggered the script (on multiapp load)
 
-        if triggered_id == "custom_config.value":
+        if triggered_id == "custom-config.value":
             if not config or config.startswith("_"):
                 return dash.no_update
             if config_saved and config in config_saved:
@@ -1703,7 +1721,9 @@ def build_callbacks(app):
 
     @app.callback([Output("permalink", 'href'), Output("download", 'href')],
                   [Input('list-params-'+key, "value") for key in Matrix.properties]
-                  +[Input('property-order', 'children')])
+                  +[Input('custom-config', 'value'),
+                    Input('custom-config-saved', 'data'),
+                    Input('property-order', 'children')])
     def get_permalink_cb(*args):
         try: triggered_id = dash.callback_context.triggered
         except IndexError: return dash.no_update, dash.no_update # nothing triggered the script (on multiapp load)
@@ -1749,29 +1769,35 @@ def build_callbacks(app):
             @app.callback([Output(graph_id, 'figure'),
                            Output(graph_id+"-txt", 'children')],
                           [Input('list-params-'+key, "value") for key in Matrix.properties]
-                          +[Input("lbl_params", "n_clicks")]+[Input('property-order', 'children')]
-                          +[Input('custom_config', 'value'), Input('custom_config_saved', 'data')]
+                          +[Input("lbl_params", "n_clicks")]
+                          +[Input('property-order', 'children')]
+                          +[Input('config-title', 'n_clicks'),
+                            Input('custom-config', 'value'),
+                            Input('custom-config-saved', 'data')],
+                          [State('custom-config-saved', 'data-label')]
             )
             def graph_figure_cb(*args):
                 return graph_figure(*args)
 
             def graph_figure(*_args):
                 if dash.callback_context.triggered:
+                    print(dash.callback_context.triggered)
                     try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
-                    except IndexError: return dash.no_update, ""# nothing triggered the script (on multiapp load)
+                    except IndexError:
+                        return dash.no_update, "" # nothing triggered the script (on multiapp load)
                     except dash.exceptions.MissingCallbackContextException: triggered_id = '<manually triggered>'
                 else: triggered_id = '<manually triggered>'
 
-                *args, config, config_saved = _args
+                *args, cfg_n_clicks, config, config_saved, config_init = _args
 
-                if triggered_id == "custom_config.value":
+                if triggered_id == "custom-config.value":
                     if not config or config.startswith("_"):
-                        return dash.no_update, dash.no_update
-                    if config_saved and config in config_saved:
                         return dash.no_update, dash.no_update
 
                 cfg = {}
-                lst = (config_saved if config_saved else []) + ([config] if config else [])
+                lst = (config_saved if config_saved else []) \
+                    + ([config] if config else []) \
+                    + (config_init if cfg_n_clicks is None else [])
 
                 for cf in lst:
                     k, _, v = cf.partition("=")
