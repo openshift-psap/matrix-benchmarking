@@ -79,29 +79,27 @@ grp_gst-vp8-9_intelvaapi_encoding:
     type: uint
     desc: "Controls the deblocking filter sensitivity"
     default: 0
-    url: "https://gstreamer.freedesktop.org/documentation/vaapi/vaapivp9enc.html#vaapivp8enc:sharpness-level"
+    url: "https://gstreamer.freedesktop.org/documentation/vaapi/vaapivp8enc.html#vaapivp8enc:sharpness-level"
 
 gst.vp8.vp8enc:
   _group: grp_gst-vp8-9_sw_encoding
-  _disabled: true
+  #_disabled: true
 
 gst.vp8.vaapivp8enc:
   _group: grp_gst-vp8-9_intelvaapi_encoding
-  _disabled: true
-
   encoder-reload:
     type: enum
     values: yes, no
 
 gst.vp9.vaapivp9enc:
   _group: grp_gst-vp8-9_intelvaapi_encoding
-  _disabled: true
+  #_disabled: true
 
   cpb-length:
     type: uint
     default: 128
     desc: "Length of the CPB_buffer/window_size in milliseconds"
-    url: "https://gstreamer.freedesktop.org/documentation/vaapi/vaapivp9enc.html#vaapivp9enc:cpb-length"
+    url: "https://gstreamer.freedesktop.org/documentation/vaapi/vaapivp8enc.html#vaapivp9enc:cpb-length"
 
 gst.h264.vaapih264enc:
   _disabled: true
