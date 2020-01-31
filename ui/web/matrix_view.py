@@ -541,6 +541,78 @@ class Report():
 
         return report
 
+class DistribPlot():
+    def __init__(self, name, table, x, x_unit, divisor=1):
+        self.name = "Distrib: "+name
+        self.id_name = name
+        TableStats._register_stat(self)
+        self.table = table
+        self.x = x
+        self.x_unit = x_unit
+        self.divisor = divisor
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
+        table_def = None
+        fig = go.Figure()
+
+        use_count = bool(cfg.get('distrib.count'))
+        show_i_vs_p = cfg.get('distrib.i_vs_p')
+        side_by_side = bool(cfg.get('distrib.side'))
+
+        if len(variables) > 4:
+            return {'layout': {'title': f"Too many variables selected ({len(variables)} > 4)"}}
+
+        for i, param_values in enumerate(sorted(itertools.product(*param_lists))):
+            params.update(dict(param_values))
+
+            key = "_".join([f"{k}={params[k]}" for k in key_order])
+
+            try: entry = Matrix.entry_map[key]
+            except KeyError: continue # missing experiment
+
+            if table_def is None:
+                for table_key in entry.tables:
+                    if not table_key.startswith(f"#{self.table}|"): continue
+                    table_def = table_key
+                    break
+                else:
+                    return {'layout': {'title': f"Error: no table named '{table_key}'"}}
+                tname = table_def.partition("|")[0].rpartition(".")[-1]
+                kfr_row_id = table_def.partition("|")[2].split(";").index(f"{tname}.key_frame")
+
+            table_fields = table_def.partition("|")[-1].split(";")
+
+            x_row_id = table_fields.index(self.x)
+            table_rows = entry.tables[table_def]
+
+            histnorm = None if use_count else 'percent'
+            legend_name = " ".join([f"{var}={params[var]}" for var in ordered_vars])
+            if not show_i_vs_p:
+                x = [row[x_row_id]/self.divisor for row in table_rows[1]]
+                fig.add_trace(go.Histogram(x=x, histnorm=histnorm, name=legend_name))
+
+            else:
+                xi = [row[x_row_id]/self.divisor for row in table_rows[1] if row[kfr_row_id]]
+                xp = [row[x_row_id]/self.divisor for row in table_rows[1] if not row[kfr_row_id]]
+
+                if show_i_vs_p in (1, "I", "i"):
+                    fig.add_trace(go.Histogram(x=xi, histnorm=histnorm, name=legend_name+" | I-frames"))
+                if show_i_vs_p in (1, "P", "p"):
+                    fig.add_trace(go.Histogram(x=xp, histnorm=histnorm, name=legend_name+" | P-frames"))
+
+        fig.update_layout(
+            title=self.name,
+            yaxis=dict(title="Distribution (in %)"),
+            xaxis=dict(title=f"{self.id_name} (in {self.x_unit})"))
+
+        if not side_by_side:
+            fig.update_layout(barmode='stack')
+
+        return fig, ""
+
 class HeatmapPlot():
     def __init__(self, name, table, title, x, y):
         self.name = "Heat: "+name
@@ -1192,6 +1264,9 @@ for what_param, what_x in ("framerate", f"Client Framerate"), ("resolution", "pa
     if what_x == "Client Framerate": what_x = "param:framerate:FPS"
     Regression(f"{what_param}_vs_bandwidth", what_param, f"Frame Bandwidth vs {what_param.title()}",
                what_x, f"Frame Size (avg)")
+
+DistribPlot("Frame capture time", 'guest.guest', 'guest.capture_duration', "ms", divisor=1/1000)
+DistribPlot("Frame encoding time", 'guest.guest', 'guest.encode_duration', "ms", divisor=1/1000)
 
 HeatmapPlot("Frame Size/Decoding", 'client.client', "Frame Size vs Decode duration",
             ("client.frame_size", "Frame size (in KB)", 0.001),
