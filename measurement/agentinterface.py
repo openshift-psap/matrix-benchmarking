@@ -428,13 +428,14 @@ def register_guest_frame(agent):
         'guest.capture_duration',
         'guest.encode_duration',
         'guest.send_duration',
+        'guest.key_frame',
         'guest.framerate_actual', 'guest.framerate_requested'
     ])
 
     framerate_state = init_framerate_state()
 
     state = collections.namedtuple('State', 'start prev_time capture encode send frame_bytes'
-                                   'width height codec')
+                                   'width height codec keyframe')
     state.start = None
     frame_fmt = re.compile(r'Frame of (\d+) bytes')
     def process(entry):
@@ -450,7 +451,7 @@ def register_guest_frame(agent):
             state.capture = None
             state.encode = None
             state.send = None
-
+            state.keyframe = 0
             state.frame_bytes = None
 
             return
@@ -474,6 +475,9 @@ def register_guest_frame(agent):
         elif verb == 'Captured':
             state.encode = dist()
 
+        elif verb == 'Keyframe':
+            state.keyframe = 1
+
         elif verb == 'Sent':
             state.send = dist()
 
@@ -486,6 +490,7 @@ def register_guest_frame(agent):
                 sleep_duration = state.sleep,
                 capture_duration = state.capture,
                 encode_duration = state.encode,
+                key_frame = state.keyframe,
                 send_duration = state.send,
                 **framerate)
 
