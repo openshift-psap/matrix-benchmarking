@@ -736,28 +736,9 @@ class TableStats():
         return obj
 
     @classmethod
-    def KeyFramesSize(clazz, *args, **kwargs):
+    def KeyFramesCount(clazz, *args, **kwargs):
         obj = clazz(*args, **kwargs)
-        obj.do_process = obj.process_keylowframes_size(keyframes=True)
-        return obj
-
-    @classmethod
-    def LowFramesSize(clazz, *args, **kwargs):
-        obj = clazz(*args, **kwargs)
-
-        obj.do_process = obj.process_keylowframes_size(lowframes=True)
-        return obj
-
-    @classmethod
-    def KeyLowFramesSize(clazz, *args, **kwargs):
-        obj = clazz(*args, **kwargs)
-        obj.do_process = obj.process_keylowframes_size(lowframes=True, keyframes=True)
-        return obj
-
-    @classmethod
-    def KeyFramePeriod(clazz, *args, **kwargs):
-        obj = clazz(*args, **kwargs)
-        obj.do_process = obj.process_keyframe_period
+        obj.do_process = obj.process_keyframes_count
         return obj
 
     @classmethod
@@ -850,14 +831,45 @@ class TableStats():
 
     def process_average(self, table_def, rows):
         row_id = table_def.partition("|")[2].split(";").index(self.field)
-        values = [row[row_id] for row in rows if row[row_id]]
-
+        values = [row[row_id] for row in rows if row[row_id] is not None]
 
         if not values: return None, None, None
-        if self.kwargs.get("invert"):
-            return 1/ (statistics.mean(values) / self.divisor), 0, 0
 
-        return statistics.mean(values) / self.divisor, (statistics.stdev(values) / self.divisor)
+        if "keyframes" in self.kwargs and self.kwargs["keyframes"] is not None:
+            kfr_rq = self.kwargs["keyframes"]
+
+            tname = table_def.partition("|")[0].rpartition(".")[-1]
+            if f"{tname}.key_frame" not in table_def:
+                # no keyframe indicator ...
+                return 0, 0
+
+            kfr_row_id = table_def.partition("|")[2].split(";").index(f"{tname}.key_frame")
+            kfr_values = [bool(row[kfr_row_id]) for row in rows if row[row_id] is not None]
+
+            if self.field == "guest.sleep_duration":
+                # the sleep_duration after encoding a (key)frame is stored in the next row
+                # this hook correctly links sleep time and encode time.
+                values = [v for v, kfr in zip(values[1:], kfr_values) if (kfr_rq is kfr)]
+            else:
+                values = [v for v, kfr in zip(values, kfr_values) if (kfr_rq is kfr)]
+
+        if not values:
+            return 0, 0
+
+        mean = statistics.mean(values) / self.divisor
+
+        if self.kwargs.get("invert"):
+            return 1/mean, 0
+
+        return mean, (statistics.stdev(values) / self.divisor)
+
+    def process_keyframes_count(self, table_def, rows):
+        kfr_row_id = table_def.partition("|")[2].split(";").index(self.field)
+        kfr_values = [bool(row[kfr_row_id]) for row in rows]
+
+        kfr_cnt = sum(kfr_values)
+
+        return kfr_cnt if self.kwargs["keyframes"] else len(rows) - kfr_cnt
 
     def process_start_stop_diff(self, table_def, rows):
         if not rows: return 0
@@ -897,54 +909,6 @@ class TableStats():
         fps =  (len(values) - 1) / (ts(values[-1]/1000000) - ts(values[0]/1000000)).total_seconds()
 
         return fps
-
-    def process_keylowframes_size(self, keyframes=False, lowframes=False):
-        if not (keyframes or lowframes):
-            raise ValueError("Must have keyframes or lowframes.") # impossible to reach
-
-        def do_process(table_def, rows):
-            time_field, value_field = self.field
-
-            indexes = table_def.partition("|")[2].split(";")
-
-            time_row_id = indexes.index(time_field)
-            value_row_id = indexes.index(value_field)
-
-            values = [row[value_row_id] for row in rows]
-            mini, maxi = min(values), max(values)
-            split = (mini+maxi)/2
-            high_values = [v for v in values if v >= split]
-            low_values = [v for v in values if v < split]
-
-            if keyframes and lowframes:
-                return (statistics.mean(low_values) / self.divisor,
-                        statistics.mean(high_values) / self.divisor, 0)
-
-            if keyframes:
-                values = high_values
-            elif lowframes:
-                values = low_values
-            else:
-                assert False, "impossible to reach"
-
-            return statistics.mean(values) / self.divisor, statistics.stdev(values) / self.divisor
-
-        return do_process
-
-    def process_keyframe_period(self, table_def, rows):
-        from . import graph
-
-        row_id = table_def.partition("|")[2].split(";").index(self.field)
-        values = [row[row_id] for row in rows]
-
-        periods = graph.GraphFormat.as_key_frames(values, period=True)
-        if not any(periods):
-            return 0, 0, 0
-
-        #res = statistics.mean([p for p in periods if p is not None])
-        res = statistics.mode(periods)
-
-        return res, 0, 0
 
     def do_hover(self, meta_value, variables, figure, data, click_info):
         ax = figure['data'][click_info.idx]['xaxis']
@@ -1213,21 +1177,16 @@ HeatmapPlot("Frame Size/Decoding", 'client.client', "Frame Size vs Decode durati
             ("client.frame_size", "Frame size (in KB)", 0.001),
             ("client.decode_duration", "Decode duration (in ms)", 1000))
 
-TableStats.KeyFramesSize("keyframe_size", "Frame Size: keyframes", "server.host",
-                      ("host.msg_ts", "host.frame_size"), ".0f", "KB", divisor=1000)
-TableStats.LowFramesSize("lowframe_size", "Frame Size: lowframes", "server.host",
-                      ("host.msg_ts", "host.frame_size"), ".0f", "KB", divisor=1000)
-TableStats.KeyLowFramesSize("keylowframe_size", "Frame Size: keys+lows", "server.host",
-                      ("host.msg_ts", "host.frame_size"), ".0f", "KB", divisor=1000)
-
 TableStats.PerSecond("frame_size_per_sec", "Frame Bandwidth (per sec)", "server.host",
                       ("host.msg_ts", "host.frame_size"), ".2f", "MB/s", min_rows=10, divisor=1000*1000)
 
 TableStats.Average("frame_size", "Frame Size (avg)", "server.host",
                    "host.frame_size", ".2f", "KB", min_rows=10, divisor=1000)
 
-TableStats.KeyFramePeriod("keyframe_period", "Keyframe Period", "server.host",
-                          "host.frame_size", ".0f", "frames")
+TableStats.KeyFramesCount("keyframe_count", "Keyframe count", "guest.guest",
+                          "guest.key_frame", ".0f", "#", keyframes=True)
+TableStats.KeyFramesCount("p_frame_count", "P-frame count", "guest.guest",
+                          "guest.key_frame", ".0f", "#", keyframes=False)
 
 TableStats.Average("client_time_in_queue_avg", "Client time in queue (avg)",
                    "client.frames_time_to_drop", "frames_time_to_drop.in_queue_time", ".0f", "ms",
@@ -1235,8 +1194,9 @@ TableStats.Average("client_time_in_queue_avg", "Client time in queue (avg)",
 
 for what in "sleep", "capture", "encode", "send":
     invert = False
-    TableStats.Average(f"guest_{what}_duration", f"Guest {what.capitalize()} Duration (avg)",
-                       "guest.guest", f"guest.{what}_duration", ".0f", "FPS" if invert else "s", invert=invert)
+    for kfr, kfr_txt in (True, "I-frames"), (False, "P-frames"), (None, ""):
+        TableStats.Average(f"guest_{what}_duration_{kfr_txt}", f"Guest {what.capitalize()} Duration (avg){' ' if kfr_txt else ''}{kfr_txt}",
+                           "guest.guest", f"guest.{what}_duration", ".0f", "FPS" if invert else "ms", invert=invert, keyframes=kfr, divisor=1 if invert else 1/1000)
 
 
 TableStats.PerSecond("client_time_in_queue_persec", "Client time in queue (per second)", "client.frames_time_to_drop",
