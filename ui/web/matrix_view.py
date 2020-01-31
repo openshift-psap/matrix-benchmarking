@@ -1378,7 +1378,9 @@ def parse_data(filename, reloading=False):
         entry.filename = os.sep.join([directory, file_path, file_key+".rec"])
         entry.linkname = os.sep.join(["results", expe, file_path, file_key+".rec"])
 
-        if not os.path.exists(entry.filename): continue
+        if not os.path.exists(entry.filename):
+            print("missing:", entry.filename)
+            continue
 
         try:
             dup_entry = Matrix.entry_map[entry.key]
