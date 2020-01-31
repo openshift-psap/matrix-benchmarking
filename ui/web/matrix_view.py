@@ -78,7 +78,7 @@ class EncodingStacked():
         second_vars = ordered_vars[:]
         second_vars.reverse()
 
-        layout.title = f"{self.name} vs " + " x ".join(ordered_vars[:-1]) + " | " + ordered_vars[-1]
+        layout.title = f"{self.name} vs " + " x ".join(ordered_vars)
         layout.plot_bgcolor='rgb(245,245,240)'
         subplots = {}
         if second_vars:
@@ -106,6 +106,8 @@ class EncodingStacked():
         legend_names = set()
         legends_visible = []
 
+        show_i_vs_p = bool(cfg.get('stack.i_vs_p'))
+
         for param_values in sorted(itertools.product(*param_lists)):
             params.update(dict(param_values))
 
@@ -119,7 +121,7 @@ class EncodingStacked():
             subplots_key = params[subplots_var] if subplots_var else None
             ax = subplots[subplots_key]
 
-            fps_target[ax][x_key] = 1/int(params['framerate']) * 1000
+            fps_target[ax][x_key] = 1/int(params['framerate']) * 1000 if 'framerate' in params else None
             fps_actual[ax][x_key] = 1/entry.stats["Guest Framerate"].value * 1000
 
             for what in "sleep", "capture", "encode", "send":
@@ -134,10 +136,24 @@ class EncodingStacked():
 
                 legend_keys.add(legend_key)
                 legend_names.add(legend_name)
-                x[legend_key].append(x_key)
-                stats = entry.stats[name]
-                y[legend_key].append(stats.value * 1000 if stats.value else 0)
-                y_err[legend_key].append(stats.stdev[0] * 1000 if stats.value else 0)
+
+                def do_add(x_name, y_stat):
+                    stats = entry.stats[y_stat]
+
+                    y[legend_key].append(stats.value if stats.value else 0)
+                    y_err[legend_key].append(stats.stdev[0] if stats.value else 0)
+                    x[legend_key].append(x_name)
+
+                if show_i_vs_p:
+                    do_add(x_key + " | all frames", name)
+                    do_add(x_key + " | I-frames", name+" I-frames")
+                    do_add(x_key + " | P-frames", name+" P-frames")
+
+                    y[legend_key].append(None)
+                    y_err[legend_key].append(None)
+                    x[legend_key].append("--- "+x_key)
+                else:
+                    do_add(x_key, name)
 
         legend_keys = sorted(list(legend_keys), key=natural_keys)
         legend_names = sorted(list(legend_names), key=natural_keys)
@@ -161,8 +177,10 @@ class EncodingStacked():
                              showlegend=showlegend, hoverlabel= {'namelength' :-1}))
 
 
-        for legend_name, fps_values_dict, mode in (('Actual FPS', fps_actual, dict(mode='lines+markers', marker=dict(symbol="x", size=10, color="purple"))),
-                                                   ('Target FPS', fps_target, dict(mode='markers', line=dict(color='black'), marker=dict(symbol="cross", size=10, color="black"))),):
+        framerates = (('Actual FPS', fps_actual, dict(mode='lines+markers', marker=dict(symbol="x", size=10, color="purple"))),
+                      ('Target FPS', fps_target, dict(mode='markers', line=dict(color='black'), marker=dict(symbol="cross", size=10, color="black"))),)
+
+        for legend_name, fps_values_dict, mode in framerates if not show_i_vs_p else []:
 
             for ax, val_dict in fps_values_dict.items():
                 showlegend = legend_name not in legends_visible
@@ -172,14 +190,16 @@ class EncodingStacked():
                                          **mode,
                                          name=legend_name, legendgroup=legend_name, showlegend=showlegend, ))
 
-        FPS = [30, 45, 60]
-        fig.add_trace(go.Scatter(
-            x=["_"]*len(FPS), name="FPS indicators",
-            y=[1/fps*1000  for fps in FPS],
-            mode="text", #marker=dict(symbol="circle", size=7, color="black"),
-            text=[f"{fps} FPS" for fps in FPS],
-            xaxis=ax,
-        ))
+        if x:
+            FPS = [30, 40, 45, 60]
+
+            fig.add_trace(go.Scatter(
+                x=["_"]*len(FPS), name="FPS indicators",
+                y=[1/fps*1000  for fps in FPS],
+                mode="text", #marker=dict(symbol="circle", size=7, color="black"),
+                text=[f"{fps} FPS" for fps in FPS],
+                xaxis=ax,
+            ))
 
 
         layout.barmode = 'stack'
