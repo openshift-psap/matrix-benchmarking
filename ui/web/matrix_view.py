@@ -1838,7 +1838,6 @@ def build_callbacks(app):
 
             def graph_figure(*_args):
                 if dash.callback_context.triggered:
-                    print(dash.callback_context.triggered)
                     try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
                     except IndexError:
                         return dash.no_update, "" # nothing triggered the script (on multiapp load)
