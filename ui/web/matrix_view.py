@@ -106,7 +106,7 @@ class EncodingStacked():
         legend_names = set()
         legends_visible = []
 
-        show_i_vs_p = bool(cfg.get('stack.i_vs_p'))
+        show_i_vs_p = cfg.get('stack.i_vs_p')
 
         for param_values in sorted(itertools.product(*param_lists)):
             params.update(dict(param_values))
@@ -145,13 +145,18 @@ class EncodingStacked():
                     x[legend_key].append(x_name)
 
                 if show_i_vs_p:
-                    do_add(x_key + " | all frames", name)
-                    do_add(x_key + " | I-frames", name+" I-frames")
-                    do_add(x_key + " | P-frames", name+" P-frames")
+                    if show_i_vs_p in [1]:
+                        do_add(x_key + " | all frames", name)
+                    if show_i_vs_p in (1, "I", "i", "ip", "IP"):
+                        do_add(x_key + " | I-frames", name+" I-frames")
+                    if show_i_vs_p in (1, "P", "p", "ip", "IP"):
+                        do_add(x_key + " | P-frames", name+" P-frames")
 
-                    y[legend_key].append(None)
-                    y_err[legend_key].append(None)
-                    x[legend_key].append("--- "+x_key)
+
+                    if show_i_vs_p in (1, "ip", "IP"):
+                        y[legend_key].append(None)
+                        y_err[legend_key].append(None)
+                        x[legend_key].append("--- "+x_key)
                 else:
                     do_add(x_key, name)
 
