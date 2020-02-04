@@ -1272,6 +1272,7 @@ for what_param, what_x in ("framerate", f"Client Framerate"), ("resolution", "pa
 
 DistribPlot("Frame capture time", 'guest.guest', 'guest.capture_duration', "ms", divisor=1/1000)
 DistribPlot("Frame encoding time", 'guest.guest', 'guest.encode_duration', "ms", divisor=1/1000)
+DistribPlot("Frame sizes", 'guest.guest', 'guest.frame_size', "KB", divisor=1000)
 
 HeatmapPlot("Frame Size/Decoding", 'client.client', "Frame Size vs Decode duration",
             ("client.frame_size", "Frame size (in KB)", 0.001),
