@@ -610,7 +610,7 @@ class DistribPlot():
 
         fig.update_layout(
             title=self.name,
-            yaxis=dict(title="Distribution (in %)"),
+            yaxis=dict(title="Distribution "+("(in # of frames)" if use_count else "(in %)")),
             xaxis=dict(title=f"{self.id_name} (in {self.x_unit})"))
 
         if not side_by_side:
