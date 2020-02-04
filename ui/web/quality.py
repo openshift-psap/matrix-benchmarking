@@ -86,7 +86,7 @@ def get_pipeline(db, idx, ext, raw=False):
     import base64
 
     p = Popen(['dot', '-Tpng'], stdin=PIPE, stdout=PIPE)
-    p.stdin.write(pipeline.encode('ascii'))
+    p.stdin.write(pipeline.encode('utf-8'))
     p.stdin.close()
 
     data = p.stdout.read()
