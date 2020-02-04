@@ -1467,10 +1467,6 @@ def get_permalink(args, full=False):
     return search
 
 def build_layout(search, serializing=False):
-    for key, values in Matrix.properties.items():
-        Matrix.properties[key] = sorted(values, key=natural_keys)
-        print(f"{key:20s}: {', '.join(map(str, Matrix.properties[key]))}")
-
     defaults = urllib.parse.parse_qs(search[1:]) if search else {}
 
     matrix_controls = [html.B("Parameters:", id="lbl_params"), html.Br()]
@@ -1653,6 +1649,13 @@ def build_callbacks(app):
     if not Matrix.properties:
         print("WARNING: Matrix empty, cannot build its GUI")
         return
+
+    print("---")
+    for key, values in Matrix.properties.items():
+        if key == "stats": continue
+        Matrix.properties[key] = sorted(values, key=natural_keys)
+        print(f"{key:20s}: {', '.join(map(str, Matrix.properties[key]))}")
+    print("---")
 
     @app.server.route('/matrix/dl')
     def download_graph():
