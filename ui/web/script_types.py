@@ -241,8 +241,8 @@ class MatrixScript(script.Script):
             val = context.params.__dict__[key]
             return val[0] if isinstance(val, tuple) else val
 
-        file_path = "/".join(scripted_property_to_named_value(key)
-                             for key in sorted(self.yaml_desc["scripted_properties"]))
+        path_properties = ["record_time"] + sorted(self.yaml_desc["scripted_properties"])
+        file_path = "/".join(scripted_property_to_named_value(key) for key in path_properties)
 
         fix_key = "_".join(f"{key}={param_to_named_value(key)}".replace("_", "-")
                            for key in sorted(context.params.__dict__))
