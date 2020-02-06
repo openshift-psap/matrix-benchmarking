@@ -555,6 +555,150 @@ class Report():
 
         return report
 
+class FPSTable():
+    def __init__(self):
+        self.name = "Table: FPS"
+        self.id_name = "table_fps"
+        TableStats._register_stat(self)
+        self.no_graph = True
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing"
+
+    def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
+        layout = go.Layout(meta=dict(name=self.name))
+
+        second_vars = ordered_vars[:]
+        second_vars.reverse()
+
+        subtables = {}
+        if len(second_vars) > 2:
+            subtables_var = second_vars[-1]
+            y_var = second_vars[-2]
+
+            for subtable_key in sorted(variables[subtables_var], key=natural_keys):
+                subtables[subtable_key] = f"{subtables_var}={subtable_key}"
+
+        elif len(second_vars) == 2:
+            subtables_var = None
+            y_var = second_vars[-1]
+        else:
+            subtables_var = None
+            y_var = None
+
+        fps_target = defaultdict(lambda:defaultdict(dict))
+        fps_actual = defaultdict(lambda:defaultdict(dict))
+
+        min_fps = 120
+        max_fps = 0
+        for param_values in sorted(itertools.product(*param_lists)):
+            params.update(dict(param_values))
+
+            key = "_".join([f"{k}={params[k]}" for k in key_order])
+
+            try: entry = Matrix.entry_map[key]
+            except KeyError: continue # missing experiment
+
+            x_key = " ".join([f'{v}={params[v]}' for v in reversed(second_vars) if v not in (subtables_var, y_var)])
+            y_key = f'{y_var}={params[y_var]}' if y_var else None
+
+            subtable_name = subtables[params[subtables_var]] if subtables_var else None
+            fps_target[subtable_name][y_key][x_key] = int(params['framerate']) \
+                if 'framerate' in params else None
+
+            fps_actual[subtable_name][y_key][x_key] = fps = int(entry.stats["Guest Framerate"].value)
+            min_fps = min(min_fps, fps)
+            max_fps = max(max_fps, fps)
+
+        colors = ['rgb(239, 243, 255)', 'rgb(189, 215, 231)', 'rgb(107, 174, 214)',
+                  'rgb(49, 130, 189)', 'rgb(8, 81, 156)']
+
+        def colormap_to_colorscale(cmap):
+            from matplotlib import colors
+            #function that transforms a matplotlib colormap to a Plotly colorscale
+            return [ [k*0.1, colors.rgb2hex(cmap(k*0.1))] for k in range(11)]
+
+        def colorscale_from_list(alist, name):
+            from matplotlib.colors import LinearSegmentedColormap
+            # Defines a colormap, and the corresponding Plotly colorscale from the list alist
+            # alist=the list of basic colors
+            # name is the name of the corresponding matplotlib colormap
+
+            cmap = LinearSegmentedColormap.from_list(name, alist)
+            #display_cmap(cmap)
+            colorscale = colormap_to_colorscale(cmap)
+            return cmap, colorscale
+        elevation =['#31A354', '#ADDD8E', '#F7FCB9']
+
+        elev_cmap, elev_cs = colorscale_from_list(elevation, 'elev_cmap')
+
+        fig = plotly.subplots.make_subplots(
+            rows=len(fps_actual), cols=1,
+            specs=[[{"type": "table"}] for _ in range(len(fps_actual))],
+        )
+
+        for i, (subtable_name, xy_values) in enumerate(fps_actual.items()):
+            header_values = [subtable_name if subtable_name else ""]
+            cell_lists = {}
+            cell_values = [[]]
+            first_pass = True
+            for y_key, x_values in xy_values.items():
+                cell_values[0].append(y_key)
+
+                for x_key, value in x_values.items():
+                    if first_pass:
+                        header_values.append(x_key)
+                        cell_lists[x_key] = lst = []
+                        cell_values.append(lst)
+
+                    cell_lists[x_key].append(value)
+                first_pass = False
+
+            lines_color = []
+            for ii in range(len(cell_values)):
+                line_color = []
+                lines_color.append(line_color)
+                for jj in range(len(cell_values[0])):
+                    if ii == 0: line_color.append('paleturquoise'); continue
+                    try:
+                        v = cell_values[ii][jj]
+                    except IndexError:
+                        line_color.append('white')
+                    else:
+                        fps_pos = (v-min_fps)/(max_fps-min_fps)
+                        color = "rgb("+", ".join([str(int(c*255)) for c in elev_cmap(1-fps_pos)[:3]])+")"
+                        line_color.append(color)
+
+            fig.add_trace(
+                go.Table(
+                    header=dict(
+                        values=header_values,
+                        line_color='white', fill_color='paleturquoise',
+                        align='center', font=dict(color='black', size=12)
+                    ),
+                    cells=dict(
+                        values=cell_values,
+                        fill_color=lines_color,
+                        align='center', font=dict(color='black', size=11)
+                    )),
+                row=(i+1), col=1)
+
+        fig.update_layout(height=len(fps_actual)*(1+len(fps_actual.items()))*17+650)
+
+        return {}, [html.H2(f"{self.name} vs " + " x ".join(ordered_vars)),
+                    html.B(f"FPS between {min_fps} and {max_fps}."),
+                    dcc.Graph(figure=fig)]
+        # for legend_name, fps_values_dict, mode in framerates if not show_i_vs_p else []:
+
+        #     for ax, val_dict in fps_values_dict.items():
+        #         showlegend = legend_name not in legends_visible
+        #         if showlegend: legends_visible.append(legend_name)
+
+        #         fig.add_trace(go.Scatter(x=list(val_dict.keys()), y=list(val_dict.values()), xaxis=ax,
+        #                                  **mode,
+        #                                  name=legend_name, legendgroup=legend_name, showlegend=showlegend, ))
+        return {}, tables
+
 class DistribPlot():
     def __init__(self, name, table, x, x_unit, divisor=1):
         self.name = "Distrib: "+name
@@ -1259,6 +1403,7 @@ for what in "framerate", "resolution":
     Report.GPU(what)
     Report.Decode(what)
 
+FPSTable()
 EncodingStacked()
 
 for who in "client", "guest":
