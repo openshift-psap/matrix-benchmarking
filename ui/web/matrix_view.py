@@ -78,7 +78,18 @@ class EncodingStacked():
         second_vars = ordered_vars[:]
         second_vars.reverse()
 
-        layout.title = f"{self.name} vs " + " x ".join(ordered_vars)
+        show_i_vs_p = cfg.get('stack.i_vs_p', [])
+        try: show_i_vs_p = show_i_vs_p.lower()
+        except AttributeError: pass
+
+        title = f"{self.name} vs " + " x ".join(ordered_vars)
+
+        if show_i_vs_p in (1, "p", "ip"):
+            title += " | I-frames"
+        if show_i_vs_p in (1, "p", "ip"):
+            title += " | P-frames"
+        layout.title = title
+
         layout.plot_bgcolor='rgb(245,245,240)'
         subplots = {}
         if second_vars:
@@ -105,8 +116,6 @@ class EncodingStacked():
         legend_keys = set()
         legend_names = set()
         legends_visible = []
-
-        show_i_vs_p = cfg.get('stack.i_vs_p')
 
         for param_values in sorted(itertools.product(*param_lists)):
             params.update(dict(param_values))
@@ -147,13 +156,13 @@ class EncodingStacked():
                 if show_i_vs_p:
                     if show_i_vs_p in [1]:
                         do_add(x_key + " | all frames", name)
-                    if show_i_vs_p in (1, "I", "i", "ip", "IP"):
+                    if show_i_vs_p in (1, "i", "ip"):
                         do_add(x_key + " | I-frames", name+" I-frames")
-                    if show_i_vs_p in (1, "P", "p", "ip", "IP"):
+                    if show_i_vs_p in (1, "p", "ip"):
                         do_add(x_key + " | P-frames", name+" P-frames")
 
 
-                    if show_i_vs_p in (1, "ip", "IP"):
+                    if show_i_vs_p in (1, "ip"):
                         y[legend_key].append(None)
                         y_err[legend_key].append(None)
                         x[legend_key].append("--- "+x_key)
@@ -196,7 +205,7 @@ class EncodingStacked():
                                          name=legend_name, legendgroup=legend_name, showlegend=showlegend, ))
 
         if x:
-            FPS = [30, 40, 45, 60]
+            FPS = [40, 45, 60]
 
             fig.add_trace(go.Scatter(
                 x=["_"]*len(FPS), name="FPS indicators",
