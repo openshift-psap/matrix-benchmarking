@@ -11,6 +11,8 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Output, Input, State, ClientsideFunction
+import dash_table
+
 import plotly
 import plotly.graph_objs as go
 import plotly.subplots
@@ -628,76 +630,58 @@ class FPSTable():
             #display_cmap(cmap)
             colorscale = colormap_to_colorscale(cmap)
             return cmap, colorscale
-        elevation =['#31A354', '#ADDD8E', '#F7FCB9']
+        elevation =['#31A354', '#F7FCB9']
 
         elev_cmap, elev_cs = colorscale_from_list(elevation, 'elev_cmap')
 
-        fig = plotly.subplots.make_subplots(
-            rows=len(fps_actual), cols=1,
-            specs=[[{"type": "table"}] for _ in range(len(fps_actual))],
-        )
+        # ---
+
+        tables = []
 
         for i, (subtable_name, xy_values) in enumerate(fps_actual.items()):
-            header_values = [subtable_name if subtable_name else ""]
-            cell_lists = {}
-            cell_values = [[]]
+            columns = [{"id":"title", "name":subtable_name if subtable_name else ""}]
+            data_dicts = []
             first_pass = True
+            fps_values = set()
             for y_key, x_values in xy_values.items():
-                cell_values[0].append(y_key)
+                current_dict = {"title": y_key}
+                data_dicts.append(current_dict)
 
-                for x_key, value in x_values.items():
-                    if first_pass:
-                        header_values.append(x_key)
-                        cell_lists[x_key] = lst = []
-                        cell_values.append(lst)
-
-                    cell_lists[x_key].append(value)
+                for x_key, fps in x_values.items():
+                    if first_pass: columns.append(dict(id=x_key, name=x_key))
+                    current_dict[x_key] = fps
+                    fps_values.add(fps)
                 first_pass = False
 
-            lines_color = []
-            for ii in range(len(cell_values)):
-                line_color = []
-                lines_color.append(line_color)
-                for jj in range(len(cell_values[0])):
-                    if ii == 0: line_color.append('paleturquoise'); continue
-                    try:
-                        v = cell_values[ii][jj]
-                    except IndexError:
-                        line_color.append('white')
-                    else:
-                        fps_pos = (v-min_fps)/(max_fps-min_fps)
-                        color = "rgb("+", ".join([str(int(c*255)) for c in elev_cmap(1-fps_pos)[:3]])+")"
-                        line_color.append(color)
+            color_filters = []
+            for c in columns:
+                if c['id'] == 'title': continue
+                for fps in fps_values:
+                    fps_pos = (fps-min_fps)/(max_fps-min_fps)
+                    color = "rgb("+", ".join([str(int(c*255)) for c in elev_cmap(1-fps_pos)[:3]])+")"
+                    color_filters.append({'if': {'column_id': c['id'],
+                                                 'filter_query': f"{{{c['id']}}} eq '{fps}'"},
+                                          'backgroundColor': color},)
 
-            fig.add_trace(
-                go.Table(
-                    header=dict(
-                        values=header_values,
-                        line_color='white', fill_color='paleturquoise',
-                        align='center', font=dict(color='black', size=12)
-                    ),
-                    cells=dict(
-                        values=cell_values,
-                        fill_color=lines_color,
-                        align='center', font=dict(color='black', size=11)
-                    )),
-                row=(i+1), col=1)
 
-        fig.update_layout(height=len(fps_actual)*(1+len(fps_actual.items()))*17+650)
+            tables.append(
+                dash_table.DataTable(
+                    sort_action="native",
+                    style_cell_conditional=color_filters,
+                    style_header={
+                        'backgroundColor': 'white',
+                        'fontWeight': 'bold'
+                    },
+                    style_as_list_view=True,
+                    id='data-table',
+                    columns=columns,
+                    data=data_dicts,
+                )
+            )
 
         return {}, [html.H2(f"{self.name} vs " + " x ".join(ordered_vars)),
-                    html.B(f"FPS between {min_fps} and {max_fps}."),
-                    dcc.Graph(figure=fig)]
-        # for legend_name, fps_values_dict, mode in framerates if not show_i_vs_p else []:
+                    html.B(f"FPS between {min_fps} and {max_fps}.")] + tables
 
-        #     for ax, val_dict in fps_values_dict.items():
-        #         showlegend = legend_name not in legends_visible
-        #         if showlegend: legends_visible.append(legend_name)
-
-        #         fig.add_trace(go.Scatter(x=list(val_dict.keys()), y=list(val_dict.values()), xaxis=ax,
-        #                                  **mode,
-        #                                  name=legend_name, legendgroup=legend_name, showlegend=showlegend, ))
-        return {}, tables
 
 class DistribPlot():
     def __init__(self, name, table, x, x_unit, divisor=1):
