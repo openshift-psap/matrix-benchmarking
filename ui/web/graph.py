@@ -35,6 +35,7 @@ class DB():
         print(json.dumps(self.quality), file=output)
 
         for table in self.expe.tables.values():
+            print(f"- {table.table_name}: {len(self.table_contents[table])} rows")
             print(table.header(), file=output)
             print(json.dumps(self.table_contents[table]), file=output)
             print(json.dumps(self.quality_by_table[table]), file=output)
