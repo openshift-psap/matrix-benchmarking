@@ -466,7 +466,7 @@ def register_guest_frame(agent):
         if verb == 'Frame':
             state.frame_bytes = int(frame_fmt.match(entry.msg).group(1))
 
-        elif entry.name == "gst_frame" and verb == 'Capturing':
+        elif entry.name in ("gst_frame", "nv_frame") and verb == 'Capturing':
             state.sleep = dist()
 
         elif verb == 'Encoding':
@@ -499,3 +499,4 @@ def register_guest_frame(agent):
 
     agent.processors["frame"] = process
     agent.processors["gst_frame"] = process
+    agent.processors["nv_frame"] = process
