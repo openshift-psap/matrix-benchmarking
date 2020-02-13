@@ -649,7 +649,7 @@ class FPSTable():
         tables = []
 
         for i, (subtable_name, xy_values) in enumerate(fps_actual.items()):
-            columns = [{"id":"title", "name":subtable_name if subtable_name else ""}]
+            columns = [{"id":"title", "name":""}]
             data_dicts = []
             first_pass = True
             fps_values = set()
@@ -674,6 +674,8 @@ class FPSTable():
                                           'backgroundColor': color},)
 
 
+            if subtable_name:
+                tables.append(html.B(subtable_name))
             tables.append(
                 dash_table.DataTable(
                     sort_action="native",
