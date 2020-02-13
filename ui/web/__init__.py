@@ -342,6 +342,9 @@ class Server():
         try:
             self._thr_run_headless()
         except Exception as e:
+            import traceback, sys
+            print(f"HEADLESS: {e.__class__.__name__}: {e}")
+            traceback.print_exception(*sys.exc_info())
             raise e
         finally:
             import signal, os
