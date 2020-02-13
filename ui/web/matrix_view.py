@@ -41,7 +41,13 @@ PROPERTY_RENAME = {
 }
 
 VALUE_TRANSLATE = {
-    "gop-size": {"-1": "600000"},
+    "gop-size": {"-1": "9000"},
+    "framerate": {"200": "60"},
+    "codec": {"gst.h264.nvh264enc": "___",
+              "gst.vp8.vaapivp8enc": "___",
+              "gst.h264.vaapih264enc": "___",
+              "nv.plug.h264": "___",
+    }
 }
 
 NB_GRAPHS = 3
@@ -1506,11 +1512,15 @@ def parse_data(filename, reloading=False):
         script_key, file_path, file_key = line.split(" | ")
         entry_key = "_".join([f"experiment={expe_name}", script_key, file_key])
 
+
         for kv in entry_key.split("_"):
             k, v = kv.split("=")
 
-            v = VALUE_TRANSLATE.get(k, {}).get(v, v)
-            k = PROPERTY_RENAME.get(k, k)
+            if not reloading:
+                v = VALUE_TRANSLATE.get(k, {}).get(v, v)
+                k = PROPERTY_RENAME.get(k, k)
+                if k == "bitrate" and  int(v) < 100: v = int(v)*1000
+                if k == "keyframe-period" and int(v) == 0: v = 9000
             entry.params.__dict__[k] = v
 
         global key_order
