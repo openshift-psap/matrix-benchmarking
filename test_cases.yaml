@@ -14,7 +14,7 @@ run:
     gst.prop=target-bitrate: 4000
 
 
-record_time: 20
+record_time: 40
 
 after:
   - vm do killall firefox
@@ -22,54 +22,132 @@ after:
 _type: matrix
 name: matrix
 record_time: 40
-#codec: gst.h264.vaapih264enc
-#codec: gst.h264.nvh264enc
-codec: nv.plug.h264
-#codec: gst.vp8.vaapivp8enc
 
-scripted_properties:
+script_config:
   display:
-    #gst_ball:
-    img_lady_1920:
-    vlc_wipeout:
     webgl_wipeout: https://phoboslab.org/wipeout/
-    #webgl_aquarium: https://webglsamples.org/aquarium/aquarium.html
     webgl_cubemap: https://webglsamples.org/dynamic-cubemap/dynamic-cubemap.html
-    #webgl_lots_of_objects: https://webglsamples.org/google-io/2011/lots-of-objects-google.html
-    #webgl_sprites: https://webglsamples.org/sprites/index.html
-  #resolution: 1920x1080
+    web_still: https://news.ycombinator.com/
 
-matrix:
-  framerate: 200
-  nv.ratecontrol: cbr
-  nv.max-bitrate: 8, 16, 32, 64
-  nv.gop: 0
-  nv.blocking: 0
+run:
+  - _nv-plug, _vaapi, _current
+  - _study-fps
+  - #study_resolution
+  - #study_bitrate
+  - #study_kfr
+  - study_display
 
-nvh264enc_matrix:
-  gst.prop=bitrate: 8000, 16000, 32000, 64000
-  gst.prop=gop-size:  -1 #30, 300, -1
-  gst.prop=rc-mode: cbr
+expe:
+  current:
+    codec: gst.vp8.vaapivp8enc
+    encoding:
+      framerate: 20, 30, 40
+      nv.ratecontrol: cbr
+      nv.max-bitrate: 8, 16, 32
+      nv.gop: 30, 300, 0
+      nv.blocking: 0
+    scripts:
+      display: webgl_wipeout, img_lady_1920
+      resolution: 1920x1080
 
-vaapi_matrix:
-  gst.prop=bitrate: 8000, 16000, 32000, 64000
-  gst.prop=rate-control: cbr
-  gst.prop=keyframe-period: 30, 300, 600000
+  study_fps:
+    codec: gst.vp8.vaapivp8enc
+    encoding:
+      framerate: 20, 25, 30, 35, 40, 45, 50
+      gst.prop=bitrate: 8000, 16000, 32000
+      gst.prop=keyframe-period: 128, 128
+      gst.prop=rate-control: cbr
+    scripts:
+      display: webgl_wipeout, img_lady_1920
+      resolution: 1920x1080, 1280x720
 
-nvplug_matrix:
-  nv.ratecontrol: cbr
-  nv.max-bitrate: 8, 16, 32, 64
-  nv.gop: 0
-  nv.blocking: 0
+  study_resolution:
+    codec: gst.vp8.vaapivp8enc
+    encoding:
+      framerate: 30, 40
+      gst.prop=bitrate: 8000, 16000, 32000
+      gst.prop=keyframe-period: 128
+      gst.prop=rate-control: cbr
+    scripts:
+      display: webgl_wipeout, img_lady_1920
+      resolution: 1600x1200, 1400x1050, 1280x960, 1024x768, 800x600, 640x480
+
+  study_bitrate:
+    codec: gst.vp8.vaapivp8enc
+    encoding:
+      framerate: 30
+      gst.prop=bitrate: 2000, 4000, 8000, 12000, 16000, 24000, 32000, 48000, 64000
+      gst.prop=keyframe-period: 128
+      gst.prop=rate-control: cbr
+    scripts:
+      display: webgl_wipeout, img_lady_1920
+      resolution: 1920x1080, 1280x720
+
+  study_kfr:
+    codec: gst.vp8.vaapivp8enc
+    encoding:
+      framerate: 30
+      gst.prop=bitrate: 16000, 48000
+      gst.prop=keyframe-period: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 9000
+      gst.prop=rate-control: cbr
+    scripts:
+      display: webgl_wipeout, img_lady_1920
+      resolution: 1920x1080
+
+  study_display:
+    codec: gst.vp8.vaapivp8enc
+    encoding:
+      framerate: 30, 40
+      gst.prop=bitrate: 16000
+      gst.prop=keyframe-period: 256
+      gst.prop=rate-control: cbr
+    scripts:
+      display: webgl_wipeout, webgl_cubemap, img_lady_1920, img_lady_1280, web_still, vlc_wipeout, vlc_primordial, vlc_mix-quick, vlc_google_map
+      resolution: 1920x1080
+
+  gst.nvenc:
+    codec: gst.h264.nvh264enc
+    encoding:
+      gst.prop=bitrate: 32000
+      gst.prop=gop-size:  30, 300, -1
+      gst.prop=rc-mode: cbr
+      framerate: 20, 30, 40
+    scripts:
+      display: img_lady_1920, webgl_wipeout
+      resolution: 1920x1080
+
+  vaapi:
+    codec: gst.vp8.vaapivp8enc
+    encoding:
+      framerate: 20, 30, 40
+      gst.prop=bitrate: 8000, 16000, 32000
+      gst.prop=rate-control: cbr
+      gst.prop=keyframe-period: 128, 512
+    scripts:
+      display: img_lady_1920, webgl_wipeout
+      resolution: 1920x1080
+
+  nv-plug:
+    codec: nv.plug.h264
+    encoding:
+      nv.ratecontrol: cbr
+      nv.max-bitrate: 8, 16, 32, 64
+      nv.gop: 0
+      nv.blocking: 0
+    scripts:
+      display: img_lady_1920, webgl_wipeout
+      resolution: 1920x1080
 
 scripts:
   setup:
     - vm resolution 1920x1080
     - xset s off -dpms
-    - server exec xset s off -dpms
+    - atuona perf on
+
   teardown:
+    - vm resolution 1920x1080
     - xset s on +dpms
-    - server exec xset s on +dpms
+    - server perf off
 
   display:
     before:

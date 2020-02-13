@@ -4,7 +4,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import threading
 import flask
-import sys
+import sys, os
 import logging
 
 try: import pandas
@@ -131,7 +131,12 @@ def construct_callbacks():
     # So at the moment, only one file can be loaded, here in the startup...
     import glob
     from . import script_types
-    for matrix_result in glob.glob(f"{script_types.RESULTS_PATH}/*/matrix.csv"):
+
+    expe_arg = sys.argv[-1]
+    what = expe_arg if not "/" in expe_arg and os.path.exists(f"{script_types.RESULTS_PATH}/{expe_arg}/matrix.csv") \
+        else "*"
+
+    for matrix_result in glob.glob(f"{script_types.RESULTS_PATH}/{what}/matrix.csv"):
         matrix_view.parse_data(matrix_result)
 
     matrix_view.build_callbacks(main_app)

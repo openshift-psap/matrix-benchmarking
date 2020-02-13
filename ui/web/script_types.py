@@ -8,7 +8,6 @@ import atexit
 from . import script
 from . import matrix_view
 
-DEFAULT_EXPE_NAME = "current"
 RESULTS_PATH = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/../../results")
 
 class SimpleScript(script.Script):
@@ -206,11 +205,10 @@ class MatrixScript(script.Script):
 
         for key, new_value in script_items:
             current_value = getattr(context.params, key)
-            if isinstance(new_value, tuple):
-                new_name = new_value[0]
-                new_value = new_value[1] if new_value[1] else new_name
-            else:
-                new_name = new_value
+
+            new_name = new_value
+            try: new_value = self.yaml_desc['script_config'][key][new_value]
+            except KeyError: pass
 
             if current_value == new_value: continue
 
@@ -233,7 +231,7 @@ class MatrixScript(script.Script):
             setattr(context.params, key, new_name)
 
 
-    def do_run_the_streaming_matrix(self, exe, param_matrix, context):
+    def do_run_the_streaming_matrix(self, exe, encoding_matrix, context, yaml_expe):
         def scripted_property_to_named_value(key):
             val = context.params.__dict__[key]
             return val[0] if isinstance(val, tuple) else val
@@ -241,7 +239,7 @@ class MatrixScript(script.Script):
             val = context.params.__dict__[key]
             return val[0] if isinstance(val, tuple) else val
 
-        path_properties = ["record_time"] + sorted(self.yaml_desc["scripted_properties"])
+        path_properties = ["record_time"] + sorted(yaml_expe['scripts'])
         file_path = "/".join(scripted_property_to_named_value(key) for key in path_properties)
 
         fix_key = "_".join(f"{key}={param_to_named_value(key)}".replace("_", "-")
@@ -249,33 +247,33 @@ class MatrixScript(script.Script):
 
         os.makedirs(f"{context.expe_dir}/{file_path}/", exist_ok=True)
 
-        for param_items in itertools.product(*param_matrix):
-            param_dict = dict(param_items)
+        for encoding_items in itertools.product(*encoding_matrix):
+            encoding_dict = dict(encoding_items)
 
-            param_str = ";".join([f"{k}={v}" for k, v in param_items])
-            param_str = param_str.replace('gst.prop=', '').replace('nv.', '')
+            encoding_str = ";".join([f"{k}={v}" for k, v in encoding_items])
+            encoding_str = encoding_str.replace('gst.prop=', '').replace('nv.', '')
 
-            current_key = param_str.replace(';', "_")
+            current_key = encoding_str.replace(';', "_")
 
             file_entry = " | ".join([fix_key, file_path, current_key])
             file_key = "_".join([fix_key, current_key])
 
-            context.expe_cnt.current_idx += 1
+            exe.expe_cnt.current_idx += 1
             exe.log("---")
-            exe.log(f"running {context.expe_cnt.current_idx}/{context.expe_cnt.total}")
+            exe.log(f"running {exe.expe_cnt.current_idx}/{exe.expe_cnt.total}")
             exe.log("> "+file_key)
 
-            key = f'experiment={DEFAULT_EXPE_NAME}_{file_key}'
+            key = f"experiment={context.expe.replace('_', '-')}_{file_key}"
             try: previous_entry = matrix_view.Matrix.entry_map[key]
             except KeyError: pass # no previous entry, run!
             else:
                 exe.log(f">> already recorded, skipping | {previous_entry.filename}")
-                context.expe_cnt.skipped += 1
+                exe.expe_cnt.skipped += 1
                 continue
 
             exe.reset_encoder()
 
-            exe.set_encoding(context.params.codec, param_dict)
+            exe.set_encoding(context.params.codec, encoding_dict)
             exe.wait(2)
             exe.clear_record()
             exe.clear_quality()
@@ -284,7 +282,7 @@ class MatrixScript(script.Script):
             for k in context.params.__dict__:
                 exe.append_quality(f"{k}: {scripted_property_to_named_value(k)}")
 
-            exe.append_quality(f"encoding: {param_str}")
+            exe.append_quality(f"encoding: {encoding_str}")
 
             exe.request("share_pipeline", client=True, agent=True)
             exe.set_encoding("share_encoding", {})
@@ -339,8 +337,26 @@ class MatrixScript(script.Script):
                 print("bye")
                 return None
 
-
     def do_run(self, exe):
+        exe.expe_cnt = types.SimpleNamespace()
+        exe.expe_cnt.total = 0
+        exe.expe_cnt.current_idx = 0
+        exe.expe_cnt.skipped = 0
+
+        expe_ran = []
+        for expe in self.yaml_desc['run']:
+            if not expe or expe.startswith("_"):
+                exe.log(f"Skip disabled expe '{expe}'")
+                continue
+
+            self.do_run_expe(exe, expe)
+            expe_ran.append(expe)
+
+        exe.log(f"Ran {len(expe_ran)} expe:", ", ".join(expe_ran))
+        exe.log(f"Performed {exe.expe_cnt.total - exe.expe_cnt.skipped}/{exe.expe_cnt.total} experiments.")
+        exe.log(f"Skipped {exe.expe_cnt.skipped} experiments already recorded.")
+
+    def do_run_expe(self, exe, expe):
         exe.log("setup()")
         for cmd in self.yaml_desc['scripts'].get("setup", []):
             exe.execute(cmd)
@@ -350,37 +366,40 @@ class MatrixScript(script.Script):
                 exe.execute(cmd)
         do_at_exit["__vm"] = teardown
 
+        try:
+            yaml_expe = self.yaml_desc['expe'][expe]
+        except KeyError as e:
+            exe.log(f"ERROR: Cannot run '{expe}': expe matrix not defined.")
+            raise e
+
         context = types.SimpleNamespace()
         context.params = types.SimpleNamespace()
-        context.params.codec = self.yaml_desc["codec"]
+        context.params.codec = yaml_expe["codec"]
         context.params.record_time = f"{self.yaml_desc['record_time']}s"
 
-        for script_propery in self.yaml_desc["scripted_properties"]:
+        for script_propery in yaml_expe["scripts"]:
             context.params.__dict__[script_propery] = None
 
-        param_matrix = [[(name, value) for value in str(values).split(", ")]
-                        for name, values in self.yaml_desc["matrix"].items()]
+        encoding_matrix = [[(name, value) for value in str(values).split(", ")]
+                           for name, values in yaml_expe["encoding"].items()]
 
         def values_to_list(values):
             return (values.items() if isinstance(values, dict)
                     else str(values).split(", "))
 
         script_matrix = [[(name, value) for value in values_to_list(values)]
-                          for name, values in self.yaml_desc["scripted_properties"].items()]
+                         for name, values in yaml_expe["scripts"].items()]
 
-        context.expe_cnt = types.SimpleNamespace()
-        nb_param_expe = functools.reduce(operator.mul, map(len, param_matrix), 1)
+        nb_encoding_params_expe = functools.reduce(operator.mul, map(len, encoding_matrix), 1)
         nb_script_expe = functools.reduce(operator.mul, map(len, script_matrix), 1)
-        context.expe_cnt.total = nb_script_expe * nb_param_expe
-        context.expe_cnt.current_idx = 0
-        context.expe_cnt.skipped = 0
+        exe.expe_cnt.total += nb_script_expe * nb_encoding_params_expe
 
-        context.expe = DEFAULT_EXPE_NAME
+        context.expe = expe
         context.script_name = self.yaml_desc["name"]
         context.expe_dir = f"{RESULTS_PATH}/{context.expe}"
         context.results_filename = f"{context.expe_dir}/{context.script_name}.csv"
 
-        exe.log("Loading previous matrix results ...")
+        exe.log("Loading previous matrix results from", context.results_filename)
 
         matrix_view.parse_data(context.results_filename, reloading=True)
         exe.log("Loading previous matrix results: done")
@@ -394,15 +413,16 @@ class MatrixScript(script.Script):
         for script_items in itertools.product(*script_matrix):
             exe.reset_encoder()
             self.do_scripts_setup(exe, script_items, context)
-            self.do_run_the_streaming_matrix(exe, param_matrix, context)
+            self.do_run_the_streaming_matrix(exe, encoding_matrix, context, yaml_expe)
 
         self.do_scripts_setup(exe, [(k, None) for k, v in script_items], context)
         exe.log("teardown()")
         teardown()
         del do_at_exit["__vm"]
 
-        exe.log(f"Performed {context.expe_cnt.total - context.expe_cnt.skipped} experiments.")
-        exe.log(f"Skipped {context.expe_cnt.skipped} experiments already recorded.")
+        exe.log("#")
+        exe.log(f"# Finished with {context.expe}")
+        exe.log("#")
 
 TYPES = {
     None: SimpleScript,
