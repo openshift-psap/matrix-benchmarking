@@ -102,7 +102,6 @@ class EncodingStacked():
         subplots = {}
         if second_vars:
             subplots_var = second_vars[-1]
-            subplots_len = len(variables[subplots_var])
             subplots_var_values = sorted(variables[subplots_var], key=natural_keys)
 
             showticks = len(second_vars) == 2
@@ -110,7 +109,6 @@ class EncodingStacked():
                 subplots[subplots_key] = f"x{i+1}"
                 ax = f"xaxis{i+1}"
                 layout[ax] = dict(title=f"{subplots_var}={subplots_key}",
-                                  domain=[i/subplots_len, (i+1)/subplots_len],
                                   type='category', showticklabels=showticks, tickangle=45)
         else:
             subplots_var = None
@@ -125,6 +123,8 @@ class EncodingStacked():
         legend_names = set()
         legends_visible = []
 
+        subplots_used = set()
+
         for param_values in sorted(itertools.product(*param_lists)):
             params.update(dict(param_values))
 
@@ -137,6 +137,7 @@ class EncodingStacked():
 
             subplots_key = params[subplots_var] if subplots_var else None
             ax = subplots[subplots_key]
+            subplots_used.add(ax)
 
             fps_target[ax][x_key] = 1/int(params['framerate']) * 1000 if 'framerate' in params else None
             fps_actual[ax][x_key] = 1/entry.stats["Guest Framerate"].value * 1000
@@ -223,6 +224,9 @@ class EncodingStacked():
                 xaxis=ax,
             ))
 
+        for i, ax in enumerate(sorted(subplots_used)):
+            axis = "xaxis"+ax[1:]
+            layout[axis].domain = [i/len(subplots_used), (i+1)/len(subplots_used)]
 
         layout.barmode = 'stack'
         fig.update_layout(yaxis=dict(title="Time (in ms)"))
@@ -1198,14 +1202,12 @@ class TableStats():
         subplots = {}
         if second_vars:
             subplots_var = second_vars[-1]
-            subplots_len = len(variables[subplots_var])
 
             showticks = len(second_vars) == 2
             for i, subplots_key in enumerate(sorted(variables[subplots_var], key=natural_keys)):
                 subplots[subplots_key] = f"x{i+1}"
                 ax = f"xaxis{i+1}"
                 layout[ax] = dict(title=f"{subplots_var}={subplots_key}",
-                                  domain=[i/subplots_len, (i+1)/subplots_len],
                                   type='category', showticklabels=showticks, tickangle=45)
         else:
             subplots_var = None
@@ -1216,6 +1218,8 @@ class TableStats():
         legend_keys = set()
         legend_names = set()
         legends_visible = []
+        subplots_used = set()
+
         for param_values in sorted(itertools.product(*param_lists)):
             params.update(dict(param_values))
 
@@ -1371,6 +1375,7 @@ class TableStats():
 
             showlegend = legend_name not in legends_visible
             if showlegend: legends_visible.append(legend_name)
+            subplots_used.add(ax)
 
             y_max = max([yval for yval in [y_max]+y[legend_key] if yval is not None])
             data.append(dict(**plot_args, x=x[legend_key], y=y[legend_key],
@@ -1383,6 +1388,10 @@ class TableStats():
             #   bar plot start from 0, y_max hard to compute with error bars
 
             layout.yaxis.range = [0, y_max]
+
+        for i, ax in enumerate(sorted(subplots_used)):
+            axis = "xaxis"+ax[1:]
+            layout[axis].domain = [i/len(subplots_used), (i+1)/len(subplots_used)]
 
         layout.legend.traceorder = 'normal'
 
