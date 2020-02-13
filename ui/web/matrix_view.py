@@ -711,7 +711,7 @@ class DistribPlot():
         fig = go.Figure()
 
         use_count = bool(cfg.get('distrib.count'))
-        show_i_vs_p = cfg.get('distrib.i_vs_p')
+        show_i_vs_p = str(cfg.get('distrib.i_vs_p', "").lower())
         side_by_side = bool(cfg.get('distrib.side'))
 
         if len(variables) > 4:
@@ -733,7 +733,13 @@ class DistribPlot():
                 else:
                     return {'layout': {'title': f"Error: no table named '{table_key}'"}}
                 tname = table_def.partition("|")[0].rpartition(".")[-1]
+
+                if not show_i_vs_p: continue
+                if "key_frame" not in table_def:
+                    return {'layout': {'title': f"key_frame field not found in {table_def}"}}
+
                 kfr_row_id = table_def.partition("|")[2].split(";").index(f"{tname}.key_frame")
+
 
             table_fields = table_def.partition("|")[-1].split(";")
 
@@ -746,13 +752,13 @@ class DistribPlot():
                 x = [row[x_row_id]/self.divisor for row in table_rows[1]]
                 fig.add_trace(go.Histogram(x=x, histnorm=histnorm, name=legend_name))
 
-            else:
+            elif kfr_row_id:
                 xi = [row[x_row_id]/self.divisor for row in table_rows[1] if row[kfr_row_id]]
                 xp = [row[x_row_id]/self.divisor for row in table_rows[1] if not row[kfr_row_id]]
 
-                if show_i_vs_p in (1, "I", "i"):
+                if show_i_vs_p in ("1", "I", "i"):
                     fig.add_trace(go.Histogram(x=xi, histnorm=histnorm, name=legend_name+" | I-frames"))
-                if show_i_vs_p in (1, "P", "p"):
+                if show_i_vs_p in ("1", "P", "p"):
                     fig.add_trace(go.Histogram(x=xp, histnorm=histnorm, name=legend_name+" | P-frames"))
 
         fig.update_layout(
@@ -1448,7 +1454,8 @@ TableStats.Average("client_time_in_queue_avg", "Client time in queue (avg)",
 
 for what in "sleep", "capture", "encode", "send":
     invert = False
-    for kfr, kfr_txt in (True, "I-frames"), (False, "P-frames"), (None, ""):
+    frames = (True, "I-frames"), (False, "P-frames"), (None, "")
+    for kfr, kfr_txt in frames if what != "capture" else frames[-1:]:
         TableStats.Average(f"guest_{what}_duration_{kfr_txt}", f"Guest {what.capitalize()} Duration (avg){' ' if kfr_txt else ''}{kfr_txt}",
                            "guest.guest", f"guest.{what}_duration", ".0f", "FPS" if invert else "ms", invert=invert, keyframes=kfr, divisor=1 if invert else 1/1000)
 
