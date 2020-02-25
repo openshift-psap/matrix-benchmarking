@@ -193,6 +193,9 @@ class AgentInterface(measurement.Measurement):
         except bdb.BdbQuit as e: raise e
         except Exception as e:
             print(f"WARNING: Failed to process entry {entry.name}: {e.__class__.__name__}: {e}")
+            import sys, traceback
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_tb(exc_traceback, file=sys.stdout)
             print(entry)
 
 
