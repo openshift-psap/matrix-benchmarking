@@ -139,10 +139,13 @@ class EncodingStacked():
             ax = subplots[subplots_key]
             subplots_used.add(ax)
 
-            fps_target[ax][x_key] = 1/int(params['framerate']) * 1000 if 'framerate' in params else None
-            fps_actual[ax][x_key] = 1/entry.stats["Guest Framerate"].value * 1000
+            fps_target[ax][x_key+"-capture"] = 1/int(params['framerate']) * 1000 if 'framerate' in params else None
+            fps_actual[ax][x_key+"-send"] = 1/entry.stats["Guest Framerate"].value * 1000
 
-            for what in "sleep", "capture", "encode", "send":
+            CAPTURE_STACK = ["capture", "push"]
+            SEND_STACK = ["sleep", "pull", "send"]
+
+            for what in CAPTURE_STACK + SEND_STACK:
                 What = what.title()
                 name = f"Guest {What} Duration (avg)"
                 if name not in entry.stats:
@@ -176,7 +179,9 @@ class EncodingStacked():
                         y_err[legend_key].append(None)
                         x[legend_key].append("--- "+x_key)
                 else:
-                    do_add(x_key, name)
+                    x_key_ = x_key + ("-capture" if what in CAPTURE_STACK else ("-send" if what in SEND_STACK else "-xxx"))
+                    do_add(x_key_, name)
+
 
         legend_keys = sorted(list(legend_keys), key=natural_keys)
         legend_names = sorted(list(legend_names), key=natural_keys)
@@ -200,7 +205,7 @@ class EncodingStacked():
                              showlegend=showlegend, hoverlabel= {'namelength' :-1}))
 
 
-        framerates = (('Actual FPS', fps_actual, dict(mode='lines+markers', marker=dict(symbol="x", size=10, color="purple"))),
+        framerates = (('Actual FPS', fps_actual, dict(mode='markers', marker=dict(symbol="x", size=10, color="purple"))),
                       ('Target FPS', fps_target, dict(mode='markers', line=dict(color='black'), marker=dict(symbol="cross", size=10, color="black"))),)
 
         for legend_name, fps_values_dict, mode in framerates if not show_i_vs_p else []:
@@ -227,6 +232,15 @@ class EncodingStacked():
         for i, ax in enumerate(sorted(subplots_used)):
             axis = "xaxis"+ax[1:]
             layout[axis].domain = [i/len(subplots_used), (i+1)/len(subplots_used)]
+            sort_pipeline = bool(cfg.get('stack.sort_pipeline', True))
+            if sort_pipeline:
+                elts = []
+                for k, v in x.items():
+                    if k[1] != ax: continue
+                    elts += v
+
+                layout[axis].categoryorder = 'array'
+                layout[axis].categoryarray = sorted(elts, key=natural_keys)
 
         layout.barmode = 'stack'
         fig.update_layout(yaxis=dict(title="Time (in ms)"))
@@ -1160,6 +1174,9 @@ class TableStats():
         ts = datetime.datetime.fromtimestamp
         fps =  (len(values) - 1) / (ts(values[-1]/1000000) - ts(values[0]/1000000)).total_seconds()
 
+        if self.kwargs.get("invert"):
+            return (1/fps) / self.divisor
+
         return fps
 
     def do_hover(self, meta_value, variables, figure, data, click_info):
@@ -1454,12 +1471,15 @@ TableStats.Average("client_time_in_queue_avg", "Client time in queue (avg)",
                    "client.frames_time_to_drop", "frames_time_to_drop.in_queue_time", ".0f", "ms",
                    divisor=1000)
 
-for what in "sleep", "capture", "encode", "send":
-    invert = False
+for what in "sleep", "encode", "send", "pull":
     frames = (True, "I-frames"), (False, "P-frames"), (None, "")
-    for kfr, kfr_txt in frames if what != "capture" else frames[-1:]:
+    for kfr, kfr_txt in frames:
         TableStats.Average(f"guest_{what}_duration_{kfr_txt}", f"Guest {what.capitalize()} Duration (avg){' ' if kfr_txt else ''}{kfr_txt}",
-                           "guest.guest", f"guest.{what}_duration", ".0f", "FPS" if invert else "ms", invert=invert, keyframes=kfr, divisor=1 if invert else 1/1000)
+                           "guest.guest", f"guest.{what}_duration", ".0f", "ms", keyframes=kfr, divisor=1/1000)
+
+for what in "capture", "push":
+    TableStats.Average(f"guest_capt_{what}_duration", f"Guest {what.capitalize()} Duration (avg)",
+                       "guest.guest_capt", f"guest_capt.{what}_duration", ".0f", "ms", divisor=1/1000)
 
 
 TableStats.PerSecond("client_time_in_queue_persec", "Client time in queue (per second)", "client.frames_time_to_drop",
@@ -1482,8 +1502,11 @@ for agent_name, tbl_name in (("client", "client"), ("guest", "guest"), ("server"
     TableStats.ActualFramerate(f"{agent_name}_framerate", f"{agent_name.capitalize()} Framerate",
                                f"{agent_name}.{tbl_name}", f"{tbl_name}.msg_ts", ".0f", "FPS")
 
-    TableStats.AgentActualFramerate(f"{agent_name}_framerate_agent", f"{agent_name.capitalize()} Agent Framerate",
-                                    f"{agent_name}.{tbl_name}", f"{tbl_name}.framerate_actual", ".0f", "fps")
+    TableStats.ActualFramerate(f"{agent_name}_framerate_time", f"{agent_name.capitalize()} Framerate Time",
+                               f"{agent_name}.{tbl_name}", f"{tbl_name}.msg_ts", ".0f", "ms", invert=True, divisor=1/1000)
+
+    #TableStats.AgentActualFramerate(f"{agent_name}_framerate_agent", f"{agent_name.capitalize()} Agent Framerate",
+    #                                f"{agent_name}.{tbl_name}", f"{tbl_name}.framerate_actual", ".0f", "fps")
 
 TableStats.ActualFramerate(f"guest_capture_framerate", f"Guest Capture Framerate",
                            f"guest.capture", f"capture.msg_ts", ".0f", "FPS")

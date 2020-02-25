@@ -447,19 +447,18 @@ def register_guest_frame(agent):
         s.prev_time = None
         return s
 
-    def EncodeState():
-        s = collections.namedtuple('State', 'start frame_bytes prev_time '
-                                       'send sleep pull '
-                                       'width height codec keyframe')
+    def resetEncodeState(s):
         s.start = None
         s.prev_time = None
         s.send = None
         s.sleep = None
         s.keyframe = 0
         s.frame_bytes = None
-        return s
 
-    encode_state = EncodeState()
+    encode_state = collections.namedtuple('State', 'start frame_bytes prev_time '
+                                       'send sleep pull '
+                                       'width height codec keyframe')
+    resetEncodeState(encode_state)
     capture_state = CaptureState()
 
     frame_fmt = re.compile(r'Frame of (\d+) bytes')
@@ -549,7 +548,7 @@ def register_guest_frame(agent):
 
                     **framerate)
 
-                encode_state.start = None
+                resetEncodeState(encode_state)
             else:
                 print(f"WARNING: agentinterface: unknown Main verb: {verb}")
                 return
