@@ -5,6 +5,7 @@ import collections
 import threading
 import re
 from collections import deque
+import types
 
 import measurement
 import measurement.hot_connect
@@ -423,13 +424,16 @@ def register_quality_setting(agent):
     agent.processors["quality_setting"] = process
 
 def register_guest_frame(agent):
-    table = agent.experiment.create_table([
+    capture_table = agent.experiment.create_table([
+        'guest_capt.msg_ts',
+        'guest_capt.capture_duration',
+        'guest_capt.push_duration'])
+
+    encode_table = agent.experiment.create_table([
         'guest.msg_ts',
         'guest.frame_size',
-        'guest.time',
         'guest.sleep_duration',
-        'guest.capture_duration',
-        'guest.encode_duration',
+        'guest.pull_duration',
         'guest.send_duration',
         'guest.key_frame',
         'guest.framerate_actual', 'guest.framerate_requested'
@@ -437,68 +441,119 @@ def register_guest_frame(agent):
 
     framerate_state = init_framerate_state()
 
-    state = collections.namedtuple('State', 'start prev_time capture encode send frame_bytes'
-                                   'width height codec keyframe')
-    state.start = None
+    def CaptureState():
+        s = collections.namedtuple('CaptureState',
+                                   'prev_time capture push')
+        s.prev_time = None
+        return s
+
+    def EncodeState():
+        s = collections.namedtuple('State', 'start frame_bytes prev_time '
+                                       'send sleep pull '
+                                       'width height codec keyframe')
+        s.start = None
+        s.prev_time = None
+        s.send = None
+        s.sleep = None
+        s.keyframe = 0
+        s.frame_bytes = None
+        return s
+
+    encode_state = EncodeState()
+    capture_state = CaptureState()
+
     frame_fmt = re.compile(r'Frame of (\d+) bytes')
+
     def process(entry):
         time = entry.time
 
         verb = entry.msg.split()[0]
 
-        if entry.name == "frame" and verb == 'Capturing':
-            state.start = time
-            state.prev_time = time
+        if "." in verb: mode, verb = verb.split(".")
+        else: mode = None
 
-            state.sleep = None
-            state.capture = None
-            state.encode = None
-            state.send = None
-            state.keyframe = 0
-            state.frame_bytes = None
-
+        if entry.name == "frame" and mode is None and verb == 'Capturing':
+            encode_state.start = time
             return
 
-        if state.start is None: return # partial state, skip it
+        if mode == "Capture" and verb == "capturing":
+            capture_state.prev_time = time
+            return
 
-        def dist():  return (time - state.prev_time) / 1000000
+        def encode_dist():  return (time - encode_state.prev_time) / 1000000
+        def capture_dist():  return (time - capture_state.prev_time) / 1000000
+        def dist(start, stop): return (stop - start) / 1000000
 
-        # if one event is missing (eg, gst_frame.Capturing or frame.Encoding),
-        # then its time is included in the next event.
+        if mode == "Capture":
+            if capture_state.prev_time is None:
+                return # partial state, skip it
 
-        if verb == 'Frame':
-            state.frame_bytes = int(frame_fmt.match(entry.msg).group(1))
+            elif verb == "pushing":
+                capture_state.capture = capture_dist()
 
-        elif entry.name in ("gst_frame", "nv_frame") and verb == 'Capturing':
-            state.sleep = dist()
+            elif verb == "done":
+                capture_state.push = capture_dist()
 
-        elif verb == 'Encoding':
-            state.capture = dist()
+                capture_table.add(
+                    msg_ts = time,
+                    capture_duration = capture_state.capture,
+                    push_duration = capture_state.push)
+                #print("      |", " "*10, "---")
+                capture_state.prev_time = None
+                return
+            else:
+                print(f"WARNING: agentinterface: unknown Capture verb: {verb}")
+                return
+            capture_state.prev_time = time
+            return
 
-        elif verb == 'Captured':
-            state.encode = dist()
+        elif mode == "Encode":
+            if encode_state.start is None:
+                return # partial state, skip it
+            if verb == "pulling":
+                pass # just to set encode_state.prev_time = time
+            elif verb == "sleeping":
+                encode_state.pull = encode_dist()
+            elif verb == "done":
+                encode_state.sleep = encode_dist()
 
-        elif verb == 'Keyframe':
-            state.keyframe = 1
 
-        elif verb == 'Sent':
-            state.send = dist()
+            else:
+                print(f"WARNING: agentinterface: unknown Encode verb: {verb}")
+                return
+            encode_state.prev_time = time
+        else:
+            if encode_state.start is None: return # partial state, skip it
 
-            framerate = process_framerate(framerate_state, time)
+            if verb == 'Capturing': pass
+            elif verb == 'Captured': pass
+            elif verb == 'Frame':
+                encode_state.frame_bytes = int(frame_fmt.match(entry.msg).group(1))
 
-            table.add(
-                msg_ts = time,
-                frame_size = state.frame_bytes,
-                time = state.start / 1000000,
-                sleep_duration = state.sleep,
-                capture_duration = state.capture,
-                encode_duration = state.encode,
-                key_frame = state.keyframe,
-                send_duration = state.send,
-                **framerate)
+            elif verb == 'Keyframe':
+                encode_state.keyframe = 1
 
-            state.start = None
-        state.prev_time = time
+            elif verb == 'Sent':
+                encode_state.send = encode_dist()
+
+                framerate = process_framerate(framerate_state, time)
+
+                encode_table.add(
+                    msg_ts = time,
+                    frame_size = encode_state.frame_bytes,
+                    key_frame = encode_state.keyframe,
+
+                    pull_duration = encode_state.pull,
+                    sleep_duration = encode_state.sleep,
+                    send_duration = encode_state.send,
+
+                    **framerate)
+
+                encode_state.start = None
+            else:
+                print(f"WARNING: agentinterface: unknown Main verb: {verb}")
+                return
+            encode_state.prev_time = time
 
     agent.processors["frame"] = process
     agent.processors["gst_frame"] = process
