@@ -254,6 +254,11 @@ class Regression():
         return val
 
     @staticmethod
+    def bitrate_in_kbps(bitrate):
+        "KB/s"
+        return bitrate*1024/8
+
+    @staticmethod
     def res_in_pix(res):
         "px" # docstring
 
@@ -285,7 +290,7 @@ class Regression():
         other_vars = ordered_vars[:]
         try: other_vars.remove(self.key_var)
         except ValueError:
-            return { 'data': [], 'layout': dict(title="ERROR: Framerate parameter must be variable ...")}, [""]
+            return { 'data': [], 'layout': dict(title=f"ERROR: '{self.key_var}' parameter must be variable ...")}, [""]
 
         def name_units(ax_key):
             if ax_key.startswith("param:"):
@@ -374,7 +379,6 @@ class Regression():
             formulae.append(f"{y_name} = {slope:+.2f} * {x_name} {intercept:+.2f} " +
                             f"| r={r_value:+.3f}, p={p_value:+.3f}, stdev={std_err:+.3f} | {reg_key}")
 
-        text_x_pos = x_range[0] + (x_range[1]-x_range[0])/2
         text = '<br>'.join(formulae)
 
         fig.update_layout(
@@ -1358,6 +1362,7 @@ class TableStats():
         y_max = 0
         legend_keys = sorted(list(legend_keys), key=natural_keys)
         legend_names = sorted(list(legend_names), key=natural_keys)
+        DO_LOCAL_SORT = True
 
         for legend_key in legend_keys:
             legend_name, subplots_key = legend_key
@@ -1384,7 +1389,6 @@ class TableStats():
                     y_max = plot_scatter_err(legend_key, err_data, y_max)
 
 
-            DO_LOCAL_SORT = True
             if len(variables) >= 5 and DO_LOCAL_SORT:
                 # sort x according to y's value order
                 x[legend_key] = [_x for _y, _x in sorted(zip(y[legend_key], x[legend_key]),
@@ -1407,6 +1411,21 @@ class TableStats():
                              legendgroup=legend_name,
                              xaxis=ax, name=legend_name,
                              showlegend=showlegend, hoverlabel= {'namelength' :-1}))
+
+        do_sort = bool(cfg.get('stats.sort_bar', False))
+        if do_sort and len(variables) <= 2:
+            layout['xaxis'].categoryorder = 'trace'
+            def get(_name):
+                for trace in data:
+                    if trace['name'] != _name: continue
+                    return trace
+
+            for _y, _x in sorted(zip(y.values(), x.keys())):
+                name = _x[0]
+                trace = get(name)
+                data.remove(trace)
+                data.append(trace)
+
         if len(variables) > 2:
             # force y_min = 0 | y_max = max visible value (cannot set only y_min)
             # if len(variables) <= 2:
@@ -1432,7 +1451,10 @@ EncodingStacked()
 
 for who in "client", "guest":
     Who = who.capitalize()
-    for what_param, what_x in ("framerate", f"{Who} Framerate"), ("resolution", "param:resolution:res_in_pix"):
+    for what_param, what_x in (
+            ("framerate", f"{Who} Framerate"),
+            ("resolution", "param:resolution:res_in_pix"),
+            ("bitrate", "param:bitrate:bitrate_in_kbps")):
         for y_name in "CPU", "GPU Video", "GPU Render":
             y_id = y_name.lower().replace(" ", "_")
             Regression(f"{what_param}_vs_{who}_{y_id}", what_param, f"{Who} {y_name} vs {what_param.title()}", what_x, f"{Who} {y_name}")
@@ -1448,8 +1470,10 @@ for what_param, what_x in ("framerate", f"Client Framerate"), ("resolution", "pa
     Regression(f"{what_param}_vs_bandwidth", what_param, f"Frame Bandwidth vs {what_param.title()}",
                what_x, f"Frame Size (avg)")
 
+Regression(f"resolution_vs_decode_time", "resolution", f"Guest Capture Duration (avg) vs Resolution",
+           "param:resolution:res_in_pix", "Guest Capture Duration (avg)")
+
 DistribPlot("Frame capture time", 'guest.guest', 'guest.capture_duration', "ms", divisor=1/1000)
-DistribPlot("Frame encoding time", 'guest.guest', 'guest.encode_duration', "ms", divisor=1/1000)
 DistribPlot("Frame sizes", 'guest.guest', 'guest.frame_size', "KB", divisor=1000)
 
 HeatmapPlot("Frame Size/Decoding", 'client.client', "Frame Size vs Decode duration",
@@ -1520,6 +1544,10 @@ TableStats.PerFrame("client_decode_per_f", "Client Decode time/frame", "client.c
 TableStats.Average("client_decode", "Client Decode Duration", "client.client",
                    "client.decode_duration", ".0f", "s")
 
+TableStats.StartStopDiff(f"guest_syst_mem", f"Guest Free Memory", "guest.mem",
+                         "mem.free", ".0f", "B", divisor=1000*1000)
+TableStats.Average("guest_syst_mem_avg", "Guest Free Memory (avg)", "guest.mem",
+                   "mem.free", ".0f", "MB", divisor=1000)
 
 TableStats.StartStopDiff(f"frames_dropped", f"Client Frames Dropped", "client.frames_dropped",
                          "frames_dropped.count", "d", "frames")
