@@ -544,7 +544,8 @@ class Report():
 
         # --- GPU --- #
         report = []
-        for src in "client", "guest":
+        SYST = ["guest", "client"]
+        for src in SYST:
             report += [html.H2(f"{src.capitalize()} GPU Usage"+ (f" (by {what})" if what else ""))]
 
             for value in variables.get(what, [params[what]]) if what else [""]:
@@ -573,8 +574,8 @@ class Report():
 
         # --- CPU --- #
         report = []
-
-        for src in "client", "guest":
+        SYST = ["guest", "client"]
+        for src in SYST:
             report += [html.H2(f"{src.capitalize()} CPU Usage" + (f" (by {what})" if what else ""))]
 
             for value in variables.get(what, [params[what]]) if what else [""]:
