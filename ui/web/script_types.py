@@ -274,7 +274,7 @@ class MatrixScript(script.Script):
             exe.reset_encoder()
 
             exe.set_encoding(context.params.codec, encoding_dict)
-            exe.wait(2)
+            exe.wait(10)
             exe.clear_record()
             exe.clear_quality()
             exe.wait(2)
