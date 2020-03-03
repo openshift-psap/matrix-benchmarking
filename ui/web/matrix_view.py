@@ -1139,8 +1139,10 @@ class TableStats():
         kfr_values = [bool(row[kfr_row_id]) for row in rows]
 
         kfr_cnt = sum(kfr_values)
-
-        return kfr_cnt if self.kwargs["keyframes"] else len(rows) - kfr_cnt
+        if self.kwargs["keyframes"] is None:
+            return len(rows)
+        else:
+            return kfr_cnt if self.kwargs["keyframes"] else len(rows) - kfr_cnt
 
     def process_start_stop_diff(self, table_def, rows):
         if not rows: return 0
@@ -1491,6 +1493,9 @@ TableStats.KeyFramesCount("keyframe_count", "Keyframe count", "guest.guest",
                           "guest.key_frame", ".0f", "#", keyframes=True)
 TableStats.KeyFramesCount("p_frame_count", "P-frame count", "guest.guest",
                           "guest.key_frame", ".0f", "#", keyframes=False)
+
+TableStats.KeyFramesCount("all_frame_count", "All-frame count", "guest.guest",
+                          "guest.key_frame", ".0f", "#", keyframes=None)
 
 TableStats.Average("client_time_in_queue_avg", "Client time in queue (avg)",
                    "client.frames_time_to_drop", "frames_time_to_drop.in_queue_time", ".0f", "ms",
