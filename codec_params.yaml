@@ -16,7 +16,6 @@ grp_gst:
   _group: true
 
 grp_gst-vp8-9_sw_encoding:
-  _prefix: gst.$3.prop=
   _group: true
   keyframe-max-dist:
     type: int
@@ -47,7 +46,6 @@ grp_gst-vp8-9_sw_encoding:
     url: "https://thiblahute.github.io/GStreamer-doc/vpx-1.0/vp8enc.html?gi-language=c#GstVP8Enc:end-usage"
 
 grp_gst-vp8-9_intelvaapi_encoding:
-  _prefix: gst.$3.prop=
   _group: true
   bitrate:
     type: uint
@@ -108,12 +106,10 @@ gst.mjpeg.vaapimpeg2enc:
 native:mjpeg:
   _disabled: true
   quality:
-    _prefix: mjpeg.
     type: int[0:100:5]
     default: 100
 
 nv.plug.h264:
-  _prefix: nv.
   profile:
     type: uint
     desc: "[min: 1, max:100]"

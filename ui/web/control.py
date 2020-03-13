@@ -66,8 +66,8 @@ def construct_codec_control_callback(codec_name):
     cb_states = [State(tag_id, tag_cb_field) \
                  for tag_id, tag_cb_field, *_ in control_center_boxes[codec_name]]
 
-    param_names = [prefix+tag_id.rpartition(":")[-1]
-                   for tag_id, tag_cb_field, _, prefix in control_center_boxes[codec_name]]
+    param_names = [tag_id.rpartition(":")[-1]
+                   for tag_id, tag_cb_field, _ in control_center_boxes[codec_name]]
     @UIState.app.callback(Output(f"{codec_id_name}-msg", 'children'),
                            [Input(f'{codec_id_name}-go-button', "n_clicks"),
                             Input(f'{codec_id_name}-reset-button', "n_clicks")],
@@ -97,7 +97,7 @@ def construct_codec_control_callback(codec_name):
 
         return set_encoder(codec_name, params)
 
-    for tag_id, tag_cb_field, need_value_cb, _ in control_center_boxes[codec_name]:
+    for tag_id, tag_cb_field, need_value_cb in control_center_boxes[codec_name]:
         if not need_value_cb: continue
 
         @UIState.app.callback(Output(f"{tag_id}:value", 'children'),
@@ -155,11 +155,7 @@ def construct_control_center_tab(codec_cfg):
         tag_id = f"{codec_name}-opt:{opt_name.lower()}".replace(".", "_")
         tag.id = tag_id
 
-        prefix = opt_props.get("_prefix", "")
-        for i, v in enumerate(codec_name.split(".")):
-            prefix = prefix.replace(f"${i+1}", v)
-
-        control_center_boxes[codec_name].append((tag_id, tag_cb_field, need_value_cb, prefix))
+        control_center_boxes[codec_name].append((tag_id, tag_cb_field, need_value_cb))
 
         opt_name_span = html.Span(opt_name)
         children = [opt_name_span, html.Span(id=tag_id+":value")]
@@ -201,14 +197,6 @@ def construct_control_center_tab(codec_cfg):
             if "_group" in options:
                 options = options.copy()
                 del options["_group"]
-
-            if "_prefix" in options:
-                prefix = options["_prefix"]
-                options = options.copy()
-                del options["_prefix"]
-                for param_option in options.values():
-                    try: param_option["_prefix"] = prefix
-                    except TypeError: pass # '<type>' object does not support item assignment
 
             all_options.update(options)
 
