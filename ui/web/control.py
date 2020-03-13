@@ -45,7 +45,7 @@ def send_qmp(set_spice_args):
     del qmp_sock
 
 def set_encoder(encoder_name, parameters):
-    params_str = ";".join(f"{name+'=' if not name.startswith('_') else ''}{value}" for name, value in parameters.items() if value not in (None, "")) + ";"
+    params_str = ",".join(f"{k}={v}" for k, v in parameters.items() if v not in (None, ""))
 
     args = {"guest-encoder": encoder_name,
             "guest-encoder-params": params_str}
