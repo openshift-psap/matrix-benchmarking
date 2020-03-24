@@ -764,6 +764,15 @@ class Report():
         return obj
 
     @classmethod
+    def GuestCPU(clazz, *args, **kwargs):
+        obj = clazz(f"report_guest_cpu", f"Report: Guest CPU",
+                    *args, **kwargs)
+
+        obj.do_report = lambda *_args: obj.report_guest_cpu(*_args)
+
+        return obj
+
+    @classmethod
     def GPU(clazz, key_var, *args, **kwargs):
         obj = clazz(f"report_{key_var}_gpu", f"Report: Guest/Client GPU vs {key_var.title()}",
                     *args, **kwargs)
@@ -928,6 +937,33 @@ class Report():
                 report += do_plot(f"Reg: {src.capitalize()} CPU vs {key_var.title()}", what, value)
 
         return report
+
+    def report_guest_cpu(self, *args):
+        ordered_vars, params, param_lists, variables, cfg = args
+
+        def do_plot(stat_name):
+            _args = Report.prepare_args(args, None, None)
+            reg_stats = TableStats.stats_by_name[stat_name].do_plot(*_args)
+
+            return reg_stats[1] + [dcc.Graph(figure=reg_stats[0])] + [html.Hr()]
+
+        src = "guest"
+        report = []
+
+        equa = "CPU = " + " * ".join(f"({v.lower()} * {v[0].upper()})"for v in ordered_vars \
+                                     if v != "experiment")
+        report += []
+
+        all_equa = []
+        for key_var in "framerate", "resolution", "bitrate", "keyframe-period":
+            report += [html.H3(f"{src.capitalize()} CPU Usage vs {key_var.title()}")]
+            current_report = do_plot(f"Reg: {src.capitalize()} CPU vs {key_var.title()}")
+            report += current_report
+            all_equa += [e for e in current_report[:-2] if e and not isinstance(e, html.Br)]
+
+        return ([html.B("Equation: "), html.I(f"{equa}"), html.Br()]
+                + list(join(html.Br(), all_equa)) + [html.Hr()]
+                + report)
 
 class FPSTable():
     def __init__(self):
@@ -1815,6 +1851,8 @@ for what in "framerate", "resolution":
     Report.CPU(what)
     Report.GPU(what)
     Report.Decode(what)
+
+Report.GuestCPU()
 
 ModelGuestCPU()
 FPSTable()
