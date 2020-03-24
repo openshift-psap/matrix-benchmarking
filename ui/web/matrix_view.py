@@ -1567,7 +1567,7 @@ class TableStats():
 
         if len(variables) == 0:
             layout.title = "Select at least 1 variable parameter..."
-            return {'data': data, 'layout': layout}
+            return [{'data': data, 'layout': layout}]
 
         *second_vars, legend_var = ordered_vars
         second_vars.reverse()
