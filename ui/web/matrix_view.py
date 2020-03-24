@@ -41,8 +41,10 @@ PROPERTY_RENAME = {
 }
 
 VALUE_TRANSLATE = {
-    "gop-size": {"-1": "9000"},
-    "framerate": {"200": "60"},
+    "gop-size": {"30": "128", "9000": "512", "-1": "512"},
+    "gop": {"30": "128", "9000": "512", "-1": "512"},
+    #"keyframe-period": {"30": "128", "9000": "512"},
+    #"framerate": {"200": "60"},
     "codec": {"gst.h264.nvh264enc": "___",
               "gst.vp8.vaapivp8enc": "___",
               "gst.h264.vaapih264enc": "___",
@@ -1709,7 +1711,7 @@ def parse_data(filename, reloading=False):
                 v = VALUE_TRANSLATE.get(k, {}).get(v, v)
                 k = PROPERTY_RENAME.get(k, k)
                 if k == "bitrate" and  int(v) < 100: v = int(v)*1000
-                if k == "keyframe-period" and int(v) == 0: v = 9000
+                if k == "keyframe-period" and int(v) == 0: v = 512
             entry.params.__dict__[k] = v
 
         global key_order
