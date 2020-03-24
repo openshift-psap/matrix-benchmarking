@@ -573,6 +573,10 @@ class Regression():
         "FPS"
         return val
 
+    def keyframe_period(val):
+        "kfp"
+        return val
+
     @staticmethod
     def bitrate_in_kbps(bitrate):
         "KB/s"
@@ -1803,7 +1807,8 @@ for who in "client", "guest":
     for what_param, what_x in (
             ("framerate", f"{Who} Framerate"),
             ("resolution", "param:resolution:res_in_pix"),
-            ("bitrate", "param:bitrate:bitrate_in_kbps")):
+            ("bitrate", "param:bitrate:bitrate_in_kbps"),
+            ("keyframe-period", "param:keyframe-period:keyframe_period")):
         for y_name in "CPU", "GPU Video", "GPU Render":
             y_id = y_name.lower().replace(" ", "_")
             Regression(f"{what_param}_vs_{who}_{y_id}", what_param, f"{Who} {y_name} vs {what_param.title()}", what_x, f"{Who} {y_name}")
