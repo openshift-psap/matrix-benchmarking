@@ -1,24 +1,3 @@
-name: simple-test
-description: shows 3D shapes in motion
-before:
-  - vm do killall firefox
-  - vm open https://webglsamples.org/video/video.html
-  - sleep 10
-
-codec: gst.vp8.vaapivp8enc
-
-run:
-  test_framerate:
-    _framerate: 15, 20, 25, 30, 35, 40, 45
-    gst.prop=keyframe-max-dist: 5
-    gst.prop=target-bitrate: 4000
-
-
-record_time: 40
-
-after:
-  - vm do killall firefox
----
 _type: matrix
 name: matrix
 record_time: 40
