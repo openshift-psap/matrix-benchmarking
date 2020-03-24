@@ -1518,7 +1518,31 @@ class TableStats():
         props = " ".join([click_info.x, click_info.legend, xaxis_name]).split()
         value = f"{yaxis}: {click_info.y:.2f}"
 
-        return TableStats.props_to_hoverlink(variables, props, value)
+        entry, msg = TableStats.props_to_hoverlink(variables, props, value)
+
+        graph = self.props_to_hovergraph(entry) \
+            if entry else ""
+
+        return [*msg, graph]
+
+    def props_to_hovergraph(self, entry):
+        for table_def, (table_name, table_rows) in entry.tables.items():
+            if table_name != self.table: continue
+
+            def get_values(field_name):
+                row_id = table_def.partition("|")[2].split(";").index(field_name)
+                return [row[row_id] for row in table_rows if row[row_id] is not None]
+
+            x = get_values("time")
+            y = get_values(self.field)
+            from . import graph
+            x = graph.GraphFormat.as_timestamp(x, y)
+            fig = go.Figure(data=go.Scatter(x=x, y=y))
+
+            fig.update_layout(yaxis_title=f"{self.name} ({self.unit})")
+            return dcc.Graph(figure=fig)
+
+        return "Table not found ..."
 
     @staticmethod
     def props_to_hoverlink(variables, props, value):
@@ -1529,11 +1553,11 @@ class TableStats():
         key = "_".join([f"{k}={variables[k]}" for k in key_order])
 
         try: entry = Matrix.entry_map[key]
-        except KeyError: return f"Error: record '{key}' not found in matrix ..."
+        except KeyError: return None, f"Error: record '{key}' not found in matrix ..."
 
         link = html.A("view", target="_blank", href="/viewer/"+entry.linkname)
 
-        return [f"{key.replace('_', ', ')} 🡆 {value} (", link, ")"]
+        return entry, [f"{key.replace('_', ', ')} 🡆 {value} (", link, ")"]
 
     def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
         data = []
