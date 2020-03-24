@@ -88,6 +88,7 @@ Frames Size:
     table: guest.guest
     x: guest.msg_ts | as_us_timestamp
     y: guest.frame_size
+    y2: guest.frame_size | per_sec_5 > bandwidth (per 5s)
     _y2: guest.frame_size | as_key_frames > key frames (detected)
     _y4: guest.frame_size | key_frames_from_qual > key frames (from settings)
     _y3: guest.frame_size | as_key_frames_period > key frames period (detected)
@@ -103,6 +104,7 @@ Frames Size:
     table: client.client
     x: client.msg_ts | as_us_timestamp
     y: client.frame_size
+    _disabled: true
 
 
 Frame Delta:
@@ -172,21 +174,28 @@ Frame Rate:
     y: client.framerate_requested > Requested Framerate
 
 Frame Processing:
-  Guest processing duration:
+  Guest encoding duration:
     table: guest.guest
     x: guest.msg_ts | as_us_timestamp
-    y: guest.sleep_duration
-    y2: guest.capture_duration
-    y3: guest.encode_duration
-    y4: guest.send_duration
+    y: guest.pull_duration
+    y2: guest.sleep_duration
+    y3: guest.send_duration
+    #y4: guest.send_duration
 
-  Client processing duration:
-    table: client.client
-    x: client.msg_ts | as_us_timestamp
-    y: client.decode_duration
-    y2: client.decode_duration | per_sec_5 > per_second (over 5s)
-    y3: client.decode_duration | per_sec_20 > per_second (over 20s)
-    #y4: client.decode_duration | per_sec_60 > per_second (over 60s)
+  Guest capturing duration:
+    table: guest.guest_capt
+    x: guest_capt.msg_ts | as_us_timestamp
+    y2: guest_capt.capture_duration
+    y3: guest_capt.push_duration
+    #y4: guest.send_duration
+
+  # Client processing duration:
+  #   table: client.client
+  #   x: client.msg_ts | as_us_timestamp
+  #   y: client.decode_duration
+  #   y2: client.decode_duration | per_sec_5 > per_second (over 5s)
+  #   y3: client.decode_duration | per_sec_20 > per_second (over 20s)
+  #   y4: client.decode_duration | per_sec_60 > per_second (over 60s)
 
   Client processing per frame size:
     table: client.client
