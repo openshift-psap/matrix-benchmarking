@@ -29,24 +29,55 @@ expe:
       display: webgl_wipeout, img_lady_1920
       resolution: 1920x1080
 
+  intel_vp8:
+    codec: gst.vp8.vaapivp8enc
+    encoding:
+      framerate: 20, 30, 40
+      bitrate: 8000, 16000, 32000
+      keyframe-period: 128, 512, 300
+      rate-control: cbr
+    scripts:
+      display: webgl_wipeout, img_lady_1920
+
+  study_encode:
+    codec: gst.vp8.vaapivp8enc
+    encoding:
+      framerate: 100, 120
+      bitrate: 16000
+      keyframe-period: 128, 256, 512
+      rate-control: cbr
+    scripts:
+      display: img_lady_1920
+      encode_load: none, ball, snow
+
   study_fps:
     codec: gst.vp8.vaapivp8enc
     encoding:
       framerate: 20, 25, 30, 35, 40, 45, 50
-      gst.prop=bitrate: 8000, 16000, 32000
-      gst.prop=keyframe-period: 128, 128
-      gst.prop=rate-control: cbr
+      bitrate: 8000, 16000, 32000
+      keyframe-period: 128
+      rate-control: cbr
     scripts:
       display: webgl_wipeout, img_lady_1920
       resolution: 1920x1080, 1280x720
+
+  study_new:
+    codec: gst.vp8.vaapivp8enc
+    encoding:
+      framerate: 30, 40
+      bitrate: 16000
+      keyframe-period:  128, 256
+      rate-control: cbr
+    scripts:
+      display: img_lady_1920, webgl_wipeout
 
   study_resolution:
     codec: gst.vp8.vaapivp8enc
     encoding:
       framerate: 30, 40
-      gst.prop=bitrate: 8000, 16000, 32000
-      gst.prop=keyframe-period: 128
-      gst.prop=rate-control: cbr
+      bitrate: 8000, 16000, 32000
+      keyframe-period: 128
+      rate-control: cbr
     scripts:
       display: webgl_wipeout, img_lady_1920
       resolution: 1600x1200, 1400x1050, 1280x960, 1024x768, 800x600, 640x480
@@ -55,9 +86,9 @@ expe:
     codec: gst.vp8.vaapivp8enc
     encoding:
       framerate: 30
-      gst.prop=bitrate: 2000, 4000, 8000, 12000, 16000, 24000, 32000, 48000, 64000
-      gst.prop=keyframe-period: 128
-      gst.prop=rate-control: cbr
+      bitrate: 2000, 4000, 8000, 12000, 16000, 24000, 32000, 48000, 64000
+      keyframe-period: 128
+      rate-control: cbr
     scripts:
       display: webgl_wipeout, img_lady_1920
       resolution: 1920x1080, 1280x720
@@ -66,30 +97,54 @@ expe:
     codec: gst.vp8.vaapivp8enc
     encoding:
       framerate: 30
-      gst.prop=bitrate: 16000, 48000
-      gst.prop=keyframe-period: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 9000
-      gst.prop=rate-control: cbr
+      bitrate: 16000, 48000
+      keyframe-period: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 9000
+      rate-control: cbr
     scripts:
       display: webgl_wipeout, img_lady_1920
       resolution: 1920x1080
 
-  study_display:
+  study_bitrate_0:
     codec: gst.vp8.vaapivp8enc
     encoding:
       framerate: 30, 40
-      gst.prop=bitrate: 16000
-      gst.prop=keyframe-period: 256
-      gst.prop=rate-control: cbr
+      bitrate: 0
+      keyframe-period: 256
+      rate-control: cbr
     scripts:
-      display: webgl_wipeout, webgl_cubemap, img_lady_1920, img_lady_1280, web_still, vlc_wipeout, vlc_primordial, vlc_mix-quick, vlc_google_map
+      display: webgl_wipeout, webgl_cubemap, img_lady_1920, img_lady_1280, web_still, vlc_wipeout, vlc_mix-quick, vlc_google_map, vlc_primordial_soup
       resolution: 1920x1080
+
+  study_min_frequency:
+    codec: gst.vp8.vaapivp8enc
+    encoding:
+      framerate: 100
+      bitrate: 8000, 16000
+      keyframe-period: 256
+      rate-control: cbr
+    scripts:
+      resolution: 1920x1080
+      min_frequency: 350, 500, 800, 1000, 1200
+      display: webgl_wipeout, img_lady_1920, vlc_wipeout
+
+  study_min_max_frequency:
+    codec: gst.vp8.vaapivp8enc
+    encoding:
+      framerate: 100
+      bitrate: 8000, 16000
+      keyframe-period: 256
+      rate-control: cbr
+    scripts:
+      resolution: 1920x1080
+      min_max_frequency: 350, 500, 800, 1000, 1200
+      display: webgl_wipeout, img_lady_1920, vlc_wipeout
 
   gst.nvenc:
     codec: gst.h264.nvh264enc
     encoding:
-      gst.prop=bitrate: 32000
-      gst.prop=gop-size:  30, 300, -1
-      gst.prop=rc-mode: cbr
+      bitrate: 32000
+      gop-size:  30, 300, -1
+      rc-mode: cbr
       framerate: 20, 30, 40
     scripts:
       display: img_lady_1920, webgl_wipeout
@@ -99,9 +154,9 @@ expe:
     codec: gst.vp8.vaapivp8enc
     encoding:
       framerate: 20, 30, 40
-      gst.prop=bitrate: 8000, 16000, 32000
-      gst.prop=rate-control: cbr
-      gst.prop=keyframe-period: 128, 512
+      bitrate: 8000, 16000, 32000
+      rate-control: cbr
+      keyframe-period: 128, 512
     scripts:
       display: img_lady_1920, webgl_wipeout
       resolution: 1920x1080
@@ -134,6 +189,12 @@ scripts:
     after:
       - vm display stop $display
 
+  encode_load:
+    before:
+      - vm encode_load start $encode_load
+    after:
+      - vm encode_load stop $encode_load
+
   resolution:
     before:
       - vm resolution $resolution
@@ -145,3 +206,15 @@ scripts:
       - /py/ stress_test $resources
     after:
       - /py/ stress_test normal
+
+  min_max_frequency:
+    before:
+      - server gpu_freq $min_max_frequency $min_max_frequency
+    after:
+      - server gpu_freq 350 1200
+
+  min_frequency:
+    before:
+      - server gpu_freq $min_frequency 1200
+    after:
+      - server gpu_freq 350 1200
