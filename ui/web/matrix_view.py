@@ -603,6 +603,7 @@ class Regression():
         return ""
 
     def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
+        MIN_COUNT_FOR_REGR = 4
         fig = go.Figure()
 
         x = defaultdict(list)
@@ -670,6 +671,8 @@ class Regression():
             reg_y[reg_key].append(_y)
 
         for i, legend_key in enumerate(x.keys()):
+            if len(y[legend_key]) < MIN_COUNT_FOR_REGR: continue
+
             fig.add_trace(go.Scatter(x=x[legend_key], y=y[legend_key], mode='markers', name=legend_key,
                                      hovertext=text[legend_key],hoverinfo="text+x+y", hoverlabel= {'namelength' :-1},
                                      legendgroup=legend_key,
@@ -687,9 +690,11 @@ class Regression():
         for i, reg_key in enumerate(reg_x.keys()):
             all_x = reg_x[reg_key]
             all_y = reg_y[reg_key]
-
+            if len(all_y) < MIN_COUNT_FOR_REGR: continue
             # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.linregress.html
             slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(all_x, all_y)
+
+            if math.isnan(slope): continue
 
             line = slope*np.array(all_x)+intercept
             fig.add_trace(go.Scatter(x=all_x, y=line, mode='lines', hovertext="text",
@@ -699,9 +704,23 @@ class Regression():
             if not x_range: x_range = [all_x[0], all_x[-1]]
             x_range = [min(x_range[0], min(all_x)), max(x_range[1], max(all_x))]
 
-            # need to change here: if slope/intercept too low, they appear as 0.00 !
-            formulae.append(f"{y_name} = {slope:+.2f} * {x_name} {intercept:+.2f} " +
-                            f"| r={r_value:+.3f}, p={p_value:+.3f}, stdev={std_err:+.3f} | {reg_key}")
+            def print_float(f):
+                from decimal import Decimal
+                def fexp(number):
+                    (sign, digits, exponent) = Decimal(number).as_tuple()
+                    try:
+                        return len(digits) + exponent - 1
+                    except:
+                        import pdb;pdb.set_trace()
+                        return "XXX"
+                def fman(number):
+                    return Decimal(number).scaleb(-fexp(number)).normalize()
+
+                return f"{fman(f):.2f} * 10**{fexp(f)}"
+
+            formulae.append(f"{reg_key} | {y_name} = {print_float(slope)} * {x_name} "
+                            f"{'+' if intercept >= 0 else '-'} {print_float(abs(intercept))} " +
+                            f"| r={r_value:+.3e}, p={p_value:+.3e},stdev={std_err:+.3e}")
 
         text = '<br>'.join(formulae)
 
