@@ -6,6 +6,7 @@ import itertools, functools, operator
 import scipy
 import scipy.stats
 import numpy as np
+import math
 
 import dash
 import dash_core_components as dcc
@@ -70,6 +71,210 @@ def COLORS(idx):
         '#17becf'   # blue-teal
     ]
     return colors[idx % len(colors)]
+
+class ModelGuestCPU():
+    def __init__(self):
+        self.name = "Model: Guest CPU Usage"
+        self.id_name = "model_guest_cpu"
+        self.no_graph = True
+        self.estimate_value = self.estimate_cpu_value
+
+        TableStats._register_stat(self)
+
+    def do_hover(self, meta_value, variables, figure, data, click_info):
+        return "nothing ..."
+
+    def estimate_cpu_value(self, params={}, formula=False, _coeff=False):
+        "Guest CPU"
+
+        COEFFS = {"webgl-wipeout": 0.21,
+                  "img-lady-1920": 0.13}
+
+        if _coeff in (True, False):
+            coeff = COEFFS.get(params.get('display'))
+            if _coeff:
+                return coeff
+            if coeff is None:
+                return float('+inf')
+        else:
+            coeff = _coeff
+
+        if formula is True: return f"CPU = resolution x framerate x {coeff:.2f}"
+        if not params: return COEFF
+
+        if params['rate-control'] != 'cbr': return float('+inf')
+
+        resolution = Regression.res_in_mpix(params.get('resolution', "1920x1080"))
+        bitrate = Regression.bitrate_in_mbps(params['bitrate'])
+        framerate = params['framerate']
+        kfr = params['keyframe-period']
+
+        return resolution*framerate*coeff
+
+    def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
+        actual_key = self.estimate_value.__doc__
+        user_coeff = cfg.get('model.coeff')
+        if user_coeff is not None: user_coeff = float(user_coeff)
+        layout = go.Layout(meta=dict(name=self.name))
+
+        second_vars = ordered_vars[:]
+        second_vars.reverse()
+
+        subtables = {}
+        if len(second_vars) > 2:
+            subtables_var = second_vars[-1]
+            y_var = second_vars[-2]
+
+            for subtable_key in sorted(variables[subtables_var], key=natural_keys):
+                subtables[subtable_key] = f"{subtables_var}={subtable_key}"
+
+        elif len(second_vars) == 2:
+            subtables_var = None
+            y_var = second_vars[-1]
+        else:
+            subtables_var = None
+            y_var = None
+
+        values = defaultdict(lambda:defaultdict(dict))
+
+        min_dist = float('+inf')
+        max_dist = float('-inf')
+        dist_count = [0, 0]
+
+        for param_values in sorted(itertools.product(*param_lists)):
+            params.update(dict(param_values))
+
+            key = "_".join([f"{k}={params[k]}" for k in key_order])
+
+            try: entry = Matrix.entry_map[key]
+            except KeyError: continue # missing experiment
+
+            x_key = " ".join([f'{v}={params[v]}' for v in reversed(second_vars) \
+                              if v not in (subtables_var, y_var)])
+            y_key = f'{y_var}={params[y_var]}' if y_var else None
+
+            subtable_name = subtables[params[subtables_var]] if subtables_var else None
+
+            estimated_value = self.estimate_value(params, user_coeff)
+            actual_value = entry.stats[actual_key].value
+            dist = estimated_value - actual_value
+
+            values[subtable_name][y_key][x_key] = estimated_value, actual_value
+
+            if abs(estimated_value) != float('inf'):
+                min_dist = min(min_dist, dist)
+                max_dist = max(max_dist, dist)
+                dist_count[0] += 1
+                dist_count[1] += abs(dist)
+
+        colors = ['rgb(239, 243, 255)', 'rgb(189, 215, 231)', 'rgb(107, 174, 214)',
+                  'rgb(49, 130, 189)', 'rgb(8, 81, 156)']
+
+        def colormap_to_colorscale(cmap):
+            from matplotlib import colors
+            #function that transforms a matplotlib colormap to a Plotly colorscale
+            return [ [k*0.1, colors.rgb2hex(cmap(k*0.1))] for k in range(11)]
+
+        def colorscale_from_list(alist, name):
+            from matplotlib.colors import LinearSegmentedColormap
+            # Defines a colormap, and the corresponding Plotly colorscale from the list alist
+            # alist=the list of basic colors
+            # name is the name of the corresponding matplotlib colormap
+
+            cmap = LinearSegmentedColormap.from_list(name, alist)
+            #display_cmap(cmap)
+            colorscale = colormap_to_colorscale(cmap)
+            return cmap, colorscale
+
+        elevation =['#31A354', '#F7FCB9']
+
+        elev_cmap, elev_cs = colorscale_from_list(elevation, 'elev_cmap')
+        # ---
+
+        tables = []
+
+        for i, (subtable_name, xy_values) in enumerate(values.items()):
+            columns = [{"id":"title", "name":""}]
+            data_dicts = []
+            first_pass = True
+            current_dists = set()
+            for y_key, x_values in xy_values.items():
+                current_dict = {"title": y_key}
+                data_dicts.append(current_dict)
+                for x_key, (estimated_value, actual_value) in x_values.items():
+                    if first_pass: columns.append(dict(id=x_key, name=x_key))
+                    if abs(estimated_value) != float('inf'):
+                        dist = estimated_value - actual_value
+                        current_dict[x_key] = f"estim: {estimated_value:.0f}% | actual: {int(actual_value)}% | error: {dist:+.1f}%"
+                    else:
+                        dist = None
+                        current_dict[x_key] = f"estim: ---% | actual: {int(actual_value)}% | error: ---%"
+
+                    current_dists.add((current_dict[x_key], dist))
+                first_pass = False
+
+            color_filters = []
+            for c in columns:
+                if c['id'] == 'title': continue
+                for val, dist in current_dists:
+                    if dist is not None:
+                        dist_pos = abs(dist)/max(abs(max_dist), abs(min_dist))
+                        color = "rgb("+", ".join([str(int(c*255)) for c in elev_cmap(dist_pos)[:3]])+")"
+                    else:
+                        color = "#f08080"
+                    color_filters.append({'if': {'column_id': c['id'],
+                                                 'filter_query': f"{{{c['id']}}} eq '{val}'"},
+                                          'backgroundColor': color},)
+
+
+            if subtable_name:
+                tables.append(html.B(subtable_name))
+                print(f"# {subtable_name}")
+
+            x = []; y = []; z = [];
+            x_estim = []; y_estim = []; z_estim = []
+            for y_key, x_values in xy_values.items():
+                y_estim.append(y_key)
+                z_estim.append([])
+                for x_key, (estimated_value, actual_value) in x_values.items():
+                    if x_key not in x_estim:
+                        x_estim.append(x_key)
+                    x.append(x_key)
+                    y.append(y_key)
+                    z.append(actual_value)
+                    z_estim[-1].append(estimated_value)
+                x.append(None)
+                y.append(None)
+                z.append(None)
+
+            tables.append(dcc.Graph(figure=go.Figure(data=[
+                go.Scatter3d(x=x, y=y, z=z, name="Actual"),
+                go.Surface(x=x_estim, y=y_estim,
+                           z=z_estim, name="Estimated"),
+            ])))
+
+            tables.append(
+                dash_table.DataTable(
+                    sort_action="native",
+                    style_cell_conditional=color_filters,
+                    style_header={
+                        'backgroundColor': 'white',
+                        'fontWeight': 'bold'
+                    },
+                    style_as_list_view=True,
+                    id='data-table',
+                    columns=columns,
+                    data=data_dicts,
+                )
+            )
+
+        formula = self.estimate_value(coeff=user_coeff, formula=True)
+        return {}, [html.H2(f"{self.name} vs " + " x ".join(ordered_vars)),
+                    html.B(f"Error distance between {min_dist:.0f}% and {max_dist:.0f}% for {dist_count[0]} measures. "
+                           f"{formula} | error sum = {dist_count[1]:.0f}"),
+
+                    html.Br()] + tables
+
 
 class OldEncodingStacked():
     def __init__(self):
@@ -1564,6 +1769,7 @@ for what in "framerate", "resolution":
     Report.GPU(what)
     Report.Decode(what)
 
+ModelGuestCPU()
 FPSTable()
 EncodingStacked()
 OldEncodingStacked()
