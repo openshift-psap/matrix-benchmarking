@@ -691,17 +691,17 @@ class Regression():
         return val
 
     @staticmethod
-    def bitrate_in_kbps(bitrate):
-        "KB/s"
-        return bitrate*1024/8
+    def bitrate_in_mbps(bitrate):
+        "MB/s"
+        return int(bitrate)/8/1024
 
     @staticmethod
-    def res_in_pix(res):
-        "px" # docstring
+    def res_in_mpix(res):
+        "Mpx" # docstring
 
         x, y = map(int, res.split("x"))
 
-        return x*y
+        return x*y * 10**-6
 
     def __init__(self, id_name, key_var, name, x_key, y_key):
         self.name = "Reg: " + name
@@ -1998,14 +1998,14 @@ for who in "client", "guest":
     Who = who.capitalize()
     for what_param, what_x in (
             ("framerate", f"{Who} Framerate"),
-            ("resolution", "param:resolution:res_in_pix"),
-            ("bitrate", "param:bitrate:bitrate_in_kbps"),
+            ("resolution", "param:resolution:res_in_mpix"),
+            ("bitrate", "param:bitrate:bitrate_in_mbps"),
             ("keyframe-period", "param:keyframe-period:keyframe_period")):
         for y_name in "CPU", "GPU Video", "GPU Render":
             y_id = y_name.lower().replace(" ", "_")
             Regression(f"{what_param}_vs_{who}_{y_id}", what_param, f"{Who} {y_name} vs {what_param.title()}", what_x, f"{Who} {y_name}")
 
-for what_param, what_x in ("framerate", f"Client Framerate"), ("resolution", "param:resolution:res_in_pix"):
+for what_param, what_x in ("framerate", f"Client Framerate"), ("resolution", "param:resolution:res_in_mpix"):
     Regression(f"{what_param}_vs_decode_time", what_param, f"Client Decode Time vs {what_param.title()}",
                what_x, f"Client Decode time/s")
 
@@ -2017,7 +2017,7 @@ for what_param, what_x in ("framerate", f"Client Framerate"), ("resolution", "pa
                what_x, f"Frame Size (avg)")
 
 Regression(f"resolution_vs_decode_time", "resolution", f"Guest Capture Duration (avg) vs Resolution",
-           "param:resolution:res_in_pix", "Guest Capture Duration (avg)")
+           "param:resolution:res_in_mpix", "Guest Capture Duration (avg)")
 
 DistribPlot("Frame capture time", 'guest.guest', 'guest.capture_duration', "ms", divisor=1/1000)
 DistribPlot("Frame sizes", 'guest.guest', 'guest.frame_size', "KB", divisor=1000)
