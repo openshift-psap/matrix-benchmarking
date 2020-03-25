@@ -28,6 +28,16 @@ import measurement.perf_viewer
 import re
 def atoi(text): return int(text) if text.isdigit() else text
 def natural_keys(text): return [atoi(c) for c in re.split(r'(\d+)', str(text))]
+def join(joiner, iterable):
+    i = iter(iterable)
+    try:
+        yield next(i)  # First value, or StopIteration
+        while True:
+            next_value = next(i)
+            yield joiner
+            yield next_value
+    except StopIteration: pass
+
 
 PROPERTY_RENAME = {
     # gst.nvenc
@@ -611,6 +621,7 @@ class Regression():
         text = defaultdict(list)
 
         reg_x, reg_y = defaultdict(list), defaultdict(list)
+        fixed_params = {}
 
         other_vars = ordered_vars[:]
         try: other_vars.remove(self.key_var)
@@ -663,6 +674,7 @@ class Regression():
             reg_key = "all" if not other_vars else \
                  " | ".join(f"{k}={params[k]}" for k in other_vars)
 
+            fixed_params[reg_key] = {k: params[k] for k in other_vars}
             x[reg_key].append(_x)
             y[reg_key].append(_y)
             text[reg_key].append(legend_key)
@@ -716,13 +728,32 @@ class Regression():
                 def fman(number):
                     return Decimal(number).scaleb(-fexp(number)).normalize()
 
-                return f"{fman(f):.2f} * 10**{fexp(f)}"
+                return f"{f:.2f}"
+                return f"{fman(f):.2f} * 10^{fexp(f)}"
 
-            formulae.append(f"{reg_key} | {y_name} = {print_float(slope)} * {x_name} "
-                            f"{'+' if intercept >= 0 else '-'} {print_float(abs(intercept))} " +
-                            f"| r={r_value:+.3e}, p={p_value:+.3e},stdev={std_err:+.3e}")
+            PARAMS_REWRITE = {
+                #'keyframe-period': lambda x:x,
+                #'bitrate': Regression.bitrate_in_mbps,
+                'framerate': lambda x:x,
+                'resolution': Regression.res_in_mpix,
+            }
 
-        text = '<br>'.join(formulae)
+            fix_equa_params = " ; ".join(f"{k}={float(PARAMS_REWRITE[k](v)):.2f}" \
+                                           for k, v in fixed_params[reg_key].items() \
+                                           if k in PARAMS_REWRITE)
+            coeff = slope
+            for k, v in fixed_params[reg_key].items():
+                if k not in PARAMS_REWRITE: continue
+                coeff /= float(PARAMS_REWRITE[k](v))
+
+            #f" | r={r_value:+.3e}, p={p_value:+.3e}, stdev={std_err:+.3e}"
+            x = x_name.lower().replace('guest ', '')
+            X = x.upper()[0]
+            y = y_name.lower().replace('guest ', '')
+
+            equa_to_solve = f"{y} = {x} * {print_float(slope)} {intercept:+.1f} | {fix_equa_params} |> {coeff:.3f}"
+
+            formulae.append(equa_to_solve)
 
         fig.update_layout(
             meta=dict(name=self.name, value=formulae),
@@ -730,7 +761,7 @@ class Regression():
 
         fig.update_layout(title=f"{y_name} vs {x_name} | {' x '.join(other_vars)}")
 
-        return fig, [html.P(f) for f in formulae]
+        return fig, list(join(html.Br(), formulae)) #[html.Span(f) for f in formulae]
 
 class Report():
     def __init__(self, id_name, name):
