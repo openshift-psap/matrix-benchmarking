@@ -1740,7 +1740,8 @@ class TableStats():
     @staticmethod
     def props_to_hoverlink(variables, props, value):
         for prop in props:
-            k, v = prop.split('=')
+            try: k, v = prop.split('=')
+            except ValueError: continue # not enough values to unpack (expected 2, got 1)
             variables[k] = v
 
         key = "_".join([f"{k}={variables[k]}" for k in key_order])
@@ -1769,10 +1770,12 @@ class TableStats():
         layout.yaxis = dict(title=self.name+ f" ({self.unit})")
         layout.plot_bgcolor='rgb(245,245,240)'
         subplots = {}
+
         if second_vars:
             subplots_var = second_vars[-1]
 
             showticks = len(second_vars) == 2
+
             for i, subplots_key in enumerate(sorted(variables[subplots_var], key=natural_keys)):
                 subplots[subplots_key] = f"x{i+1}"
                 ax = f"xaxis{i+1}"
@@ -1781,7 +1784,7 @@ class TableStats():
         else:
             subplots_var = None
             subplots[subplots_var] = "x1"
-            layout["xaxis1"] = dict(type='category', showticklabels=False)
+            layout["xaxis1"] = dict(type='category', showticklabels=True, tickfont=dict(size=18))
 
         x = defaultdict(list); y = defaultdict(list); y_err = defaultdict(list)
         legend_keys = set()
@@ -1815,6 +1818,7 @@ class TableStats():
                     y_err[legend_key].append(None)
 
             legend_keys.add(legend_key)
+            if not x_key: x_key = legend_key[0].split("=")[1]
 
             legend_names.add(legend_name)
             x[legend_key].append(x_key)
@@ -1947,6 +1951,7 @@ class TableStats():
             subplots_used.add(ax)
 
             y_max = max([yval for yval in [y_max]+y[legend_key] if yval is not None])
+
             data.append(dict(**plot_args, x=x[legend_key], y=y[legend_key],
                              legendgroup=legend_name,
                              xaxis=ax, name=legend_name,
@@ -2524,6 +2529,7 @@ def build_callbacks(app):
 
         try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
         except IndexError: return # nothing triggered the script (on multiapp load)
+        if triggered_id == ".": return
 
         pos = int(triggered_id.rpartition(".")[0].split("-")[1])
         data = hoverData[pos]
@@ -2579,7 +2585,7 @@ def build_callbacks(app):
                     stats_values = [stats_values]
 
                 if (graph_idx != "graph-for-dl" and (graph_idx + 1) > len(stats_values)
-                    or not triggered_id):
+                    or not triggered_id or not (stats_values and stats_values[0])):
                     return {"display": 'none'},  {"display": 'none'},
 
                 graph_style = {}
