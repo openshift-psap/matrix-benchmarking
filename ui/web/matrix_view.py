@@ -286,6 +286,109 @@ class ModelGuestCPU():
                     html.Br()] + tables
 
 
+class PlotModelGuestCPU(ModelGuestCPU):
+    def __init__(self, *args, **kwargs):
+        self.name = "PlotModel: Guest CPU Usage"
+        self.id_name = "plot_model_guest_cpu"
+        self.no_graph = False
+        self.estimate_value = self.estimate_cpu_value
+
+        TableStats._register_stat(self)
+
+    def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
+        actual_key = self.estimate_value.__doc__
+        max_x, max_y = 0, 0
+
+        def colormap_to_colorscale(cmap):
+            from matplotlib import colors
+            #function that transforms a matplotlib colormap to a Plotly colorscale
+            return [ [k*0.1, colors.rgb2hex(cmap(k*0.1))] for k in range(11)]
+
+        def colorscale_from_list(alist, name):
+            from matplotlib.colors import LinearSegmentedColormap
+            # Defines a colormap, and the corresponding Plotly colorscale from the list alist
+            # alist=the list of basic colors
+            # name is the name of the corresponding matplotlib colormap
+
+            cmap = LinearSegmentedColormap.from_list(name, alist)
+            #display_cmap(cmap)
+            colorscale = colormap_to_colorscale(cmap)
+            return cmap, colorscale
+
+        elevation =['green', "red"]
+
+        elev_cmap, elev_cs = colorscale_from_list(elevation, 'elev_cmap')
+
+        traces = []
+        max_dist = 0
+        min_dist = 100
+        for param_values in sorted(itertools.product(*param_lists)):
+            params.update(dict(param_values))
+
+            key = "_".join([f"{k}={params[k]}" for k in key_order])
+
+            try: entry = Matrix.entry_map[key]
+            except KeyError: continue # missing experiment
+
+            estimated_value = self.estimate_value(params)
+            actual_value = entry.stats[actual_key].value
+            dist = estimated_value - actual_value
+
+
+            x = [Regression.res_in_mpix(params['resolution'])] * 2
+            y = [params['framerate']]*2
+            z = [estimated_value, actual_value]
+
+            max_x = max(max_x, x[0])
+            max_y = max(max_y, y[0])
+            if abs(dist) == float('inf'): continue
+
+            max_dist = max(max_dist, dist)
+            min_dist = min(min_dist, dist)
+
+            traces.append((x, y, z, f"err={dist:.0f}% | {key}", dist))
+
+        data = []
+        for x, y, z, key, dist in traces:
+            dist_pos = abs(dist/max_dist)
+            color = "rgb("+", ".join([str(int(c*255)) for c in elev_cmap(dist_pos)[:3]])+")"
+            data.append(go.Scatter3d(x=x, y=y, z=z, name=key, mode="lines",
+                                     line=dict(width=10, color=color),
+                                     showlegend=False, hoverlabel= {'namelength' :-1},))
+
+            data.append(go.Scatter3d(x=[x[1]], y=[y[1]], z=[z[1]], name=key, mode="markers",
+                                     marker=dict(size=5, color=color),
+                                     showlegend=False, hoverlabel= {'namelength' :-1},))
+        LENGTH = 50
+        estim_x = np.linspace(0.0, max_x, LENGTH)
+        estim_y = np.linspace(0.0, max_y, LENGTH)
+        estim_z = [[100]*LENGTH for _ in range(LENGTH)]
+        formulae = []
+        for disp in variables.get('display', [params['display']]):
+            cur_params = {"display": disp}
+            coeff = self.estimate_value(cur_params, _coeff=True)
+            if coeff is None: continue
+            for i, _x in enumerate(estim_x):
+                for j, _y in enumerate(estim_y):
+                    estim_z[j][i] = _x * _y * coeff
+
+            formula = f"display={disp} | "+self.estimate_value(cur_params, formula=True)
+            data += [go.Surface(x=estim_x, y=estim_y, z=estim_z, name=formula,
+                                hoverlabel= {'namelength' :-1})]
+            formulae += [formula]
+        fig = go.Figure(data=data)
+
+        fig.update_layout(
+            title={
+                'text': "Guest CPU usage",
+                'y':0.9, 'x':0.5, 'xanchor': 'center', 'yanchor': 'top'},
+            scene=dict(
+                xaxis_title="Resolution (in Mpix)",
+                yaxis_title="Framerate",
+                zaxis_title="CPU Usage (in %)"))
+        fig.write_html("/tmp/model_cpu.html")
+        return fig, [f"Error between {min_dist:.0f}% and {max_dist:.0f}% ({len(traces)} measurements).", html.Br()] + list(join(html.Br(), formulae))
+
 class OldEncodingStacked():
     def __init__(self):
         self.name = "Stack: Encoding (old)"
@@ -1885,6 +1988,7 @@ for what in "framerate", "resolution":
 
 Report.GuestCPU()
 
+PlotModelGuestCPU()
 ModelGuestCPU()
 FPSTable()
 EncodingStacked()
