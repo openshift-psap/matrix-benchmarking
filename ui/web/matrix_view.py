@@ -87,45 +87,62 @@ class ModelGuestCPU():
         self.name = "Model: Guest CPU Usage"
         self.id_name = "model_guest_cpu"
         self.no_graph = True
-        self.estimate_value = self.estimate_cpu_value
+        self.estimate_value = self.estimate_guest_cpu_value
 
         TableStats._register_stat(self)
 
     def do_hover(self, meta_value, variables, figure, data, click_info):
         return "nothing ..."
 
-    def estimate_cpu_value(self, params={}, formula=False, _coeff=False):
+    @staticmethod
+    def estimate_guest_gpu_render_value(params={}, formula=False):
+        "Guest GPU Render"
+
+        if params.get('display') == "webgl-wipeout":
+            aFR, aF, aR = -0.033, 0.48, 27.28
+        elif params.get('display') == "img-lady-1920":
+            aFR, aF, aR= 0.15, 0.25, 0.19
+        else:
+            return float('+inf')
+
+        if formula:
+            return (f"gpu_render = framerate * resolution * {aFR:.2f} "
+                    f"+ framerate * {aF:.2f} "
+                    f"+ resolution * {aR:.2f}")
+
+        resolution = params.get('res',
+                                Regression.res_in_mpix(params.get('resolution', "1920x1080")))
+        framerate = params['framerate']
+
+        return framerate * resolution * aFR + framerate * aF + resolution * aR
+
+    @staticmethod
+    def estimate_guest_cpu_value(params={}, formula=False):
         "Guest CPU"
 
         COEFFS = {"webgl-wipeout": 0.21,
                   "img-lady-1920": 0.13}
 
-        if _coeff in (True, False):
-            coeff = COEFFS.get(params.get('display'))
-            if _coeff:
-                return coeff
-            if coeff is None:
-                return float('+inf')
-        else:
-            coeff = _coeff
+        try: coeff = COEFFS[params['display']]
+        except KeyError: return float('+inf')
 
         if formula is True: return f"CPU = resolution x framerate x {coeff:.2f}"
-        if not params: return COEFF
 
-        if params['rate-control'] != 'cbr': return float('+inf')
+        if params.get('rate-control', 'cbr') != 'cbr': return float('+inf')
 
-        resolution = Regression.res_in_mpix(params.get('resolution', "1920x1080"))
-        bitrate = Regression.bitrate_in_mbps(params['bitrate'])
+        resolution = params.get('res',
+                                Regression.res_in_mpix(params.get('resolution', "1920x1080")))
         framerate = params['framerate']
-        kfr = params['keyframe-period']
+
+        #bitrate = Regression.bitrate_in_mbps(params['bitrate'])
+        #kfr = params['keyframe-period']
 
         return resolution*framerate*coeff
 
     def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
-        actual_key = self.estimate_value.__doc__
-        user_coeff = cfg.get('model.coeff')
-        if user_coeff is not None: user_coeff = float(user_coeff)
         layout = go.Layout(meta=dict(name=self.name))
+
+        actual_key = self.estimate_value.__doc__
 
         second_vars = ordered_vars[:]
         second_vars.reverse()
@@ -150,6 +167,7 @@ class ModelGuestCPU():
         min_dist = float('+inf')
         max_dist = float('-inf')
         dist_count = [0, 0]
+        value_units = ""
 
         for param_values in sorted(itertools.product(*param_lists)):
             params.update(dict(param_values))
@@ -165,8 +183,10 @@ class ModelGuestCPU():
 
             subtable_name = subtables[params[subtables_var]] if subtables_var else None
 
-            estimated_value = self.estimate_value(params, user_coeff)
+            estimated_value = self.estimate_value(params)
             actual_value = entry.stats[actual_key].value
+            if not value_units:
+                value_units = f" (in {entry.stats[actual_key].units})"
             dist = estimated_value - actual_value
 
             values[subtable_name][y_key][x_key] = estimated_value, actual_value
@@ -278,7 +298,7 @@ class ModelGuestCPU():
                 )
             )
 
-        formula = self.estimate_value(coeff=user_coeff, formula=True)
+        formula = self.estimate_value(formula=True)
         return {}, [html.H2(f"{self.name} vs " + " x ".join(ordered_vars)),
                     html.B(f"Error distance between {min_dist:.0f}% and {max_dist:.0f}% for {dist_count[0]} measures. "
                            f"{formula} | error sum = {dist_count[1]:.0f}"),
@@ -286,12 +306,13 @@ class ModelGuestCPU():
                     html.Br()] + tables
 
 
-class PlotModelGuestCPU(ModelGuestCPU):
-    def __init__(self, *args, **kwargs):
-        self.name = "PlotModel: Guest CPU Usage"
-        self.id_name = "plot_model_guest_cpu"
+class PlotModel(ModelGuestCPU):
+    def __init__(self, name, id_name, estimate_value_fct, *args, **kwargs):
+        self.name = f"PlotModel: {name}"
+        self._name = name
+        self.id_name = f"plot_model_{id_name}"
         self.no_graph = False
-        self.estimate_value = self.estimate_cpu_value
+        self.estimate_value = estimate_value_fct
 
         TableStats._register_stat(self)
 
@@ -322,6 +343,7 @@ class PlotModelGuestCPU(ModelGuestCPU):
         traces = []
         max_dist = 0
         min_dist = 100
+        value_units = f" (in {TableStats.stats_by_name[actual_key].unit})"
         for param_values in sorted(itertools.product(*param_lists)):
             params.update(dict(param_values))
 
@@ -333,7 +355,6 @@ class PlotModelGuestCPU(ModelGuestCPU):
             estimated_value = self.estimate_value(params)
             actual_value = entry.stats[actual_key].value
             dist = estimated_value - actual_value
-
 
             x = [Regression.res_in_mpix(params['resolution'])] * 2
             y = [params['framerate']]*2
@@ -366,26 +387,30 @@ class PlotModelGuestCPU(ModelGuestCPU):
         formulae = []
         for disp in variables.get('display', [params['display']]):
             cur_params = {"display": disp}
-            coeff = self.estimate_value(cur_params, _coeff=True)
-            if coeff is None: continue
+            formula = self.estimate_value(cur_params, formula=True)
+            if formula is None: continue
+
             for i, _x in enumerate(estim_x):
                 for j, _y in enumerate(estim_y):
-                    estim_z[j][i] = _x * _y * coeff
+                    cur_params['res'] = _x
+                    cur_params['framerate'] = _y
+                    estim_z[j][i] = self.estimate_value(cur_params)
 
-            formula = f"display={disp} | "+self.estimate_value(cur_params, formula=True)
+            formula = f"display={disp} | {formula}"
             data += [go.Surface(x=estim_x, y=estim_y, z=estim_z, name=formula,
+                                showscale=False,
                                 hoverlabel= {'namelength' :-1})]
             formulae += [formula]
         fig = go.Figure(data=data)
 
         fig.update_layout(
             title={
-                'text': "Guest CPU usage",
+                'text': self._name,
                 'y':0.9, 'x':0.5, 'xanchor': 'center', 'yanchor': 'top'},
             scene=dict(
                 xaxis_title="Resolution (in Mpix)",
                 yaxis_title="Framerate",
-                zaxis_title="CPU Usage (in %)"))
+                zaxis_title=f"{actual_key}{value_units}"))
         fig.write_html("/tmp/model_cpu.html")
         return fig, [f"Error between {min_dist:.0f}% and {max_dist:.0f}% ({len(traces)} measurements).", html.Br()] + list(join(html.Br(), formulae))
 
@@ -867,9 +892,11 @@ class Regression():
         return fig, list(join(html.Br(), formulae)) #[html.Span(f) for f in formulae]
 
 class Report():
-    def __init__(self, id_name, name):
+    def __init__(self, id_name, name, **kwargs):
         self.id_name = id_name
         self.name = name
+        self.kwargs = kwargs
+
         TableStats._register_stat(self)
         self.no_graph = True
 
@@ -907,8 +934,10 @@ class Report():
         return obj
 
     @classmethod
-    def GPU(clazz, key_var, *args, **kwargs):
-        obj = clazz(f"report_{key_var}_gpu", f"Report: Guest/Client GPU vs {key_var.title()}",
+    def GPU(clazz, key_var, sys, engine, *args, **kwargs):
+        kwargs['sys'] = sys
+        kwargs['engine'] = engine
+        obj = clazz(f"report_{key_var}_gpu_{sys}_{engine}", f"Report: {sys.title()} GPU {engine.title()} vs {key_var.title()}",
                     *args, **kwargs)
 
         obj.do_report = lambda *_args: obj.report_gpu(key_var, *_args)
@@ -1017,11 +1046,15 @@ class Report():
         ordered_vars, params, param_lists, variables, cfg = args
 
         if key_var not in ordered_vars:
-            return [ f"ERROR: {key_var} must not be set for this report."]
+            return [f"ERROR: {key_var} must not be set for this report."]
+
+        sys = self.kwargs["sys"]
+        engine = self.kwargs["engine"]
 
         def do_plot(stat_name, what, value):
             _args = Report.prepare_args(args, what, value)
             reg_stats = TableStats.stats_by_name[stat_name].do_plot(*_args)
+            if not reg_stats[0].data: return [False]
 
             return [dcc.Graph(figure=reg_stats[0])] + reg_stats[1] + [html.Hr()]
 
@@ -1029,17 +1062,17 @@ class Report():
         if what == key_var: what = None
 
         # --- GPU --- #
-        report = []
-        SYST = ["guest", "client"]
-        for src in SYST:
-            report += [html.H2(f"{src.capitalize()} GPU Usage"+ (f" (by {what})" if what else ""))]
+        report = [html.H2(f"{sys.capitalize()} GPU {engine} Usage"
+                          + (f" (by {what})" if what else ""))]
 
-            for value in variables.get(what, [params[what]]) if what else [""]:
-                if what:
-                    report += [html.P(html.B(f"{what}={value}", what))]
+        for value in variables.get(what, [params[what]]) if what else [""]:
+            if what:
+                report += [html.P(html.B(f"{what}={value}", what))]
 
-                for gpu in "Render", "Video":
-                    report += do_plot(f"Reg: {src.capitalize()} GPU {gpu} vs {key_var.title()}", what, value)
+            report += do_plot(f"Reg: {sys.capitalize()} GPU {engine} vs {key_var.title()}", what, value)
+            if report[-1] is False:
+                report.pop()
+                report.append(html.I("Nothing ..."))
 
         return report
 
@@ -1721,15 +1754,22 @@ class TableStats():
     def props_to_hovergraph(self, entry):
         for table_def, (table_name, table_rows) in entry.tables.items():
             if table_name != self.table: continue
+            table_simple_name = table_name.split(".")[1]
 
             def get_values(field_name):
                 row_id = table_def.partition("|")[2].split(";").index(field_name)
                 return [row[row_id] for row in table_rows if row[row_id] is not None]
 
-            x = get_values("time")
-            y = get_values(self.field)
+            x = get_values(f"{table_simple_name}.msg_ts")
+            field = self.field if not isinstance(self.field, tuple) else self.field[1]
+
+            y = get_values(field)
             from . import graph
-            x = graph.GraphFormat.as_timestamp(x, y)
+            try:
+                x = graph.GraphFormat.as_timestamp(x, y)
+            except ValueError: #  year 50265933 is out of range
+                x = graph.GraphFormat.as_timestamp([_x/1000000 for _x in x], y)
+
             fig = go.Figure(data=go.Scatter(x=x, y=y))
 
             fig.update_layout(yaxis_title=f"{self.name} ({self.unit})")
@@ -1988,12 +2028,15 @@ class TableStats():
 
 for what in "framerate", "resolution":
     Report.CPU(what)
-    Report.GPU(what)
     Report.Decode(what)
+    for sys in "guest", "client":
+        for engine in "Render", "Video":
+            Report.GPU(what, sys=sys, engine=engine)
 
 Report.GuestCPU()
 
-PlotModelGuestCPU()
+PlotModel("Guest CPU Usage", "guest_cpu", PlotModel.estimate_guest_cpu_value)
+PlotModel("Guest GPU Render Usage", "guest_gpu_render", PlotModel.estimate_guest_gpu_render_value)
 ModelGuestCPU()
 FPSTable()
 EncodingStacked()
@@ -2023,6 +2066,9 @@ for what_param, what_x in ("framerate", f"Client Framerate"), ("resolution", "pa
 
 Regression(f"resolution_vs_decode_time", "resolution", f"Guest Capture Duration (avg) vs Resolution",
            "param:resolution:res_in_mpix", "Guest Capture Duration (avg)")
+
+Regression(f"bandwidth_vs_bitrate", "bitrate", f"Bandwidth vs Bitrate",
+           "param:bitrate:bitrate_in_mbps", "Frame Bandwidth (per sec)")
 
 DistribPlot("Frame capture time", 'guest.guest', 'guest.capture_duration', "ms", divisor=1/1000)
 DistribPlot("Frame sizes", 'guest.guest', 'guest.frame_size', "KB", divisor=1000)
