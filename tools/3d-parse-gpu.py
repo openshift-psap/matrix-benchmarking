@@ -25,6 +25,8 @@ gpu render = framerate * 0.40 + 0.01 | resolution=0.92
 gpu render = framerate * 0.57 + 0.4 | resolution=2.07
 """
 
+WITH_B = False
+
 LENGTH = 10
 EQ_RE = re.compile(r"(?P<z_var>.*) = (?P<x_var>.*) \* (?P<x_coeff>.*) \+ (?P<x_origin>.*) \| (?P<params>.*)")
 
@@ -83,7 +85,12 @@ f, r, gpu = sympy.symbols("f r gpu")
 aFR, aR, aF, b = sympy.symbols("aFR aR aF b")
 
 ns = {str(s):s for s in [f, r, gpu, aFR, aR, aF, b]}
-main_eq = aFR*f*r + aR*r + aF*f
+main_eq = aFR*f*r + aR*r + aF*f + b
+
+if not WITH_B:
+    main_eq = main_eq.subs(b, 0)
+print(f"Solving `{main_eq}` ...")
+print("---\n")
 
 syst = []
 for eq in equations_settings:
@@ -97,12 +104,13 @@ for eq in equations_settings:
         syst.append(sympy.Eq(local_eq_at_x, main_eq_at_xy))
         print(f"> {syst[-1].lhs:.2f} = {syst[-1].rhs}")
 
-print("---")
+print("\n---\n")
 
-for idx, (s1, s2, s3) in enumerate(itertools.combinations(syst, 3)):
-    solutions = sympy.solve([s1, s2, s3])
+NB_UNKNOWN = len(main_eq.atoms()) - 2
+for idx, eq_system in enumerate(itertools.combinations(syst, NB_UNKNOWN)):
+    solutions = sympy.solve(eq_system)
     if not solutions:
-        #print(f"[{s1}, {s2}, {s3}] --> no solution")
+        #print(f"{eq_system} --> no solution")
         print(f"#{idx} no solution")
         continue
 
