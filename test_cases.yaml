@@ -1,5 +1,6 @@
 _type: matrix
 name: matrix
+
 record_time: 40
 
 script_config:
@@ -10,24 +11,31 @@ script_config:
 
 run:
   - _nv-plug, _vaapi, _current
-  - _study-fps
-  - #study_resolution
-  - #study_bitrate
-  - #study_kfr
-  - study_display
+  - _study_fps.i965
+  - _study_resolution
+  - _study_bitrate
+  - _study_bitrate
+  - _study_kfr
+  - _study_display
+  - _study_min_max_frequency
+  - _study_new
+  - _intel_vp8
+  - _study_encode
+  - study_min_frequency
 
 expe:
-  current:
+  study_fps.i965:
     codec: gst.vp8.vaapivp8enc
+
     encoding:
-      framerate: 20, 30, 40
-      nv.ratecontrol: cbr
-      nv.max-bitrate: 8, 16, 32
-      nv.gop: 30, 300, 0
-      nv.blocking: 0
+      framerate: 20, 25, 30, 35, 40, 45, 50, 120
+      bitrate: 8000, 16000, 32000
+      keyframe-period: 128
+      rate-control: cbr
+
     scripts:
       display: webgl_wipeout, img_lady_1920
-      resolution: 1920x1080
+      #resolution: 1920x1080, 1280x720
 
   intel_vp8:
     codec: gst.vp8.vaapivp8enc
@@ -37,7 +45,7 @@ expe:
       keyframe-period: 128, 512, 300
       rate-control: cbr
     scripts:
-      display: webgl_wipeout, img_lady_1920
+      display: img_lady_1920, webgl_wipeout
 
   study_encode:
     codec: gst.vp8.vaapivp8enc
@@ -50,16 +58,16 @@ expe:
       display: img_lady_1920
       encode_load: none, ball, snow
 
-  study_fps:
+  study_fps.iHD:
     codec: gst.vp8.vaapivp8enc
     encoding:
-      framerate: 20, 25, 30, 35, 40, 45, 50
+      framerate: 20, 25, 30, 35, 40, 45, 50, 120
       bitrate: 8000, 16000, 32000
       keyframe-period: 128
       rate-control: cbr
     scripts:
       display: webgl_wipeout, img_lady_1920
-      resolution: 1920x1080, 1280x720
+      resolution: 1920x1080 #, 1280x720
 
   study_new:
     codec: gst.vp8.vaapivp8enc
@@ -85,18 +93,18 @@ expe:
   study_bitrate:
     codec: gst.vp8.vaapivp8enc
     encoding:
-      framerate: 30
-      bitrate: 2000, 4000, 8000, 12000, 16000, 24000, 32000, 48000, 64000
+      framerate: 30 #, 40
+      bitrate: 2000, 3000, 3500, 4000, 5000, 6000, 7000, 8000, 8250, 8500, 8750, 9000, 10000, 11000, 12000, 16000, 24000, 32000, 48000, 64000
       keyframe-period: 128
       rate-control: cbr
     scripts:
-      display: webgl_wipeout, img_lady_1920
-      resolution: 1920x1080, 1280x720
+      display: img_lady_1920 #, webgl_wipeout
+      resolution: 1920x1080
 
   study_kfr:
     codec: gst.vp8.vaapivp8enc
     encoding:
-      framerate: 30
+      framerate: 30, 40
       bitrate: 16000, 48000
       keyframe-period: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 9000
       rate-control: cbr
@@ -119,13 +127,13 @@ expe:
     codec: gst.vp8.vaapivp8enc
     encoding:
       framerate: 100
-      bitrate: 8000, 16000
+      bitrate: 10000
       keyframe-period: 256
       rate-control: cbr
     scripts:
       resolution: 1920x1080
       min_frequency: 350, 500, 800, 1000, 1200
-      display: webgl_wipeout, img_lady_1920, vlc_wipeout
+      display: webgl_wipeout, img_lady_1920
 
   study_min_max_frequency:
     codec: gst.vp8.vaapivp8enc
@@ -199,7 +207,7 @@ scripts:
     before:
       - vm resolution $resolution
     after:
-      - vm resolution 1920x1200
+      - vm resolution 1920x1080
 
   resources:
     before:
