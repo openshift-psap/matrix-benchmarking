@@ -4,6 +4,8 @@ import select
 import struct
 import measurement
 
+force_recheck = None
+
 class Server():
     def __init__(self, port, expe, loop):
         self.expe = expe
@@ -23,9 +25,9 @@ class Server():
             self.serv_sock.bind(('0.0.0.0', self.port))
         except OSError as e:
             if e.errno == 98:
-                print(f"Port {self.port} already in use. Is the SmartLocalAgent already running?")
-
-            raise e
+                print(f"Port {self.port} already in use. Is this local_agent already running?")
+            self.serv_sock.close()
+            raise
 
         self.serv_sock.listen(5)
         self.thr = threading.Thread(target=self.thr_accept_socket)
@@ -34,6 +36,7 @@ class Server():
     def terminate(self):
         self.serv_sock.shutdown(socket.SHUT_RDWR)
         self.thr.join()
+        self.serv_sock.close()
 
     def thr_accept_socket(self):
         read_list = [self.serv_sock]
@@ -56,12 +59,10 @@ class Server():
                     print(f"New connection from {addr}:{port}")
                     self.new_clients.append(conn)
                     read_list.append(conn)
-                    self.loop.stop()
+                    force_recheck.append(True)
                 else:
                     if not self.thr_read_quality(s):
                         read_list.remove(s)
-
-        print("Socket to Perf collector closed.")
 
     def thr_read_quality(self, comm_sock):
         try:
@@ -129,6 +130,7 @@ class Server():
                 self.current_clients.remove(client_sock)
                 addr, port = client_sock.getsockname()
                 print(f"Client {addr}:{port} disconnected ({e})")
+                client_sock.close()
 
     def new_table_row(self, table, row):
         self.send_all(f"@{table.table_name}|1".encode("ascii"))

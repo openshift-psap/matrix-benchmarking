@@ -1,0 +1,5 @@
+kevin ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+kevin ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/bus/pci/devices/0000\:00\:02.0/drm/card0/gt_min_freq_mhz
+kevin ALL=(ALL) NOPASSWD: /usr/bin/tee /sys/bus/pci/devices/0000\:00\:02.0/drm/card0/gt_max_freq_mhz
+kevin ALL=(ALL) NOPASSWD: /usr/bin/cpupower -c all frequency-set --governor *
+kevin ALL=(ALL) NOPASSWD: /usr/bin/local/latency *

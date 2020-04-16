@@ -1,103 +1,87 @@
 from collections import defaultdict
-import json
-import os
+import importlib
+
 import dash
 from dash.dependencies import Output, Input, State
 import dash_core_components as dcc
 import dash_html_components as html
-import socket
 
 from . import InitialState, UIState
 from . import quality
 
 control_center_boxes = defaultdict(list)
 
-USE_VIRSH = None
-VIRSH_VM_NAME = None
-QMP_ADDR = None
+plugin_control = None
 
-def send_qmp(set_spice_args):
-    json_msg = json.dumps(dict(execute="set-spice",
-                               arguments=set_spice_args))
+def configure(mode, plugin_cfg, machines):
+    global plugin_control
 
-    if USE_VIRSH:
-        cmd = f"virsh qemu-monitor-command {VIRSH_VM_NAME} '{json_msg}'"
-        os.system(cmd)
-        return
+    plugin_pkg_name = f"plugins.{mode}.control"
 
-    qmp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try: plugin_control = importlib.import_module(plugin_pkg_name)
+    except Exception as e:
+        print(f"ERROR: Cannot load control plugin package ({plugin_pkg_name}) ...")
+        raise e
 
-    qmp_sock.connect(QMP_ADDR)
-    qmp_sock.send('{"execute":"qmp_capabilities"}'.encode('ascii'))
-    qmp_sock.send(json_msg.encode("ascii"))
-    resp = ""
-    to_read = 3
-    while True:
-        c = qmp_sock.recv(1).decode('ascii')
-        if not c: break
-        resp += c
+    plugin_control.configure(plugin_cfg, machines)
 
-        if c == '\n':
-            if "error" in resp:
-                print(resp)
-            to_read -= 1; resp = ""
-            if to_read == 0: break
-    del qmp_sock
+def apply_settings(driver_name, settings):
+    settings_str = ",".join(f"{k}={v}" for k, v in settings.items() if v not in (None, ""))
 
-def set_encoder(encoder_name, parameters):
-    params_str = ",".join(f"{k}={v}" for k, v in parameters.items() if v not in (None, ""))
+    quality.Quality.add_to_quality(None, "ui", f"Apply settings: {driver_name} || {settings_str}")
 
-    args = {"guest-encoder": encoder_name,
-            "guest-encoder-params": params_str}
-    try:
-        args["target-fps"] = int(parameters["framerate"])
-    except KeyError: pass # no framerate available, ignore
-    except ValueError as e:
-        print("WARNING: invalid value for 'framerate':", e)
+    err = plugin_control.apply_settings(driver_name, settings)
+    if not err:
+        return f"{driver_name} || {settings_str}"
 
-    send_qmp(set_spice_args=args)
+    msg = f"FAILED ({err})"
+    quality.Quality.add_to_quality(None, "ui", f"Apply settings: {msg}")
 
-    quality.Quality.add_to_quality(None, "ui", f"Set encoder: {encoder_name} || {params_str}")
+    return msg
 
-    return f"{encoder_name} || {params_str}"
+def reset_settings():
+    plugin_control.reset_settings()
 
-def construct_codec_control_callback(codec_name):
-    codec_id_name = codec_name.replace(".", ":")
+def request(msg, dry, log, **kwargs):
+    return plugin_control.request(msg, dry, log, **kwargs)
+
+def construct_driver_control_callback(driver_name):
+    driver_id_name = driver_name.replace(".", ":")
     cb_states = [State(tag_id, tag_cb_field) \
-                 for tag_id, tag_cb_field, *_ in control_center_boxes[codec_name]]
+                 for tag_id, tag_cb_field, *_ in control_center_boxes[driver_name]]
 
-    param_names = [tag_id.rpartition(":")[-1]
-                   for tag_id, tag_cb_field, _ in control_center_boxes[codec_name]]
-    @UIState.app.callback(Output(f"{codec_id_name}-msg", 'children'),
-                           [Input(f'{codec_id_name}-go-button', "n_clicks"),
-                            Input(f'{codec_id_name}-reset-button', "n_clicks")],
+    setting_names = [tag_id.rpartition(":")[-1]
+                   for tag_id, tag_cb_field, _ in control_center_boxes[driver_name]]
+    @UIState.app.callback(Output(f"{driver_id_name}-msg", 'children'),
+                          [Input(f'{driver_id_name}-go-button', "n_clicks"),
+                           Input(f'{driver_id_name}-reset-button', "n_clicks")],
                            cb_states)
-    def activate_codec(*args):
+    def activate_driver(*args):
 
         try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
         except IndexError: return # nothing triggered the script (on multiapp load)
 
         go_n_clicks, reset_n_clicks, *states = args
 
-        if triggered_id == f"{codec_id_name}-reset-button.n_clicks":
+        if triggered_id == f"{driver_id_name}-reset-button.n_clicks":
             if reset_n_clicks is None: return # button creation
 
-            set_encoder("reset", {})
+            reset_settings()
             return "Encoding reset!"
 
         if go_n_clicks is None: return # button creation
 
-        params = dict(zip(param_names, states))
-        if params.get("custom", None):
-            for custom in params["custom"].split(";"):
+        settings = dict(zip(setting_names, states))
+        if settings.get("custom", None):
+            for custom in settings["custom"].split(";"):
                 k, _, v = custom.partition("=")
-                params[k] = v
+                settings[k] = v
 
-            del params["custom"]
+            del settings["custom"]
 
-        return set_encoder(codec_name, params)
+        return apply_settings(driver_name, settings)
 
-    for tag_id, tag_cb_field, need_value_cb in control_center_boxes[codec_name]:
+    for tag_id, tag_cb_field, need_value_cb in control_center_boxes[driver_name]:
         if not need_value_cb: continue
 
         @UIState.app.callback(Output(f"{tag_id}:value", 'children'),
@@ -106,17 +90,17 @@ def construct_codec_control_callback(codec_name):
             return f": {value if value is not None else ''}"
 
 
-def construct_codec_control_callbacks(codec_cfg):
-    for codec_name, options in codec_cfg.items():
+def construct_driver_control_callbacks(driver_cfg):
+    for driver_name, options in driver_cfg.items():
         if not options: options = {}
         if options.get("_group") is True: continue
         if options.get("_disabled"): continue
 
-        construct_codec_control_callback(codec_name)
+        construct_driver_control_callback(driver_name)
 
-def construct_control_center_tab(codec_cfg):
+def construct_control_center_tab(driver_cfg):
 
-    def get_option_box(codec_name, opt_name, opt_props):
+    def get_option_box(driver_name, opt_name, opt_props):
         tag = None
         tag_cb_field = "value"
         need_value_cb = False
@@ -152,10 +136,10 @@ def construct_control_center_tab(codec_cfg):
             tag = dcc.Input(placeholder=f'Enter a value for "{opt_name}"'+default_str,
                             type='text', style={"width": "100%"})
 
-        tag_id = f"{codec_name}-opt:{opt_name.lower()}".replace(".", "_")
+        tag_id = f"{driver_name}-opt:{opt_name.lower()}".replace(".", "_")
         tag.id = tag_id
 
-        control_center_boxes[codec_name].append((tag_id, tag_cb_field, need_value_cb))
+        control_center_boxes[driver_name].append((tag_id, tag_cb_field, need_value_cb))
 
         opt_name_span = html.Span(opt_name)
         children = [opt_name_span, html.Span(id=tag_id+":value")]
@@ -174,18 +158,18 @@ def construct_control_center_tab(codec_cfg):
         return [html.P(children=children, style={"text-align": "center"}),
                 html.P([tag])]
 
-    def get_codec_params(codec_name, codec_id_name):
+    def get_driver_params(driver_name, driver_id_name):
         all_options = {}
-        for name, options in codec_cfg.items():
+        for name, options in driver_cfg.items():
             if not options: continue
             if "_disabled" in options: continue
 
-            if codec_name == name: pass # keep
+            if driver_name == name: pass # keep
             elif name == "_all": pass # keep
             elif options.get("_group") is True:
-                codec_opts = codec_cfg.get(codec_name)
-                if not codec_opts: continue
-                group = codec_opts.get("_group")
+                driver_opts = driver_cfg.get(driver_name)
+                if not driver_opts: continue
+                group = driver_opts.get("_group")
                 try:
                     if group != name and name not in group:
                         continue
@@ -202,32 +186,32 @@ def construct_control_center_tab(codec_cfg):
 
         for opt_name, opt_props in all_options.items():
             if opt_name.startswith("_"): continue
-            yield from get_option_box(codec_name, opt_name, opt_props)
+            yield from get_option_box(driver_name, opt_name, opt_props)
 
-        yield from get_option_box(codec_name, "custom", {"desc": "format: (key=value;)*"})
+        yield from get_option_box(driver_name, "custom", {"desc": "format: (key=value;)*"})
 
-        yield html.P(id=f"{codec_id_name}-msg", style={"text-align":"center"})
+        yield html.P(id=f"{driver_id_name}-msg", style={"text-align":"center"})
 
-    def get_codec_tabs():
-        for codec_name, options in codec_cfg.items():
+    def get_driver_tabs():
+        for driver_name, options in driver_cfg.items():
             if options is None: options = {}
 
             if options.get("_group") is True: continue
             if options.get("_disabled"): continue
 
-            print(f"Create {codec_name} tab ...")
-            codec_id_name = codec_name.replace(".", ":")
+            print(f"Create {driver_name} tab ...")
+            driver_id_name = driver_name.replace(".", ":")
             children = []
-            children += [html.Div([html.Button('Go!', id=f'{codec_id_name}-go-button'),
-                                   html.Button('Reset', id=f'{codec_id_name}-reset-button')],
+            children += [html.Div([html.Button('Go!', id=f'{driver_id_name}-go-button'),
+                                   html.Button('Reset', id=f'{driver_id_name}-reset-button')],
                                   style={"text-align": "center"})]
-            children += get_codec_params(codec_name, codec_id_name)
+            children += get_driver_params(driver_name, driver_id_name)
 
-            yield dcc.Tab(label=codec_name, children=children)
+            yield dcc.Tab(label=driver_name, children=children)
 
-    codec_tabs = [
-        html.H3("Video Encoding", style={"text-align":"center"}),
-        dcc.Tabs(id="video-enc-tabs", children=list(get_codec_tabs())),
+    driver_tabs = [
+        html.H3("Drivers & settings", style={"text-align":"center"}),
+        dcc.Tabs(id="driver-settings-tabs", children=list(get_driver_tabs())),
     ]
 
     refresh_interval = 9999999 if UIState().viewer_mode else InitialState.QUALITY_REFRESH_INTERVAL * 1000
@@ -261,7 +245,7 @@ def construct_control_center_tab(codec_cfg):
         tab_children = [
             html.Div([
                 html.Div(quality_children, style={"text-align":"center",}, className="four columns"),
-                html.Div(codec_tabs, className="eight columns"),
+                html.Div(driver_tabs, className="eight columns"),
             ], className="row")
         ]
 

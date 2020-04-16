@@ -1,4 +1,6 @@
 _type: matrix
+_nb_agents: 3
+
 name: matrix
 
 record_time: 40
@@ -25,9 +27,9 @@ run:
 
 expe:
   study_fps.i965:
-    codec: gst.vp8.vaapivp8enc
+    driver: gst.vp8.vaapivp8enc
 
-    encoding:
+    settings:
       framerate: 20, 25, 30, 35, 40, 45, 50, 120
       bitrate: 8000, 16000, 32000
       keyframe-period: 128
@@ -38,8 +40,8 @@ expe:
       #resolution: 1920x1080, 1280x720
 
   intel_vp8:
-    codec: gst.vp8.vaapivp8enc
-    encoding:
+    driver: gst.vp8.vaapivp8enc
+    settings:
       framerate: 20, 30, 40
       bitrate: 8000, 16000, 32000
       keyframe-period: 128, 512, 300
@@ -48,8 +50,8 @@ expe:
       display: img_lady_1920, webgl_wipeout
 
   study_encode:
-    codec: gst.vp8.vaapivp8enc
-    encoding:
+    driver: gst.vp8.vaapivp8enc
+    settings:
       framerate: 100, 120
       bitrate: 16000
       keyframe-period: 128, 256, 512
@@ -59,8 +61,8 @@ expe:
       encode_load: none, ball, snow
 
   study_fps.iHD:
-    codec: gst.vp8.vaapivp8enc
-    encoding:
+    driver: gst.vp8.vaapivp8enc
+    settings:
       framerate: 20, 25, 30, 35, 40, 45, 50, 120
       bitrate: 8000, 16000, 32000
       keyframe-period: 128
@@ -70,8 +72,8 @@ expe:
       resolution: 1920x1080 #, 1280x720
 
   study_new:
-    codec: gst.vp8.vaapivp8enc
-    encoding:
+    driver: gst.vp8.vaapivp8enc
+    settings:
       framerate: 30, 40
       bitrate: 16000
       keyframe-period:  128, 256
@@ -80,8 +82,8 @@ expe:
       display: img_lady_1920, webgl_wipeout
 
   study_resolution:
-    codec: gst.vp8.vaapivp8enc
-    encoding:
+    driver: gst.vp8.vaapivp8enc
+    settings:
       framerate: 30, 40
       bitrate: 8000, 16000, 32000
       keyframe-period: 128
@@ -91,8 +93,8 @@ expe:
       resolution: 1600x1200, 1400x1050, 1280x960, 1024x768, 800x600, 640x480
 
   study_bitrate:
-    codec: gst.vp8.vaapivp8enc
-    encoding:
+    driver: gst.vp8.vaapivp8enc
+    settings:
       framerate: 30 #, 40
       bitrate: 2000, 3000, 3500, 4000, 5000, 6000, 7000, 8000, 8250, 8500, 8750, 9000, 10000, 11000, 12000, 16000, 24000, 32000, 48000, 64000
       keyframe-period: 128
@@ -102,8 +104,8 @@ expe:
       resolution: 1920x1080
 
   study_kfr:
-    codec: gst.vp8.vaapivp8enc
-    encoding:
+    driver: gst.vp8.vaapivp8enc
+    settings:
       framerate: 30, 40
       bitrate: 16000, 48000
       keyframe-period: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 9000
@@ -113,8 +115,8 @@ expe:
       resolution: 1920x1080
 
   study_bitrate_0:
-    codec: gst.vp8.vaapivp8enc
-    encoding:
+    driver: gst.vp8.vaapivp8enc
+    settings:
       framerate: 30, 40
       bitrate: 0
       keyframe-period: 256
@@ -124,8 +126,8 @@ expe:
       resolution: 1920x1080
 
   study_min_frequency:
-    codec: gst.vp8.vaapivp8enc
-    encoding:
+    driver: gst.vp8.vaapivp8enc
+    settings:
       framerate: 100
       bitrate: 10000
       keyframe-period: 256
@@ -134,10 +136,11 @@ expe:
       resolution: 1920x1080
       min_frequency: 350, 500, 800, 1000, 1200
       display: webgl_wipeout, img_lady_1920
+      resources: normal
 
   study_min_max_frequency:
-    codec: gst.vp8.vaapivp8enc
-    encoding:
+    driver: gst.vp8.vaapivp8enc
+    settings:
       framerate: 100
       bitrate: 8000, 16000
       keyframe-period: 256
@@ -148,8 +151,8 @@ expe:
       display: webgl_wipeout, img_lady_1920, vlc_wipeout
 
   gst.nvenc:
-    codec: gst.h264.nvh264enc
-    encoding:
+    driver: gst.h264.nvh264enc
+    settings:
       bitrate: 32000
       gop-size:  30, 300, -1
       rc-mode: cbr
@@ -159,8 +162,8 @@ expe:
       resolution: 1920x1080
 
   vaapi:
-    codec: gst.vp8.vaapivp8enc
-    encoding:
+    driver: gst.vp8.vaapivp8enc
+    settings:
       framerate: 20, 30, 40
       bitrate: 8000, 16000, 32000
       rate-control: cbr
@@ -170,8 +173,8 @@ expe:
       resolution: 1920x1080
 
   nv-plug:
-    codec: nv.plug.h264
-    encoding:
+    driver: nv.plug.h264
+    settings:
       nv.ratecontrol: cbr
       nv.max-bitrate: 8, 16, 32, 64
       nv.gop: 0
@@ -183,12 +186,10 @@ expe:
 scripts:
   setup:
     - vm resolution 1920x1080
-    - xset s off -dpms
-    - atuona perf on
+    - server perf on
 
   teardown:
     - vm resolution 1920x1080
-    - xset s on +dpms
     - server perf off
 
   display:
@@ -211,9 +212,9 @@ scripts:
 
   resources:
     before:
-      - /py/ stress_test $resources
+      - /py/ stress $resources
     after:
-      - /py/ stress_test normal
+      - /py/ stress normal
 
   min_max_frequency:
     before:

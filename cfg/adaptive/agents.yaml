@@ -1,7 +1,9 @@
 setup:
   machines: desktop
-  ui.web:
-    listen_on: localhost
+  listen_on: localhost
+
+plugins:
+  adaptive:
     use_virsh: false
     virsh_vm_name: fedora30
     qmp_port: 4444
@@ -22,7 +24,7 @@ measurement_sets:
     - VMStat
     - MPStat
     - Intel_GPU_Top
-    - AgentInterface:
+    - SpiceAgentInterface:
         port: 1236
         mode: guest
 
@@ -30,7 +32,7 @@ measurement_sets:
     - VMStat
     - MPStat
     - Intel_GPU_Top
-    - AgentInterface:
+    - SpiceAgentInterface:
         port: 1235
         mode: server
 
@@ -38,7 +40,7 @@ measurement_sets:
     - VMStat
     - MPStat
     - Intel_GPU_Top
-    - AgentInterface:
+    - SpiceAgentInterface:
         port: 1234
         mode: client
 
@@ -90,5 +92,4 @@ headless:
   measurement_sets:
     - collector
   headless:
-    ui.web:
-      script: matrix
+    script: matrix

@@ -1,0 +1,173 @@
+#! /bin/bash
+
+THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+
+source $THIS_DIR/../../../cfg/adaptive/config.sh
+
+in_vm() {
+    ssh -q -t -t $VM "bash -c 'DISPLAY=:0 $@'"
+}
+
+in_vm_bg() {
+    ssh -q $VM "bash -c 'DISPLAY=:0 $@'" &
+}
+
+do_set_resolution() {
+    resolution="$1"
+    if [ -z "$VM_SCREEN_NAME" ]; then
+        echo "ERROR: cannot change VM resolution without VM_SCREEN_NAME env variable."
+    fi
+    in_vm "xrandr --output $VM_SCREEN_NAME --mode $resolution"
+
+    exit $?
+}
+
+do_stream() {
+    add_gst_enc() {
+        ENCODING_OPT="$ENCODING_OPT -c gst.$1=$2"
+    }
+
+    set_gst_encoders() {
+        export IFS=":"
+        for codec_encoder in $1; do
+            eval "add_gst_enc $codec_encoder"
+        done
+    }
+
+    ENCODING_OPT=$SPICE_ENCODING_OPT
+    set_gst_encoders "$SPICE_STREAMING_GST_PLUGINS"
+
+    STREAMING_OPT="--plugins-dir=$VM_SPICE_STREAMING_PLUGINS_DIR $ENCODING_OPT"
+    echo $SPICE_STREAMING_ENV $VM_SPICE_STREAMING_AGENT $STREAMING_OPT
+    in_vm $SPICE_STREAMING_ENV $VM_SPICE_STREAMING_AGENT $STREAMING_OPT
+}
+
+do_encode_load() {
+    action=$1
+    GST_PATTERN=$2
+
+    if [[ $GST_PATTERN == "none" ]]; then
+        echo "Nothing to do to $action '$GST_PATTERN'."
+        return
+    fi
+
+    if [[ $action == "stop" ]]; then
+        in_vm killall gst-launch-1.0
+        return
+    fi
+
+    WIDTH=1920
+    HEIGHT=1080
+    GST_OPT=" ! video/x-raw,width=$WIDTH,height=$HEIGHT,framerate=400/1"
+    GST_VP8_ENC="$GST_OPT ! autovideoconvert ! vaapivp8enc ! fakesink"
+
+    in_vm_bg gst-launch-1.0 videotestsrc pattern=$GST_PATTERN $GST_VP8_ENC
+}
+
+do_stop_display() {
+    what=$1
+    if [[ $what == "img_lady_"* ]]; then
+        who=eog
+    elif [[ $what == "background"* ]]; then
+        exit 0
+    elif [[ $what == "vlc_"* ]]; then
+        who=vlc
+    elif [[ $what == "gst_"* ]]; then
+        who=gst-launch-1.0
+    elif [[ $what == "snow_"* ]]; then
+        who=gst-launch-1.0
+    elif [[ $what == "http"* ]]; then
+        who=firefox
+    else
+        echo "ERROR: unknown stop display request ($what) ..."
+        exit 1
+    fi
+    in_vm pkill $who
+}
+
+do_start_display() {
+    what=$1
+    full=0
+
+    if [[ $what == "img_lady_"* ]]; then
+        width=$(echo $what | cut -d_ -f3)
+        height=$(bc <<< "$width/1.77")
+        SRC="$VM_DISPLAY_DESK_IMG"
+        DST="/tmp/lady-musgrave-blue_${width}x${height}.png"
+        if ! in_vm test -e $DST; then
+            in_vm convert -resize ${width}x${height} $SRC $DST
+        fi
+        in_vm eog --fullscreen $DST &
+
+        return
+    elif [[ $what == "background"* ]]; then
+        echo "Nothing to do ..."
+        return
+
+    elif [[ $what == "vlc_"* ]]; then
+        VIDEO_SUFFIX=-2020
+
+        video_prefix=${what:4}
+        in_vm_bg cvlc --fullscreen --loop $VM_DISPLAY_VIDEO_PATH/$video_prefix$VIDEO_SUFFIX* >/dev/null
+        full=1
+
+    elif [[ $what == "snow_"* ]]; then
+        width=$(echo $what | cut -d_ -f2)
+        height=$(bc <<< "scale=5; $width/(16/9)" | cut -d"." -f1)
+
+        echo "Running snow pattern with ${width}x${height}"
+        in_vm_bg gst-launch-1.0 -v videotestsrc pattern=snow ! \
+                                   video/x-raw,width=$width,height=$height ! \
+                                   autovideosink >/dev/null
+
+    elif [[ $what == "gst_"* ]]; then
+        pattern=${what:4}
+        in_vm_bg gst-launch-1.0 -v videotestsrc pattern=$pattern ! \
+                                   video/x-raw,width=1920,height=1080 ! \
+                                   autovideosink >/dev/null
+
+    elif [[ $what == "http"* ]]; then
+        vm do rm -rf .mozilla
+        in_vm_bg firefox "$1" 2> /dev/null
+        sleep 10
+    else
+        echo "ERROR: unknown start display request ($what) ..."
+        exit 1
+    fi
+    sleep 2
+
+    [ $full == 0 ] && vm do wmctrl -r ":ACTIVE:" -b toggle,fullscreen
+}
+
+
+ACTION="$1"
+shift
+case $ACTION in
+    stream)
+        do_stream
+        ;;
+    stream-no)
+        in_vm killall spice-streaming-agent
+        ;;
+    "do")
+        in_vm "$*"
+        ;;
+    open)
+        in_vm_bg firefox "$*"
+        ;;
+    resolution)
+        do_set_resolution "$1"
+        ;;
+    encode_load)
+        do_encode_load "$1" "$2"
+        ;;
+    display)
+        if [[ $1 == start ]]; then
+            do_start_display "$2"
+        else
+            do_stop_display "$2"
+        fi
+        ;;
+    *)
+        echo "ERROR: unknown command '$ACTION' ..."
+esac

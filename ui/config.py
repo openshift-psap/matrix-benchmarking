@@ -5,7 +5,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 
 from . import InitialState, UIState
-from . import graph, quality
+from . import graph, quality, script
 
 def construct_config_stubs():
     yield dcc.Input(type='number', value=0, id='graph-view-length', style={"display":"none"})
@@ -18,10 +18,6 @@ def construct_config_tab():
         dcc.Slider(min=0, max=100, step=2, value=InitialState.GRAPH_REFRESH_INTERVAL-1,
                    marks={0:"1s", 100:"100s"}, id="cfg:graph-refresh"),
         html.Br(),
-        "Script refresh period: ",
-        dcc.Slider(min=0, max=100, step=1, value=InitialState.SCRIPT_REFRESH_INTERVAL,
-                   marks={0:"0s", 100:"100s"}, id="cfg:script-refresh"),
-        html.Br(),
         "Number of seconds to show on the live graph: ",
         dcc.Input(type='number', value=InitialState.LIVE_GRAPH_NB_SECONDS_TO_KEEP,
                   id='graph-view-length'),
@@ -30,13 +26,6 @@ def construct_config_tab():
     return dcc.Tab(label="Config", children=children)
 
 def construct_config_tab_callbacks(dataview_cfg):
-
-    @UIState.app.callback(Output("script-msg-refresh", 'interval'),
-                          [Input('cfg:script-refresh', 'value')])
-    def update_script_refresh_timer(value):
-        if value == 0: value = 9999
-        print(f"Refresh scripts every {value}s")
-        return value * 1000
 
     @UIState.app.callback(Output("quality-refresh", 'interval'),
                           [Input('cfg:quality', 'value')])
@@ -61,6 +50,9 @@ def construct_config_tab_callbacks(dataview_cfg):
         try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
         except IndexError: return # nothing triggered the script (on multiapp load)
 
+        if triggered_id == ".":
+            return
+
         if triggered_id == "graph-bt-marker.n_clicks":
             if marker is None: return
             nonlocal marker_cnt
@@ -71,9 +63,7 @@ def construct_config_tab_callbacks(dataview_cfg):
         if triggered_id == "graph-bt-save.n_clicks":
             if save is None: return
 
-            from . import script_types
-
-            dirname = script_types.RESULTS_PATH
+            dirname = script.RESULTS_PATH
 
             try: os.mkdir(dirname)
             except FileExistsError: pass

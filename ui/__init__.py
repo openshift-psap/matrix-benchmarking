@@ -1,14 +1,13 @@
+import sys, os, threading
+import logging
+
 import dash
 from dash.dependencies import Output, Input, State
 import dash_core_components as dcc
 import dash_html_components as html
-import threading
 import flask
-import sys, os
-import logging
 
-try: import pandas
-except ImportError: pass
+import pandas
 
 try: import numpy
 except ImportError: pass
@@ -19,11 +18,6 @@ from . import matrix_view
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
-external_stylesheets = [
-    # 'https://codepen.io/chriddyp/pen/bWLwgP.css' # served via assets/bWLwgP.css and automatically included
-    # see https://codepen.io/chriddyp/pen/bWLwgP for style/columnts
-]
-
 LISTEN_ON = None
 
 class InitialState():
@@ -32,12 +26,15 @@ class InitialState():
     SCRIPT_REFRESH_INTERVAL = 0 #s
     LIVE_GRAPH_NB_SECONDS_TO_KEEP = 2*60 #s
 
-codec_cfg = utils.yaml.load_multiple("codec_params.yaml")
+driver_settings_cfg = None
 dataview_cfg = None
-main_app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-AgentExperimentClass = None # populated by smart_agent, cannot import it from here
+
+AgentExperimentClass = None # populated by local_agent, cannot import it from here
 running_as_collector = False
 machines = None
+
+# stylesheets now served via assets/bWLwgP.css and automatically included
+main_app = dash.Dash(__name__)
 
 class _UIState():
     def __init__(self, url, expe=None, viewer_mode=False):
@@ -64,25 +61,22 @@ class __UIState():
         self.app = main_app
 
     def __call__(self):
-        try:
-            url = flask.request.url
-            if url.endswith("/_dash-update-component"): # common case
-                url = flask.request.referrer
-                if url is None:
-                    msg = "Warning: cannot get the proper URL ..."
-                    print(msg)
-                    raise RuntimeError(msg)
-                # url: http://host/{key}
-                key = url.split("/", maxsplit=3)[-1]
-            else:
-                # url: http://host/{key}/<whatever>
-                key = url.split("/", maxsplit=3)[-1].partition("/")[0]
+        if running_as_collector:
+            key = "collector"
+            return ui_states[key]
 
-        except RuntimeError as e:
-            # Working outside of request context --> collector initialization
-            if running_as_collector:
-                key = "collector"
-            else: raise(e)
+        url = flask.request.url
+        if url.endswith("/_dash-update-component"): # common case
+            url = flask.request.referrer
+            if url is None:
+                msg = "Warning: cannot get the proper URL ..."
+                print(msg)
+                raise RuntimeError(msg)
+            # url: http://host/{key}
+            key = url.split("/", maxsplit=3)[-1]
+        else:
+            # url: http://host/{key}/<whatever>
+            key = url.split("/", maxsplit=3)[-1].partition("/")[0]
 
         return ui_states[key]
 
@@ -93,7 +87,7 @@ def construct_layout(ui_state):
     from . import live, config, control, script, quality
 
     def tab_entries():
-        yield control.construct_control_center_tab(codec_cfg)
+        yield control.construct_control_center_tab(driver_settings_cfg)
 
         for graph_tab in dataview_cfg.tabs:
             print(f"Add {graph_tab.tab_name}")
@@ -102,11 +96,11 @@ def construct_layout(ui_state):
 
         if UIState().viewer_mode: return
 
-        yield script.construct_script_tab()
         yield config.construct_config_tab()
 
-    ui_state.app.title = 'Smart Streaming Control Center'
-    header = [dcc.Input(id='empty', style={"display": "none"})] + live.construct_header()
+    ui_state.app.title = 'Streaming Stats Control Center'
+    header = [dcc.Input(id='empty', style={"display": "none"})] \
+        + live.construct_header()
 
 
     if UIState().viewer_mode:
@@ -115,35 +109,35 @@ def construct_layout(ui_state):
     return html.Div(header+[dcc.Tabs(id="main-tabs", children=list(tab_entries()))])
 
 
-def construct_callbacks():
-    from . import quality, control, live, config, script
+def construct_collector_callbacks(mode):
+    from . import quality, control, live, config
 
     quality.construct_quality_callbacks()
-    control.construct_codec_control_callbacks(codec_cfg)
+    control.construct_driver_control_callbacks(driver_settings_cfg)
     live.construct_live_refresh_callbacks(dataview_cfg)
     config.construct_config_tab_callbacks(dataview_cfg)
-    script.construct_script_tab_callbacks()
 
-    if running_as_collector: return
-
+def construct_matrix_callbacks(mode):
     # Dash doesn't support creating the callbacks AFTER the app is running,
     # can the Matrix callback IDs are dynamic (base on the name of the parameters)
     # So at the moment, only one file can be loaded, here in the startup...
     import glob
-    from . import script_types
+    from . import script
 
     expe_arg = sys.argv[-1]
-    what = expe_arg if not "/" in expe_arg and os.path.exists(f"{script_types.RESULTS_PATH}/{expe_arg}/matrix.csv") \
+    what = expe_arg if not "/" in expe_arg \
+        and os.path.exists(f"{script.RESULTS_PATH}/{expe_arg}/matrix.csv") \
         else "*"
 
-    for matrix_result in glob.glob(f"{script_types.RESULTS_PATH}/{what}/matrix.csv"):
+    matrix_view.configure(mode)
+
+    for matrix_result in glob.glob(f"{script.RESULTS_PATH}/{what}/matrix.csv"):
         matrix_view.parse_data(matrix_result)
 
     matrix_view.build_callbacks(main_app)
 
 def initialize_viewer(url, ui_state):
     from measurement import hot_connect
-    from . import script_types
 
     import os
     _viewer, _result, path = url.split("/", maxsplit=2)
@@ -151,9 +145,10 @@ def initialize_viewer(url, ui_state):
     if not (_viewer == "viewer" and _result == "results"):
         raise RuntimeError(f"Invalid url prefix ... {_viewer}/{_result} ...")
 
-    filename = os.path.abspath(os.sep.join([script_types.RESULTS_PATH, path]))
-    if not filename.startswith(script_types.RESULTS_PATH):
-        raise RuntimeError(f"Filename abs path ({filename}) doesn't start with the right prefix {script_types.RESULTS_PATH} ...")
+    filename = os.path.abspath(os.sep.join([script.RESULTS_PATH, path]))
+    if not filename.startswith(script.RESULTS_PATH):
+        raise RuntimeError(f"Filename abs path ({filename}) doesn't start "
+                           f"with the right prefix {script.RESULTS_PATH} ...")
 
     hot_connect.load_record_file(ui_state.DB.expe, filename)
 
@@ -182,8 +177,8 @@ def construct_dispatcher():
 
         elif pathname in ("/viewer", "/viewer/"):
             from pathlib import Path
-            from . import script_types
-            path = script_types.RESULTS_PATH
+
+            path = script.RESULTS_PATH
             children = [html.P(html.A(str(filename)[len(path)+1:],
                                       href="/viewer/results/"+(str(filename)[len(path)+1:]),
                                       target="_blank")) \
@@ -222,20 +217,19 @@ def construct_dispatcher():
 
         elif pathname.startswith('/matrix'):
             if running_as_collector:
-                return "Matrix visualiser not available, running as collector."
+                return ["Matrix visualiser not available, running as ", html.A("collector", href="/collector"), "."]
 
             return matrix_view.build_layout(search)
         elif pathname.startswith('/saved'):
-            from . import script_types
-
-            path = f"{script_types.RESULTS_PATH}/../saved"
+            path = f"{script.RESULTS_PATH}/../saved"
 
             if pathname.endswith(".dill"):
                 filepath = pathname[len("/saved/"):]
                 if '..' in filepath: return "invalid path ..."
                 import dill
                 try:
-                    return dill.load(open(path+"/"+filepath, 'rb'))
+                    with open(path+"/"+filepath, 'rb') as dill_f:
+                        return dill.load(diff_f)
                 except Exception as e:
                     return f"Failed to open '{pathname}' ... ({e.__class__.__name__})"
             else:
@@ -264,9 +258,8 @@ def construct_dispatcher():
 
             return [msg, index]
 
-
 class Server():
-    def __init__(self, expe=None, headless=False):
+    def __init__(self, expe=None, headless=False, cfg={}):
 
         thr_fct = self._thr_run_headless_and_quit if headless \
             else self._thr_run_dash
@@ -274,9 +267,8 @@ class Server():
         self.thr = threading.Thread(target=thr_fct)
         self.thr.daemon = True
 
-        from . import graph
-        global dataview_cfg
-        dataview_cfg = graph.DataviewCfg(utils.yaml.load_multiple("ui/web/dataview.yaml"))
+        self.cfg = cfg
+        self._configure()
 
         if headless:
             assert expe is not None, "No expe received in headless collector mode ..."
@@ -287,21 +279,25 @@ class Server():
         if not headless:
             self._init_webapp(expe)
 
-    def configure(self, cfg, _machines):
-        from . import control
-        global LISTEN_ON
-        LISTEN_ON = cfg.get('listen_on', None)
+    def _configure(self):
+        if not self.cfg: return
 
-        control.USE_VIRSH = cfg['use_virsh']
-        if control.USE_VIRSH:
-            control.VIRSH_VM_NAME = cfg['virsh_vm_name']
-        else:
-            control.QMP_ADDR = _machines['server'], cfg['qmp_port']
+        from . import graph
+        global dataview_cfg
+        dataview_cfg = graph.DataviewCfg(utils.yaml.load_multiple(f"cfg/{self.cfg['mode']}/dataview.yaml"))
+
+        global driver_settings_cfg
+        driver_settings_cfg  = utils.yaml.load_multiple(f"cfg/{self.cfg['mode']}/driver_settings.yaml")
 
         global machines
-        machines = _machines
+        machines = self.cfg['machines']
 
-        self.cfg = cfg
+        # ---
+        from . import control
+        control.configure(self.cfg['mode'], self.cfg['plugin'], self.cfg['machines'])
+
+        global LISTEN_ON
+        LISTEN_ON = self.cfg["setup"].get('listen_on', None)
 
     def start(self):
         self.thr.start()
@@ -322,12 +318,16 @@ class Server():
         global running_as_collector
         running_as_collector = True
         ui_state = ui_states["collector"] = _UIState("collector", expe, viewer_mode=False)
+
         if not headless:
             ui_state.layout = construct_layout(ui_state)
-
+            UIState()
     def _init_webapp(self, expe):
         construct_dispatcher()
-        construct_callbacks()
+        construct_collector_callbacks(self.cfg["mode"])
+        if running_as_collector: return
+
+        construct_matrix_callbacks(self.cfg["mode"])
 
     def _thr_run_dash(self):
         try:
@@ -358,14 +358,16 @@ class Server():
             def insert(self, pos, msg): pass
             def clear(self): pass
 
+        matrix_view.configure(self.cfg["mode"])
+
         script.Script.messages = message_to_print()
 
-        script.Script.load()
+        script.Script.load(self.cfg["mode"])
         try:
             script_name = self.cfg['headless']['script']
             script_to_run = script.Script.all_scripts[script_name]
         except KeyError:
-            print("ERROR: script not found '{script_name}'...")
+            print(f"ERROR: script not found '{script_name}'...")
             return
         import sys
         dry = "run" not in sys.argv

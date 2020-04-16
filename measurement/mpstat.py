@@ -20,6 +20,7 @@ class SysStat(measurement.Measurement):
             self.live = False
         else:
             self.live = utils.live.LiveStream()
+            self.live.name = self.cmd
             self.headers = None
 
     def start(self):
@@ -37,11 +38,16 @@ class SysStat(measurement.Measurement):
         if not self.live: return
 
         self.live.stop()
-        self.process.kill()
+        if self.process:
+            self.process.kill()
 
     def process_line(self, line):
         raise NotImplementedError()
 
+
+# fix issue with asyncio and datetime:
+# partially initialized module '_strptime' has no attribute '_strptime_datetime'
+datetime.datetime.strptime('2020-04-20 12:15:00', '%Y-%m-%d %H:%M:%S').timestamp()
 class MPStat(SysStat):
     def __init__(self, cfg, experiment):
         self.cmd = 'mpstat 1'
@@ -65,8 +71,11 @@ class MPStat(SysStat):
 
         idle = float(fields["%idle"])
         guest = float(fields["%guest"])
-        time = int(datetime.datetime.strptime(' '.join([datetime.date.today().isoformat(),
-                                                        fields["time"]]),
-                                              '%Y-%m-%d %H:%M:%S').timestamp())
-
+        try:
+            time = int(datetime.datetime.strptime(' '.join([datetime.date.today().isoformat(),
+                                                            fields["time"]]),
+                                                  '%Y-%m-%d %H:%M:%S').timestamp())
+        except BaseException as e:
+            print("cannot parse time", e)
+            return
         self.table.add(time, idle, guest)

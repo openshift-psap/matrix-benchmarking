@@ -31,14 +31,14 @@ class DB():
 
     def save_to_file(self, filename):
         print("Saving into", filename)
-        output = open(filename, "w")
-        print(json.dumps(self.quality), file=output)
+        with open(filename, "w") as output:
+            print(json.dumps(self.quality), file=output)
 
-        for table in self.expe.tables.values():
-            print(f"- {table.table_name}: {len(self.table_contents[table])} rows")
-            print(table.header(), file=output)
-            print(json.dumps(self.table_contents[table]), file=output)
-            print(json.dumps(self.quality_by_table[table]), file=output)
+            for table in self.expe.tables.values():
+                print(f"- {table.table_name}: {len(self.table_contents[table])} rows")
+                print(table.header(), file=output)
+                print(json.dumps(self.table_contents[table]), file=output)
+                print(json.dumps(self.quality_by_table[table]), file=output)
 
     def init_quality_from_viewer(self):
         import measurement.perf_viewer

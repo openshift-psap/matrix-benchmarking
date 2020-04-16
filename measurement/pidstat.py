@@ -39,7 +39,6 @@ class PidStat(mpstat.SysStat):
         except Exception as e:
             if not os.path.exists(f"/proc/{self.pid}"):
                 print(f"PidStat: {self.mode}: {self.pid} is dead")
-
                 hot_connect.detach_module(self)
                 raise StopIteration()
 

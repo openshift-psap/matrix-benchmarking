@@ -27,10 +27,5 @@ class Measurement:
         """Stop the measurement.
         See start"""
         pass
-    def collect(self):
-        """Collect the measurement.
-        For instance get logs and parse them.
-        Should store the results on a table."""
-        pass
     def __str__(self):
         return self.__class__.__name__

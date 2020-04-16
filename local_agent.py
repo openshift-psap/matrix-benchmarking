@@ -1,11 +1,12 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python3.7
 
 import argparse
-import sys
+import sys, signal
 import re
 import asyncio
 import importlib
 import traceback
+import datetime, calendar
 
 import utils.yaml
 
@@ -14,6 +15,10 @@ import measurement.agentinterface
 import agent.to_collector
 
 VERBOSE = False
+
+import warnings
+warnings.simplefilter('always', ResourceWarning)
+
 quit_signal = False
 
 class AgentTable():
@@ -86,6 +91,7 @@ class AgentExperiment():
         if not self.send_quality_cbs:
             print("No callback set for sending quality message: ", msg)
             return
+
         print("Quality to send:", msg)
         for send_quality_cb in self.send_quality_cbs:
             send_quality_cb(msg)
@@ -100,63 +106,70 @@ class AgentExperiment():
     def agents_connected(self):
         return [k for k, v in self.agent_status.items() if v.live and v.live.alive]
 
-def prepare_cfg(key):
-    cfg = {}
+def prepare_cfg(mode_key, agent_key):
+    cfg = {"mode": mode_key, "agent": agent_key}
 
-    cfg_filename = "smart_agent.yaml"
-    smart_cfg = utils.yaml.load_multiple(cfg_filename)
-    if key is None: key = smart_cfg["default"]
-    if not key in smart_cfg:
-        raise KeyError(f"Key '{key}' not found inside {cfg_filename}")
+    cfg_filename = f"cfg/{mode_key}/agents.yaml"
+
+    agents_cfg = utils.yaml.load_multiple(cfg_filename)
+    if not agent_key in agents_cfg:
+        raise KeyError(f"Key '{agent_key}' not found inside '{cfg_filename}'")
 
     # gather the measurment sets requested for this run
     cfg["measurements"] = list()
-    for measures in smart_cfg[key].get("measurement_sets", []):
-        for measure in smart_cfg["measurement_sets"][measures]:
-            if isinstance(measure, str) and measure in cfg["measurements"]:
-                continue
+    for measures in agents_cfg[agent_key].get("measurement_sets", []):
+        for measure in agents_cfg["measurement_sets"][measures]:
+            if isinstance(measure, str) and measure in cfg["measurements"]: continue
             cfg["measurements"].append(measure)
 
-    cfg["run_as_collector"] = smart_cfg[key].get("run_as_collector", False)
-    cfg["run_headless"] = smart_cfg[key].get("run_headless", False)
-    cfg["run_as_viewer"] = smart_cfg[key].get("run_as_viewer", False)
+    cfg["run_as_collector"] = agents_cfg[agent_key].get("run_as_collector", False)
+    cfg["run_headless"] = agents_cfg[agent_key].get("run_headless", False)
+    cfg["run_as_viewer"] = agents_cfg[agent_key].get("run_as_viewer", False)
+
     if cfg["run_as_viewer"] and cfg["run_headless"]:
-        print(f"ERROR: viewer cannot run headless (key: '{key}')")
+        print(f"ERROR: viewer cannot run headless (key: '{agent_key}')")
         raise RuntimeError()
 
-    try:
-        cfg["port_to_collector"] = smart_cfg[key]["port_to_collector"]
+    if cfg["run_as_viewer"]:
+        cfg["matrix_view"] = agents_cfg[agent_key].get("matrix_view")
+
+    try: cfg["port_to_collector"] = agents_cfg[agent_key]["port_to_collector"]
     except KeyError: pass # ignore here, not used for collector/viewer
 
-    machines_key = smart_cfg["setup"]["machines"]
-    cfg["machines"] = smart_cfg["machines"][machines_key]
-    cfg["ui.web"] = smart_cfg["setup"]["ui.web"]
+    if cfg["run_headless"]: cfg["headless"] = agents_cfg[agent_key]["headless"]
 
-    if cfg["run_headless"]:
-        cfg["ui.web"]["headless"] = smart_cfg[key]["headless"]['ui.web']
+    machines_key = agents_cfg["setup"]["machines"]
+    cfg["machines"] = agents_cfg["machines"][machines_key]
+
+    cfg["plugin"] = agents_cfg["plugins"].get(mode_key, {})
+
+    cfg["setup"] = agents_cfg["setup"]
 
     return cfg
 
 def load_measurements(cfg, expe):
     measurements = []
-    name_re = re.compile(r'^[a-z_][a-z0-9_]*$', re.I)
-    for measurement_name in cfg['measurements']:
-        if isinstance(measurement_name, dict):
-            measurement_name, measurement_options = list(measurement_name.items())[0]
+
+    for name in cfg['measurements']:
+        if isinstance(name, dict):
+            name, options = list(name.items())[0]
         else:
-            measurement_options = {}
+            options = {}
 
-        if not name_re.match(measurement_name):
-            raise Exception(f'Invalid module name: {measurement_name}')
+        options['machines'] = cfg['machines']
 
-        measurement_options['machines'] = cfg['machines']
+        for mod_prefix in f"plugins.{cfg['mode']}.", "":
+            try: mod = importlib.import_module(f"{mod_prefix}measurement.{name.lower()}")
+            except ModuleNotFoundError: continue
+            break
+        else: raise RuntimeError("Cannot find measurement module '{name}' ...")
 
-        measurement_module = importlib.import_module('measurement.' + measurement_name.lower())
-        measurement_class = getattr(measurement_module, measurement_name)
-        measurements.append(measurement_class(measurement_options, expe))
+        clazz = getattr(mod, name)
+        measurements.append(clazz(options, expe))
 
         if not hasattr(measurements[-1], "live"):
             raise Exception(f"Module {measurement_name} cannot run live ...")
+
     return measurements
 
 def checkup_mods(measurements, deads, loop):
@@ -179,7 +192,7 @@ def checkup_mods(measurements, deads, loop):
                 if mod.live:
                     mod.live.connect(loop, mod.process_line)
             except Exception as e:
-                print("###", e.__class__.__name__+":", e)
+                #print("###", e.__class__.__name__+":", e)
                 if VERBOSE:
                     fatal = sys.exc_info()
                     traceback.print_exception(*fatal)
@@ -197,14 +210,14 @@ def run(cfg):
     expe = AgentExperiment() if not run_as_viewer else None
 
     if run_as_collector or run_as_viewer:
-        import ui.web
-        ui.web.AgentExperimentClass = AgentExperiment
-        server = ui.web.Server(expe, headless=run_headless)
-        server.configure(cfg['ui.web'], cfg['machines'])
+        import ui # load ui only in collector/viewer modes
+        ui.AgentExperimentClass = AgentExperiment
+        server = ui.Server(expe, headless=run_headless, cfg=cfg)
 
     else: # run as agent
         port = cfg["port_to_collector"]
         print(f"\n* Starting the socket for the Perf Collector on {port}...")
+        agent.to_collector.force_recheck = force_recheck
         server = agent.to_collector.Server(port, expe, loop)
 
     AgentExperiment.new_table = server.new_table
@@ -213,7 +226,7 @@ def run(cfg):
     deads = []
     measurements = load_measurements(cfg, expe) if not run_as_viewer else []
 
-    measurement.hot_connect.setup(measurements, deads)
+    measurement.hot_connect.setup(measurements, deads, force_recheck)
 
     print("\n* Preparing the environment ...")
     for mod in measurements:
@@ -222,38 +235,20 @@ def run(cfg):
 
     server.start()
     print("\n* Running!")
-    RECHECK_TIME=5 #s
 
-    async def timer_kick(wait_time):
-        for _ in range(wait_time):
-            # this allows asyncio to check for loop.stop every 1s
-            await asyncio.sleep(1)
+    fatal = []
 
-        loop.stop()
-        loop.create_task(timer_kick(RECHECK_TIME))
-
-    fatal = None
-    loop.create_task(timer_kick(RECHECK_TIME))
-
+    loop.create_task(check_timer(server, measurements, deads, loop, fatal))
     while not quit_signal:
-        try:
-            server.periodic_checkup()
-            checkup_mods(measurements, deads, loop)
-
-        except Exception as e:
-            print(f"FATAL: {e.__class__.__name__} raised during periodic checkup: {e}")
-            fatal = sys.exc_info()
-            break
-
-        loop.run_forever() # returns after timer_kick() calls loop.stop()
+        loop.run_forever()
 
     print("\n* Stopping the measurements ...")
+
     for m in measurements:
         try:
-            m.stop()
+            m.stop() # measurements
         except Exception as e:
-            if fatal:
-                continue
+            if fatal: continue
             print(f"ERROR: {e.__class__.__name__} raised "
                   f"while stopping {m.__class__.__name__}: {e}")
 
@@ -261,15 +256,13 @@ def run(cfg):
 
     return fatal
 
-
-
 async def shutdown(signal, loop):
     print("\nQuitting ...")
 
     global quit_signal
     quit_signal = True
 
-    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    tasks = [t for t in list(asyncio.all_tasks()) if t is not asyncio.current_task()]
     for task in tasks: task.cancel()
 
     # Cancelling outstanding tasks
@@ -278,24 +271,48 @@ async def shutdown(signal, loop):
     loop.stop()
 
 def prepare_gracefull_shutdown():
-    import signal
     loop = asyncio.get_event_loop()
 
-    for s in (signal.SIGTERM, signal.SIGINT):
+    for s in (signal.SIGTERM, signal.SIGINT, signal.SIGUSR2):
         loop.add_signal_handler(s, lambda s=s: asyncio.create_task(shutdown(s, loop)))
 
+RECHECK_TIME=5 #s
+force_recheck = []
+async def check_timer(server, measurements, deads, loop, fatal):
+    while True:
+        try:
+            server.periodic_checkup()
+            checkup_mods(measurements, deads, loop)
+        except Exception as e:
+            print(f"FATAL: {e.__class__.__name__} raised during periodic checkup: {e}")
+            fatal.append.append(sys.exc_info())
+            global quit_signal
+            quit_signal = True
+
+        force_recheck[:] = []
+        for _ in range(RECHECK_TIME):
+            # this allows asyncio to check for loop.stop every 1s
+            await asyncio.sleep(1)
+            if force_recheck: break
+
 def main():
+    MODE_KEY = "adaptive"
     prepare_gracefull_shutdown()
 
-    key = None if len(sys.argv) == 1 else sys.argv[1]
-
     try:
-        cfg = prepare_cfg(key)
-    except Exception as e:
-        print(f"Fatal: {e.__class__.__name__}: {e}")
+        agent_key = sys.argv[1]
+    except IndexError:
+        print(f"FATAL: Please provide an <agent_key> as first parameter.")
         return 1
 
-    error = run(cfg)
+    try:
+        cfg = prepare_cfg(MODE_KEY, agent_key)
+    except Exception as e:
+        print(f"FATAL: {e.__class__.__name__}: {e}")
+        error = sys.exc_info()
+    else:
+        error = run(cfg)
+
     if error:
         traceback.print_exception(*error)
         return 1
@@ -303,14 +320,14 @@ def main():
     return 0
 
 def get_wsgi_application():
-    import ui.web
-    ui.web.AgentExperimentClass = AgentExperiment
-    server = ui.web.Server(expe=None)
+    import ui
+    ui.AgentExperimentClass = AgentExperiment
+    server = ui.Server(expe=None, cfg=None)
 
     AgentExperiment.new_table = server.new_table
     AgentExperiment.new_table_row = server.new_table_row
 
-    return ui.web.main_app.server
+    return ui.main_app.server
 
 if __name__ == "__main__":
     sys.exit(main())

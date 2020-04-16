@@ -46,8 +46,9 @@ def set_cpu(state, exe, cfg, machines):
 def set_network(state, exe, cfg, machines):
     latency, bw = cfg.split("+")
 
-    latency_server_cmd = "sudo /home/kevin/spice/latency/latency --server"
-    latency_client_cmd = f"sudo /home/kevin/spice/latency/latency {latency} {bw} --client {machines['server']}"
+    # https://github.com/freddy77/latency/
+    latency_server_cmd = "sudo latency --server"
+    latency_client_cmd = f"sudo latency {latency} {bw} --client {machines['server']}"
 
     run_cmd(state, exe, latency_server_cmd, machines["server"])
     run_cmd(state, exe, latency_client_cmd, machines["client"])
@@ -101,7 +102,9 @@ STRESS_SETTERS = {
     "net": set_network,
 }
 
-def stress_test(state, exe, resources, machines):
+def stress(state, exe, machines, args):
+    resources = args
+
     if not hasattr(state, "current"):
         state.current = None
         state.running = []

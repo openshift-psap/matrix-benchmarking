@@ -41,13 +41,6 @@ class LiveCollect():
     def stop(self):
         pass
 
-    def collect(self):
-        # the task is not running during this call
-        copy = self.lines
-        self.lines = []
-
-        yield from copy
-
 
 class FollowFile(LiveCollect):
     def __init__(self, path):

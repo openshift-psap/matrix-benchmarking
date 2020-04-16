@@ -62,10 +62,10 @@ pip install --user dash numpy scipy
 Configure and execute
 ---------------------
 
-    ./smart_agent.py <mode>
+    ./local_agent.py <mode>
 
-See the bottom of [smart_agent.yaml](smart_agent.yaml) for the
-execution modes. Currently, the main modes are:
+See the bottom of [cfg/adaptive/agents.yaml](cfg/adaptive/agents.yaml)
+for the execution modes. Currently, the main modes are:
 
     guest_agent, server_agent, client_agent
     viewer
@@ -83,8 +83,8 @@ To try the viewer mode (matrix visualization + record viewer):
     cp ./docs/samples/report_framerate_decode.dill ./saved/
 
     pip install --user dash pyyaml numpy scipy
-    ./smart_agent.py viewer
-    # OR pipenv run ./smart_agent.py viewer
+    ./local_agent.py viewer
+    # OR pipenv run ./local_agent.py viewer
 
     xdg-open http://127.0.0.1:8050/matrix/
 
@@ -127,4 +127,4 @@ Screenshots
 Known Issues
 ------------
 
-* Doesn't work (yet) with Python3.8, not with Python < 3.7.
+* Doesn't work (yet) with Python3.8, and not with Python < 3.7.
