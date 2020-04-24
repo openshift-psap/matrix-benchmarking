@@ -132,7 +132,9 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
         try:
             y_max = graph_spec.y_max
         except AttributeError: pass # use actual y_max
-        layout.yaxis = dict(range=[0, y_max])
+        y_min = min([0] + [_y for _y in Y[records_to_drop:] if _y is not None])
+
+        layout.yaxis = dict(range=[y_min, y_max])
         try:
             layout.yaxis.title = graph_spec.y_title
         except AttributeError: pass
