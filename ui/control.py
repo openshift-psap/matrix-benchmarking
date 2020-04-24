@@ -32,7 +32,7 @@ def apply_settings(driver_name, settings):
 
     err = plugin_control.apply_settings(driver_name, settings)
     if not err:
-        return f"{driver_name} || {settings_str}"
+        return f"settings applied: {driver_name} || {settings_str}"
 
     msg = f"FAILED ({err})"
     quality.Quality.add_to_quality(None, "ui", f"Apply settings: {msg}")

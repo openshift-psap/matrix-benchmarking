@@ -324,7 +324,16 @@ async def check_timer(server, measurements, deads, loop, fatal):
 
 
 def main():
-    MODE_KEY = "adaptive"
+    try:
+        with open(".plugin") as plugin_f:
+            MODE_KEY = plugin_f.read().strip()
+        if not MODE_KEY: raise ValueError(".plugin file is empty")
+    except FileNotFoundError: pass # ignore
+    except Exception as e:
+        MODE_KEY = "adaptive"
+        print("FATAL:", e.__class__.__name__, e)
+        return 1
+
     prepare_gracefull_shutdown()
 
     try:

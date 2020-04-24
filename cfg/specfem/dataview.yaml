@@ -1,0 +1,52 @@
+System:
+  Specfem CPU:
+    table: local.local-pid
+    x: time | as_timestamp
+    y: local-pid.cpu_user
+    y2: local-pid.cpu_system
+
+  System Memory:
+    table: local.mem
+    x: time | as_timestamp
+    y: mem.free | as_KB_to_GB > Free
+    y_title: GB of RAM
+
+  System CPU:
+    table: local.cpu
+    x: time | as_timestamp
+    y: cpu.idle > Idle
+    y_max: 100
+    y_title: '% of CPU usage'
+
+Time loop:
+  Steps:
+    table: local.loop
+    x: loop.msg_ts | as_us_timestamp
+    y: loop.stages
+    y2: loop.seismograms
+
+  Loop rate:
+    table: local.loop
+    x: loop.msg_ts | as_us_timestamp
+    y: loop.msg_ts | as_delta | as_s_to_ms > Loop time Δ
+
+Progress:
+  Time loop progress:
+    table: local.loop
+    x: loop.msg_ts | as_us_timestamp
+    y: loop.it_pct > '% of progress'
+
+Seismo:
+  Seismograms:
+    table: local.seismo
+    x: seismo.time
+    y: seismo.value_1
+    y1: seismo.value_2
+    y2: seismo.value_3
+
+General:
+  Total time:
+    table: local.general
+    x: general.msg_ts | as_us_timestamp
+    y: general.specfem_time
+    mode: markers

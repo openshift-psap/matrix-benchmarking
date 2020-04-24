@@ -1,0 +1,17 @@
+Specfem3D:
+  Threads:
+    type: int[1:8:1]
+    default: 4
+    desc: "Number of OpenMP threads per process"
+
+  NEX:
+    type: enum
+    values: 16, 32, 64
+    desc: "Number of elements at the surface along the two sides of the first chunk. (must be multiple of 16 and 8 * multiple of NPROC)"
+    default: "16"
+    url: "https://github.com/geodynamics/specfem3d_globe/wiki/03_running_the_mesher"
+
+  Machine:
+    type: enum
+    values: laptop, desktop
+    desc: "Machine on which Specfem3D will run"

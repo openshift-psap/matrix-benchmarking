@@ -1,0 +1,29 @@
+_type: matrix
+_nb_agents: 1
+
+name: matrix
+
+record_time: 40
+
+run:
+  - current
+
+expe:
+  current:
+    driver: Specfem3D
+
+    settings:
+      machine: laptop #, desktop
+      nex: 16, 32 #, 64
+      threads: 1, 2, 4, 8
+
+    scripts:
+
+scripts:
+  setup:
+
+  teardown:
+
+  display:
+    before:
+    after:
