@@ -123,9 +123,10 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
         layout.hovermode = "closest"
         layout.showlegend = True
 
-        try:
-            layout.xaxis = dict(range=[min(X_cut), max(X_cut)])
-        except ValueError: pass # X is empty
+        X_vals = [_x for _x in X_cut if _x is not None]
+        if X_vals:
+            layout.xaxis = dict(range=[min(X_vals), max(X_vals)])
+
         layout.xaxis.title = graph_spec.x.label
 
         try:
