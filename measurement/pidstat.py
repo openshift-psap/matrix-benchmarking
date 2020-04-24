@@ -38,10 +38,13 @@ class PidStat(mpstat.SysStat):
             sys = float(fields["%system"])
         except Exception as e:
             if not os.path.exists(f"/proc/{self.pid}"):
-                print(f"PidStat: {self.mode}: {self.pid} is dead")
                 hot_connect.detach_module(self)
                 raise StopIteration()
 
             raise Exception(f"Failed to parse line '{line.strip()}'", e)
 
         self.table.add(time, usr, sys)
+
+    def stop(self):
+        mpstat.SysStat.stop(self)
+        hot_connect.detach_module(self)

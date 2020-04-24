@@ -2,6 +2,8 @@ import asyncio
 import subprocess
 import sys
 
+force_recheck = None
+
 async def stream_as_generator(loop, stream):
     reader = asyncio.StreamReader(loop=loop)
     reader_protocol = asyncio.StreamReaderProtocol(reader)
@@ -94,5 +96,6 @@ class LiveSocket(LiveCollect):
             addr, port = self.sock.getpeername()
             print(f"Connection to {addr}:{port} closed.")
             self.alive = False
+            force_recheck.append(True)
 
         loop.create_task(follow_socket())

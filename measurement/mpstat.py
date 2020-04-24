@@ -35,11 +35,13 @@ class SysStat(measurement.Measurement):
         self.live.start(self.process.stdout)
 
     def stop(self):
-        if not self.live: return
+        if self.live:
+            self.live.stop()
 
-        self.live.stop()
         if self.process:
             self.process.kill()
+            self.process.wait()
+            self.process = None
 
     def process_line(self, line):
         raise NotImplementedError()

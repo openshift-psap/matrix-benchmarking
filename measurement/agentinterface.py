@@ -114,8 +114,10 @@ class AgentInterface(measurement.Measurement):
     def stop(self):
         self.live = None
         self.sock.close()
-
         quality.stop()
+        print("Bye bye")
+        import os, signal
+        os.kill(os.getpid(), signal.SIGINT)
 
     def process_line(self, entry):
         if entry is None:

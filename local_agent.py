@@ -14,10 +14,11 @@ import measurement.hot_connect
 import measurement.agentinterface
 import agent.to_collector
 
-VERBOSE = False
+DEBUG = False
 
-import warnings
-warnings.simplefilter('always', ResourceWarning)
+if DEBUG:
+    import warnings; warnings.simplefilter('always', ResourceWarning)
+    import tracemalloc; tracemalloc.start()
 
 quit_signal = False
 
@@ -31,7 +32,7 @@ class AgentTable():
 
         self.table_name = (mode+"." if mode else "") + table_names.pop()
 
-        if VERBOSE:
+        if DEBUG:
             print(self.table_name, "|", ", ".join(fields))
 
         if self.table_name == "quality":
@@ -177,7 +178,7 @@ def checkup_mods(measurements, deads, loop):
         while mod.live and mod.live.exception:
             ex, info = mod.live.exception.pop()
             print(mod, "raised", ex.__class__.__name__, ex)
-            if VERBOSE:
+            if DEBUG:
                 traceback.print_exception(*info)
 
         # try to reconnect disconnected agent interfaces
@@ -186,16 +187,21 @@ def checkup_mods(measurements, deads, loop):
             if not mod in deads:
                 print(mod, "is dead")
                 deads.append(mod)
-
+                mod.stop()
             try:
                 mod.start()
                 if mod.live:
                     mod.live.connect(loop, mod.process_line)
             except Exception as e:
                 #print("###", e.__class__.__name__+":", e)
-                if VERBOSE:
+                if DEBUG:
                     fatal = sys.exc_info()
                     traceback.print_exception(*fatal)
+            else:
+                if mod.live and mod.live.alive:
+                    # module restarted without error
+                    try: deads.remove(mod)
+                    except ValueError: pass
         else:
             try: deads.remove(mod)
             except ValueError: pass
@@ -218,6 +224,8 @@ def run(cfg):
         port = cfg["port_to_collector"]
         print(f"\n* Starting the socket for the Perf Collector on {port}...")
         agent.to_collector.force_recheck = force_recheck
+        import utils.live
+        utils.live.force_recheck = force_recheck
         server = agent.to_collector.Server(port, expe, loop)
 
     AgentExperiment.new_table = server.new_table
@@ -285,7 +293,7 @@ async def check_timer(server, measurements, deads, loop, fatal):
             checkup_mods(measurements, deads, loop)
         except Exception as e:
             print(f"FATAL: {e.__class__.__name__} raised during periodic checkup: {e}")
-            fatal.append.append(sys.exc_info())
+            fatal.append(sys.exc_info())
             global quit_signal
             quit_signal = True
 
@@ -307,6 +315,9 @@ def main():
 
     try:
         cfg = prepare_cfg(MODE_KEY, agent_key)
+    except KeyError as e:
+        print(f"ERROR: {e.args[0]}")
+        error = None
     except Exception as e:
         print(f"FATAL: {e.__class__.__name__}: {e}")
         error = sys.exc_info()
