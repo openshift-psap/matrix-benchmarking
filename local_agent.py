@@ -13,6 +13,7 @@ import utils.yaml
 import measurement.hot_connect
 import measurement.agentinterface
 import agent.to_collector
+import utils.live
 
 DEBUG = False
 
@@ -163,7 +164,7 @@ def load_measurements(cfg, expe):
             try: mod = importlib.import_module(f"{mod_prefix}measurement.{name.lower()}")
             except ModuleNotFoundError: continue
             break
-        else: raise RuntimeError("Cannot find measurement module '{name}' ...")
+        else: raise RuntimeError(f"Cannot find measurement module '{name}' ...")
 
         clazz = getattr(mod, name)
         measurements.append(clazz(options, expe))
@@ -174,6 +175,7 @@ def load_measurements(cfg, expe):
     return measurements
 
 def checkup_mods(measurements, deads, loop):
+    if quit_signal: return
     for mod in measurements:
         while mod.live and mod.live.exception:
             ex, info = mod.live.exception.pop()
@@ -182,8 +184,8 @@ def checkup_mods(measurements, deads, loop):
                 traceback.print_exception(*info)
 
         # try to reconnect disconnected agent interfaces
-
-        if not (mod.live and mod.live.alive):
+        if quit_signal: return
+        if not (mod.live and mod.live.alive or mod.live_async_connect):
             if not mod in deads:
                 print(mod, "is dead")
                 deads.append(mod)
@@ -224,12 +226,18 @@ def run(cfg):
         port = cfg["port_to_collector"]
         print(f"\n* Starting the socket for the Perf Collector on {port}...")
         agent.to_collector.force_recheck = force_recheck
-        import utils.live
-        utils.live.force_recheck = force_recheck
+
+        def set_quit_signal():
+            global quit_signal
+            quit_signal = True
+            force_recheck.append(True)
+
+        utils.live.set_quit_signal = set_quit_signal
         server = agent.to_collector.Server(port, expe, loop)
 
     AgentExperiment.new_table = server.new_table
     AgentExperiment.new_table_row = server.new_table_row
+    utils.live.force_recheck = force_recheck
 
     deads = []
     measurements = load_measurements(cfg, expe) if not run_as_viewer else []
@@ -259,12 +267,14 @@ def run(cfg):
             if fatal: continue
             print(f"ERROR: {e.__class__.__name__} raised "
                   f"while stopping {m.__class__.__name__}: {e}")
-
+            #if DEBUG:
+            traceback.print_exception(sys.exc_info())
+            pass
     server.terminate()
 
     return fatal
 
-async def shutdown(signal, loop):
+async def shutdown(loop):
     print("\nQuitting ...")
 
     global quit_signal
@@ -282,26 +292,36 @@ def prepare_gracefull_shutdown():
     loop = asyncio.get_event_loop()
 
     for s in (signal.SIGTERM, signal.SIGINT, signal.SIGUSR2):
-        loop.add_signal_handler(s, lambda s=s: asyncio.create_task(shutdown(s, loop)))
+        loop.add_signal_handler(s, lambda s=s: asyncio.create_task(shutdown(loop)))
 
 RECHECK_TIME=5 #s
 force_recheck = []
 async def check_timer(server, measurements, deads, loop, fatal):
+    global quit_signal
     while True:
+        if quit_signal: break
+
         try:
             server.periodic_checkup()
             checkup_mods(measurements, deads, loop)
         except Exception as e:
             print(f"FATAL: {e.__class__.__name__} raised during periodic checkup: {e}")
             fatal.append(sys.exc_info())
-            global quit_signal
             quit_signal = True
+            break
 
-        force_recheck[:] = []
+        if quit_signal: break
+        if force_recheck:
+            force_recheck[:] = []
+            continue
+
         for _ in range(RECHECK_TIME):
             # this allows asyncio to check for loop.stop every 1s
             await asyncio.sleep(1)
             if force_recheck: break
+
+    await shutdown(loop)
+
 
 def main():
     MODE_KEY = "adaptive"
@@ -313,11 +333,13 @@ def main():
         print(f"FATAL: Please provide an <agent_key> as first parameter.")
         return 1
 
+    error = None
     try:
         cfg = prepare_cfg(MODE_KEY, agent_key)
+    except FileNotFoundError as e:
+        print(f"FATAL: {e.__class__.__name__}: {e}")
     except KeyError as e:
         print(f"ERROR: {e.args[0]}")
-        error = None
     except Exception as e:
         print(f"FATAL: {e.__class__.__name__}: {e}")
         error = sys.exc_info()

@@ -12,6 +12,8 @@ class Measurement:
         in setup() so to allow user to have a faster feedback before
         leaving the keyboard"""
         self.experiment = experiment
+        self.live_async_connect = False
+
     def setup(self):
         """Setup the measurement
         In this step you should launch any tool needed (like a CPU

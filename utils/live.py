@@ -3,6 +3,7 @@ import subprocess
 import sys
 
 force_recheck = None
+set_quit_signal = None
 
 async def stream_as_generator(loop, stream):
     reader = asyncio.StreamReader(loop=loop)
@@ -19,6 +20,7 @@ class LiveCollect():
         self.lines = []
         self.alive = False
         self.exception = []
+        self.async_connect = False
 
     def connect(self, loop, process=None):
         self.alive = True
@@ -72,11 +74,29 @@ class LiveStream(LiveCollect):
         self.stream = stream
 
 class LiveSocket(LiveCollect):
-    def __init__(self, sock, async_read):
+    def __init__(self, sock, async_read, async_connect=False, process=None):
         super().__init__()
 
         self.sock = sock
         self.async_read = async_read
+        self.async_connect = async_connect
+
+        if not self.async_connect: return
+
+        ASYNC_CONNECT_RETRY_TIME = 1 #s
+        async def do_async_connect():
+            while True:
+                await asyncio.sleep(ASYNC_CONNECT_RETRY_TIME)
+                try:
+                    self.sock = async_connect()
+                    self.connect(loop, process)
+                    break
+                except ConnectionRefusedError: pass
+                except Exception as e:
+                    print(f"{async_connect.__qualname__} FAILED ... {e.__class__.__name__}:{e}")
+
+        loop = asyncio.get_event_loop()
+        loop.create_task(do_async_connect())
 
     def connect(self, loop, process=None):
         self.alive = True

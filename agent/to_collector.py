@@ -7,6 +7,8 @@ import measurement
 force_recheck = None
 
 class Server():
+    current = None
+
     def __init__(self, port, expe, loop):
         self.expe = expe
         self.quality_buffer = []
@@ -15,6 +17,8 @@ class Server():
 
         self.new_clients = []
         self.current_clients = []
+        assert Server.current is None, "agent.to_collector.Server is not a singleton :("
+        Server.current = self
 
     def start(self):
         self.serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -56,7 +60,7 @@ class Server():
                             print("ERROR:", e.__class__.__name__, ":", e)
                             continue
 
-                    print(f"New connection from {addr}:{port}")
+                    print(f"Performance collector connected from {addr}")
                     self.new_clients.append(conn)
                     read_list.append(conn)
                     force_recheck.append(True)

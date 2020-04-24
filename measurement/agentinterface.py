@@ -1,5 +1,5 @@
 import socket, struct, asyncio
-import collections
+import collections, time
 
 import measurement
 import utils.live
@@ -56,13 +56,22 @@ stream-channel.c:315:Stream data packet size 212621 mm_time 313704699
 
 #---
 
-def initialize(sock, mode):
+def initialize(sock, mode, wait_collector):
     recorders = sock_readline(sock)
     if recorders is False:
         return False
 
     # eg: "Recorders: stream_channel_data;stream_device_data;"
     names = recorders[:-1].partition(": ")[-1].split(";")
+
+    import agent.to_collector
+    server = agent.to_collector.Server.current
+
+
+    while wait_collector and not (server.new_clients or server.current_clients):
+        print("Waiting for the Performance Collector to connect ...")
+        # cannot yet exit this loop ...
+        time.sleep(1)
 
     # enable all the recorders
     for name in names:
@@ -81,10 +90,14 @@ class AgentInterface(measurement.Measurement):
         self.processors = {}
 
         self.live = None
-
+        self.live_async_connect = True
         self.host = cfg.get("host", "localhost")
         self.port = cfg["port"]
         self.mode = cfg["mode"]
+        self.sock = None
+        self.wait_collector = cfg.get("wait_collector", False)
+
+        self.start()
 
     def __str__(self):
         return f"AgentInterface:{self.mode}<{self.host}:{self.port}>"
@@ -93,31 +106,41 @@ class AgentInterface(measurement.Measurement):
         raise NotImplementedError("Should be overriden...")
 
     def start(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.settimeout(None)
+        if not self.live_async_connect: return
 
-        print(f"Connecting to {self.host}:{self.port}")
-        try:
-            self.sock.connect((self.host, self.port))
-            recorder_names = initialize(self.sock, self.mode)
-            if not recorder_names:
-                self.live = False
-                raise Exception(f"Communication refused to {self}")
-        except (ConnectionRefusedError, OSError):
-            self.live = False
-            self.sock.close()
-            #raise Exception(f"Connection refused to {self}")
-        else:
-            self.live = utils.live.LiveSocket(self.sock, async_read_entry)
+        def async_connect():
+            print(f"Connecting to {self.host}:{self.port} ...")
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.settimeout(None)
+
+            try:
+                self.sock.connect((self.host, self.port))
+                recorder_names = initialize(self.sock, self.mode, self.wait_collector)
+                if not recorder_names:
+                    raise Exception(f"Communication refused to {self}")
+            except (ConnectionRefusedError, OSError):
+                self.sock.close()
+                raise
+            except Exception:
+                self.sock.close()
+                raise
+
+            print(f"Connected to {self.host}:{self.port}!")
             quality.register(self.mode, self.sock)
+            self.live_async_connect = False
+            return self.sock
+
+        self.live = utils.live.LiveSocket(None, async_read_entry,
+                                          async_connect=async_connect,
+                                          process=self.process_line)
 
     def stop(self):
         self.live = None
-        self.sock.close()
+        if self.sock:
+            self.sock.close()
+
         quality.stop()
-        print("Bye bye")
-        import os, signal
-        os.kill(os.getpid(), signal.SIGINT)
+        utils.live.set_quit_signal()
 
     def process_line(self, entry):
         if entry is None:
