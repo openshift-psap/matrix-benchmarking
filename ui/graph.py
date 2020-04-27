@@ -21,6 +21,8 @@ class DB():
         self.pipelines = {} # pipeline -> id
         self.pipelines_reversed = {} # id -> pipeline
 
+        self.seconds_to_keep = None # None for 'keep all', n to keep only n seconds
+
     def new_table(self, table):
         self.table_contents[table] = []
 

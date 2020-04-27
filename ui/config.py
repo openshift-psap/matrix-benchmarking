@@ -9,6 +9,7 @@ from . import graph, quality, script
 
 def construct_config_stubs():
     yield dcc.Input(type='number', value=0, id='graph-view-length', style={"display":"none"})
+    yield dcc.Input(type='number', value=0, id='graph-records-too-old', style={"display":"none"})
 
 def construct_config_tab():
     if UIState().viewer_mode: return
@@ -21,11 +22,26 @@ def construct_config_tab():
         "Number of seconds to show on the live graph: ",
         dcc.Input(type='number', value=InitialState.LIVE_GRAPH_NB_SECONDS_TO_KEEP,
                   id='graph-view-length'),
+        html.Br(),
+        dcc.RadioItems(id='graph-records-too-old', value='DEL',
+                       options=[
+                           {'label': 'Delete records too old', 'value': 'DEL'},
+                           {'label': 'Hide records too old', 'value': 'KEEP'},
+                       ],),
     ]
 
     return dcc.Tab(label="Config", children=children)
 
 def construct_config_tab_callbacks(dataview_cfg):
+
+    @UIState.app.callback(Output("graph-records-too-old", 'data'),
+                          [Input("graph-view-length", 'value'),
+                           Input("graph-records-too-old", 'value')])
+    def update_quality_refresh_timer(view_length, action_too_old):
+        if action_too_old == "DEL":
+            UIState().DB.seconds_to_keep = view_length
+        else: # value == "KEEP"
+            UIState().DB.seconds_to_keep = None # keep all
 
     @UIState.app.callback(Output("quality-refresh", 'interval'),
                           [Input('cfg:quality', 'value')])

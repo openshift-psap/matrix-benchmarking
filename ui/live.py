@@ -88,7 +88,8 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
     scatter_input = Input(graph_tab.to_id()+'-refresh', 'n_intervals')
     @UIState.app.callback(Output(graph_spec.to_id(), 'figure'),
                           [scatter_input,
-                          Input("graph-view-length", "value")])
+                           Input("graph-view-length", "value"),
+                           Input("graph-records-too-old", "value")])
     def update_graph_scatter(*args):
         if not UIState().DB.table_contents:
             return {}
@@ -101,13 +102,17 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
         content = UIState().DB.table_contents[tbl.table]
         X = tbl.get_x()
 
-        nb_seconds_to_keep = args[-1]
+        nb_seconds_to_keep, action_too_old = args[-2:]
         records_to_drop = 0
+
         if nb_seconds_to_keep != 0 and X and isinstance(X[0], datetime.datetime):
             for records_to_drop, v in enumerate(X):
                 if (X[-1] - v).total_seconds() <= nb_seconds_to_keep: break
 
-        X_cut = X[records_to_drop:]
+            X_cut = X[records_to_drop:]
+        else:
+            X_cut = X
+
         plots = []
         y_max = 0
         for y_field, Y in tbl.get_all_y(X):
@@ -118,6 +123,9 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
                     x=X_cut, y=Y[records_to_drop:],
                     name=y_field.label,
                     mode=graph_spec.mode))
+
+        if records_to_drop and action_too_old == "DEL":
+            for _ in range(records_to_drop): del content[0]
 
         layout = go.Layout()
         layout.hovermode = "closest"
