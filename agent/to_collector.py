@@ -46,6 +46,7 @@ class Server():
         read_list = [self.serv_sock]
         running = True
         while running:
+            read_list = [s for s in read_list[:] if s.fileno() != -1]
             readable, writable, errored = select.select(read_list, [], [])
 
             for s in readable:

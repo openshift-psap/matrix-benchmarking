@@ -67,7 +67,7 @@ class AgentExperiment():
     def __init__(self):
         self.tables = {}
         self.quality = None
-        self.new_quality_cb = None
+        self.new_quality_cbs = []
         self.send_quality_cbs = []
         self.agent_status = {}
 
@@ -102,8 +102,8 @@ class AgentExperiment():
         self.new_quality_callback = cb
 
     def new_quality(self, ts, src, msg):
-        if self.new_quality_cb:
-            self.new_quality_cb(ts, src, msg)
+        for new_quality_cb in self.new_quality_cbs:
+            new_quality_cb(ts, src, msg)
 
     def agents_connected(self):
         return [k for k, v in self.agent_status.items() if v.live and v.live.alive]
@@ -217,6 +217,17 @@ def run(cfg):
 
     expe = AgentExperiment() if not run_as_viewer else None
 
+    def set_quit_signal():
+        global quit_signal
+        quit_signal = True
+        force_recheck.append(True)
+
+    def get_quit_signal():
+        return quit_signal
+
+    utils.live.set_quit_signal = set_quit_signal
+    utils.live.get_quit_signal = get_quit_signal
+
     if run_as_collector or run_as_viewer:
         import ui # load ui only in collector/viewer modes
         ui.AgentExperimentClass = AgentExperiment
@@ -226,13 +237,6 @@ def run(cfg):
         port = cfg["port_to_collector"]
         print(f"\n* Starting the socket for the Perf Collector on {port}...")
         agent.to_collector.force_recheck = force_recheck
-
-        def set_quit_signal():
-            global quit_signal
-            quit_signal = True
-            force_recheck.append(True)
-
-        utils.live.set_quit_signal = set_quit_signal
         server = agent.to_collector.Server(port, expe, loop)
 
     AgentExperiment.new_table = server.new_table
@@ -254,6 +258,8 @@ def run(cfg):
 
     fatal = []
 
+    prepare_gracefull_shutdown()
+
     loop.create_task(check_timer(server, measurements, deads, loop, fatal))
     while not quit_signal:
         loop.run_forever()
@@ -268,11 +274,11 @@ def run(cfg):
             print(f"ERROR: {e.__class__.__name__} raised "
                   f"while stopping {m.__class__.__name__}: {e}")
             #if DEBUG:
-            traceback.print_exception(sys.exc_info())
+            traceback.print_exception(*sys.exc_info())
             pass
     server.terminate()
 
-    return fatal
+    return fatal[0] if fatal else []
 
 async def shutdown(loop):
     print("\nQuitting ...")
@@ -334,29 +340,28 @@ def main():
         print("FATAL:", e.__class__.__name__, e)
         return 1
 
-    prepare_gracefull_shutdown()
-
     try:
         agent_key = sys.argv[1]
     except IndexError:
         print(f"FATAL: Please provide an <agent_key> as first parameter.")
         return 1
 
-    error = None
+    fatal = None
     try:
         cfg = prepare_cfg(MODE_KEY, agent_key)
     except FileNotFoundError as e:
         print(f"FATAL: {e.__class__.__name__}: {e}")
     except KeyError as e:
-        print(f"ERROR: {e.args[0]}")
+        print(f"FATAL: {e.args[0]}")
     except Exception as e:
         print(f"FATAL: {e.__class__.__name__}: {e}")
-        error = sys.exc_info()
+        fatal = sys.exc_info()
     else:
-        error = run(cfg)
+        fatal = run(cfg)
 
-    if error:
-        traceback.print_exception(*error)
+    if fatal:
+        import pdb;pdb.set_trace()
+        traceback.print_exception(*fatal)
         return 1
 
     return 0

@@ -8,12 +8,13 @@ class PidStat(mpstat.SysStat):
     def __init__(self, cfg, experiment):
         self.mode = cfg['mode']
         self.pid = cfg["pid"]
-        self.cmd = f'pidstat -p {self.pid} 1'
+        self.cmd = f'pidstat -I -p {self.pid} 1'
         self.check_cmd = 'pidstat -V'
 
         mpstat.SysStat.__init__(self, cfg, experiment)
 
         self.table = self.experiment.create_table(["time",
+                                                   f'{self.mode}-pid.cpu',
                                                    f'{self.mode}-pid.cpu_user',
                                                    f'{self.mode}-pid.cpu_system'])
 
@@ -36,6 +37,7 @@ class PidStat(mpstat.SysStat):
                                                   '%Y-%m-%d %H:%M:%S').timestamp())
             usr = float(fields["%usr"])
             sys = float(fields["%system"])
+            cpu = float(fields["%CPU"])
         except Exception as e:
             if not os.path.exists(f"/proc/{self.pid}"):
                 hot_connect.detach_module(self)
@@ -43,7 +45,10 @@ class PidStat(mpstat.SysStat):
 
             raise Exception(f"Failed to parse line '{line.strip()}'", e)
 
-        self.table.add(time, usr, sys)
+        self.table.add(time,
+                       cpu=cpu,
+                       cpu_user=usr,
+                       cpu_system=sys)
 
     def stop(self):
         mpstat.SysStat.stop(self)

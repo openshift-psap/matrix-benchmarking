@@ -142,7 +142,7 @@ class Script():
     mode = None
 
     @staticmethod
-    def load(mode):
+    def load(mode, expe):
         script_cfg = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/../"
                                       + f"cfg/{mode}/benchmarks.yaml")
         Script.mode = mode
@@ -159,6 +159,7 @@ class Script():
 
             try:
                 script_mod = importlib.import_module(plugins_pkg_name)
+                script_mod.configure(expe)
                 script_class = getattr(script_mod, _type.capitalize())
                 script_instance = script_class(yaml_script_desc)
             except Exception as e:
@@ -200,8 +201,9 @@ class Script():
                 exe.log(f"Running {self.name}!")
 
                 while self.nb_agents and len(connected()) != self.nb_agents:
-                    print(f"Agents connected: {','.join(connected())}")
-                    print(f"Waiting to have {self.nb_agents} ...")
+                    if connected():
+                        print(f"Agents connected: {','.join(connected())}")
+                    print(f"Waiting to have {self.nb_agents} agents connected ...")
                     time.sleep(1)
                     if exe.interrupt: return
 

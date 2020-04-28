@@ -54,7 +54,6 @@ class Perf_Collect(measurement.Measurement):
         self.port = cfg.get("port", DEFAULT_PORT)
         self.mode = cfg.get("mode", DEFAULT_MODE)
         self.tables = {}
-        self.stopped = False
 
     def create_table(self, line):
         self.__class__.do_create_table(self.experiment, line, self.mode, self.tables)
@@ -122,13 +121,12 @@ class Perf_Collect(measurement.Measurement):
         self.experiment.agent_status[self.mode] = self
 
     def start(self):
-        if self.stopped: return
-
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(None)
 
-        print(f"Connecting to the LocalAgent on {self.host}:{self.port} ({self.mode}) ...")
-        try: self.sock.connect((self.host, self.port))
+        try:
+            self.sock.connect((self.host, self.port))
+            print(f"Connected to the LocalAgent on {self.host}:{self.port} ({self.mode}).")
         except Exception as e:
             self.sock.close()
             return
@@ -138,14 +136,14 @@ class Perf_Collect(measurement.Measurement):
         self.live = utils.live.LiveSocket(self.sock, async_read_dataset)
 
     def stop(self):
-        if self.stopped: return
-
         self.live = None
         self.sock.close()
         self.sock = None
 
-        del self.experiment.agent_status[self.mode]
-        self.stopped = True
+        try:
+            del self.experiment.agent_status[self.mode]
+        except KeyError:
+            pass # the agent was already disconnected
 
     def process_line(self, buf):
         line = buf.decode("ascii")

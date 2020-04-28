@@ -49,7 +49,7 @@ class _UIState():
             expe = AgentExperimentClass()
 
         self.DB.expe = expe
-        self.DB.expe.new_quality_cb = quality.Quality.add_to_quality
+        self.DB.expe.new_quality_cbs.append(quality.Quality.add_to_quality)
 
         self.DB.init_quality_from_viewer()
 
@@ -65,8 +65,15 @@ class __UIState():
             key = "collector"
             return ui_states[key]
 
-        url = flask.request.url
-        if url.endswith("/_dash-update-component"): # common case
+        try:
+            url = threading.current_thread().url
+        except AttributeError as e: # 'Thread' object has no attribute 'url'
+            url = flask.request.url
+
+        if url.endswith(".rec"):
+            # url: http://host/{key}
+            key = url.split("/", maxsplit=3)[-1]
+        elif url.endswith("/_dash-update-component"): # common case
             url = flask.request.referrer
             if url is None:
                 msg = "Warning: cannot get the proper URL ..."
@@ -109,12 +116,15 @@ def construct_layout(ui_state):
     return html.Div(header+[dcc.Tabs(id="main-tabs", children=list(tab_entries()))])
 
 
-def construct_collector_callbacks(mode):
+def construct_collector_callbacks(mode, running_as_collector):
     from . import quality, control, live, config
 
     quality.construct_quality_callbacks()
     control.construct_driver_control_callbacks(driver_settings_cfg)
     live.construct_live_refresh_callbacks(dataview_cfg)
+
+    if not running_as_collector: return
+
     config.construct_config_tab_callbacks(dataview_cfg)
 
 def construct_matrix_callbacks(mode):
@@ -139,7 +149,6 @@ def construct_matrix_callbacks(mode):
 def initialize_viewer(url, ui_state):
     from measurement import hot_connect
 
-    import os
     _viewer, _result, path = url.split("/", maxsplit=2)
 
     if not (_viewer == "viewer" and _result == "results"):
@@ -186,20 +195,23 @@ def construct_dispatcher():
             return html.Div([html.H3("Saved records")] + children)
 
         elif pathname.startswith('/viewer/') and pathname.endswith(".rec"):
-            try:
-                ui_state = _UIState(url, viewer_mode=True)
-                ui_states[url] = ui_state # must remain before init()
+            def load_viewer():
+                try:
+                    ui_state = _UIState(url, viewer_mode=True)
+                    ui_states[url] = ui_state # must remain before init()
+                    ui_state.layout = initialize_viewer(url, ui_state)
+                except Exception as e:
+                    del ui_states[url]
+                    import traceback, sys, os, signal
+                    print(f"load_viewer: {e.__class__.__name__}: {e}")
+                    traceback.print_exception(*sys.exc_info())
 
-                ui_state.layout = initialize_viewer(url, ui_state)
+            t = threading.Thread(target=load_viewer)
+            t.daemon = True # we cannot join it ...
+            t.url = flask.request.url_root + url
+            t.start() # run load_viewer() in a thread to avoid timeout
+            return  "Loading ..." # might not be shown because of very short timeout  -,-
 
-                return ui_state.layout
-            except Exception as e:
-                del ui_states[url]
-                import traceback, sys, os, signal
-                print(f"DASH: {e.__class__.__name__}: {e}")
-                traceback.print_exception(*sys.exc_info())
-
-                return html.Div(f"Error: {e}")
         elif pathname.startswith('/viewer/') and ".rec/" in pathname:
             # pathname  = /viewer/[<path>/]<file>/<other args>
 
@@ -260,7 +272,6 @@ def construct_dispatcher():
 
 class Server():
     def __init__(self, expe=None, headless=False, cfg={}):
-
         thr_fct = self._thr_run_headless_and_quit if headless \
             else self._thr_run_dash
 
@@ -269,6 +280,8 @@ class Server():
 
         self.cfg = cfg
         self._configure()
+
+        self.expe = expe
 
         if headless:
             assert expe is not None, "No expe received in headless collector mode ..."
@@ -322,9 +335,11 @@ class Server():
         if not headless:
             ui_state.layout = construct_layout(ui_state)
             UIState()
+
     def _init_webapp(self, expe):
         construct_dispatcher()
-        construct_collector_callbacks(self.cfg["mode"])
+        construct_collector_callbacks(self.cfg["mode"], running_as_collector)
+
         if running_as_collector: return
 
         construct_matrix_callbacks(self.cfg["mode"])
@@ -362,7 +377,7 @@ class Server():
 
         script.Script.messages = message_to_print()
 
-        script.Script.load(self.cfg["mode"])
+        script.Script.load(self.cfg["mode"], self.expe)
         try:
             script_name = self.cfg['headless']['script']
             script_to_run = script.Script.all_scripts[script_name]

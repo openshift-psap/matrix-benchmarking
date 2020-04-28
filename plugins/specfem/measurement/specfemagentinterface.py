@@ -1,4 +1,4 @@
-import re, collections, types, os
+import re, collections, types, os, socket
 from collections import deque
 
 import statistics
@@ -8,32 +8,43 @@ import measurement.agentinterface
 from measurement.quality import quality
 
 SPECFEM_DIR = "/app"
+HOSTNAME = socket.gethostname()
 
 def specfem_set_par(key, new_val):
     par_filename = f"{SPECFEM_DIR}/DATA/Par_file"
-    with open(par_filename) as par_f:
-        par_file_lines = par_f.readlines()
-
     changed = 0
-    with open(par_filename, "w") as par_f:
-        for line in par_file_lines:
+    par_file_lines = []
+    with open(par_filename) as par_f:
+        for line in par_f.readlines():
             if not line.strip() or line.startswith("#"):
-                par_f.write(line)
+                par_file_lines.append(line)
                 continue
 
             line_key, old_val = "".join(line.split()).partition("#")[0].split("=")
             if line_key == key:
-                print(f"INFO: Specfem: set {key} = {new_val} (was {old_val})")
-                line = line.replace(f"= {old_val}", f"= {new_val}")
-                changed += 1
-            par_f.write(line)
+                if old_val == str(new_val):
+                    print(f"INFO: Specfem: set {key} = {new_val} already set.")
+                else:
+                    print(f"INFO: Specfem: set {key} = {new_val} (was {old_val})")
+                    line = line.replace(f"= {old_val}", f"= {new_val}")
+                    changed += 1
+            par_file_lines.append(line)
+
+    if changed:
+        with open(par_filename, "w") as par_f:
+            for line in par_file_lines:
+                par_f.write(line)
+
     return changed
 
 def get_or_default_param(params, key):
     DEFAULTS = {
         "machine": "laptop",
         "nex": "16",
-        "threads": "4"
+        "threads": "4",
+        "machine.laptop": "pinea",
+        "machine.desktop": "atuona",
+
     }
     try: return params[key]
     except KeyError:
@@ -43,15 +54,14 @@ def get_or_default_param(params, key):
 
 def fork_specfem(params):
     machine = get_or_default_param(params, "machine")
-    if machine != "laptop":
-        print(f"ERROR: cannot yet run specfem on {machine} ...")
+    machine_hostname = get_or_default_param(params, f"machine.{machine}")
+    if machine_hostname != HOSTNAME:
+        print(f"INFO: this is {HOSTNAME}, not {machine}, ignoring fork request.")
         return
 
     nex = get_or_default_param(params, "nex")
-    if (specfem_set_par("NEX_XI", nex) != 1 or
-        specfem_set_par("NEX_ETA", nex) != 1):
-        print(f"ERROR: failed to change NEX_XI/NEX_ETA param ...")
-        return
+    specfem_set_par("NEX_XI", nex)
+    specfem_set_par("NEX_ETA", nex)
 
     num_threads = get_or_default_param(params, "threads")
 
@@ -97,7 +107,7 @@ class SpecfemAgentInterface(measurement.agentinterface.AgentInterface):
             fork_specfem(params)
 
         elif action == "request" and action_params == "reset":
-            print("RESET!!")
+            os.system("pkill xspecfem3D")
 
         else:
             print(f"remote_ctrl: unknown action '{action}/{action_params}' received ...")

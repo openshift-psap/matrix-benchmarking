@@ -8,7 +8,8 @@ plugins:
 
 machines:
   local:
-    local: localhost
+    laptop: localhost
+    desktop: 172.16.0.2
 
 # ---
 measurement_sets:
@@ -23,7 +24,13 @@ measurement_sets:
   collector:
     - Perf_Collect:
         port: 1230
-        host: local
+        host: laptop
+        mode: laptop
+
+    - Perf_Collect:
+        port: 1230
+        host: desktop
+        mode: desktop
 
 # --- #
 

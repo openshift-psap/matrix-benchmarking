@@ -302,7 +302,20 @@ class DbTableForSpec():
         try: return db.table_for_spec[str(graph_spec.yaml_desc)]
         except KeyError: pass
 
-        for table in db.tables_by_name[graph_spec.table]:
+        if graph_spec.table in db.tables_by_name: # it's a default dict, so no KeyError
+            tables = db.tables_by_name[graph_spec.table]
+        elif graph_spec.table.startswith("?."):
+            name = graph_spec.table[1:] # ?.name --> .name
+            for tbl_name, tbl in db.tables_by_name.items():
+                if not tbl_name.endswith(name): continue
+                tables = tbl
+                break
+            else:
+                tables = []
+        else:
+            tables = []
+
+        for table in tables:
             for ax in graph_spec.all_axis:
                 if ax.field_name == "setting": continue
                 if ax.field_name not in table.fields:

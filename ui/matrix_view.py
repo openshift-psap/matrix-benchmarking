@@ -57,6 +57,9 @@ def parse_data(_):
 def all_records(_, __):
     raise RuntimeError("matrix_view is not configured ...")
 
+def get_record(_):
+    raise RuntimeError("matrix_view is not configured ...")
+
 def configure(mode):
     plugins_pkg_name = f"plugins.{mode}.matrix_view"
 
@@ -65,10 +68,11 @@ def configure(mode):
         print(f"ERROR: Cannot load matrix plugins package ({plugins_pkg_name}) ...")
         raise e
 
-    global parse_data, all_records
+    global parse_data, all_records, get_record
 
     parse_data = plot.parse_data
     all_records = plot.all_records
+    get_record = plot.get_record
 
     plot.register()
 

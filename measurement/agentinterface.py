@@ -55,6 +55,33 @@ stream-channel.c:315:Stream data packet size 212621 mm_time 313704699
                  msg)
 
 #---
+def do_wait_collector(server):
+    import threading, signal
+    return True
+    quit_signal = threading.Event()
+    def quit(signo, _frame):
+        print("")
+        quit_signal.set()
+
+    sigs = {}
+    for sig in ('TERM', 'HUP', 'INT'):
+        sig = getattr(signal, 'SIG'+sig)
+        sigs[sig] = signal.getsignal(sig)
+        signal.signal(sig, quit);
+
+    while not (server.new_clients or server.current_clients):
+        print("Waiting for the Performance Collector to connect ...")
+        # cannot yet exit this loop ...
+        time.sleep(1)
+        if quit_signal.is_set():
+            print("Interrupted while waiting for the perf collector.")
+            return False
+
+    for sig in ('TERM', 'HUP', 'INT'):
+        sig = getattr(signal, 'SIG'+sig)
+        signal.signal(sig, sigs[sig]);
+
+    return True
 
 def initialize(sock, mode, wait_collector):
     recorders = sock_readline(sock)
@@ -67,11 +94,8 @@ def initialize(sock, mode, wait_collector):
     import agent.to_collector
     server = agent.to_collector.Server.current
 
-
-    while wait_collector and not (server.new_clients or server.current_clients):
-        print("Waiting for the Performance Collector to connect ...")
-        # cannot yet exit this loop ...
-        time.sleep(1)
+    if wait_collector and not do_wait_collector(server):
+        return
 
     # enable all the recorders
     for name in names:
@@ -106,10 +130,8 @@ class AgentInterface(measurement.Measurement):
         raise NotImplementedError("Should be overriden...")
 
     def start(self):
-        if not self.live_async_connect: return
-
         def async_connect():
-            print(f"Connecting to {self.host}:{self.port} ...")
+            #print(f"Connecting to {self.host}:{self.port} ...")
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.settimeout(None)
 
@@ -138,9 +160,7 @@ class AgentInterface(measurement.Measurement):
         self.live = None
         if self.sock:
             self.sock.close()
-
-        quality.stop()
-        utils.live.set_quit_signal()
+        self.live_async_connect = True
 
     def process_line(self, entry):
         if entry is None:

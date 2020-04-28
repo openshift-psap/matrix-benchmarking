@@ -3,7 +3,10 @@ import subprocess
 import sys
 
 force_recheck = None
+
+# used by measurement plugins
 set_quit_signal = None
+get_quit_signal = None
 
 async def stream_as_generator(loop, stream):
     reader = asyncio.StreamReader(loop=loop)

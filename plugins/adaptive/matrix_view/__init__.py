@@ -5,6 +5,7 @@ from ui import script
 import measurement.perf_viewer
 
 from ui.table_stats import TableStats
+
 from .report import Report
 from .plot_model import PlotModel, ModelGuestCPU
 from .fps_table import FPSTable
@@ -45,6 +46,14 @@ VALUE_TRANSLATE = {
     }
 }
 
+def rewrite_properties(params_dict):
+    new_params_dict = {}
+    for k, v in params_dict.items():
+        v = VALUE_TRANSLATE.get(k, {}).get(v, v)
+        k = PROPERTY_RENAME.get(k, k)
+
+        new_params_dict[k] = v
+    return new_params_dict
 
 key_order = None
 
@@ -70,13 +79,15 @@ def parse_data(filename, reloading=False):
         script_key, file_path, file_key = line.split(" | ")
         entry_key = "_".join([f"experiment={expe_name}", script_key, file_key])
 
+        params_dict = {}
         for kv in entry_key.split("_"):
             k, v = kv.split("=")
+            params_dict[k] = v
 
-            if not reloading:
-                v = VALUE_TRANSLATE.get(k, {}).get(v, v)
-                k = PROPERTY_RENAME.get(k, k)
-            entry.params.__dict__[k] = v
+        if not reloading:
+            param_dict = rewrite_properties(params_dict)
+
+        entry.params.__dict__.update(params_dict)
 
         global key_order
         if key_order is None:
@@ -115,19 +126,6 @@ def parse_data(filename, reloading=False):
 
                 table_name = table_def.partition("|")[0][1:]
 
-                if not TableStats.interesting_tables[table_name]:
-                    continue # table not interesting
-
-                keep = True
-                for table_stat in TableStats.interesting_tables[table_name]:
-                    if table_stat.min_rows and len(table_rows) < table_stat.min_rows:
-                        keep = False
-                        msg = f"{table_name} has only {len(table_rows)} rows (min: {table_stat.min_rows})"
-                        print("### ", "http://localhost:8050/viewer/"+entry.linkname, msg)
-                        Matrix.broken_files.append((entry.filename, entry.linkname + msg))
-                        break
-
-                if not keep: break # not enough rows, skip the record
                 entry.tables[table_def] = table_name, table_rows
 
         if table_def is not None: # didn't break because not enough entries
@@ -141,12 +139,17 @@ def parse_data(filename, reloading=False):
         Matrix.entry_map[entry.key] = entry
 
         entry.stats = {}
-        for table_def, (table_name, table_rows) in entry.tables.items():
-            for table_stat in TableStats.interesting_tables[table_name]:
-                entry.stats[table_stat.name] = table_stat.process(table_def, table_rows)
-
         for table_stat in TableStats.all_stats:
-            Matrix.properties["stats"].add(table_stat.name)
+            register = False
+            for table_def, (table_name, table_rows) in entry.tables.items():
+                if (table_stat.table != table_name and not
+                    (table_stat.table.startswith("?.") and table_name.endswith(table_stat.table[1:]))):
+                    continue
+                entry.stats[table_stat.name] = table_stat.process(table_def, table_rows)
+                register = True
+
+            if register:
+                Matrix.properties["stats"].add(table_stat.name)
 
 def all_records(params, param_lists):
     for param_values in sorted(itertools.product(*param_lists)):
@@ -156,6 +159,12 @@ def all_records(params, param_lists):
             yield Matrix.entry_map[key]
         except KeyError:
             continue # missing experiment
+
+def get_record(variables):
+    key = "_".join([f"{k}={variables[k]}" for k in key_order])
+
+    try: return Matrix.entry_map[key]
+    except KeyError: return None
 
 def register():
     from . import plot_model
@@ -213,10 +222,10 @@ def register():
                 ("client.decode_duration", "Decode duration (in ms)", 1000))
 
     TableStats.PerSecond("frame_size_per_sec", "Frame Bandwidth (per sec)", "server.host",
-                          ("host.msg_ts", "host.frame_size"), ".2f", "MB/s", min_rows=10, divisor=1000*1000)
+                          ("host.msg_ts", "host.frame_size"), ".2f", "MB/s", divisor=1000*1000)
 
     TableStats.Average("frame_size", "Frame Size (avg)", "server.host",
-                       "host.frame_size", ".2f", "KB", min_rows=10, divisor=1000)
+                       "host.frame_size", ".2f", "KB", divisor=1000)
 
     TableStats.KeyFramesCount("keyframe_count", "Keyframe count", "guest.guest",
                               "guest.key_frame", ".0f", "#", keyframes=True)
@@ -271,10 +280,10 @@ def register():
                                f"guest.capture", f"capture.msg_ts", ".0f", "FPS")
 
     TableStats.PerSecond("client_decode_per_s", "Client Decode time/s", "client.client",
-                          ("client.msg_ts", "client.decode_duration"), ".0f", "s/s", min_rows=10, divisor=1000*1000)
+                          ("client.msg_ts", "client.decode_duration"), ".0f", "s/s", divisor=1000*1000)
 
     TableStats.PerFrame("client_decode_per_f", "Client Decode time/frame", "client.client",
-                        ("client.msg_ts", "client.decode_duration"), ".0f", "s/frame", min_rows=10, divisor=1000*1000)
+                        ("client.msg_ts", "client.decode_duration"), ".0f", "s/frame", divisor=1000*1000)
 
     TableStats.Average("client_decode", "Client Decode Duration", "client.client",
                        "client.decode_duration", ".0f", "s")

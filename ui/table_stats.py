@@ -6,13 +6,12 @@ import statistics
 import plotly.graph_objs as go
 import plotly.subplots
 import dash_html_components as html
+import dash_core_components as dcc
 
 class TableStats():
     all_stats = []
     stats_by_name = {}
     graph_figure = None
-
-    interesting_tables = defaultdict(list)
 
     @classmethod
     def _register_stat(clazz, stat_obj):
@@ -25,21 +24,19 @@ class TableStats():
 
         clazz.stats_by_name[stat_obj.name] = stat_obj
 
-    def __init__(self, id_name, name, table, field, fmt, unit, min_rows=0, divisor=1, **kwargs):
+    def __init__(self, id_name, name, table, field, fmt, unit, divisor=1, **kwargs):
         self.id_name = id_name
         self.name = name
         self.table = table
         self.field = field
         self.unit = unit
         self.fmt = fmt
-        self.min_rows = min_rows
         self.divisor = divisor
         self.kwargs = kwargs
 
         self.do_process = None
 
         TableStats._register_stat(self)
-        TableStats.interesting_tables[table].append(self)
 
     def __str__(self):
         return self.name
@@ -210,7 +207,9 @@ class TableStats():
         if self.kwargs.get("invert"):
             return 1/mean, 0
 
-        return mean, (statistics.stdev(values) / self.divisor)
+        stdev = statistics.stdev(values) if len(values) > 2 else 0
+
+        return mean, (stdev / self.divisor)
 
     def process_keyframes_count(self, table_def, rows):
         kfr_row_id = table_def.partition("|")[2].split(";").index(self.field)
@@ -285,20 +284,30 @@ class TableStats():
 
     def props_to_hovergraph(self, entry):
         for table_def, (table_name, table_rows) in entry.tables.items():
-            if table_name != self.table: continue
+            if (table_name != self.table and
+                not (self.table.startswith("?.") and table_name.endswith(self.table[1:]))):
+                continue
+
             table_simple_name = table_name.split(".")[1]
 
             def get_values(field_name):
                 row_id = table_def.partition("|")[2].split(";").index(field_name)
                 return [row[row_id] for row in table_rows if row[row_id] is not None]
 
-            x = get_values(f"{table_simple_name}.msg_ts")
+            try:
+                x = get_values(f"{table_simple_name}.msg_ts")
+            except ValueError:
+                try:
+                    x = get_values(f"time")
+                except ValueError:
+                    print(f"props_to_hovergraph: Cannot find {table_simple_name}.msg_ts or time field ...")
+                    return ""
+
             field = self.field if not isinstance(self.field, tuple) else self.field[1]
 
             y = get_values(field)
             from . import graph
-            try:
-                x = graph.GraphFormat.as_timestamp(x, y)
+            try: x = graph.GraphFormat.as_timestamp(x, y)
             except ValueError: #  year 50265933 is out of range
                 x = graph.GraphFormat.as_timestamp([_x/1000000 for _x in x], y)
 
@@ -316,14 +325,14 @@ class TableStats():
             except ValueError: continue # not enough values to unpack (expected 2, got 1)
             variables[k] = v
 
-        key = "_".join([f"{k}={variables[k]}" for k in key_order])
-
-        try: entry = Matrix.entry_map[key]
-        except KeyError: return None, f"Error: record '{key}' not found in matrix ..."
+        from .matrix_view import get_record
+        entry = get_record(variables)
+        if not entry:
+            return None, f"Error: record not found in matrix ..."
 
         link = html.A("view", target="_blank", href="/viewer/"+entry.linkname)
 
-        return entry, [f"{key.replace('_', ', ')} 🡆 {value} (", link, ")"]
+        return entry, [f"{entry.key.replace('_', ', ')} 🡆 {value} (", link, ")"]
 
     def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
         from .matrix_view import natural_keys
@@ -370,7 +379,7 @@ class TableStats():
 
         for entry in all_records(params, param_lists):
             if self.name not in entry.stats:
-                print(f"Stats not found: {self.name} for entry '{key}' ")
+                print(f"Stats not found: {self.name} for entry '{entry.key}' ")
                 continue
 
             x_key = " ".join([f'{v}={params[v]}' for v in reversed(second_vars) if v != subplots_var])

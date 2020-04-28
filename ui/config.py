@@ -33,7 +33,6 @@ def construct_config_tab():
     return dcc.Tab(label="Config", children=children)
 
 def construct_config_tab_callbacks(dataview_cfg):
-
     @UIState.app.callback(Output("graph-records-too-old", 'data'),
                           [Input("graph-view-length", 'value'),
                            Input("graph-records-too-old", 'value')])

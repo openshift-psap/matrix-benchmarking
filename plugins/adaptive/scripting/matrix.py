@@ -21,22 +21,38 @@ def exit_cleanup():
         try: cleanup()
         except Exception as e: print(e)
 
-atexit.register(exit_cleanup)
+class AdaptiveMatrix():
 
-def prepare_new_record(exe, context, settings_dict):
-    exe.reset()
-    exe.apply_settings(context.params.driver, settings_dict)
+    @staticmethod
+    def add_custom_properties(yaml_desc, params):
+        params.record_time = f"{yaml_desc['record_time']}s"
 
-    exe.wait(10)
+    @staticmethod
+    def get_path_properties(yaml_expe):
+        return ["record_time"] + sorted(yaml_expe.get('scripts') or [])
 
-    exe.clear_record()
-    exe.clear_quality()
-    exe.wait(2)
+    @staticmethod
+    def prepare_new_record(exe, context, settings_dict):
+        exe.reset()
+        exe.apply_settings(context.params.driver, settings_dict)
 
-    exe.request("share_pipeline", client=True, agent=True)
-    exe.apply_settings("share_encoding", {})
-    exe.apply_settings("share_resolution", {})
-    exe.wait(1)
+        exe.wait(10)
+
+        exe.clear_record()
+        exe.clear_quality()
+        exe.wait(2)
+
+        exe.request("share_pipeline", client=True, agent=True)
+        exe.apply_settings("share_encoding", {})
+        exe.apply_settings("share_resolution", {})
+        exe.wait(1)
+
+    @staticmethod
+    def wait_end_of_recording(exe, yaml_desc):
+        exe.wait(int(yaml_desc["record_time"]))
+
+customized_matrix = AdaptiveMatrix
+
 
 class Matrix(script.Script):
 
@@ -77,7 +93,7 @@ class Matrix(script.Script):
             setattr(context.params, key, new_name)
 
 
-    def do_run_the_streaming_matrix(self, exe, settings_matrix, context, yaml_expe):
+    def do_run_the_settings_matrix(self, exe, settings_matrix, context, yaml_expe):
         def scripted_property_to_named_value(key):
             val = context.params.__dict__[key]
             return val[0] if isinstance(val, tuple) else val
@@ -85,7 +101,7 @@ class Matrix(script.Script):
             val = context.params.__dict__[key]
             return val[0] if isinstance(val, tuple) else val
 
-        path_properties = ["record_time"] + sorted(yaml_expe['scripts'])
+        path_properties = customized_matrix.get_path_properties(yaml_expe)
         file_path = "/".join(scripted_property_to_named_value(key) for key in path_properties)
 
         fix_key = "_".join(f"{key}={param_to_named_value(key)}".replace("_", "-")
@@ -104,6 +120,7 @@ class Matrix(script.Script):
             file_key = "_".join([fix_key, current_key])
 
             exe.expe_cnt.current_idx += 1
+
             exe.log("---")
             exe.log(f"running {exe.expe_cnt.current_idx}/{exe.expe_cnt.total}")
             exe.log("> "+file_key)
@@ -113,17 +130,18 @@ class Matrix(script.Script):
             except KeyError: pass # no previous entry, run!
             else:
                 exe.log(f">> already recorded, skipping | {previous_entry.filename}")
-                exe.expe_cnt.skipped += 1
                 continue
 
-            prepare_new_record(exe, context, settings_dict)
+            customized_matrix.prepare_new_record(exe, context, settings_dict)
 
             for k in context.params.__dict__:
                 exe.append_quality(f"{k}: {scripted_property_to_named_value(k)}")
 
             exe.append_quality(f"settings: {settings_str}")
 
-            exe.wait(int(self.yaml_desc["record_time"]))
+            customized_matrix.wait_end_of_recording(exe, yaml_expe)
+
+            exe.expe_cnt.executed += 1
 
             dest = f"{context.expe_dir}/{file_path}/{current_key}.rec"
 
@@ -136,12 +154,11 @@ class Matrix(script.Script):
             with open(context.results_filename, "a") as f:
                 print(file_entry, file=f)
 
-
     def do_run(self, exe):
         exe.expe_cnt = types.SimpleNamespace()
         exe.expe_cnt.total = 0
         exe.expe_cnt.current_idx = 0
-        exe.expe_cnt.skipped = 0
+        exe.expe_cnt.executed = 0
 
         expe_ran = []
         for expe in self.yaml_desc['run']:
@@ -153,16 +170,18 @@ class Matrix(script.Script):
             expe_ran.append(expe)
 
         exe.log(f"Ran {len(expe_ran)} expe:", ", ".join(expe_ran))
-        exe.log(f"Performed {exe.expe_cnt.total - exe.expe_cnt.skipped}/{exe.expe_cnt.total} experiments.")
-        exe.log(f"Skipped {exe.expe_cnt.skipped} experiments already recorded.")
+        exe.log(f"Performed {exe.expe_cnt.executed}/{exe.expe_cnt.total} experiments.")
+
+        exe.log(f"Skipped {exe.expe_cnt.total - exe.expe_cnt.executed} "
+                "experiments already recorded.")
 
     def do_run_expe(self, exe, expe):
         exe.log("setup()")
-        for cmd in self.yaml_desc['scripts'].get("setup", []):
+        for cmd in (self.yaml_desc.get('scripts', {}).get("setup") or []):
             exe.execute(cmd)
 
         def teardown():
-            for cmd in self.yaml_desc['scripts'].get("teardown", []):
+            for cmd in (self.yaml_desc.get('scripts', {}).get("teardown") or []):
                 exe.execute(cmd)
 
         do_at_exit["__benchmark__"] = teardown
@@ -176,23 +195,24 @@ class Matrix(script.Script):
         context = types.SimpleNamespace()
         context.params = types.SimpleNamespace()
         context.params.driver = yaml_expe["driver"]
-        context.params.record_time = f"{self.yaml_desc['record_time']}s"
 
-        for script_propery in yaml_expe["scripts"]:
+        for script_propery in (yaml_expe.get("scripts") or []):
             context.params.__dict__[script_propery] = None
 
+        customized_matrix.add_custom_properties(self.yaml_desc, context.params)
+
         settings_matrix = [[(name, value) for value in str(values).split(", ")]
-                           for name, values in yaml_expe["settings"].items()]
+                           for name, values in (yaml_expe.get("settings") or {}).items()]
 
         def values_to_list(values):
             return (values.items() if isinstance(values, dict)
                     else str(values).split(", "))
 
         script_matrix = [[(name, value) for value in values_to_list(values)]
-                         for name, values in yaml_expe["scripts"].items()]
+                         for name, values in (yaml_expe.get("scripts") or {}).items()]
 
-        nb_settings_params_expe = functools.reduce(operator.mul, map(len, settings_matrix), 1)
-        nb_script_expe = functools.reduce(operator.mul, map(len, script_matrix), 1)
+        nb_settings_params_expe = sum(1 for _ in itertools.product(*settings_matrix))
+        nb_script_expe = sum(1 for _ in itertools.product(*script_matrix))
         exe.expe_cnt.total += nb_script_expe * nb_settings_params_expe
 
         context.expe = expe
@@ -216,7 +236,11 @@ class Matrix(script.Script):
         for script_items in itertools.product(*script_matrix):
             exe.reset()
             self.do_scripts_setup(exe, script_items, context)
-            self.do_run_the_streaming_matrix(exe, settings_matrix, context, yaml_expe)
+            try:
+                self.do_run_the_settings_matrix(exe, settings_matrix, context, yaml_expe)
+            except KeyboardInterrupt:
+                print("Interrupted ...")
+                break
 
         self.do_scripts_setup(exe, [(k, None) for k, v in script_items], context)
         exe.log("teardown()")
@@ -226,3 +250,6 @@ class Matrix(script.Script):
         exe.log("#")
         exe.log(f"# Finished with {context.expe}")
         exe.log("#")
+
+def configure(expe):
+    atexit.register(exit_cleanup)
