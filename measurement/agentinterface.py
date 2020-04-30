@@ -3,7 +3,7 @@ import collections, time
 
 import measurement
 import utils.live
-from measurement.quality import quality
+from measurement.feedback import feedback
 #---
 
 def sock_readline(sock):
@@ -148,7 +148,7 @@ class AgentInterface(measurement.Measurement):
                 raise
 
             print(f"Connected to {self.host}:{self.port}!")
-            quality.register(self.mode, self.sock)
+            feedback.register(self.mode, self.sock)
             self.live_async_connect = False
             return self.sock
 

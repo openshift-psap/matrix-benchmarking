@@ -7,7 +7,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 
 from . import InitialState, UIState
-from . import quality
+from . import feedback
 
 control_center_boxes = defaultdict(list)
 
@@ -28,14 +28,14 @@ def configure(mode, plugin_cfg, machines):
 def apply_settings(driver_name, settings):
     settings_str = ",".join(f"{k}={v}" for k, v in settings.items() if v not in (None, ""))
 
-    quality.Quality.add_to_quality(None, "ui", f"Apply settings: {driver_name} || {settings_str}")
+    feedback.Feedback.add_to_feedback(None, "ui", f"Apply settings: {driver_name} || {settings_str}")
 
     err = plugin_control.apply_settings(driver_name, settings)
     if not err:
         return f"settings applied: {driver_name} || {settings_str}"
 
     msg = f"FAILED ({err})"
-    quality.Quality.add_to_quality(None, "ui", f"Apply settings: {msg}")
+    feedback.Feedback.add_to_feedback(None, "ui", f"Apply settings: {msg}")
 
     return msg
 
@@ -214,37 +214,37 @@ def construct_control_center_tab(driver_cfg):
         dcc.Tabs(id="driver-settings-tabs", children=list(get_driver_tabs())),
     ]
 
-    refresh_interval = 9999999 if UIState().viewer_mode else InitialState.QUALITY_REFRESH_INTERVAL * 1000
+    refresh_interval = 9999999 if UIState().viewer_mode else InitialState.FEEDBACK_REFRESH_INTERVAL * 1000
 
-    quality_headers = [html.H3("Quality Messages", style={"text-align":"center"}),
+    feedback_headers = [html.H3("Feedback Messages", style={"text-align":"center"}),
                        dcc.Interval(
-                           id='quality-refresh', n_intervals=0,
+                           id='feedback-refresh', n_intervals=0,
                            interval=refresh_interval
                        )]
 
-    quality_area = html.Div(id="quality-box", children=[],
+    feedback_area = html.Div(id="feedback-box", children=[],
                             style={"margin-top": "10px", "margin-left": "0px",
                                    "padding-left": "10px", "padding-top": "10px",
                                    "background-color": "lightblue", "text-align":"left",})
 
     if UIState().viewer_mode:
-        tab_children = quality_headers + [quality_area]
+        tab_children = feedback_headers + [feedback_area]
     else:
-        quality_children = quality_headers + [
-            dcc.Input(placeholder='Enter a quality message...', type='text', value='', id="quality-input"),
-            html.Button('Send!', id='quality-bt-send'),
-            html.Button('Clear', id='quality-bt-clear'),
-            html.Button('Refresh', id='quality-bt-refresh'),
+        feedback_children = feedback_headers + [
+            dcc.Input(placeholder='Enter a feedback message...', type='text', value='', id="feedback-input"),
+            html.Button('Send!', id='feedback-bt-send'),
+            html.Button('Clear', id='feedback-bt-clear'),
+            html.Button('Refresh', id='feedback-bt-refresh'),
             html.Br(),
-            "Refreshing quality ", html.Span(id="cfg:quality:value"),
-            dcc.Slider(min=0, max=30, step=1, value=InitialState.QUALITY_REFRESH_INTERVAL,
+            "Refreshing feedback ", html.Span(id="cfg:feedback:value"),
+            dcc.Slider(min=0, max=30, step=1, value=InitialState.FEEDBACK_REFRESH_INTERVAL,
                        marks={0:"0s", 30:"30s"},
-                       id="cfg:quality"), html.Br(),
-            quality_area]
+                       id="cfg:feedback"), html.Br(),
+            feedback_area]
 
         tab_children = [
             html.Div([
-                html.Div(quality_children, style={"text-align":"center",}, className="four columns"),
+                html.Div(feedback_children, style={"text-align":"center",}, className="four columns"),
                 html.Div(driver_tabs, className="eight columns"),
             ], className="row")
         ]

@@ -22,7 +22,7 @@ LISTEN_ON = None
 
 class InitialState():
     GRAPH_REFRESH_INTERVAL = 1 #s
-    QUALITY_REFRESH_INTERVAL = 0 #s
+    FEEDBACK_REFRESH_INTERVAL = 0 #s
     SCRIPT_REFRESH_INTERVAL = 0 #s
     LIVE_GRAPH_NB_SECONDS_TO_KEEP = 2*60 #s
 
@@ -38,7 +38,7 @@ main_app = dash.Dash(__name__)
 
 class _UIState():
     def __init__(self, url, expe=None, viewer_mode=False):
-        from . import graph, quality
+        from . import graph, feedback
 
         self.viewer_mode = viewer_mode
         self.app = main_app
@@ -49,9 +49,9 @@ class _UIState():
             expe = AgentExperimentClass()
 
         self.DB.expe = expe
-        self.DB.expe.new_quality_cbs.append(quality.Quality.add_to_quality)
+        self.DB.expe.new_feedback_cbs.append(feedback.Feedback.add_to_feedback)
 
-        self.DB.init_quality_from_viewer()
+        self.DB.init_feedback_from_viewer()
 
         self.url = url
 
@@ -91,7 +91,7 @@ class __UIState():
 UIState = __UIState()
 
 def construct_layout(ui_state):
-    from . import live, config, control, script, quality
+    from . import live, config, control, script, feedback
 
     def tab_entries():
         yield control.construct_control_center_tab(driver_settings_cfg)
@@ -117,9 +117,9 @@ def construct_layout(ui_state):
 
 
 def construct_collector_callbacks(mode, running_as_collector):
-    from . import quality, control, live, config
+    from . import feedback, control, live, config
 
-    quality.construct_quality_callbacks()
+    feedback.construct_feedback_callbacks()
     control.construct_driver_control_callbacks(driver_settings_cfg)
     live.construct_live_refresh_callbacks(dataview_cfg)
 
@@ -223,7 +223,7 @@ def construct_dispatcher():
                 except KeyError: return html.Div(f"Error: key '{key}' not found, is the viewer loaded?")
                 idx, _, ext = args.partition("/")[-1].partition(".")
 
-                return quality.get_pipeline(db, int(idx), ext)
+                return feedback.get_pipeline(db, int(idx), ext)
             else:
                 return html.Div(f"Error: invalid url {pathname}")
 

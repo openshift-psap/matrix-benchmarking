@@ -10,7 +10,7 @@ import dash_html_components as html
 import utils.yaml
 
 from . import InitialState, UIState
-from . import quality, graph, control
+from . import feedback, graph, control
 
 RESULTS_PATH = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/../results")
 
@@ -99,16 +99,16 @@ class Exec():
             if self.interrupt: raise ThreadInterrupt()
             time.sleep(1)
 
-    def clear_quality(self):
-        self.log(f"clear quality")
+    def clear_feedback(self):
+        self.log(f"clear feedback")
         if self.dry: return
-        quality.Quality.clear()
+        feedback.Feedback.clear()
 
-    def append_quality(self, msg):
-        quality_msg = (0, "script", msg)
-        self.log(f"append to quality:", ": ".join(quality_msg[1:]))
+    def append_feedback(self, msg):
+        feedback_msg = (0, "script", msg)
+        self.log(f"append to feedback:", ": ".join(feedback_msg[1:]))
         if self.dry: return
-        quality.Quality.add_to_quality(*quality_msg)
+        feedback.Feedback.add_to_feedback(*feedback_msg)
 
     def clear_record(self):
         self.log(f"clear graphs")

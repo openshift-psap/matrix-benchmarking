@@ -28,10 +28,10 @@ class SpecfemMatrix():
         exe.apply_settings(context.params.driver, settings_dict)
 
         exe.clear_record()
-        exe.clear_quality()
+        exe.clear_feedback()
 
     @staticmethod
-    def wait_end_of_recording(exe, yaml_desc):
+    def wait_end_of_recording(exe, context):
         if exe.dry:
             print("Waiting for the end of the execution ... [dry]")
             return
@@ -50,7 +50,7 @@ class SpecfemMatrix():
         print(f"\nExecution completed after {i} seconds.")
 
 
-def add_to_quality_cb(ts, src, msg):
+def add_to_feedback_cb(ts, src, msg):
     global running
     if src == "agent" and msg.startswith("execution time"):
         running = False
@@ -60,4 +60,4 @@ def configure(expe):
 
     adaptive_matrix.customized_matrix = SpecfemMatrix
 
-    expe.new_quality_cbs.append(add_to_quality_cb)
+    expe.new_feedback_cbs.append(add_to_feedback_cb)

@@ -41,11 +41,11 @@ def g_strcompress(string):
         new_string += c
     return new_string
 
-class Quality():
+class Feedback():
     @staticmethod
-    def add_to_quality(ts, src, msg):
+    def add_to_feedback(ts, src, msg):
         db = UIState().DB
-        db.quality.insert(0, (ts, src, msg))
+        db.feedback.insert(0, (ts, src, msg))
 
         if msg.startswith("#pipeline:"):
             db.pipelines[msg] = db.pipeline_idx
@@ -53,20 +53,20 @@ class Quality():
             db.pipeline_idx += 1
 
         if msg.startswith("!"):
-            Quality.add_quality_to_plots(msg)
+            Feedback.add_feedback_to_plots(msg)
 
     @staticmethod
-    def add_quality_to_plots(msg):
+    def add_feedback_to_plots(msg):
         db = UIState().DB
 
         for table, content in db.table_contents.items():
             if not content: continue
 
-            db.quality_by_table[table].append((content[-1], msg))
+            db.feedback_by_table[table].append((content[-1], msg))
 
     @staticmethod
     def clear():
-        UIState().DB.quality[:] = []
+        UIState().DB.feedback[:] = []
 
 def get_pipeline(db, idx, ext, raw=False):
     pipeline_escaped = db.pipelines_reversed[int(idx)]
@@ -97,7 +97,7 @@ def get_pipeline(db, idx, ext, raw=False):
     return html.Img(src='data:image/png;base64,'+b64_data)
 
 
-def construct_quality_callbacks(url=None):
+def construct_feedback_callbacks(url=None):
     @UIState.app.server.route('/collector/pipeline/<idx>.<ext>')
     def download_pipeline(idx, ext):
         db = UIState().DB
@@ -112,14 +112,14 @@ def construct_quality_callbacks(url=None):
         except Exception as e:
             return str(e)
 
-    @UIState.app.callback(Output("quality-box", 'children'),
-                          [Input('quality-refresh', 'n_intervals')])
-    def refresh_quality(*args):
+    @UIState.app.callback(Output("feedback-box", 'children'),
+                          [Input('feedback-refresh', 'n_intervals')])
+    def refresh_feedback(*args):
         try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
         except IndexError: return # nothing triggered the script (on multiapp load)
         db = UIState().DB
-        quality_html = []
-        for (ts, src, msg) in db.quality:
+        feedback_html = []
+        for (ts, src, msg) in db.feedback:
             if msg.startswith("#pipeline:"):
                 pipeline_idx = db.pipelines[msg]
                 link = f"/{UIState().url}/pipeline/{pipeline_idx}"
@@ -130,39 +130,39 @@ def construct_quality_callbacks(url=None):
                             ]
             else:
                 children = f"{src}: {msg}"
-            quality_html.append(html.P(children, style={"margin-top": "0px", "margin-bottom": "0px"}))
+            feedback_html.append(html.P(children, style={"margin-top": "0px", "margin-bottom": "0px"}))
 
-        return quality_html
+        return feedback_html
 
 
-    @UIState.app.callback(Output("quality-refresh", 'n_intervals'),
-                          [Input('quality-bt-clear', 'n_clicks'),
-                           Input('quality-bt-refresh', 'n_clicks')])
-    def clear_quality(clear_n_clicks, refresh_n_clicks):
+    @UIState.app.callback(Output("feedback-refresh", 'n_intervals'),
+                          [Input('feedback-bt-clear', 'n_clicks'),
+                           Input('feedback-bt-refresh', 'n_clicks')])
+    def clear_feedback(clear_n_clicks, refresh_n_clicks):
 
         try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
         except IndexError: return # nothing triggered the script (on multiapp load)
 
-        if triggered_id == "quality-bt-clear.n_clicks":
+        if triggered_id == "feedback-bt-clear.n_clicks":
             if clear_n_clicks is None: return
 
-            Quality.clear()
+            Feedback.clear()
         else:
             if refresh_n_clicks is None: return
             # forced refresh, nothing to do
 
         return 0
 
-    @UIState.app.callback(Output("quality-input", 'value'),
-                  [Input('quality-bt-send', 'n_clicks'),
-                   Input('quality-input', 'n_submit'),],
-                  [State(component_id='quality-input', component_property='value')])
-    def quality_send(n_click, n_submit, quality_value):
-        if not quality_value:
+    @UIState.app.callback(Output("feedback-input", 'value'),
+                  [Input('feedback-bt-send', 'n_clicks'),
+                   Input('feedback-input', 'n_submit'),],
+                  [State(component_id='feedback-input', component_property='value')])
+    def feedback_send(n_click, n_submit, feedback_value):
+        if not feedback_value:
             return ""
 
         if not UIState().DB.expe:
             return "<error: expe not set>"
-        UIState().DB.expe.send_quality(quality_value)
+        UIState().DB.expe.send_feedback(feedback_value)
 
         return "" # empty the input text

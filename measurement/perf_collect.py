@@ -14,7 +14,7 @@ DEFAULT_HOST = "localhost"
 DEFAULT_PORT = 1230
 DEFAULT_MODE = "local"
 
-class Quality():
+class Feedback():
     def __init__(self, expe, fields):
         self.fields = fields
         self.expe = expe
@@ -24,7 +24,7 @@ class Quality():
         src = values[1]
         msg = values[2].replace("||", ", ")
 
-        self.expe.new_quality(ts, src, msg)
+        self.expe.new_feedback(ts, src, msg)
 
 
 async def async_read_dataset(reader):
@@ -79,8 +79,8 @@ class Perf_Collect(measurement.Measurement):
                 print(f"INFO: Table '{table_name}' is already known.")
                 return
 
-        if table_name == "quality":
-            table = Quality(experiment, fields)
+        if table_name == "feedback":
+            table = Feedback(experiment, fields)
         else:
             table = experiment.create_table(fields, mode)
 
@@ -106,17 +106,17 @@ class Perf_Collect(measurement.Measurement):
             # eg: msg = '#client-pid|time;client-pid.cpu_user;client-pid.cpu_system\0'
             self.create_table(msg[1:-1])
 
-    def send_quality(self, quality_msg):
+    def send_feedback(self, feedback_msg):
         if not self.live: return
         try:
-            self.sock.send((quality_msg + "\0").encode("ascii"))
+            self.sock.send((feedback_msg + "\0").encode("ascii"))
         except BrokenPipeError:
             print(f"{self.mode}: BrokenPipeError")
             self.sock = None
             self.live = False
 
     def setup(self):
-        self.experiment.send_quality_cbs.append(self.send_quality)
+        self.experiment.send_feedback_cbs.append(self.send_feedback)
         assert not self.mode in self.experiment.agent_status, "Agent already registered ..."
         self.experiment.agent_status[self.mode] = self
 
@@ -167,7 +167,7 @@ class Perf_Collect(measurement.Measurement):
                 except ValueError:
                     print(f"Cannot parse {elt} in {line_tuple} for {self.current_table.header()}")
 
-            if isinstance(self.current_table, Quality):
+            if isinstance(self.current_table, Feedback):
                 self.current_table.add(line_tuple)
             else:
                 entry = [cast(elt) for elt in line_tuple]

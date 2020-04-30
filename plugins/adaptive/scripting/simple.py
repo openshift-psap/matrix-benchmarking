@@ -12,11 +12,11 @@ class Simple(script.Script):
         def init_recording(test_name):
             exe.wait(5)
             exe.clear_record()
-            exe.clear_quality()
+            exe.clear_feedback()
             exe.request("share_pipeline", client=True, agent=True)
             exe.apply_settings("share_encoding", {})
-            exe.append_quality(f"!running: {self.name}")
-            exe.append_quality(f"!running: {self.name} / {test_name}")
+            exe.append_feedback(f"!running: {self.name}")
+            exe.append_feedback(f"!running: {self.name} / {test_name}")
             exe.wait(1)
 
         for cmd in self.yaml_desc.get("before", []): exe.execute(cmd)
@@ -29,7 +29,7 @@ class Simple(script.Script):
                 continue
 
             if not first_record:
-                exe.append_quality(f"!running: {self.name} / {test_name}")
+                exe.append_feedback(f"!running: {self.name} / {test_name}")
             rolling_param  = None
             fixed_params = {}
 
@@ -67,7 +67,7 @@ class Simple(script.Script):
 
             exe.reset_encoder()
 
-        exe.append_quality(f"!finished: {self.name}")
+        exe.append_feedback(f"!finished: {self.name}")
 
         dest = (f"{script.RESULTS_PATH}/simple/{self.to_id()}_"
                 + datetime.datetime.today().strftime("%Y%m%d-%H%M")

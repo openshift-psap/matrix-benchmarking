@@ -302,7 +302,8 @@ def build_callbacks(app):
         return list([html.P(e) for e in data]), data, ''
 
     @app.callback(Output('property-order', 'children'),
-                  [Input(f"label_{key}", 'n_clicks') for key in Matrix.properties],
+                  [Input(f"label_{key}", 'n_clicks') for key in Matrix.properties] +
+                  [Input(f"property-order", 'n_clicks')],
                   [State('property-order', 'children')])
     def varname_click(*args):
         current_str = args[-1]
@@ -312,7 +313,9 @@ def build_callbacks(app):
 
         current = current_str.split(" ") if current_str else list(Matrix.properties.keys())
 
-        if triggered_id: # label_keyframe-period.n_clicks
+        if triggered_id == "property-order.n_clicks":
+            current.insert(0, current.pop())
+        elif triggered_id: # label_keyframe-period.n_clicks
             key = triggered_id.partition("_")[-1].rpartition(".")[0]
             if key in current: current.remove(key)
             current.append(key)

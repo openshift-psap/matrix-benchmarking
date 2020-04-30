@@ -11,7 +11,7 @@ class Server():
 
     def __init__(self, port, expe, loop):
         self.expe = expe
-        self.quality_buffer = []
+        self.feedback_buffer = []
         self.loop = loop
         self.port = port
 
@@ -66,32 +66,32 @@ class Server():
                     read_list.append(conn)
                     force_recheck.append(True)
                 else:
-                    if not self.thr_read_quality(s):
+                    if not self.thr_read_feedback(s):
                         read_list.remove(s)
 
-    def thr_read_quality(self, comm_sock):
+    def thr_read_feedback(self, comm_sock):
         try:
             c = comm_sock.recv(1).decode("ascii")
 
             if not c: return False
 
             if c == "\0":
-                self.thr_quality_to_agent("".join(self.quality_buffer))
-                self.quality_buffer[:] = []
+                self.thr_feedback_to_agent("".join(self.feedback_buffer))
+                self.feedback_buffer[:] = []
             else:
-                self.quality_buffer.append(c)
+                self.feedback_buffer.append(c)
 
             return True
         except ConnectionResetError: pass # Collector disconnected
         except Exception as e:
-            print("thr_read_quality failed:", e)
+            print("thr_read_feedback failed:", e)
         return False
 
-    def thr_quality_to_agent(self, msg):
-        measurement.agentinterface.quality.send_str(msg)
+    def thr_feedback_to_agent(self, msg):
+        measurement.agentinterface.feedback.send_str(msg)
 
-    def send_quality_backlog(self, client_sock):
-        table = self.expe.quality
+    def send_feedback_backlog(self, client_sock):
+        table = self.expe.feedback
         if not (table and table.rows):
             return
 
@@ -116,7 +116,7 @@ class Server():
         for client in clients:
             try:
                 self.initialize_new_client(client)
-                self.send_quality_backlog(client)
+                self.send_feedback_backlog(client)
             except Exception as e:
                 print(f"Client {client} disconnected during initialization ({e})")
                 continue

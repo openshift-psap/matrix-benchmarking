@@ -13,8 +13,8 @@ expe:
     driver: Specfem3D
 
     settings:
-      machine:  desktop
-      nex: 16, 32 #, 64
+      machine: laptop, desktop
+      nex: 16, 32, 64
       threads: 1, 2, 3, 4, 5, 6, 7, 8
 
     scripts:

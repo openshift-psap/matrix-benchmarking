@@ -5,19 +5,19 @@ import statistics
 
 import measurement.hot_connect
 import measurement.agentinterface
-from measurement.quality import quality
+from measurement.feedback import feedback
 
 class SpiceAgentInterface(measurement.agentinterface.AgentInterface):
     def setup(self):
         register_agent_info(self)
-        register_quality_setting(self)
+        register_feedback_setting(self)
 
         if self.mode == "client":
             register_frame_stats(self)
             register_frames_dropped(self)
 
         elif self.mode == "server":
-            register_quality(self)
+            register_feedback(self)
             register_stream_channel_data(self)
 
         elif self.mode == "guest":
@@ -105,23 +105,23 @@ def register_frame_stats(agent):
     agent.processors["frames_info"] = process_info
 
 
-def register_quality(agent):
-    agent.quality_table = \
+def register_feedback(agent):
+    agent.feedback_table = \
         agent.experiment.create_table([
-            'quality.msg_ts',
-            'quality.src',
-            'quality.msg',
+            'feedback.msg_ts',
+            'feedback.src',
+            'feedback.msg',
         ])
 
     def process(entry):
         src, _, msg = entry.msg.partition(": ")
 
-        agent.quality_table.add(entry.time, src, msg.replace(", ", "||"))
+        agent.feedback_table.add(entry.time, src, msg.replace(", ", "||"))
         if msg.startswith("#"):
             msg = msg[:20] + "..." + msg[-20:]
-        print(f"Quality received: '{src}' says '{msg}'")
+        print(f"Feedback received: '{src}' says '{msg}'")
 
-    agent.processors["quality_interface"] = process
+    agent.processors["feedback_interface"] = process
 
 
 def register_agent_info(agent):
@@ -162,7 +162,7 @@ def register_guest_streaming_info(agent):
         info_type, _, info_msg = entry.msg.partition(": ")
         if info_type == "resolution":
             print("Guest streaming resolution:", info_msg)
-            quality.send_str("guest:"+entry.msg)
+            feedback.send_str("guest:"+entry.msg)
         else:
             print("Unknown streaming_info message:", entry.msg)
 
@@ -218,16 +218,16 @@ def process_framerate(state, time):
 
     return ret(mean)
 
-def register_quality_setting(agent):
+def register_feedback_setting(agent):
     def process(entry):
         print(f"{agent.mode}: Agent info received: '{entry.msg}'")
         if entry.msg.startswith("encoding:framerate:"):
             global target_framerate
             target_framerate = int(entry.msg.rpartition(":")[-1])
         else:
-            print(f"{agent.mode}: quality setting '{entry.msg}' not recognized...")
+            print(f"{agent.mode}: feedback setting '{entry.msg}' not recognized...")
 
-    agent.processors["quality_setting"] = process
+    agent.processors["feedback_setting"] = process
 
 def register_guest_frame(agent):
     capture_table = agent.experiment.create_table([

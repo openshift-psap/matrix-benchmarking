@@ -5,16 +5,16 @@ from collections import defaultdict
 
 import utils.yaml
 
-from . import quality
+from . import feedback
 from . import UIState
 
 class DB():
     def __init__(self):
         self.expe = None
-        self.quality = []
+        self.feedback = []
         self.tables_by_name = defaultdict(list)
         self.table_contents = {}
-        self.quality_by_table = defaultdict(list)
+        self.feedback_by_table = defaultdict(list)
         self.table_for_spec = {}
 
         self.pipeline_idx = 0
@@ -34,23 +34,23 @@ class DB():
     def save_to_file(self, filename):
         print("Saving into", filename)
         with open(filename, "w") as output:
-            print(json.dumps(self.quality), file=output)
+            print(json.dumps(self.feedback), file=output)
 
             for table in self.expe.tables.values():
                 print(f"- {table.table_name}: {len(self.table_contents[table])} rows")
                 print(table.header(), file=output)
                 print(json.dumps(self.table_contents[table]), file=output)
-                print(json.dumps(self.quality_by_table[table]), file=output)
+                print(json.dumps(self.feedback_by_table[table]), file=output)
 
-    def init_quality_from_viewer(self):
+    def init_feedback_from_viewer(self):
         import measurement.perf_viewer
 
-        measurement.perf_viewer.Perf_Viewer.quality_for_ui = self.quality_by_table
+        measurement.perf_viewer.Perf_Viewer.feedback_for_ui = self.feedback_by_table
 
     def clear_graphs(self):
         for content in self.table_contents.values():
             content[:] = []
-        self.quality_by_table .clear()
+        self.feedback_by_table .clear()
 
 class GraphFormat():
     @staticmethod
@@ -92,9 +92,9 @@ class GraphFormat():
     @staticmethod
     def key_frames_from_qual(Y_lst, X_lst):
         db = UIState().DB
-        if not db.quality: return []
+        if not db.feedback: return []
 
-        for ts, src, msg in db.quality:
+        for ts, src, msg in db.feedback:
             try: pos = msg.index("keyframe-period=")
             except ValueError: continue
 
@@ -266,7 +266,7 @@ class GraphFormat():
 
         def modifier(table, X_lst, X_raw, X_idx):
             db = UIState().DB
-            qual = iter(db.quality_by_table[table])
+            qual = iter(db.feedback_by_table[table])
             try: current_qual = next(qual)
             except StopIteration: qual = None
             new = []

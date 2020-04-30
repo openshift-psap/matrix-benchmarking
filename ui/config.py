@@ -5,7 +5,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 
 from . import InitialState, UIState
-from . import graph, quality, script
+from . import graph, feedback, script
 
 def construct_config_stubs():
     yield dcc.Input(type='number', value=0, id='graph-view-length', style={"display":"none"})
@@ -36,21 +36,21 @@ def construct_config_tab_callbacks(dataview_cfg):
     @UIState.app.callback(Output("graph-records-too-old", 'data'),
                           [Input("graph-view-length", 'value'),
                            Input("graph-records-too-old", 'value')])
-    def update_quality_refresh_timer(view_length, action_too_old):
+    def update_feedback_refresh_timer(view_length, action_too_old):
         if action_too_old == "DEL":
             UIState().DB.seconds_to_keep = view_length
         else: # value == "KEEP"
             UIState().DB.seconds_to_keep = None # keep all
 
-    @UIState.app.callback(Output("quality-refresh", 'interval'),
-                          [Input('cfg:quality', 'value')])
-    def update_quality_refresh_timer(value):
+    @UIState.app.callback(Output("feedback-refresh", 'interval'),
+                          [Input('cfg:feedback', 'value')])
+    def update_feedback_refresh_timer(value):
         if value == 0: value = 9999
         return value * 1000
 
-    @UIState.app.callback(Output("cfg:quality:value", 'children'),
-                          [Input('cfg:quality', 'value')])
-    def update_quality_refresh_label(value):
+    @UIState.app.callback(Output("cfg:feedback:value", 'children'),
+                          [Input('cfg:feedback', 'value')])
+    def update_feedback_refresh_label(value):
         return f" every {value} seconds"
 
     # ---
@@ -71,7 +71,7 @@ def construct_config_tab_callbacks(dataview_cfg):
         if triggered_id == "graph-bt-marker.n_clicks":
             if marker is None: return
             nonlocal marker_cnt
-            quality.Quality.add_to_quality(0, "ui", f"!Marker {marker_cnt}")
+            feedback.Feedback.add_to_feedback(0, "ui", f"!Marker {marker_cnt}")
             marker_cnt += 1
             return
 

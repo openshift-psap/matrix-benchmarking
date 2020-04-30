@@ -229,10 +229,10 @@ class TableStats():
         return rows[-1][row_id] - rows[0][row_id]
 
     def process_agent_framerate(self, table_def, rows):
-        quality_row_id = table_def.partition("|")[2].split(";").index(self.field)
-        target_row_id = table_def.partition("|")[2].split(";").index(self.field.replace("_quality", "_requested"))
+        feedback_row_id = table_def.partition("|")[2].split(";").index(self.field)
+        target_row_id = table_def.partition("|")[2].split(";").index(self.field.replace("_feedback", "_requested"))
 
-        actual_values = [row[quality_row_id] for row in rows if row[quality_row_id] is not None]
+        actual_values = [row[feedback_row_id] for row in rows if row[feedback_row_id] is not None]
         target_values = [row[target_row_id] for row in rows if row[target_row_id] is not None]
 
         actual_mean = statistics.mean(actual_values) / self.divisor

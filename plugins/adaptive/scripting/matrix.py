@@ -39,7 +39,7 @@ class AdaptiveMatrix():
         exe.wait(10)
 
         exe.clear_record()
-        exe.clear_quality()
+        exe.clear_feedback()
         exe.wait(2)
 
         exe.request("share_pipeline", client=True, agent=True)
@@ -48,8 +48,8 @@ class AdaptiveMatrix():
         exe.wait(1)
 
     @staticmethod
-    def wait_end_of_recording(exe, yaml_desc):
-        exe.wait(int(yaml_desc["record_time"]))
+    def wait_end_of_recording(exe, context):
+        exe.wait(int(context.params.record_time[:-1]))
 
 customized_matrix = AdaptiveMatrix
 
@@ -135,11 +135,11 @@ class Matrix(script.Script):
             customized_matrix.prepare_new_record(exe, context, settings_dict)
 
             for k in context.params.__dict__:
-                exe.append_quality(f"{k}: {scripted_property_to_named_value(k)}")
+                exe.append_feedback(f"{k}: {scripted_property_to_named_value(k)}")
 
-            exe.append_quality(f"settings: {settings_str}")
+            exe.append_feedback(f"settings: {settings_str}")
 
-            customized_matrix.wait_end_of_recording(exe, yaml_expe)
+            customized_matrix.wait_end_of_recording(exe, context)
 
             exe.expe_cnt.executed += 1
 

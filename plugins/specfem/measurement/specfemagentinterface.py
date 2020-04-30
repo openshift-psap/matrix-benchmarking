@@ -5,7 +5,7 @@ import statistics
 
 import measurement.hot_connect
 import measurement.agentinterface
-from measurement.quality import quality
+from measurement.feedback import feedback
 
 SPECFEM_DIR = "/app"
 HOSTNAME = socket.gethostname()
@@ -76,22 +76,22 @@ class SpecfemAgentInterface(measurement.agentinterface.AgentInterface):
     def setup(self):
         register_agent_info(self)
         register_checkpoints(self)
-        register_quality(self)
+        register_feedback(self)
 
         obj = types.SimpleNamespace()
         obj.send = self.remote_ctrl
 
-        quality.register("remote_ctrl", obj)
+        feedback.register("remote_ctrl", obj)
 
         self.it_cnt = 1
 
-    def quality(self, entry):
+    def feedback(self, entry):
         src = "specfem"
-        self.quality_table.add(entry.time, src, entry.msg.replace(", ", "||"))
+        self.feedback_table.add(entry.time, src, entry.msg.replace(", ", "||"))
 
-    def add_to_quality(self, msg):
+    def add_to_feedback(self, msg):
         src = "agent"
-        self.quality_table.add(0, src, msg.replace(", ", "||"))
+        self.feedback_table.add(0, src, msg.replace(", ", "||"))
 
     def remote_ctrl(self, _msg):
         msg = _msg[:-1].decode('ascii').strip()
@@ -114,23 +114,23 @@ class SpecfemAgentInterface(measurement.agentinterface.AgentInterface):
 
 
 
-def register_quality(agent):
-    agent.quality_table = \
+def register_feedback(agent):
+    agent.feedback_table = \
         agent.experiment.create_table([
-            'quality.msg_ts',
-            'quality.src',
-            'quality.msg',
+            'feedback.msg_ts',
+            'feedback.src',
+            'feedback.msg',
         ])
 
     def process(entry):
         src, _, msg = entry.msg.partition(": ")
 
-        agent.quality_table.add(entry.time, src, msg.replace(", ", "||"))
+        agent.feedback_table.add(entry.time, src, msg.replace(", ", "||"))
         if msg.startswith("#"):
             msg = msg[:20] + "..." + msg[-20:]
-        print(f"Quality received: '{src}' says '{msg}'")
+        print(f"Feedback received: '{src}' says '{msg}'")
 
-    agent.processors["quality_interface"] = process
+    agent.processors["feedback_interface"] = process
 
 def register_checkpoints(agent):
     loop_table = agent.experiment.create_table([
@@ -163,7 +163,7 @@ def register_checkpoints(agent):
                 if general_state.start is None: return # partial record ...
 
                 specfem_time = int(value[0])
-                agent.add_to_quality(f"execution time: {specfem_time}")
+                agent.add_to_feedback(f"execution time: {specfem_time}")
 
                 general_table.add(
                     msg_ts = time,
@@ -200,7 +200,7 @@ def register_checkpoints(agent):
         if entry.msg.startswith("it_end"):
             agent.it_cnt = int(entry.msg.split(": ")[-1])
 
-        agent.quality(entry)
+        agent.feedback(entry)
 
     seismo_table = agent.experiment.create_table([
         'seismo.time', 'seismo.value_1', 'seismo.value_2', 'seismo.value_3'

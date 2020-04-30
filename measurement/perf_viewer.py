@@ -11,7 +11,7 @@ class DummyLiveCollect(utils.live.LiveCollect):
         pass
 
 class Perf_Viewer(measurement.Measurement):
-    quality_for_ui = None
+    feedback_for_ui = None
 
     def __init__(self, cfg, experiment, input_f=None):
         measurement.Measurement.__init__(self, experiment)
@@ -34,22 +34,22 @@ class Perf_Viewer(measurement.Measurement):
     def start(self):
         parser = parse_rec_file(self.input_f)
 
-        _, quality_rows = next(parser)
+        _, feedback_rows = next(parser)
 
-        for entry in quality_rows:
-            self.experiment.new_quality(*entry)
+        for entry in feedback_rows:
+            self.experiment.new_feedback(*entry)
 
-        print(len(quality_rows), "quality messages reloaded")
+        print(len(feedback_rows), "feedback messages reloaded")
 
-        if Perf_Viewer.quality_for_ui is None:
-            print("WARNING: quality graph markers not shared with UI.")
+        if Perf_Viewer.feedback_for_ui is None:
+            print("WARNING: feedback graph markers not shared with UI.")
 
         while True:
             _, _table_def = next(parser)
             if not _table_def: break
 
             _, table_rows= next(parser)
-            _, quality_rows = next(parser)
+            _, feedback_rows = next(parser)
 
             # eg: table_def = '#host.mem|time;mem.free'
             mode = _table_def[1:].split(".")[0]
@@ -59,8 +59,8 @@ class Perf_Viewer(measurement.Measurement):
             for row in table_rows:
                 table.add(*row)
 
-            if Perf_Viewer.quality_for_ui is not None:
-                Perf_Viewer.quality_for_ui[table] = quality_rows
+            if Perf_Viewer.feedback_for_ui is not None:
+                Perf_Viewer.feedback_for_ui[table] = feedback_rows
 
             print(f"{table.table_name}: {len(table_rows)} rows reloaded.")
 
@@ -74,7 +74,7 @@ class Perf_Viewer(measurement.Measurement):
         pass
 
 def parse_rec_file(input_f):
-    yield "quality_rows", json.loads(input_f.readline())
+    yield "feedback_rows", json.loads(input_f.readline())
 
     while True:
         table_def = input_f.readline()
@@ -82,6 +82,6 @@ def parse_rec_file(input_f):
             break
         yield "table_def", table_def[:-1]
         yield "table_rows", json.loads(input_f.readline())
-        yield "quality_rows", json.loads(input_f.readline())
+        yield "feedback_rows", json.loads(input_f.readline())
 
     yield "table_def", None

@@ -148,21 +148,21 @@ def construct_live_refresh_cb(graph_tab, graph_spec):
         except AttributeError: pass
 
         shapes = []
-        if UIState().DB.quality_by_table[tbl.table]:
-            quality_x = []
-            quality_y = []
-            quality_msg = []
-            for row, msg in UIState().DB.quality_by_table[tbl.table]:
-                quality_x.append(row[tbl.idx(graph_spec.x)])
-                quality_y.append(y_max / 2)
-                quality_msg.append(msg)
+        if UIState().DB.feedback_by_table[tbl.table]:
+            feedback_x = []
+            feedback_y = []
+            feedback_msg = []
+            for row, msg in UIState().DB.feedback_by_table[tbl.table]:
+                feedback_x.append(row[tbl.idx(graph_spec.x)])
+                feedback_y.append(y_max / 2)
+                feedback_msg.append(msg)
 
             plots.append(
                 go.Scatter(
-                    x=graph_spec.x.modify(quality_x, None),
-                    y=quality_y,
-                    name="Quality",
-                    hovertext=quality_msg,
+                    x=graph_spec.x.modify(feedback_x, None),
+                    y=feedback_y,
+                    name="Feedback",
+                    hovertext=feedback_msg,
                     mode="markers",
                     marker=dict(color="green"),
                 )

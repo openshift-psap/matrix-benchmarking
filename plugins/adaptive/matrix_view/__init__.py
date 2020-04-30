@@ -113,7 +113,7 @@ def parse_data(filename, reloading=False):
 
         with open(entry.filename) as rec_f:
             parser = measurement.perf_viewer.parse_rec_file(rec_f)
-            _, quality_rows = next(parser)
+            _, feedback_rows = next(parser)
 
             entry.tables = {}
 
@@ -122,7 +122,7 @@ def parse_data(filename, reloading=False):
                 if not table_def: break
 
                 _, table_rows= next(parser)
-                _, quality_rows = next(parser)
+                _, feedback_rows = next(parser)
 
                 table_name = table_def.partition("|")[0][1:]
 

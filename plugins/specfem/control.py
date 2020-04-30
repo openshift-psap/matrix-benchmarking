@@ -9,11 +9,11 @@ def apply_settings(driver_name, settings):
 
     msg = f"remote_ctrl:apply_settings:{driver_name}:{settings_str}"
 
-    UIState().DB.expe.send_quality(msg)
+    UIState().DB.expe.send_feedback(msg)
 
 def request(req, dry, log):
     msg = f"remote_ctrl:request:{req}"
-    UIState().DB.expe.send_quality(msg)
+    UIState().DB.expe.send_feedback(msg)
 
 def reset_settings():
     return request("reset", False, print, )

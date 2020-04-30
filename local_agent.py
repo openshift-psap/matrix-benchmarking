@@ -36,7 +36,7 @@ class AgentTable():
         if DEBUG:
             print(self.table_name, "|", ", ".join(fields))
 
-        if self.table_name == "quality":
+        if self.table_name == "feedback":
             self.rows = []
 
     def add(self, *row, **kw_row):
@@ -54,7 +54,7 @@ class AgentTable():
 
         AgentExperiment.new_table_row(self, row)
 
-        if self.table_name == "quality":
+        if self.table_name == "feedback":
             self.rows.append(row)
 
     def header(self):
@@ -66,9 +66,9 @@ class AgentExperiment():
 
     def __init__(self):
         self.tables = {}
-        self.quality = None
-        self.new_quality_cbs = []
-        self.send_quality_cbs = []
+        self.feedback = None
+        self.new_feedback_cbs = []
+        self.send_feedback_cbs = []
         self.agent_status = {}
 
     def create_table(self, fields, mode=None):
@@ -78,9 +78,9 @@ class AgentExperiment():
             return self.tables[table.table_name]
         except KeyError: pass # new table, proceed
 
-        if table.table_name == "quality":
-            assert self.quality is None, "Quality table already created ..."
-            self.quality = table
+        if table.table_name == "feedback":
+            assert self.feedback is None, "Feedback table already created ..."
+            self.feedback = table
 
         if AgentExperiment.new_table:
             AgentExperiment.new_table(table)
@@ -89,21 +89,21 @@ class AgentExperiment():
 
         return table
 
-    def send_quality(self, msg):
-        if not self.send_quality_cbs:
-            print("No callback set for sending quality message: ", msg)
+    def send_feedback(self, msg):
+        if not self.send_feedback_cbs:
+            print("No callback set for sending feedback message: ", msg)
             return
 
-        print("Quality to send:", msg)
-        for send_quality_cb in self.send_quality_cbs:
-            send_quality_cb(msg)
+        print("Feedback to send:", msg)
+        for send_feedback_cb in self.send_feedback_cbs:
+            send_feedback_cb(msg)
 
-    def set_quality_callback(self, cb):
-        self.new_quality_callback = cb
+    def set_feedback_callback(self, cb):
+        self.new_feedback_callback = cb
 
-    def new_quality(self, ts, src, msg):
-        for new_quality_cb in self.new_quality_cbs:
-            new_quality_cb(ts, src, msg)
+    def new_feedback(self, ts, src, msg):
+        for new_feedback_cb in self.new_feedback_cbs:
+            new_feedback_cb(ts, src, msg)
 
     def agents_connected(self):
         return [k for k, v in self.agent_status.items() if v.live and v.live.alive]
@@ -180,7 +180,7 @@ def checkup_mods(measurements, deads, loop):
         while mod.live and mod.live.exception:
             ex, info = mod.live.exception.pop()
             print(mod, "raised", ex.__class__.__name__, ex)
-            if DEBUG:
+            if DEBUG or True:
                 traceback.print_exception(*info)
 
         # try to reconnect disconnected agent interfaces
@@ -192,11 +192,11 @@ def checkup_mods(measurements, deads, loop):
                 mod.stop()
             try:
                 mod.start()
-                if mod.live:
+                if mod.live and not mod.live_async_connect:
                     mod.live.connect(loop, mod.process_line)
             except Exception as e:
-                #print("###", e.__class__.__name__+":", e)
-                if DEBUG:
+                print("###", e.__class__.__name__+":", e)
+                if DEBUG or True:
                     fatal = sys.exc_info()
                     traceback.print_exception(*fatal)
             else:
