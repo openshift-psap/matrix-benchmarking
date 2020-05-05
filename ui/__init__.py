@@ -347,11 +347,16 @@ class Server():
     def _thr_run_dash(self):
         try:
             main_app.run_server(host=LISTEN_ON)
+        except OSError as e:
+            if e.errno == 98:
+                print(f"FATAL: Dash server port already in use. Is this perf_collector already running?")
         except Exception as e:
-            import traceback, sys, os, signal
+            import traceback, sys
             print(f"DASH: {e.__class__.__name__}: {e}")
             traceback.print_exception(*sys.exc_info())
-            os.kill(os.getpid(), signal.SIGINT)
+        finally:
+            import utils.live
+            utils.live.set_quit_signal()
 
     def _thr_run_headless_and_quit(self):
         try:

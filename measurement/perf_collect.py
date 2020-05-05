@@ -54,6 +54,7 @@ class Perf_Collect(measurement.Measurement):
         self.port = cfg.get("port", DEFAULT_PORT)
         self.mode = cfg.get("mode", DEFAULT_MODE)
         self.tables = {}
+        self.sock = None
 
     def create_table(self, line):
         self.__class__.do_create_table(self.experiment, line, self.mode, self.tables)
@@ -122,14 +123,18 @@ class Perf_Collect(measurement.Measurement):
 
     def start(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.settimeout(None)
+        self.sock.settimeout(0.3)
 
         try:
             self.sock.connect((self.host, self.port))
+            self.sock.settimeout(None)
             print(f"Connected to the LocalAgent on {self.host}:{self.port} ({self.mode}).")
-        except Exception as e:
+        except (socket.timeout, ConnectionRefusedError):
             self.sock.close()
             return
+        except Exception as e:
+            self.sock.close()
+            raise e
 
         self.initialize_localagent()
 
@@ -137,8 +142,9 @@ class Perf_Collect(measurement.Measurement):
 
     def stop(self):
         self.live = None
-        self.sock.close()
-        self.sock = None
+        if self.sock:
+            self.sock.close()
+            self.sock = None
 
         try:
             del self.experiment.agent_status[self.mode]
