@@ -130,7 +130,7 @@ def register_feedback(agent):
             msg = msg[:20] + "..." + msg[-20:]
         print(f"Feedback received: '{src}' says '{msg}'")
 
-    agent.processors["feedback_interface"] = process
+    agent.processors["quality_interface"] = process
 
 def register_checkpoints(agent):
     loop_table = agent.experiment.create_table([

@@ -127,6 +127,7 @@ def construct_collector_callbacks(mode, running_as_collector):
 
     config.construct_config_tab_callbacks(dataview_cfg)
 
+
 def construct_matrix_callbacks(mode):
     # Dash doesn't support creating the callbacks AFTER the app is running,
     # can the Matrix callback IDs are dynamic (base on the name of the parameters)
@@ -218,14 +219,12 @@ def construct_dispatcher():
             _key, _, args = pathname[1:].partition(".rec/")
             key = _key + ".rec"
 
-            if args.startswith("pipeline/"):
-                try: db = ui_states[key].DB
-                except KeyError: return html.Div(f"Error: key '{key}' not found, is the viewer loaded?")
-                idx, _, ext = args.partition("/")[-1].partition(".")
 
-                return feedback.get_pipeline(db, int(idx), ext)
-            else:
-                return html.Div(f"Error: invalid url {pathname}")
+            children = feedback.plugin.handle_viewer_req(ui_states, key, args)
+            if children is False:
+                children = html.Div(f"Error: invalid url {pathname}")
+
+            return children
 
         elif pathname.startswith('/matrix'):
             if running_as_collector:
@@ -308,6 +307,12 @@ class Server():
         # ---
         from . import control
         control.configure(self.cfg['mode'], self.cfg['plugin'], self.cfg['machines'])
+
+        from . import feedback
+        feedback.configure(self.cfg['mode'])
+
+        from . import grap
+        graph.configure(self.cfg['mode'])
 
         global LISTEN_ON
         LISTEN_ON = self.cfg["setup"].get('listen_on', None)
