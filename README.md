@@ -69,7 +69,7 @@ for the execution modes. Currently, the main modes are:
 
     guest_agent, server_agent, client_agent
     viewer
-    collector, headless
+    collector, benchmark
 
 Try it
 ------

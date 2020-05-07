@@ -39,7 +39,7 @@ class Exec():
             print(datetime.datetime.now().strftime("%H:%M:%S"), msg)
             Script.messages.insert(0, msg)
 
-    def get_py_fct(self, name):
+    def _get_py_fct(self, name):
         try: return self.py_fct_cache[name]
         except KeyError: pass
 
@@ -56,8 +56,8 @@ class Exec():
 
         return wrap, f"{name}.{fct.__qualname__}"
 
-    def do_py_exec(self, name, args):
-        fct, fct_name = self.get_py_fct(name)
+    def _do_py_exec(self, name, args):
+        fct, fct_name = self._get_py_fct(name)
 
         self.log(f"python-exec: {fct_name}({args})")
 
@@ -68,7 +68,7 @@ class Exec():
 
         if cmd.startswith("/py/"):
             fct_name, _, args = cmd[5:].partition(" ")
-            self.do_py_exec(fct_name, args)
+            self._do_py_exec(fct_name, args)
         else:
             self.log("system-exec:", cmd)
             if self.dry: return
@@ -153,14 +153,14 @@ class Script():
         for yaml_script_desc in all_yaml_desc:
             if not yaml_script_desc: continue
             if yaml_script_desc.get("disabled", False) is True: continue
-            _type = yaml_script_desc.get("_type")
+            _engine = yaml_script_desc.get("_engine")
 
-            plugins_pkg_name = f"plugins.{mode}.scripting.{_type}"
+            plugins_pkg_name = f"plugins.{mode}.scripting.{_engine}"
 
             try:
                 script_mod = importlib.import_module(plugins_pkg_name)
                 script_mod.configure(expe)
-                script_class = getattr(script_mod, _type.capitalize())
+                script_class = getattr(script_mod, _engine.capitalize())
                 script_instance = script_class(yaml_script_desc)
             except Exception as e:
                 print(f"ERROR: Cannot instantiate script plugin ({plugins_pkg_name}) ...", e)
@@ -171,7 +171,7 @@ class Script():
     def __init__(self, yaml_desc):
         self.yaml_desc = yaml_desc
 
-        self.name = yaml_desc["name"]
+        self.name = yaml_desc["_name"]
         self.nb_agents = yaml_desc["_nb_agents"]
 
     def to_id(self):

@@ -270,8 +270,8 @@ def construct_dispatcher():
             return [msg, index]
 
 class Server():
-    def __init__(self, expe=None, headless=False, cfg={}):
-        thr_fct = self._thr_run_headless_and_quit if headless \
+    def __init__(self, expe=None, benchmark=False, cfg={}):
+        thr_fct = self._thr_run_benchmark_and_quit if benchmark \
             else self._thr_run_dash
 
         self.thr = threading.Thread(target=thr_fct)
@@ -282,13 +282,13 @@ class Server():
 
         self.expe = expe
 
-        if headless:
-            assert expe is not None, "No expe received in headless collector mode ..."
+        if benchmark:
+            assert expe is not None, "No expe received in benchmark collector mode ..."
 
         if expe:
-            self._init_collector(expe, headless)
+            self._init_collector(expe, benchmark)
 
-        if not headless:
+        if not benchmark:
             self._init_webapp(expe)
 
     def _configure(self):
@@ -332,12 +332,12 @@ class Server():
     def periodic_checkup(self):
         pass
 
-    def _init_collector(self, expe, headless=False):
+    def _init_collector(self, expe, benchmark=False):
         global running_as_collector
         running_as_collector = True
         ui_state = ui_states["collector"] = _UIState("collector", expe, viewer_mode=False)
 
-        if not headless:
+        if not benchmark:
             ui_state.layout = construct_layout(ui_state)
             UIState()
 
@@ -363,19 +363,19 @@ class Server():
             import utils.live
             utils.live.set_quit_signal()
 
-    def _thr_run_headless_and_quit(self):
+    def _thr_run_benchmark_and_quit(self):
         try:
-            self._thr_run_headless()
+            self._thr_run_benchmark()
         except Exception as e:
             import traceback, sys
-            print(f"HEADLESS: {e.__class__.__name__}: {e}")
+            print(f"BENCHMARK: {e.__class__.__name__}: {e}")
             traceback.print_exception(*sys.exc_info())
             raise e
         finally:
             import signal, os
             os.kill(os.getpid(), signal.SIGTERM)
 
-    def _thr_run_headless(self):
+    def _thr_run_benchmark(self):
         from . import script
 
         class message_to_print():
@@ -389,7 +389,7 @@ class Server():
 
         script.Script.load(self.cfg["mode"], self.expe)
         try:
-            script_name = self.cfg['headless']['script']
+            script_name = self.cfg['benchmark']['script']
             script_to_run = script.Script.all_scripts[script_name]
         except KeyError:
             print(f"ERROR: script not found '{script_name}'...")

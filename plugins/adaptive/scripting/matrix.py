@@ -216,7 +216,7 @@ class Matrix(script.Script):
         exe.expe_cnt.total += nb_script_expe * nb_settings_params_expe
 
         context.expe = expe
-        context.script_name = self.yaml_desc["name"]
+        context.script_name = self.yaml_desc["_name"]
         context.expe_dir = f"{script.RESULTS_PATH}/{context.expe}"
         context.results_filename = f"{context.expe_dir}/{context.script_name}.csv"
 

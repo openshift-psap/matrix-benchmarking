@@ -1,9 +1,6 @@
-_type: matrix
+_engine: matrix
 _nb_agents: 1
-
-name: matrix
-
-record_time: 40
+_name: matrix
 
 run:
   - current

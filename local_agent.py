@@ -125,11 +125,11 @@ def prepare_cfg(mode_key, agent_key):
             cfg["measurements"].append(measure)
 
     cfg["run_as_collector"] = agents_cfg[agent_key].get("run_as_collector", False)
-    cfg["run_headless"] = agents_cfg[agent_key].get("run_headless", False)
+    cfg["run_as_benchmark"] = agents_cfg[agent_key].get("run_as_benchmark", False)
     cfg["run_as_viewer"] = agents_cfg[agent_key].get("run_as_viewer", False)
 
-    if cfg["run_as_viewer"] and cfg["run_headless"]:
-        print(f"ERROR: viewer cannot run headless (key: '{agent_key}')")
+    if cfg["run_as_viewer"] and cfg["run_as_benchmark"]:
+        print(f"ERROR: viewer cannot run as benchmark & viewer (key: '{agent_key}')")
         raise RuntimeError()
 
     if cfg["run_as_viewer"]:
@@ -138,7 +138,9 @@ def prepare_cfg(mode_key, agent_key):
     try: cfg["port_to_collector"] = agents_cfg[agent_key]["port_to_collector"]
     except KeyError: pass # ignore here, not used for collector/viewer
 
-    if cfg["run_headless"]: cfg["headless"] = agents_cfg[agent_key]["headless"]
+    if cfg["run_as_benchmark"]:
+        cfg["run_as_collector"] = True
+        cfg["benchmark"] = agents_cfg[agent_key]["benchmark"]
 
     machines_key = agents_cfg["setup"]["machines"]
     cfg["machines"] = agents_cfg["machines"][machines_key]
@@ -210,7 +212,7 @@ def checkup_mods(measurements, deads, loop):
 
 def run(cfg):
     run_as_collector = cfg["run_as_collector"]
-    run_headless = cfg["run_headless"]
+    run_as_benchmark = cfg["run_as_benchmark"]
     run_as_viewer = cfg["run_as_viewer"]
 
     loop = asyncio.get_event_loop()
@@ -231,7 +233,7 @@ def run(cfg):
     if run_as_collector or run_as_viewer:
         import ui # load ui only in collector/viewer modes
         ui.AgentExperimentClass = AgentExperiment
-        server = ui.Server(expe, headless=run_headless, cfg=cfg)
+        server = ui.Server(expe, benchmark=run_as_benchmark, cfg=cfg)
 
     else: # run as agent
         port = cfg["port_to_collector"]

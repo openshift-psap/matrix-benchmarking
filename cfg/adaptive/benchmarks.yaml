@@ -1,7 +1,7 @@
-_type: matrix
+_engine: matrix
 _nb_agents: 3
 
-name: matrix
+_name: matrix
 
 record_time: 40
 
