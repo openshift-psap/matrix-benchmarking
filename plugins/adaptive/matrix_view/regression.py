@@ -93,7 +93,7 @@ class Regression():
                 _x = value(self.x_key)
                 _y = value(self.y_key)
             except KeyError:
-                print(f"{self.x_key} or {self.y_key} missing values for ", key)
+                print(f"{self.x_key} or {self.y_key} missing values for ", entry.key)
                 continue
 
             legend_key = f"{self.key_var}={params[self.key_var]}"

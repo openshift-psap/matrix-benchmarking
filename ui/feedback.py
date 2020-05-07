@@ -1,8 +1,10 @@
+from collections import defaultdict
+import importlib
+
 import dash
 from dash.dependencies import Output, Input, State
 import dash_html_components as html
 import dash_core_components as dcc
-from collections import defaultdict
 
 from . import InitialState, UIState
 

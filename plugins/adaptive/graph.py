@@ -1,3 +1,5 @@
+from ui import UIState
+
 class GraphFormat():
 
     @staticmethod

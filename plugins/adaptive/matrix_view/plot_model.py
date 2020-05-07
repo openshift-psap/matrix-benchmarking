@@ -271,7 +271,10 @@ class PlotModel(ModelGuestCPU):
         value_units = f" (in {TableStats.stats_by_name[actual_key].unit})"
         for entry in matrix_view.all_records(params, param_lists):
             estimated_value = self.estimate_value(params)
-            actual_value = entry.stats[actual_key].value
+            try:
+                actual_value = entry.stats[actual_key].value
+            except KeyError: continue
+
             dist = estimated_value - actual_value
 
             x = [Regression.res_in_mpix(params['resolution'])] * 2

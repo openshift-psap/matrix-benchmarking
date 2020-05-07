@@ -121,7 +121,7 @@ def register_feedback(agent):
             msg = msg[:20] + "..." + msg[-20:]
         print(f"Feedback received: '{src}' says '{msg}'")
 
-    agent.processors["feedback_interface"] = process
+    agent.processors["quality_interface"] = process
 
 
 def register_agent_info(agent):
@@ -227,7 +227,7 @@ def register_feedback_setting(agent):
         else:
             print(f"{agent.mode}: feedback setting '{entry.msg}' not recognized...")
 
-    agent.processors["feedback_setting"] = process
+    agent.processors["quality_setting"] = process
 
 def register_guest_frame(agent):
     capture_table = agent.experiment.create_table([

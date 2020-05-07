@@ -296,7 +296,8 @@ class Server():
 
         from . import graph
         global dataview_cfg
-        dataview_cfg = graph.DataviewCfg(utils.yaml.load_multiple(f"cfg/{self.cfg['mode']}/dataview.yaml"))
+
+        dataview_cfg = graph.configure(self.cfg['mode'])
 
         global driver_settings_cfg
         driver_settings_cfg  = utils.yaml.load_multiple(f"cfg/{self.cfg['mode']}/driver_settings.yaml")
@@ -310,9 +311,6 @@ class Server():
 
         from . import feedback
         feedback.configure(self.cfg['mode'])
-
-        from . import grap
-        graph.configure(self.cfg['mode'])
 
         global LISTEN_ON
         LISTEN_ON = self.cfg["setup"].get('listen_on', None)

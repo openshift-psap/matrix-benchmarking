@@ -2,6 +2,7 @@ import datetime
 import json
 import statistics
 from collections import defaultdict
+import importlib
 
 import utils.yaml
 
@@ -17,6 +18,8 @@ def configure(mode):
     except Exception as e:
         print(f"ERROR: Cannot load control plugin package ({plugin_pkg_name}) ...")
         raise e
+    dataview_yaml = utils.yaml.load_multiple(f"cfg/{mode}/dataview.yaml")
+    return DataviewCfg(dataview_yaml)
 
 class DB():
     def __init__(self):
@@ -190,12 +193,15 @@ class FieldSpec():
         self.modify = lambda y,x:y # will be modified if necessary
 
         if self.field_name == "setting":
-            self.modify = GraphFormat.get_setting_modifier(modif)
+            self.modify = plugin.GraphFormat.get_setting_modifier(modif)
             return
 
         if not modif: return
 
-        plugin_graph_format = getattr(plugin, GraphFormat, False)
+        try: plugin_graph_format = plugin.GraphFormat
+        except AttributeError:
+            plugin_graph_format = False
+
         modifiers = []
         try:
             for mod in modif:
