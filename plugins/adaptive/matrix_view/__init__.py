@@ -140,13 +140,16 @@ def parse_data(filename, reloading=False):
 
         entry.stats = {}
         for table_stat in TableStats.all_stats:
-            register = False
-            for table_def, (table_name, table_rows) in entry.tables.items():
-                if (table_stat.table != table_name and not
-                    (table_stat.table.startswith("?.") and table_name.endswith(table_stat.table[1:]))):
-                    continue
-                entry.stats[table_stat.name] = table_stat.process(table_def, table_rows)
-                register = True
+
+            if isinstance(table_stat, TableStats):
+                register = False
+                for table_def, (table_name, table_rows) in entry.tables.items():
+                    if (table_stat.table != table_name and not
+                        (table_stat.table.startswith("?.") and table_name.endswith(table_stat.table[1:]))):
+                        continue
+                    entry.stats[table_stat.name] = table_stat.process(table_def, table_rows)
+                    register = True
+            else: register = True
 
             if register:
                 Matrix.properties["stats"].add(table_stat.name)
