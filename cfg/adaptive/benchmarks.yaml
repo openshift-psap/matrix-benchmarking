@@ -7,47 +7,31 @@ record_time: 40
 
 script_config:
   display:
+    web_still: https://news.ycombinator.com/
     webgl_wipeout: https://phoboslab.org/wipeout/
     webgl_cubemap: https://webglsamples.org/dynamic-cubemap/dynamic-cubemap.html
-    web_still: https://news.ycombinator.com/
+    webgl_aquarium: https://webglsamples.org/aquarium/aquarium.html
+    webgl_lots_of_objects: https://webglsamples.org/google-io/2011/lots-of-objects-google.html
+    webgl_sprites: https://webglsamples.org/sprites/index.html
 
 run:
-  - _nv-plug, _vaapi, _current
-  - _study_fps.i965
-  - _study_resolution
-  - _study_bitrate
-  - _study_bitrate
-  - _study_kfr
-  - _study_display
-  - _study_min_max_frequency
-  - _study_new
-  - _intel_vp8
-  - _study_encode
-  - study_min_frequency
+  - study_fps
+  - study_resolution
+  - study_bitrate
+  - study_kfr
+  - study_display
 
 expe:
-  study_fps.i965:
+  study_fps:
     driver: gst.vp8.vaapivp8enc
-
     settings:
       framerate: 20, 25, 30, 35, 40, 45, 50, 120
       bitrate: 8000, 16000, 32000
       keyframe-period: 128
       rate-control: cbr
-
     scripts:
       display: webgl_wipeout, img_lady_1920
-      #resolution: 1920x1080, 1280x720
-
-  intel_vp8:
-    driver: gst.vp8.vaapivp8enc
-    settings:
-      framerate: 20, 30, 40
-      bitrate: 8000, 16000, 32000
-      keyframe-period: 128, 512, 300
-      rate-control: cbr
-    scripts:
-      display: img_lady_1920, webgl_wipeout
+      resolution: 1920x1080, 1280x720
 
   study_encode:
     driver: gst.vp8.vaapivp8enc
@@ -59,27 +43,6 @@ expe:
     scripts:
       display: img_lady_1920
       encode_load: none, ball, snow
-
-  study_fps.iHD:
-    driver: gst.vp8.vaapivp8enc
-    settings:
-      framerate: 20, 25, 30, 35, 40, 45, 50, 120
-      bitrate: 8000, 16000, 32000
-      keyframe-period: 128
-      rate-control: cbr
-    scripts:
-      display: webgl_wipeout, img_lady_1920
-      resolution: 1920x1080 #, 1280x720
-
-  study_new:
-    driver: gst.vp8.vaapivp8enc
-    settings:
-      framerate: 30, 40
-      bitrate: 16000
-      keyframe-period:  128, 256
-      rate-control: cbr
-    scripts:
-      display: img_lady_1920, webgl_wipeout
 
   study_resolution:
     driver: gst.vp8.vaapivp8enc
@@ -95,13 +58,24 @@ expe:
   study_bitrate:
     driver: gst.vp8.vaapivp8enc
     settings:
-      framerate: 30 #, 40
-      bitrate: 2000, 3000, 3500, 4000, 5000, 6000, 7000, 8000, 8250, 8500, 8750, 9000, 10000, 11000, 12000, 16000, 24000, 32000, 48000, 64000
+      framerate: 30, 40
+      bitrate: 2000, 4000, 8000, 16000, 24000, 32000, 48000, 64000
       keyframe-period: 128
       rate-control: cbr
     scripts:
-      display: img_lady_1920 #, webgl_wipeout
+      display: img_lady_1920, webgl_wipeout
       resolution: 1920x1080
+
+  study_display:
+    driver: gst.vp8.vaapivp8enc
+    settings:
+      framerate: 30, 40
+      gst.prop=bitrate: 16000
+      gst.prop=keyframe-period: 256
+      gst.prop=rate-control: cbr
+    scripts:
+      display: webgl_wipeout, webgl_cubemap, img_lady_1920, img_lady_1280, web_still, vlc_wipeout, vlc_primordial, vlc_mix-quick, vlc_google_map
+
 
   study_kfr:
     driver: gst.vp8.vaapivp8enc
@@ -112,17 +86,6 @@ expe:
       rate-control: cbr
     scripts:
       display: webgl_wipeout, img_lady_1920
-      resolution: 1920x1080
-
-  study_bitrate_0:
-    driver: gst.vp8.vaapivp8enc
-    settings:
-      framerate: 30, 40
-      bitrate: 0
-      keyframe-period: 256
-      rate-control: cbr
-    scripts:
-      display: webgl_wipeout, webgl_cubemap, img_lady_1920, img_lady_1280, web_still, vlc_wipeout, vlc_mix-quick, vlc_google_map, vlc_primordial_soup
       resolution: 1920x1080
 
   study_min_frequency:
@@ -137,51 +100,6 @@ expe:
       min_frequency: 350, 500, 800, 1000, 1200
       display: webgl_wipeout, img_lady_1920
       resources: normal
-
-  study_min_max_frequency:
-    driver: gst.vp8.vaapivp8enc
-    settings:
-      framerate: 100
-      bitrate: 8000, 16000
-      keyframe-period: 256
-      rate-control: cbr
-    scripts:
-      resolution: 1920x1080
-      min_max_frequency: 350, 500, 800, 1000, 1200
-      display: webgl_wipeout, img_lady_1920, vlc_wipeout
-
-  gst.nvenc:
-    driver: gst.h264.nvh264enc
-    settings:
-      bitrate: 32000
-      gop-size:  30, 300, -1
-      rc-mode: cbr
-      framerate: 20, 30, 40
-    scripts:
-      display: img_lady_1920, webgl_wipeout
-      resolution: 1920x1080
-
-  vaapi:
-    driver: gst.vp8.vaapivp8enc
-    settings:
-      framerate: 20, 30, 40
-      bitrate: 8000, 16000, 32000
-      rate-control: cbr
-      keyframe-period: 128, 512
-    scripts:
-      display: img_lady_1920, webgl_wipeout
-      resolution: 1920x1080
-
-  nv-plug:
-    driver: nv.plug.h264
-    settings:
-      nv.ratecontrol: cbr
-      nv.max-bitrate: 8, 16, 32, 64
-      nv.gop: 0
-      nv.blocking: 0
-    scripts:
-      display: img_lady_1920, webgl_wipeout
-      resolution: 1920x1080
 
 scripts:
   setup:
