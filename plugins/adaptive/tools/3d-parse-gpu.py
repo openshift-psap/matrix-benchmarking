@@ -56,7 +56,7 @@ for equa in EQUATIONS.split("\n"):
     if z_title is None:
         z_title = z_var
     elif z_var != z_title:
-        print("Found different z params ... {z_title} and {z_var}")
+        print(f"Found different z params ... {z_title} and {z_var}")
         exit(1)
 
     y_var, y_val = params.split("=")
