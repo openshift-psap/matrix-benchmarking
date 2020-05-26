@@ -15,11 +15,17 @@ def configure(mode):
     global plugin
     plugin_pkg_name = f"plugins.{mode}.graph"
     try: plugin = importlib.import_module(plugin_pkg_name)
+    except ModuleNotFoundError:
+        return
     except Exception as e:
         print(f"ERROR: Cannot load control plugin package ({plugin_pkg_name}) ...")
         raise e
-    dataview_yaml = utils.yaml.load_multiple(f"cfg/{mode}/dataview.yaml")
-    return DataviewCfg(dataview_yaml)
+    try:
+        dataview_yaml = utils.yaml.load_multiple(f"cfg/{mode}/dataview.yaml")
+        return DataviewCfg(dataview_yaml)
+    except FileNotFoundError:
+        return
+
 
 class DB():
     def __init__(self):

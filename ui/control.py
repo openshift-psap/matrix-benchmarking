@@ -19,6 +19,8 @@ def configure(mode, plugin_cfg, machines):
     plugin_pkg_name = f"plugins.{mode}.control"
 
     try: plugin_control = importlib.import_module(plugin_pkg_name)
+    except ModuleNotFoundError:
+        return
     except Exception as e:
         print(f"ERROR: Cannot load control plugin package ({plugin_pkg_name}) ...")
         raise e

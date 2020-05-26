@@ -1,4 +1,4 @@
-import types, os, itertools
+import types, os, itertools, glob
 
 from ui.matrix_view import Matrix
 from ui import script
@@ -57,7 +57,19 @@ def rewrite_properties(params_dict):
 
 key_order = None
 
-def parse_data(filename, reloading=False):
+def parse_data():
+    import sys
+    from . import script
+
+    expe_arg = sys.argv[-1]
+    what = expe_arg if not "/" in expe_arg \
+        and os.path.exists(f"{script.RESULTS_PATH}/{expe_arg}/matrix.csv") \
+        else "*"
+
+    for matrix_result in glob.glob(f"{script.RESULTS_PATH}/{what}/matrix.csv"):
+        parse_file(matrix_result)
+
+def parse_file(filename, reloading=False):
     if not os.path.exists(filename): return
     directory = filename.rpartition(os.sep)[0]
 

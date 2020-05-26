@@ -223,7 +223,7 @@ class Matrix(script.Script):
         exe.log("Loading previous matrix results from", context.results_filename)
 
 
-        matrix_view.parse_data(context.results_filename, reloading=True)
+        matrix_view.parse_file(context.results_filename, reloading=True)
         exe.log("Loading previous matrix results: done")
 
         # do fail in drymode if we cannot create the directories

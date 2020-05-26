@@ -142,12 +142,16 @@ def prepare_cfg(mode_key, agent_key):
         cfg["run_as_collector"] = True
         cfg["benchmark"] = agents_cfg[agent_key]["benchmark"]
 
-    machines_key = agents_cfg["setup"]["machines"]
-    cfg["machines"] = agents_cfg["machines"][machines_key]
+    try:
+        machines_key = agents_cfg["setup"]["machines"]
+    except KeyError:
+        cfg["machines"] = {}
+    else:
+        cfg["machines"] = agents_cfg["machines"][machines_key]
 
-    cfg["plugin"] = agents_cfg["plugins"].get(mode_key, {})
+    cfg["plugin"] = agents_cfg.get("plugins", {}).get(mode_key, {})
 
-    cfg["setup"] = agents_cfg["setup"]
+    cfg["setup"] = agents_cfg.get("setup", {})
 
     return cfg
 

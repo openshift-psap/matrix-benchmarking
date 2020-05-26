@@ -45,6 +45,14 @@ class TableStats():
         return self.id_name
 
     @classmethod
+    def Custom(clazz, *args, **kwargs):
+        obj = clazz(*args, **kwargs)
+        def process(table_def, rows):
+            raise RuntimeError("Should not be called ...")
+        obj.do_process = process
+        return obj
+
+    @classmethod
     def Average(clazz, *args, **kwargs):
         obj = clazz(*args, **kwargs)
         obj.do_process = obj.process_average
@@ -283,6 +291,9 @@ class TableStats():
         return [*msg, graph]
 
     def props_to_hovergraph(self, entry):
+        if not hasattr(entry, "tables"):
+            return ""
+
         for table_def, (table_name, table_rows) in entry.tables.items():
             if (table_name != self.table and
                 not (self.table.startswith("?.") and table_name.endswith(self.table[1:]))):
@@ -330,9 +341,19 @@ class TableStats():
         if not entry:
             return None, f"Error: record not found in matrix ..."
 
-        link = html.A("view", target="_blank", href="/viewer/"+entry.linkname)
+        msg = [f"{', '.join(props)} ⇒ {value}"]
+        if hasattr(entry, "linkname") or hasattr(entry, "link"):
+            if hasattr(entry, "link"):
+                link = entry.link
+            else:
+                link = "/viewer/"+entry.linkname
 
-        return entry, [f"{entry.key.replace('_', ', ')} 🡆 {value} (", link, ")"]
+            msg += [" (", html.A("view", target="_blank", href=link), ")"]
+
+        if hasattr(entry, "hover_text"):
+            msg += [html.Br()] + entry.hover_text
+
+        return entry, msg
 
     def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
         from .matrix_view import natural_keys

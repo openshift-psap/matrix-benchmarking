@@ -120,7 +120,11 @@ def construct_collector_callbacks(mode, running_as_collector):
     from . import feedback, control, live, config
 
     feedback.construct_feedback_callbacks()
-    control.construct_driver_control_callbacks(driver_settings_cfg)
+    if driver_settings_cfg:
+        control.construct_driver_control_callbacks(driver_settings_cfg)
+
+    if not dataview_cfg: return
+
     live.construct_live_refresh_callbacks(dataview_cfg)
 
     if not running_as_collector: return
@@ -132,18 +136,10 @@ def construct_matrix_callbacks(mode):
     # Dash doesn't support creating the callbacks AFTER the app is running,
     # can the Matrix callback IDs are dynamic (base on the name of the parameters)
     # So at the moment, only one file can be loaded, here in the startup...
-    import glob
-    from . import script
-
-    expe_arg = sys.argv[-1]
-    what = expe_arg if not "/" in expe_arg \
-        and os.path.exists(f"{script.RESULTS_PATH}/{expe_arg}/matrix.csv") \
-        else "*"
 
     matrix_view.configure(mode)
 
-    for matrix_result in glob.glob(f"{script.RESULTS_PATH}/{what}/matrix.csv"):
-        matrix_view.parse_data(matrix_result)
+    matrix_view.parse_data()
 
     matrix_view.build_callbacks(main_app)
 
@@ -300,7 +296,10 @@ class Server():
         dataview_cfg = graph.configure(self.cfg['mode'])
 
         global driver_settings_cfg
-        driver_settings_cfg  = utils.yaml.load_multiple(f"cfg/{self.cfg['mode']}/driver_settings.yaml")
+        try:
+            driver_settings_cfg  = utils.yaml.load_multiple(f"cfg/{self.cfg['mode']}/driver_settings.yaml")
+        except FileNotFoundError:
+            pass
 
         global machines
         machines = self.cfg['machines']

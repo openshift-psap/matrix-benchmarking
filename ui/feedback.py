@@ -14,6 +14,8 @@ def configure(mode):
     global plugin
     plugin_pkg_name = f"plugins.{mode}.feedback"
     try: plugin = importlib.import_module(plugin_pkg_name)
+    except ModuleNotFoundError:
+        return
     except Exception as e:
         print(f"ERROR: Cannot load control plugin package ({plugin_pkg_name}) ...")
         raise e
@@ -40,6 +42,8 @@ class Feedback():
         UIState().DB.feedback[:] = []
 
 def construct_feedback_callbacks(url=None):
+    if not plugin: return
+
     plugin.construct_collector_callbacks(UIState.app)
 
     @UIState.app.callback(Output("feedback-box", 'children'),

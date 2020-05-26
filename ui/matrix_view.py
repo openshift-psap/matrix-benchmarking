@@ -51,7 +51,7 @@ class Matrix():
 
     broken_files = []
 
-def parse_data(_):
+def parse_data():
     raise RuntimeError("matrix_view is not configured ...")
 
 def all_records(_, __):
@@ -74,7 +74,8 @@ def configure(mode):
     all_records = plot.all_records
     get_record = plot.get_record
 
-    plot.register()
+    if hasattr(plot, "register"):
+        plot.register()
 
 def get_permalink(args, full=False):
     params = dict(zip(Matrix.properties.keys(), args[:len(Matrix.properties)]))
