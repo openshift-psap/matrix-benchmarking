@@ -280,7 +280,7 @@ class TableStats():
         try: xaxis_name = figure['layout'][xaxis]['title']['text']
         except KeyError: xaxis_name = ''
 
-        props = " ".join([click_info.x, click_info.legend, xaxis_name]).split()
+        props = ", ".join([click_info.x, click_info.legend, xaxis_name]).split(", ")
         value = f"{yaxis}: {click_info.y:.2f}"
 
         entry, msg = TableStats.props_to_hoverlink(variables, props, value)
@@ -403,7 +403,7 @@ class TableStats():
                 print(f"Stats not found: {self.name} for entry '{entry.key}' ")
                 continue
 
-            x_key = " ".join([f'{v}={params[v]}' for v in reversed(second_vars) if v != subplots_var])
+            x_key = ", ".join([f'{v}={params[v]}' for v in reversed(second_vars) if v != subplots_var])
             legend_name = f"{legend_var}={params[legend_var]}"
             legend_key = (legend_name, params[subplots_var] if subplots_var else None)
 

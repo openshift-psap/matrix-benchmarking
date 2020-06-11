@@ -312,7 +312,7 @@ def build_callbacks(app):
         try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
         except IndexError: triggered_id = None # nothing triggered the script (on multiapp load)
 
-        current = current_str.split(" ") if current_str else list(Matrix.properties.keys())
+        current = current_str.split("|") if current_str else list(Matrix.properties.keys())
 
         if triggered_id == "property-order.n_clicks":
             current.insert(0, current.pop())
@@ -324,7 +324,7 @@ def build_callbacks(app):
         try: current.remove("stats")
         except ValueError: pass
 
-        return " ".join(current)
+        return "|".join(current)
 
     @app.callback(
         Output('graph-hover-info', 'children'),
@@ -450,7 +450,7 @@ def build_callbacks(app):
                     cfg[k] = v
 
                 order_str = args[-1]
-                var_order = order_str.split(" ")+['stats'] if order_str \
+                var_order = order_str.split("|")+['stats'] if order_str \
                     else list(Matrix.properties.keys())
 
                 params = dict(zip(Matrix.properties.keys(), args[:len(Matrix.properties)]))
