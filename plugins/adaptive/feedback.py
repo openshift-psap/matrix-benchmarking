@@ -1,5 +1,8 @@
 from collections import defaultdict
 
+import dash_html_components as html
+import dash_core_components as dcc
+
 import ui
 import ui.feedback
 
@@ -15,7 +18,7 @@ def handle_new_feedback(msg, db):
         ui.feedback.Feedback.add_feedback_to_plots(msg)
         return
 
-    if not msg.startswith("#pipeline:"):
+    if msg.startswith("#pipeline:"):
         db.pipelines[msg] = db.pipeline_idx
         db.pipelines_reversed[db.pipeline_idx] = msg
         db.pipeline_idx += 1
@@ -52,7 +55,7 @@ def process_feedback(ts, src, msg, db):
         return False
 
     pipeline_idx = db.pipelines[msg]
-    link = f"/{UIState().url}/pipeline/{pipeline_idx}"
+    link = f"/{ui.UIState().url}/pipeline/{pipeline_idx}"
 
     return [src, f": Pipeline #{pipeline_idx}  ({len(msg)} chars) ",
             html.A("[dot]", target="_blank", href=link+".dot"),
