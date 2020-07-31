@@ -29,8 +29,8 @@ class TableStats():
         self.name = name
         self.table = table
         self.field = field
-        self.unit = unit
         self.fmt = fmt
+        self.unit = unit
         self.divisor = divisor
         self.kwargs = kwargs
 
@@ -52,6 +52,18 @@ class TableStats():
         obj.do_process = process
         return obj
 
+    @classmethod
+    def Value(clazz, *args, **kwargs):
+        obj = clazz(*args, **kwargs)
+        obj.do_process = obj.process_value_dev
+        return obj
+
+    @classmethod
+    def ValueDev(clazz, *args, **kwargs):
+        obj = clazz(*args, **kwargs)
+        obj.do_process = obj.process_value_dev
+        return obj
+    
     @classmethod
     def Average(clazz, *args, **kwargs):
         obj = clazz(*args, **kwargs)
@@ -183,6 +195,24 @@ class TableStats():
 
         return (values_total / nb_frames) / self.divisor, 0
 
+    def process_value_dev(self, table_def, rows):
+        row_id = table_def.partition("|")[2].split(";").index(self.field)
+
+        if not rows:
+            return None, None, None
+        
+        if len(rows) != 1:
+            print(f"WARNING: too many values in {table_def}+{self.field}: {values}")
+
+        dev_field = self.kwargs.get('dev_field')
+        dev_value = 0
+        
+        if dev_field:
+            dev_row_id = table_def.partition("|")[2].split(";").index(dev_field)
+            dev_value = rows[0][dev_row_id]
+
+        return rows[0][row_id], dev_value
+    
     def process_average(self, table_def, rows):
         row_id = table_def.partition("|")[2].split(";").index(self.field)
         values = [row[row_id] for row in rows if row[row_id] is not None]
