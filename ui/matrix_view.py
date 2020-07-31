@@ -2,6 +2,7 @@ from collections import defaultdict
 import types, importlib
 import urllib.parse
 import re
+import datetime
 
 import dash
 import dash_core_components as dcc
@@ -455,7 +456,7 @@ def build_callbacks(app):
 
                 params = dict(zip(Matrix.properties.keys(), args[:len(Matrix.properties)]))
 
-                stats_values = params["stats"]
+                stats_values = params.get("stats")
                 if not stats_values:
                     return {}, ""
 
