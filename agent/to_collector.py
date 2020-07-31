@@ -2,6 +2,9 @@ import threading
 import socket
 import select
 import struct
+import sys
+import traceback
+
 import measurement
 
 force_recheck = None
@@ -76,7 +79,16 @@ class Server():
             if not c: return False
 
             if c == "\0":
-                self.thr_feedback_to_agent("".join(self.feedback_buffer))
+                try:
+                    self.thr_feedback_to_agent("".join(self.feedback_buffer))
+                except Exception as e:
+                    print("ERROR: failed to process feedback buffer")
+                    try: print(">>", ''.join(self.feedback_buffer))
+                    except Exception: pass
+                    
+                    info = sys.exc_info()
+                    traceback.print_exception(*info)
+                    
                 self.feedback_buffer[:] = []
             else:
                 self.feedback_buffer.append(c)
