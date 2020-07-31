@@ -1,0 +1,8 @@
+Laptop System:
+  Specfem CPU:
+    table: laptop.local-pid
+    x: time | as_timestamp
+    y: local-pid.cpu
+    y2: local-pid.cpu_system
+    y3: local-pid.cpu_user
+    

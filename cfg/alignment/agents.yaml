@@ -1,0 +1,47 @@
+setup:
+  machines: local
+  listen_on: localhost
+
+machines:
+  local:
+    worker_node: localhost
+
+plugins:
+  alignment:
+    bin_path: /home/kevin/projects/math-library-optimizations/src/libgomp
+    
+# ---
+measurement_sets:
+  all:
+    - AlignmentAgentInterface:
+        port: 1234
+        mode: worker
+        wait_collector: true
+
+  collector:
+    - Perf_Collect:
+        port: 1230
+        host: worker_node
+        mode: worker
+
+# --- #
+
+worker:
+  port_to_collector: 1230
+  measurement_sets:
+    - all
+
+collector:
+  run_as_collector: True
+  measurement_sets:
+    - collector
+
+viewer:
+  run_as_viewer: True
+
+benchmark:
+  run_as_benchmark: True
+  measurement_sets:
+    - collector
+  benchmark:
+    script: matrix

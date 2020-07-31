@@ -1,0 +1,15 @@
+Alignment:
+  Threads:
+    type: int[1:8:1]
+    desc: "Number of OpenMP threads running concurrently"
+    default: 4
+
+  Matrix_Size:
+    type: int
+    desc: "Number of elements in one dimension of the 3D matrix"
+    default: 1000
+
+  Alignment:
+    type: enum
+    values: 8byte, cache_line, page_size, none
+    desc: "Alignment of the matrix cells"

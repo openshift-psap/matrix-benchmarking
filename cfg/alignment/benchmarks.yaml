@@ -1,0 +1,27 @@
+_engine: matrix
+_nb_agents: 1
+_name: matrix
+
+run:
+  - current
+
+expe:   
+  current:
+    driver: Alignment
+
+    settings:
+      alignment: double, 8byte, cache_line, page_size, none
+      matrix_size: 2048, 3000
+      threads:  4, 8
+      num_iterations: 5
+      
+    scripts:
+
+scripts:
+  setup:
+
+  teardown:
+
+  display:
+    before:
+    after:
