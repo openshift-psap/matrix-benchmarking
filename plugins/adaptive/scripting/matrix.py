@@ -5,7 +5,8 @@ import types
 import dash_html_components as html
 
 from ui import script
-from ui import matrix_view
+from ui import matrix_view as ui_matrix_view
+import plugins.adaptive.matrix_view as adaptive_matrix_view
 
 do_at_exit = {}
 def exit_cleanup():
@@ -112,7 +113,7 @@ class Matrix(script.Script):
         for settings_items in itertools.product(*settings_matrix):
             settings_dict = dict(settings_items)
 
-            settings_str = ";".join([f"{k}={v}" for k, v in settings_items])
+            settings_str = ";".join([f"{k.replace('_', '-')}={v.replace('_', '-')}" for k, v in settings_items])
 
             current_key = settings_str.replace(';', "_")
 
@@ -126,7 +127,7 @@ class Matrix(script.Script):
             exe.log("> "+file_key)
 
             key = f"experiment={context.expe.replace('_', '-')}_{file_key}"
-            try: previous_entry = matrix_view.Matrix.entry_map[key]
+            try: previous_entry = ui_matrix_view.Matrix.entry_map[key]
             except KeyError: pass # no previous entry, run!
             else:
                 exe.log(f">> already recorded, skipping | {previous_entry.filename}")
@@ -221,9 +222,7 @@ class Matrix(script.Script):
         context.results_filename = f"{context.expe_dir}/{context.script_name}.csv"
 
         exe.log("Loading previous matrix results from", context.results_filename)
-
-
-        matrix_view.parse_file(context.results_filename, reloading=True)
+        adaptive_matrix_view.parse_file(context.results_filename, reloading=True)
         exe.log("Loading previous matrix results: done")
 
         # do fail in drymode if we cannot create the directories
