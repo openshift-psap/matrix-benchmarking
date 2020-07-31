@@ -172,6 +172,9 @@ def load_measurements(cfg, expe):
             break
         else: raise RuntimeError(f"Cannot find measurement module '{name}' ...")
 
+        if hasattr(mod, "configure"):
+            mod.configure(cfg['plugin'], cfg['machines'])
+            
         clazz = getattr(mod, name)
         measurements.append(clazz(options, expe))
 
