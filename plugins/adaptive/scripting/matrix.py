@@ -202,7 +202,7 @@ class Matrix(script.Script):
 
         customized_matrix.add_custom_properties(self.yaml_desc, context.params)
 
-        settings_matrix = [[(name, value) for value in str(values).split(", ")]
+        settings_matrix = [[(name, value) for value in (values if isinstance(values, list) else str(values).split(", "))]
                            for name, values in (yaml_expe.get("settings") or {}).items()]
 
         def values_to_list(values):
