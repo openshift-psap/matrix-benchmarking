@@ -17,49 +17,73 @@ DATA_DIR="/data/kevin"
 BUILD_DIR="$DATA_DIR/specfem3d_globe"
 SHARED_DIR="/mnt/fsx/kevin"
 SHARED_SPECFEM="$SHARED_DIR/specfem"
+PODMAN_BASE_IMAGE="quay.io/kpouget/specfem"
 """
 
 # ssh -N -L localhost:1230:f12-h17-b01-5039ms.rdu2.scalelab.redhat.com:1230 root@f12-h17-b01-5039ms.rdu2.scalelab.redhat.com
 
 BUILD_AND_RUN_SH = """
-MPIRUN_CMD="mpirun --report-child-jobs-separately --allow-run-as-root --mca btl ^openib -mca pml ob1 --mca btl_tcp_if_include enp1s0f0"
+MPIRUN_CMD="mpirun --report-child-jobs-separately --allow-run-as-root --mca btl ^openib -mca pml ob1 --mca btl_tcp_if_include enp1s0f1 -np $SPECFEM_MPI_NPROC --hostfile $BUILD_DIR/hostfile.mpi"
+
+if [ "$SPECFEM_USE_PODMAN" == "1" ]; then
+  MPIRUN_CMD="$MPIRUN_CMD \
+        --mca orte_tmpdir_base /tmp/podman-mpirun \
+        --mca btl_base_warn_component_unused 0 \
+        --mca btl_vader_single_copy_mechanism none \
+    podman run --rm --env-host \
+     -v /tmp/podman-mpirun:/tmp/podman-mpirun \
+     -v $SHARED_SPECFEM:$SHARED_SPECFEM \
+     --userns=keep-id --net=host --pid=host --ipc=host \
+     --workdir=$SHARED_SPECFEM \
+     $PODMAN_BASE_IMAGE"
+   echo "$(date) Using PODMAN platform"
+else
+   echo "$(date) Using BAREMETAL platform"
+fi
 
 cp "$BUILD_DIR"/run_{mesher,solver}.sh "$SHARED_SPECFEM"
+cp {"$BUILD_DIR","$SHARED_SPECFEM"}/DATA/Par_file
 
-echo "Building the mesher ..."
+rm -f {"$BUILD_DIR","$SHARED_SPECFEM"}/bin/xspecfem3D {"$BUILD_DIR","$SHARED_SPECFEM"}/bin/xmeshfem3D
+
+echo "$(date) Building the mesher ..."
+cd "$BUILD_DIR"
+make clean >/dev/null 2>/dev/null
 if ! make mesh -j8 >/dev/null 2>/dev/null; then
   echo Mesher build failed ...
   exit 1
 fi
-echo "Solver built."
+echo "$(date) Mesher built."
 
 cp {"$BUILD_DIR","$SHARED_SPECFEM"}/bin/xmeshfem3D
 
-rm -rf "$SHARED_SPECFEM"/{DATABASES_MPI,OUTPUT_FILES}/*
+rm -rf "$SHARED_SPECFEM"/{DATABASES_MPI,OUTPUT_FILES}/
+mkdir -p "$SHARED_SPECFEM"/{DATABASES_MPI,OUTPUT_FILES}/
 
 cd "$SHARED_SPECFEM"
 
-echo "Running the mesher ..."
-$MPIRUN_CMD -np $SPECFEM_MPI_NPROC --hostfile $BUILD_DIR/hostfile.mpi bash ./run_mesher.sh |& grep -v "Warning: Permanently added"
-echo "Mesher execution done."
+echo "$(date) Running the mesher ... $SPECFEM_CONFIG"
+$MPIRUN_CMD  bash ./run_mesher.sh |& grep -v "Warning: Permanently added"
+echo "$(date) Mesher execution done."
 
 cp {"$SHARED_SPECFEM","$BUILD_DIR"}/OUTPUT_FILES/values_from_mesher.h 
 
 cd "$BUILD_DIR"
 
-echo "Building the solver ..."
-if !make spec -j8 >/dev/null 2>/dev/null; then
-  echo Build failed ...
+echo "$(date) Building the solver ..."
+if ! make spec -j8 >/dev/null 2>/dev/null; then
+  echo $(date) Build failed ...
   exit 1
 fi
-echo "Solver built."
+echo "$(date) Solver built."
 
 cp {"$BUILD_DIR","$SHARED_SPECFEM"}/bin/xspecfem3D
+sync
 
 cd "$SHARED_SPECFEM"
-
-$MPIRUN_CMD -np $SPECFEM_MPI_NPROC --hostfile $BUILD_DIR/hostfile.mpi bash ./run_solver.sh |& grep -v "Warning: Permanently added"
-echo "Solver execution done."
+echo "$(date) Running the solver ... $SPECFEM_CONFIG"
+$MPIRUN_CMD bash ./run_solver.sh |& grep -v "Warning: Permanently added"
+echo "$(date) Solver execution done."
 
 cp {"$SHARED_SPECFEM","$BUILD_DIR"}/OUTPUT_FILES/output_solver.txt
 """
@@ -67,39 +91,62 @@ cp {"$SHARED_SPECFEM","$BUILD_DIR"}/OUTPUT_FILES/output_solver.txt
 RUN_MESHER_SH = """
 WORK_DIR=/data/kevin/specfem/$OMPI_COMM_WORLD_NODE_RANK
 
+if [[ -z "$OMPI_COMM_WORLD_RANK" || "$OMPI_COMM_WORLD_RANK" -eq 0 ]]; then
+  set -x
+  echo $(date) Preparing the work dir ... >&2
+fi
+
 rm -rf "$WORK_DIR/"
 mkdir -p "$WORK_DIR/"
 
 cp ./ "$WORK_DIR/" -rf
 
-cd "$WORK_DIR/"
+if [[ -z "$OMPI_COMM_WORLD_RANK" || "$OMPI_COMM_WORLD_RANK" -eq 0 ]]; then
+  echo Running the mesher from "$WORK_DIR" ...
+  echo $(date) Running the mesher >&2
+fi
 
+cd "$WORK_DIR/"
 ./bin/xmeshfem3D "$@"
 
 if [[ -z "$OMPI_COMM_WORLD_RANK" || "$OMPI_COMM_WORLD_RANK" -eq 0 ]]; then
-  cp OUTPUT_FILES/{values_from_mesher.h,output_mesher.txt} "$SHARED_SPECFEM/OUTPUT_FILES/"
+  echo $(date) Mesher done >&2
+  rm -rf "$SHARED_SPECFEM/OUTPUT_FILES/"
+  cp OUTPUT_FILES/ "$SHARED_SPECFEM/" -r
 fi
 
 cp -f DATABASES_MPI/* "$SHARED_SPECFEM/DATABASES_MPI/"
 
-echo Done $OMPI_COMM_WORLD_RANK
+echo Mesher done $OMPI_COMM_WORLD_RANK
 """
 
 RUN_SOLVER_SH = """
 WORK_DIR=/data/kevin/specfem/$OMPI_COMM_WORLD_NODE_RANK
 
-cp ./bin/xspecfem3D "$WORK_DIR/bin/xspecfem3D" -r
+if [[ -z "$OMPI_COMM_WORLD_RANK" || "$OMPI_COMM_WORLD_RANK" -eq 0 ]]; then
+  set -x
 
-cp DATABASES_MPI/* "$WORK_DIR/DATABASES_MPI/"
+  echo $(date) Preparing the working directory ... >&2
+fi
+
+mkdir -p "$WORK_DIR/"
+cp ./ "$WORK_DIR/" -rf
+
+if [[ -z "$OMPI_COMM_WORLD_RANK" || "$OMPI_COMM_WORLD_RANK" -eq 0 ]]; then
+  echo Running the solver from "$WORK_DIR" ...
+  echo $(date) Running the solver ... >&2
+fi
 
 cd "$WORK_DIR"
 ./bin/xspecfem3D "$@"
 
 if [[ -z "$OMPI_COMM_WORLD_RANK" || "$OMPI_COMM_WORLD_RANK" -eq 0 ]]; then
+  echo $(date) Solver done. >&2
+
   cp OUTPUT_FILES/output_solver.txt "$SHARED_SPECFEM/OUTPUT_FILES/"
 fi
 
-echo Done $OMPI_COMM_WORLD_RANK
+echo Solver done $OMPI_COMM_WORLD_RANK
 """
 
 def configure(plugin_cfg, machines):
@@ -130,7 +177,6 @@ def prepare_system():
         print(RUN_SOLVER_SH, file=script_f)        
         
 def prepare_mpi_hostfile(nproc, nproc_per_worker):
-    print(f"INFO: running with nproc={nproc}, nproc_per_worker={nproc_per_worker}")
     with open(f"{SPECFEM_BUILD_PATH}/hostfile.mpi", "w") as hostfile_f:
         print(f"manager slots={nproc_per_worker}", file=hostfile_f)
         for i in range(NUM_WORKER_NODES):
@@ -167,13 +213,14 @@ def specfem_set_par(key, new_val):
 
 def get_or_default_param(params, key):
     DEFAULTS = {
-        "nex": "16",
-        "nodes": "4",
-        "cores": "4",
+        "nex": "-",
+        "processes": "-",
+        "threads": "-",
+        "platform": "baremetal"
     }
 
     if key == "nproc_per_worker":
-        return int(int(get_or_default_param(params, "cores"))/NUM_CORE_PER_NODE)
+        return int(NUM_CORE_PER_NODE/int(get_or_default_param(params, "threads")))
     
     try: return params[key]
     except KeyError:
@@ -189,7 +236,7 @@ class SpecfemSimpleAgent(measurement.agentinterface.AgentInterface):
         prepare_system()
         
     def feedback(self, msg):
-        src = "specfem"
+        src = "agent"
         self.feedback_table.add(0, src, msg.replace(", ", "||"))
 
     def remote_ctrl(self, _msg):
@@ -204,10 +251,7 @@ class SpecfemSimpleAgent(measurement.agentinterface.AgentInterface):
             self.specfem_run(driver, params)
 
         elif action == "request" and action_params == "reset":
-            print("pkill xspecfem3D")
             os.system("pkill xspecfem3D")
-            print("pkill xspecfem3D --> done")
-            pass 
         else:
             print(f"remote_ctrl: unknown action '{action}/{action_params}' received ...")
 
@@ -253,23 +297,40 @@ class SpecfemSimpleAgent(measurement.agentinterface.AgentInterface):
         specfem_set_par("NEX_XI", nex)
         specfem_set_par("NEX_ETA", nex)
     
-        nproc_param = int(get_or_default_param(params, "nodes"))
-        nproc = int(math.sqrt(nproc_param))
-        specfem_set_par("NPROC_XI", nproc)
-        specfem_set_par("NPROC_ETA", nproc)
+        mpi_nproc = int(get_or_default_param(params, "processes"))
+        specfem_nproc = int(math.sqrt(mpi_nproc))
+        specfem_set_par("NPROC_XI", specfem_nproc)
+        specfem_set_par("NPROC_ETA", specfem_nproc)
     
         nproc_per_worker = int(get_or_default_param(params, "nproc_per_worker"))
-        prepare_mpi_hostfile(nproc, nproc_per_worker)
+        msg = f"INFO: running with mpi_nproc={mpi_nproc}, nproc_per_worker={nproc_per_worker}"
+        print(msg)
+        self.feedback(msg)
+        prepare_mpi_hostfile(mpi_nproc, nproc_per_worker)
         
-        num_threads = get_or_default_param(params, "cores")
+        num_threads = get_or_default_param(params, "threads")
 
+        use_podman = 1 if get_or_default_param(params, "platform") == "podman" else 0
+
+        specfem_config = " | ".join([
+            f"USE_PODMAN={use_podman}",
+            f"MPI_NPROC={mpi_nproc}",
+            f"MPI_SLOTS={nproc_per_worker}",
+            f"OMP_THREADS={num_threads}",
+            f"NEX={nex}"])
+
+        self.feedback("config: "+specfem_config)
         cwd = SPECFEM_BUILD_PATH
         cmd = ["env",
                f"OMP_NUM_THREADS={num_threads}",
-               f"SPECFEM_MPI_NPROC={nproc_param}",
+               f"SPECFEM_MPI_NPROC={mpi_nproc}",
+               f"SPECFEM_USE_PODMAN={use_podman}",
+               f"SPECFEM_CONFIG={specfem_config}", # for logging
                "bash", "./build_and_run.sh"]
-        print(f"INFO: running '{' '.join(cmd)}' in '{cwd}'")
-
+        msg = f"Running '{' '.join(cmd)}' in '{cwd}'"
+        print(f"INFO:", msg)
+        self.feedback(msg)
+        
         process = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE)
         process.wait()
 
@@ -284,7 +345,7 @@ class SpecfemSimpleAgent(measurement.agentinterface.AgentInterface):
             print("8<--8<--8<--")
             print(output)
             print("8<--8<--8<--")
-            self.feedback(f"Specfem finished errcode={errcode}")
+            self.feedback(f"Specfem finished with errcode={errcode}")
             return
         
         print(f"INFO: Specfem finished successfully")
@@ -292,7 +353,9 @@ class SpecfemSimpleAgent(measurement.agentinterface.AgentInterface):
         timing = self.specfem_parse_and_save_timing()
         if timing is not False:
             print(f"INFO: Execution time: {timing}s")
+            self.feedback(f"Specfem finished after {timing}s (={int(timing/60)}min)")
         else:
+            self.feedback(f"Specfem finished with an invalid output log ...")
             print(f"ERROR: failed to parse the final timing values")
             print("8<--8<--8<--")
             print(output)

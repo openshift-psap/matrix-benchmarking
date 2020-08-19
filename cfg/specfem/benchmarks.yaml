@@ -10,17 +10,28 @@ expe:
     driver: Specfem3D
 
     settings:
-      machine: laptop, desktop
-      nex: 16, 32, 64
-      threads: 1, 2, 3, 4, 5, 6, 7, 8
+      conf:
+        - nodes:1_cores:8_nex:16
+        - nodes:1_cores:8_nex:32
+        #- nodes:1_cores:8_nex:64
 
-    scripts:
+        #- nodes:4_cores:8_nex:32
+        #- nodes:4_cores:8_nex:64
+        #- nodes:4_cores:4_nex:32
+        #- nodes:4_cores:4_nex:64
+        #- nodes:4_cores:2_nex:32
+        #- nodes:4_cores:2_nex:64
 
-scripts:
-  setup:
+        #- nodes:8_cores:8_nex:64
+        #- nodes:8_cores:8_nex:128
+        #- nodes:8_cores:4_nex:64
+        #- nodes:8_cores:4_nex:128
+        #- nodes:8_cores:2_nex:64
+        #- nodes:8_cores:2_nex:128
+        #- nodes:8_cores:1_nex:64
+        #- nodes:8_cores:1_nex:128
 
-  teardown:
-
-  display:
-    before:
-    after:
+        - nodes:16_cores:8_nex:128
+        - nodes:16_cores:2_nex:128
+        - nodes:16_cores:4_nex:128
+        #- nodes:16_cores:1_nex:128

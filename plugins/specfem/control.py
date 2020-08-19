@@ -5,8 +5,13 @@ def configure(plugin_cfg, machines):
     pass
 
 def apply_settings(driver_name, settings):
-    settings_str = ",".join(f"{k}={v}" for k, v in settings.items() if v not in (None, ""))
-
+    conf = settings['conf']
+    
+    settings_str = conf.replace(":", "=").replace("_", ",")
+    for k, v in settings.items():
+        if k == "conf": continue
+        settings_str += f",{k}={v}"
+        
     msg = f"remote_ctrl:apply_settings:{driver_name}:{settings_str}"
 
     UIState().DB.expe.send_feedback(msg)

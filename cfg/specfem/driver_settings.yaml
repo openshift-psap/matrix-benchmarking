@@ -11,7 +11,10 @@ Specfem3D:
     default: "16"
     url: "https://github.com/geodynamics/specfem3d_globe/wiki/03_running_the_mesher"
 
-  Machine:
-    type: enum
-    values: laptop, desktop
-    desc: "Machine on which Specfem3D will run"
+  NPROC:
+    type: int
+    desc: "Number of MPI processes to run"
+
+  NPROC_PER_WORKER:
+    type: int
+    desc: "Number of MPI processes to run on each worker node"

@@ -3,18 +3,25 @@ from ui.table_stats import TableStats
 import plugins.adaptive.matrix_view
 from plugins.adaptive.matrix_view import parse_data, all_records, get_record
 
-plugins.adaptive.matrix_view.rewrite_properties = lambda x:x
+def rewrite_properties(params_dict):
+    for cfg in params_dict["conf"].split("-"):
+        k, v = cfg.split(":")
+        
+        params_dict[k] = int(v)
+        
+    params_dict["mpi_slots"] = int(8/params_dict["threads"])
+    params_dict["machines"] = int(params_dict["processes"] /  params_dict["mpi_slots"])
+    
+    del params_dict["processes"]
+    del params_dict["threads"]
+    del params_dict["conf"]
+
+    return params_dict
+
+plugins.adaptive.matrix_view.rewrite_properties = rewrite_properties
 
 def register():
+    TableStats.Average("total_time", "Total time", "?.timing",
+                       "timing.total_time", ".0f", "s")
 
-    TableStats.Average("sys_mem_avg", "Free Memory (avg)", "?.mem",
-                       "mem.free", ".0f", "MB")
 
-    TableStats.Average("sys_cpu_avg", "System CPU Usage (avg)", "?.cpu",
-                       "cpu.idle", ".0f", "%")
-
-    TableStats.Average(f"spec_cpu", f"Specfem CPU Usage (avg)", f"?.local-pid",
-                       f"local-pid.cpu", ".0f", "%")
-
-    TableStats.Average(f"general_time", f"Overall time", "?.general",
-                       "general.specfem_time", ".0f", "sec")

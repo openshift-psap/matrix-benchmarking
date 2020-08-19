@@ -52,7 +52,7 @@ class SpecfemMatrix():
 
 def add_to_feedback_cb(ts, src, msg):
     global running
-    if src == "agent" and msg.startswith("execution time"):
+    if src == "agent" and msg.startswith("Specfem finished"):
         running = False
 
 def configure(expe):

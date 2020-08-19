@@ -4,19 +4,18 @@ setup:
 
 plugins:
   specfem:
-    key: val
-
+    build_path: /data/kevin/specfem3d_globe
+    num_worker_nodes: 15
+    num_core_per_node: 8
+    
 machines:
   local:
-    laptop: localhost
-    desktop: 172.16.0.2
-
+    #worker: f12-h17-b01-5039ms.rdu2.scalelab.redhat.com
+    worker: localhost # (tunnelling to ^^)
 # ---
 measurement_sets:
   all:
-    - VMStat
-    - MPStat
-    - SpecfemAgentInterface:
+    - SpecfemSimpleAgent:
         port: 1234
         mode: local
         wait_collector: true
@@ -24,17 +23,12 @@ measurement_sets:
   collector:
     - Perf_Collect:
         port: 1230
-        host: laptop
-        mode: laptop
-
-    - Perf_Collect:
-        port: 1230
-        host: desktop
-        mode: desktop
+        host: worker
+        mode: worker
 
 # --- #
 
-local_agent:
+worker:
   port_to_collector: 1230
   measurement_sets:
     - all
