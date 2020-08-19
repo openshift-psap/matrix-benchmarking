@@ -138,6 +138,8 @@ class Perf_Collect(measurement.Measurement):
             self.sock.close()
             return
         except Exception as e:
+            print(f"Failed to connect the LocalAgent on {self.host}:{self.port} ({self.mode}).")
+
             self.sock.close()
             raise e
 
