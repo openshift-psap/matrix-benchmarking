@@ -91,7 +91,12 @@ class Perf_Collect(measurement.Measurement):
         return table
 
     def initialize_localagent(self):
-        nb_tables = struct.unpack("I", self.sock.recv(4))[0]
+        received = self.sock.recv(4)
+        if len(received) != 4:
+            print(f"ERROR: only {len(received)} bytes received, expected 4 ...")
+            return
+        
+        nb_tables = struct.unpack("I", received)[0]
 
         print(f"{self.mode}: received {nb_tables} table definitions")
         tables = {}
