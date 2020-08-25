@@ -5,7 +5,7 @@ setup:
 plugins:
   specfem:
     build_path: /data/kevin/specfem3d_globe
-    num_worker_nodes: 15
+    num_worker_nodes: 7
     num_core_per_node: 8
     
 machines:

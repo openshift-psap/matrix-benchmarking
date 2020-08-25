@@ -51,7 +51,9 @@ class AdaptiveMatrix():
     @staticmethod
     def wait_end_of_recording(exe, context):
         exe.wait(int(context.params.record_time[:-1]))
+        return True
 
+    
 customized_matrix = AdaptiveMatrix
 
 
@@ -131,6 +133,7 @@ class Matrix(script.Script):
             except KeyError: pass # no previous entry, run!
             else:
                 exe.log(f">> already recorded, skipping | {previous_entry.filename}")
+                exe.expe_cnt.recorded += 1
                 continue
 
             customized_matrix.prepare_new_record(exe, context, settings_dict)
@@ -143,6 +146,10 @@ class Matrix(script.Script):
             customized_matrix.wait_end_of_recording(exe, context)
 
             exe.expe_cnt.executed += 1
+
+            if not customized_matrix.wait_end_of_recording(exe, context):
+                exe.log("executing unsuccessfull, don't save the records.")
+                continue
 
             dest = f"{context.expe_dir}/{file_path}/{current_key}.rec"
 
@@ -160,6 +167,8 @@ class Matrix(script.Script):
         exe.expe_cnt.total = 0
         exe.expe_cnt.current_idx = 0
         exe.expe_cnt.executed = 0
+        exe.expe_cnt.recorded = 0
+        exe.expe_cnt.errors = 0
 
         expe_ran = []
         for expe in self.yaml_desc['run']:
@@ -173,8 +182,8 @@ class Matrix(script.Script):
         exe.log(f"Ran {len(expe_ran)} expe:", ", ".join(expe_ran))
         exe.log(f"Performed {exe.expe_cnt.executed}/{exe.expe_cnt.total} experiments.")
 
-        exe.log(f"Skipped {exe.expe_cnt.total - exe.expe_cnt.executed} "
-                "experiments already recorded.")
+        exe.log(f"{exe.expe_cnt.recorded} were already recorded.")
+        exe.log(f"{exe.expe_cnt.errors} failed.") 
 
     def do_run_expe(self, exe, expe):
         exe.log("setup()")

@@ -36,7 +36,7 @@ class SpecfemMatrix():
         if exe.dry:
             print("Waiting for the end of the execution ... [dry]")
             running = False
-            return
+            return True
 
         print("Waiting for the end of the execution ...")
         from utils.live import get_quit_signal
@@ -50,7 +50,7 @@ class SpecfemMatrix():
                 raise KeyboardInterrupt()
 
         print(f"\nExecution completed after {i} seconds.")
-
+        return True
 
 def add_to_feedback_cb(ts, src, msg):
     global running
