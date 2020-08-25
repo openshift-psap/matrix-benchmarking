@@ -97,27 +97,34 @@ class Matrix(script.Script):
 
 
     def do_run_the_settings_matrix(self, exe, settings_matrix, context, yaml_expe):
-        def scripted_property_to_named_value(key):
-            val = context.params.__dict__[key]
+        def property_to_named_value(settings_dict, key):
+            try:
+                val = context.params.__dict__[key]
+            except KeyError:
+                val = settings_dict[key]
+                
             return val[0] if isinstance(val, tuple) else val
         def param_to_named_value(key):
-            val = context.params.__dict__[key]
+            try:
+                val = context.params.__dict__[key]
+            except KeyError:
+                val = settings_dict[key]
             return val[0] if isinstance(val, tuple) else val
-
-        path_properties = customized_matrix.get_path_properties(yaml_expe)
-        file_path = "/".join(scripted_property_to_named_value(key) for key in path_properties)
 
         fix_key = "_".join(f"{key}={param_to_named_value(key)}".replace("_", "-")
                            for key in sorted(context.params.__dict__))
-
-        os.makedirs(f"{context.expe_dir}/{file_path}/", exist_ok=True)
+        
+        path_properties = sorted(customized_matrix.get_path_properties(yaml_expe))
 
         for settings_items in itertools.product(*settings_matrix):
             settings_dict = dict(settings_items)
 
             settings_str = ";".join([f"{k.replace('_', '-')}={v.replace('_', '-')}" for k, v in settings_items])
-
+                               
             current_key = settings_str.replace(';', "_")
+
+            file_path = "/".join(property_to_named_value(settings_dict, key) for key in path_properties)
+            os.makedirs(f"{context.expe_dir}/{file_path}/", exist_ok=True)
 
             file_entry = " | ".join([fix_key, file_path, current_key])
             file_key = "_".join([fix_key, current_key])
@@ -139,12 +146,9 @@ class Matrix(script.Script):
             customized_matrix.prepare_new_record(exe, context, settings_dict)
 
             for k in context.params.__dict__:
-                exe.append_feedback(f"{k}: {scripted_property_to_named_value(k)}")
+                exe.append_feedback(f"{k}: {property_to_named_value(settings_dict, k)}")
 
             exe.append_feedback(f"settings: {settings_str}")
-
-            customized_matrix.wait_end_of_recording(exe, context)
-
             exe.expe_cnt.executed += 1
 
             if not customized_matrix.wait_end_of_recording(exe, context):

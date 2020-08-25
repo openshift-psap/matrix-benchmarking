@@ -15,7 +15,7 @@ class SpecfemMatrix():
 
     @staticmethod
     def get_path_properties(yaml_expe):
-        return []
+        return ["platform"]
 
     @staticmethod
     def prepare_new_record(exe, context, settings_dict):
