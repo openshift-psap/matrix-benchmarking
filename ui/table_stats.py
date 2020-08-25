@@ -389,7 +389,14 @@ class TableStats():
         from .matrix_view import natural_keys
         from .matrix_view import all_records
         from .matrix_view import COLORS
+        cfg_plot_mode = cfg.get('stats.var_length', "")
 
+        if cfg_plot_mode:
+            var_length = int(cfg_plot_mode)
+            print(f"Using var_length={var_length} instead of {len(variables)}")
+        else:
+            var_length = len(variables)
+            
         data = []
         layout = go.Layout()
         layout.hovermode = 'closest'
@@ -437,7 +444,7 @@ class TableStats():
             legend_name = f"{legend_var}={params[legend_var]}"
             legend_key = (legend_name, params[subplots_var] if subplots_var else None)
 
-            if len(variables) > 3 and x[legend_key]:
+            if var_length > 3 and x[legend_key]:
                 prev_first_param = x[legend_key][-1].partition(" ")[0]
                 first_param = x_key.partition(" ")[0]
 
@@ -469,7 +476,7 @@ class TableStats():
         # ---
 
         def prepare_scatter(legend_key, color):
-            if len(variables) < 5:
+            if var_length < 5:
                 plot_args['type'] = 'line'
                 plot_args['line'] = dict(color=color)
             else:
@@ -523,11 +530,11 @@ class TableStats():
 
             data.append(go.Scatter(
                 x=x_err_data, y=y_err_data,
-                legendgroup=legend_name + ("(stdev)" if len(variables) >= 4 else ""),
-                showlegend=(ax == "x1" and len(variables) >= 4), hoverinfo="skip",
+                legendgroup=legend_name + ("(stdev)" if var_length >= 4 else ""),
+                showlegend=(ax == "x1" and var_length >= 4), hoverinfo="skip",
                 fill='toself', fillcolor='rgba(0,100,80,0.2)',
                 line_color='rgba(0,0,0,0)', xaxis=ax,
-                name=legend_name + (" (stdev)" if len(variables) >= 4 else "")
+                name=legend_name + (" (stdev)" if var_length >= 4 else "")
             ))
 
             return max([yval for yval in [y_max]+y_err_data if yval is not None])
@@ -536,8 +543,8 @@ class TableStats():
         from .matrix_view import natural_keys
         legend_keys = sorted(list(legend_keys), key=natural_keys)
         legend_names = sorted(list(legend_names), key=natural_keys)
+        
         DO_LOCAL_SORT = True
-
         for legend_key in legend_keys:
             legend_name, subplots_key = legend_key
             ax = subplots[subplots_key]
@@ -546,16 +553,16 @@ class TableStats():
             color = COLORS(list(legend_names).index(legend_name))
             plot_args = dict()
 
-            if len(variables) <= 2:
+            if var_length <= 2:
                 prepare_histogram(legend_key, color)
             else:
                 prepare_scatter(legend_key, color)
 
-            if has_err and len(variables) < 5:
-                if len(variables) <= 2:
+            if has_err and var_length < 5:
+                if var_length <= 2:
                     err_data = plot_histogram_err(legend_key)
                 else:
-                    if len(variables) < 4:
+                    if var_length < 4:
                         err_data = prepare_scatter_short_err(legend_key)
                     else:
                         err_data = prepare_scatter_long_err(legend_key)
@@ -563,7 +570,7 @@ class TableStats():
                     y_max = plot_scatter_err(legend_key, err_data, y_max)
 
 
-            if len(variables) >= 5 and DO_LOCAL_SORT:
+            if var_length >= 5 and DO_LOCAL_SORT:
                 # sort x according to y's value order
                 x[legend_key] = [_x for _y, _x in sorted(zip(y[legend_key], x[legend_key]),
                                                              key=lambda v: (v[0] is None, v[0]))]
@@ -572,7 +579,7 @@ class TableStats():
                 if not layout.title.text.endswith(" (sorted)"):
                     layout.title.text += " (sorted)"
 
-            # if 2 >= len(variables) > 5:
+            # if 2 >= var_length > 5:
             #   need to sort and don't move the None location
             #   need to sort yerr as well
 
@@ -588,7 +595,7 @@ class TableStats():
                              showlegend=showlegend, hoverlabel= {'namelength' :-1}))
 
         do_sort = bool(cfg.get('stats.sort_bar', False))
-        if do_sort and len(variables) <= 2:
+        if do_sort and var_length <= 2:
             layout['xaxis'].categoryorder = 'trace'
             def get(_name):
                 for trace in data:
@@ -601,9 +608,9 @@ class TableStats():
                 data.remove(trace)
                 data.append(trace)
 
-        if len(variables) > 2:
+        if var_length > 2:
             # force y_min = 0 | y_max = max visible value (cannot set only y_min)
-            # if len(variables) <= 2:
+            # if var_length <= 2:
             #   bar plot start from 0, y_max hard to compute with error bars
 
             layout.yaxis.range = [0, y_max]
