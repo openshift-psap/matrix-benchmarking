@@ -183,11 +183,11 @@ class Matrix(script.Script):
             self.do_run_expe(exe, expe)
             expe_ran.append(expe)
 
-        exe.log(f"Ran {len(expe_ran)} expe:", ", ".join(expe_ran))
-        exe.log(f"Performed {exe.expe_cnt.executed}/{exe.expe_cnt.total} experiments.")
-
-        exe.log(f"{exe.expe_cnt.recorded} were already recorded.")
-        exe.log(f"{exe.expe_cnt.errors} failed.") 
+        exe.log(f"Ran {len(expe_ran)} matrices:", ", ".join(expe_ran))
+        exe.log(f"Out of {exe.expe_cnt.total} experiments configured:")
+        exe.log(f"- {exe.expe_cnt.executed} have been executed,")
+        exe.log(f"- {exe.expe_cnt.recorded} were already recorded,")
+        exe.log(f"- {exe.expe_cnt.errors} failed.") 
 
     def do_run_expe(self, exe, expe):
         exe.log("setup()")
