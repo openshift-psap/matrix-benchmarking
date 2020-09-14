@@ -194,6 +194,12 @@ def _specfem_set_par(key, new_val):
         for line in par_file_lines:
             par_f.write(line)
 
+def _nvidia_mig_set_mode(_mode):
+    mode = _mode.replace("-", ",")
+    print(subprocess.check_output("nvidia-smi -mig 0 && nvidia-smi -mig 1"))
+    print(subprocess.check_output(f"nvidia-smi mig -cgi '{mode}' -cgi 1"))
+    print(subprocess.check_output("nvidia-smi mig -cci"))
+
 def reset():
     os.system("pkill xspecfem3D")
     
@@ -207,24 +213,32 @@ def run_specfem(agent, driver, params):
     try: os.remove(f"{specfemsimpleagent.SPECFEM_BUILD_PATH}/OUTPUT_FILES/output_solver.txt")
     except FileNotFoundError: pass # ignore
 
-    nex = specfemsimpleagent.get_or_default_param(params, "nex")
+    nex = specfemsimpleagent.get_param(params, "nex")
     _specfem_set_par("NEX_XI", nex)
     _specfem_set_par("NEX_ETA", nex)
 
-    mpi_nproc = int(specfemsimpleagent.get_or_default_param(params, "processes"))
+    try:
+        gpu = specfemsimpleagent.get_param(params, "gpu")
+        _specfem_set_par("GPU_MODE", ".true.")
+        _nvidia_mig_set_mode(gpu)
+
+    except KeyError:
+        _specfem_set_par("GPU_MODE", ".false.")
+        
+    mpi_nproc = int(specfemsimpleagent.get_param(params, "processes"))
     specfem_nproc = int(math.sqrt(mpi_nproc))
     _specfem_set_par("NPROC_XI", specfem_nproc)
     _specfem_set_par("NPROC_ETA", specfem_nproc)
 
-    nproc_per_worker = int(specfemsimpleagent.get_or_default_param(params, "nproc_per_worker"))
+    nproc_per_worker = int(specfemsimpleagent.get_param(params, "nproc_per_worker"))
     msg = f"INFO: running with mpi_nproc={mpi_nproc}, nproc_per_worker={nproc_per_worker}"
     print(msg)
     agent.feedback(msg)
     _prepare_mpi_hostfile(mpi_nproc, nproc_per_worker)
 
-    num_threads = specfemsimpleagent.get_or_default_param(params, "threads")
+    num_threads = specfemsimpleagent.get_param(params, "threads")
 
-    use_podman = 1 if specfemsimpleagent.get_or_default_param(params, "platform") == "podman" else 0
+    use_podman = 1 if specfemsimpleagent.get_param(params, "platform") == "podman" else 0
 
     specfem_config = " | ".join([
         f"USE_PODMAN={use_podman}",
