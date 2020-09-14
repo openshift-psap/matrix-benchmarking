@@ -207,7 +207,7 @@ def run_specfem(agent, driver, params):
     try: os.remove(f"{specfemsimpleagent.SPECFEM_BUILD_PATH}/OUTPUT_FILES/output_solver.txt")
     except FileNotFoundError: pass # ignore
 
-    nex = get_or_default_param(params, "nex")
+    nex = specfemsimpleagent.get_or_default_param(params, "nex")
     _specfem_set_par("NEX_XI", nex)
     _specfem_set_par("NEX_ETA", nex)
 
@@ -216,15 +216,15 @@ def run_specfem(agent, driver, params):
     _specfem_set_par("NPROC_XI", specfem_nproc)
     _specfem_set_par("NPROC_ETA", specfem_nproc)
 
-    nproc_per_worker = int(get_or_default_param(params, "nproc_per_worker"))
+    nproc_per_worker = int(specfemsimpleagent.get_or_default_param(params, "nproc_per_worker"))
     msg = f"INFO: running with mpi_nproc={mpi_nproc}, nproc_per_worker={nproc_per_worker}"
     print(msg)
     agent.feedback(msg)
     _prepare_mpi_hostfile(mpi_nproc, nproc_per_worker)
 
-    num_threads = get_or_default_param(params, "threads")
+    num_threads = specfemsimpleagent.get_or_default_param(params, "threads")
 
-    use_podman = 1 if get_or_default_param(params, "platform") == "podman" else 0
+    use_podman = 1 if specfemsimpleagent.get_or_default_param(params, "platform") == "podman" else 0
 
     specfem_config = " | ".join([
         f"USE_PODMAN={use_podman}",
@@ -264,8 +264,5 @@ def run_specfem(agent, driver, params):
 
     print(f"INFO: Specfem finished successfully")
 
-    success = parse_and_save_timing(agent, f"{specfemsimpleagent.SPECFEM_BUILD_PATH}/OUTPUT_FILES/output_solver.txt")
-    if not success:
-        print("8<--8<--8<--")
-        print(output)
-        print("8<--8<--8<--")
+    specfemsimpleagent.parse_and_save_timing(agent, f"{specfemsimpleagent.SPECFEM_BUILD_PATH}/OUTPUT_FILES/output_solver.txt")
+
