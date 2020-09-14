@@ -183,9 +183,12 @@ class Matrix(script.Script):
             self.do_run_expe(exe, expe)
             expe_ran.append(expe)
 
-        exe.log(f"Ran {len(expe_ran)} matrices:", ", ".join(expe_ran))
+        exe.log(f"Ran {len(expe_ran)} matri{'ces' if len(expe_ran) > 1 else 'x'}:", ", ".join(expe_ran))
         exe.log(f"Out of {exe.expe_cnt.total} experiments configured:")
-        exe.log(f"- {exe.expe_cnt.executed} have been executed,")
+        if exe.dry:
+            exe.log(f"- {exe.expe_cnt.executed} would have been executed,")
+        else:
+            exe.log(f"- {exe.expe_cnt.executed} have been executed,")
         exe.log(f"- {exe.expe_cnt.recorded} were already recorded,")
         exe.log(f"- {exe.expe_cnt.errors} failed.") 
 
@@ -260,7 +263,7 @@ class Matrix(script.Script):
         del do_at_exit["__benchmark__"]
 
         exe.log("#")
-        exe.log(f"# Finished with {context.expe}")
+        exe.log(f"# Finished with '{context.expe}'")
         exe.log("#")
 
 def configure(expe):

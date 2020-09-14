@@ -182,7 +182,8 @@ class Script():
         if dry:
             exe.log(f"Running {self.name} (dry)")
             self.do_run(exe)
-            exe.log(f"Estimated time: {exe.total_wait_time/60:.0f}min{exe.total_wait_time%60}s", ahead=True)
+            if exe.total_wait_time != 0:
+                exe.log(f"Estimated time: {exe.total_wait_time/60:.0f}min{exe.total_wait_time%60}s", ahead=True)
         elif Script.thr:
             exe.log("Failed, a script thread is already running ...")
         else:
