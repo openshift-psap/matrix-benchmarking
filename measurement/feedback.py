@@ -15,12 +15,10 @@ class ConsoleFeedback():
 
     def send_str(self, line):
         print("Feedback Input: >>", line)
-
         mode, found, msg = line.partition(":")
         if not found \
            or not mode in self.agents \
-           or "\0" in msg \
-           or len(msg) > 127:
+           or "\0" in msg:
             print("Invalid message. Valid modes:", ",".join(self.agents.keys()))
             return
 
