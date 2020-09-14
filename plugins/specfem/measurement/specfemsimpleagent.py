@@ -1,5 +1,4 @@
-import types
-
+import types, sys, traceback
 
 import measurement.agentinterface
 from measurement.feedback import feedback
@@ -52,10 +51,17 @@ class SpecfemSimpleAgent(measurement.agentinterface.AgentInterface):
    
             params = dict([kv.split("=") for kv in params_str.split(",")])
 
-            if params.get("platform") == "openshift":
-                specfem_oc.run_specfem(self, driver, params)
-            else:
-                specfem_bm.run_specfem(self, driver, params)
+            try:
+                if params.get("platform") == "openshift":
+                    specfem_oc.run_specfem(self, driver, params)
+                else:
+                    specfem_bm.run_specfem(self, driver, params)
+            except Exception as ex:
+                self.feedback(f"Specfem finished with exception={ex}")
+                print(f"ERROR: Specfem finished with exception={ex}")
+                fatal = sys.exc_info()
+                traceback.print_exception(*fatal)
+                
 
         elif action == "request" and action_params.startswith("reset"):
             if action_params.endswith("openshift"):
