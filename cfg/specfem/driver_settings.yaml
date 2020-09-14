@@ -1,4 +1,12 @@
 Specfem3D:
+  Platform:
+    type: enum
+    values: baremetal, podman, openshift
+
+  RelyOnSharedFS:
+    type: bool
+    default: true
+
   Threads:
     type: int[1:8:1]
     default: 4
@@ -11,10 +19,13 @@ Specfem3D:
     default: "16"
     url: "https://github.com/geodynamics/specfem3d_globe/wiki/03_running_the_mesher"
 
-  NPROC:
+  Processes:
     type: int
     desc: "Number of MPI processes to run"
 
-  NPROC_PER_WORKER:
-    type: int
-    desc: "Number of MPI processes to run on each worker node"
+  GPU:
+    type: enum
+    values: true, false
+    default: false
+
+  
