@@ -109,6 +109,10 @@ def construct_control_center_tab(driver_cfg):
         opt_type = opt_props.get("type", "str")
         default = opt_props.get("default")
         default_str = f" | default: {default}" if default is not None else ""
+        
+        if opt_type == "bool":
+            opt_type = 'enum'
+            opt_props['values'] = "true, false"
 
         if opt_type.startswith("int["): # int[start:end:step]
             _min, _max, _step = map(int, opt_type[4:-1].split(":"))
