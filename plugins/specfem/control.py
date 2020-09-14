@@ -5,8 +5,12 @@ def configure(plugin_cfg, machines):
     pass
 
 def apply_settings(driver_name, settings):
-    conf = settings['conf']
-    
+    if 'conf' in settings:
+        conf = settings['conf']
+        del settings['conf']
+    else:
+        conf = ""
+        
     settings_str = conf.replace(":", "=").replace("_", ",")
     for k, v in settings.items():
         if k == "conf": continue
