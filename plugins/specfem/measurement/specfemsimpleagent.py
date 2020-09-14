@@ -16,22 +16,13 @@ def configure(plugin_cfg, machines):
     NUM_WORKER_NODES = int(plugin_cfg['num_worker_nodes'])
     NUM_CORE_PER_NODE = int(plugin_cfg['num_core_per_node'])
 
-def get_or_default_param(params, key):
-    DEFAULTS = {
-        "nex": "-",
-        "processes": "-",
-        "threads": "-",
-        "platform": "-"
-    }
 
+def get_param(params, key):
     if key == "nproc_per_worker":
-        return int(NUM_CORE_PER_NODE/int(get_or_default_param(params, "threads")))
+        return int(NUM_CORE_PER_NODE/int(get_param(params, "threads")))
     
-    try: return params[key]
-    except KeyError:
-        val = DEFAULTS[key]
-        print(f"INFO: using default parameter for {key}: {val}")
-        return val
+    return params[key]
+
 
 class SpecfemSimpleAgent(measurement.agentinterface.AgentInterface):
     def setup(self):
