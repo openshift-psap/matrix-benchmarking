@@ -89,18 +89,12 @@ def parse_and_save_timing(agent, output_solver_fname):
             if not line.startswith(" Total elapsed time in seconds"): continue
             #  Total elapsed time in seconds =    269.54141061100000
             time_str = line.split("=")[-1].strip()
-            timing = int(float(time_str)) # ignore decimals
+            total_time = int(float(time_str)) # ignore decimals
             break
         else:
             print("ERROR: failed to find the total elapsed time ...")
-            timing = False
+            return
 
-    agent.timing_table.add(total_time=time)
-    if timing is not False:
-        print(f"INFO: Execution time: {timing}s")
-        agent.feedback(f"Specfem finished after {timing}s (={int(timing/60)}min)")
-        return True
-    else:
-        agent.feedback(f"Specfem finished with an invalid output log ...")
-        print(f"ERROR: failed to parse the final timing values")
-        return False
+    agent.timing_table.add(total_time=total_time)
+    print(f"INFO: Execution time: {total_time}s")
+    agent.feedback(f"Specfem finished after {total_time}s (={int(total_time/60)}min)")
