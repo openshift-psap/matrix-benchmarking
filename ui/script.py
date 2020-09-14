@@ -128,11 +128,10 @@ class Exec():
         else:
             UIState().DB.save_to_file(fname)
 
-    def reset(self):
-        self.log(f"reset encoder parameters")
+    def reset(self, driver_name=None, settings=None):
+        self.log(f"reset benchmark")
         if self.dry: return
-        control.reset_settings()
-
+        control.reset_settings(driver_name, settings)
 
 
 class Script():

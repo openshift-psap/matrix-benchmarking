@@ -22,7 +22,7 @@ class SpecfemMatrix():
         global running
         if running: print("Already running ....")
 
-        exe.reset()
+        exe.reset(context.params.driver, settings_dict)
         running = True
 
         exe.apply_settings(context.params.driver, settings_dict)

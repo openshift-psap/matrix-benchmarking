@@ -22,8 +22,8 @@ class SpecfemMatrix():
         global running
         if running: print("Already running ....")
 
-        exe.reset()
-
+        exe.reset(None, settings_dict)
+        
         nproc = int(dict([kv.split(":") for kv in settings_dict["conf"].split("_")])["processes"])
         if int(math.pow(int(math.sqrt(nproc)), 2)) != nproc:
             print(f"WARNING: invalid 'processes' configuration (={nproc}) in {settings_dict}")

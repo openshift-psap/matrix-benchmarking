@@ -57,10 +57,11 @@ class SpecfemSimpleAgent(measurement.agentinterface.AgentInterface):
             else:
                 specfem_bm.run_specfem(self, driver, params)
 
-        elif action == "request" and action_params == "reset":
-            # how to decide which platform ... ?
-            # specfem_bm.reset()
-            pass
+        elif action == "request" and action_params.startswith("reset"):
+            if action_params.endswith("openshift"):
+                specfem_oc.reset()
+            elif action_params.endswith("baremetal") or action_params.endswith("podman"):
+                specfem_bm.reset()
         else:
             print(f"remote_ctrl: unknown action '{action}/{action_params}' received ...")
 

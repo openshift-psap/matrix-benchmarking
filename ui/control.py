@@ -41,8 +41,8 @@ def apply_settings(driver_name, settings):
 
     return msg
 
-def reset_settings():
-    plugin_control.reset_settings()
+def reset_settings(driver_name, settings):
+    plugin_control.reset_settings(driver_name, settings)
 
 def request(msg, dry, log, **kwargs):
     return plugin_control.request(msg, dry, log, **kwargs)
@@ -68,9 +68,6 @@ def construct_driver_control_callback(driver_name):
         if triggered_id == f"{driver_id_name}-reset-button.n_clicks":
             if reset_n_clicks is None: return # button creation
 
-            reset_settings()
-            return "Encoding reset!"
-
         if go_n_clicks is None: return # button creation
 
         settings = dict(zip(setting_names, states))
@@ -80,8 +77,11 @@ def construct_driver_control_callback(driver_name):
                 settings[k] = v
 
             del settings["custom"]
-
-        return apply_settings(driver_name, settings)
+            
+        if triggered_id == f"{driver_id_name}-reset-button.n_clicks":
+            return reset_settings(driver_name, settings)
+        else:
+            return apply_settings(driver_name, settings)
 
     for tag_id, tag_cb_field, need_value_cb in control_center_boxes[driver_name]:
         if not need_value_cb: continue

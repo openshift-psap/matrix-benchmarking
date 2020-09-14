@@ -34,7 +34,7 @@ class AdaptiveMatrix():
 
     @staticmethod
     def prepare_new_record(exe, context, settings_dict):
-        exe.reset()
+        exe.reset(context.params.driver, settings_dict)
         exe.apply_settings(context.params.driver, settings_dict)
 
         exe.wait(10)

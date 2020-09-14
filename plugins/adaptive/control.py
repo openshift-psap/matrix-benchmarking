@@ -42,7 +42,7 @@ def request(msg, dry, log, client=False, agent=False, force=False):
 
     _send_qmp(rq)
 
-def reset_settings():
+def reset_settings(driver_name, settings):
     return apply_settings("reset", {})
 
 def _send_qmp(set_spice_args):

@@ -20,5 +20,8 @@ def request(req, dry, log):
     msg = f"remote_ctrl:request:{req}"
     UIState().DB.expe.send_feedback(msg)
 
-def reset_settings():
-    return request("reset", False, print, )
+def reset_settings(driver_name, settings):
+    if settings is None:
+        return request(f"reset", False, print, )
+    else:
+        return request(f"reset:{settings.get('platform')}", False, print, )
