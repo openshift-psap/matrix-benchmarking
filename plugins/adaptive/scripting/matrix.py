@@ -8,6 +8,8 @@ from ui import script
 from ui import matrix_view as ui_matrix_view
 import plugins.adaptive.matrix_view as adaptive_matrix_view
 
+STOP_ON_ERRORS = True
+
 do_at_exit = {}
 def exit_cleanup():
     if not do_at_exit:
@@ -153,6 +155,7 @@ class Matrix(script.Script):
 
             if not customized_matrix.wait_end_of_recording(exe, context):
                 exe.log("executing unsuccessfull, don't save the records.")
+                if STOP_ON_ERRORS: return
                 continue
 
             dest = f"{context.expe_dir}/{file_path}/{current_key}.rec"
@@ -256,7 +259,9 @@ class Matrix(script.Script):
             except KeyboardInterrupt:
                 print("Interrupted ...")
                 break
-
+            if STOP_ON_ERRORS and exe.expe_cnt.errors > 0:
+                break
+            
         self.do_scripts_setup(exe, [(k, None) for k, v in script_items], context)
         exe.log("teardown()")
         teardown()
