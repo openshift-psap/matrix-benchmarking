@@ -4,17 +4,8 @@ import plugins.adaptive.matrix_view
 from plugins.adaptive.matrix_view import parse_data, all_records, get_record
 
 def rewrite_properties(params_dict):
-    for cfg in params_dict["conf"].split("-"):
-        k, v = cfg.split(":")
-        
-        params_dict[k] = int(v)
-        
-    params_dict["mpi_slots"] = int(8/params_dict["threads"])
-    params_dict["machines"] = int(params_dict["processes"] /  params_dict["mpi_slots"])
-    
     del params_dict["processes"]
     del params_dict["threads"]
-    del params_dict["conf"]
 
     return params_dict
 

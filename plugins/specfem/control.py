@@ -5,16 +5,7 @@ def configure(plugin_cfg, machines):
     pass
 
 def apply_settings(driver_name, settings):
-    if 'conf' in settings:
-        conf = settings['conf']
-        del settings['conf']
-    else:
-        conf = ""
-        
-    settings_str = conf.replace(":", "=").replace("_", ",")
-    for k, v in settings.items():
-        if k == "conf": continue
-        settings_str += f",{k}={v}"
+    settings_str = ",".join(f"{k}={v}" for k, v in settings.items())
         
     msg = f"remote_ctrl:apply_settings:{driver_name}:{settings_str}"
 

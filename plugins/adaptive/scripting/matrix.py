@@ -120,9 +120,15 @@ class Matrix(script.Script):
 
         for settings_items in itertools.product(*settings_matrix):
             settings_dict = dict(settings_items)
+            if "extra" in settings_dict:
+                extra = settings_dict["extra"]
+                del settings_dict["extra"]
+                for kv in extra.split(", "):
+                    k, v = kv.split("=")
+                    settings_dict[k] = v
+                
+            settings_str = ";".join([f"{k.replace('_', '-')}={v.replace('_', '-')}" for k, v in settings_dict.items()])
 
-            settings_str = ";".join([f"{k.replace('_', '-')}={v.replace('_', '-')}" for k, v in settings_items])
-                               
             current_key = settings_str.replace(';', "_")
 
             file_path = "/".join(property_to_named_value(settings_dict, key) for key in path_properties)
