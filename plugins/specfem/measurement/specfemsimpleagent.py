@@ -15,11 +15,13 @@ def configure(plugin_cfg, machines):
     SPECFEM_BUILD_PATH = plugin_cfg['build_path']
     NUM_WORKER_NODES = int(plugin_cfg['num_worker_nodes'])
     NUM_CORE_PER_NODE = int(plugin_cfg['num_core_per_node'])
-
+    specfem_bm.configure(plugin_cfg, machines)
+    specfem_oc.configure(plugin_cfg, machines)
+        
 
 def get_param(params, key):
-    if key == "nproc_per_worker":
-        return int(NUM_CORE_PER_NODE/int(get_param(params, "threads")))
+    if key == "threads":
+        return int(NUM_CORE_PER_NODE/int(get_param(params, "mpi-slots")))
     
     return params[key]
 

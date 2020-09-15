@@ -4,14 +4,19 @@ setup:
 
 plugins:
   specfem:
-    build_path: /data/kpouget/specfem3d_globe
-    num_worker_nodes: 7
-    num_core_per_node: 8
     
+    num_core_per_node: 8
+    use_scale_lab: true
+    scale_lab:
+      num_worker_nodes: 7
+      build_path: /data/kpouget/specfem3d_globe
+    openshift:
+      go_client_path: /home/kevin/openshift/specfem/specfem-client
+
 machines:
   local:
-    #worker: f12-h17-b01-5039ms.rdu2.scalelab.redhat.com
-    worker: localhost # (tunnelling to ^^)
+    # ssh -N -L localhost:1230:$HOST:1230 $SSH_GW
+    worker: localhost # (tunnelling $HOST via $SSH_GW)
 # ---
 measurement_sets:
   all:

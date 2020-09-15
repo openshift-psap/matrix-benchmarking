@@ -15,7 +15,7 @@ class SpecfemMatrix():
 
     @staticmethod
     def get_path_properties(yaml_expe):
-        return ["platform"]
+        return ["network", "platform"]
 
     @staticmethod
     def prepare_new_record(exe, context, settings_dict):
@@ -24,7 +24,7 @@ class SpecfemMatrix():
 
         exe.reset(None, settings_dict)
         
-        nproc = int(dict([kv.split(":") for kv in settings_dict["conf"].split("_")])["processes"])
+        nproc = int(settings_dict["processes"])
         if int(math.pow(int(math.sqrt(nproc)), 2)) != nproc:
             print(f"WARNING: invalid 'processes' configuration (={nproc}) in {settings_dict}")
             exe.expe_cnt.errors += 1
@@ -74,7 +74,7 @@ class SpecfemMatrix():
     
 def add_to_feedback_cb(ts, src, msg):
     global running
-    if src == "agent" and msg.startswith("Specfem finished"):
+    if src == "agent" and "Specfem finished" in msg:
         running = False
 
 def configure(expe):

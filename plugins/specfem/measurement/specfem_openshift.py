@@ -3,8 +3,12 @@ import yaml
 
 from . import specfemsimpleagent
 
-GO_CLIENT_CWD = "/home/kevin/openshift/specfem/specfem-client"
+GO_CLIENT_CWD = "<from configure>"
 GO_CLIENT_CMD = ["go", "run", ".", "-config", "specfem-benchmark"]
+
+def configure(plugin_cfg, machines):
+    global GO_CLIENT_CWD
+    GO_CLIENT_CWD = plugin_cfg['openshift']['go_client_path']
 
 def _specfem_set_yaml(path_key, value):
     with open(GO_CLIENT_CWD+"/config/specfem-benchmark.yaml", 'r') as f:
@@ -48,8 +52,8 @@ def run_specfem(agent, driver, params):
     num_threads = specfemsimpleagent.get_param(params, "threads")
     _specfem_set_yaml("spec.exec.ncore", mpi_nproc)
 
-    nproc_per_worker = int(specfemsimpleagent.get_param(params, "nproc_per_worker"))
-    _specfem_set_yaml("spec.exec.slotsPerWorker", nproc_per_worker)
+    mpi_slots = int(specfemsimpleagent.get_param(params, "mpi-slots"))
+    _specfem_set_yaml("spec.exec.slotsPerWorker", mpi_slots)
 
     agent.feedback("config: "+_specfem_get_yaml())
 
