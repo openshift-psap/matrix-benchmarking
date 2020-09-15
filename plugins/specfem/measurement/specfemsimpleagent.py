@@ -33,7 +33,7 @@ class SpecfemSimpleAgent(measurement.agentinterface.AgentInterface):
                 
     def feedback(self, msg):
         src = "agent"
-        self.feedback_table.add(0, src, msg.replace(", ", "||"))
+        self.feedback_table.add(0, src, msg.replace(", ", "||").encode('ascii', "ignore").decode())
 
     def remote_ctrl(self, _msg):
         msg = _msg[:-1].decode('ascii').strip()
