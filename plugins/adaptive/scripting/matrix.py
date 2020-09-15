@@ -220,7 +220,7 @@ class Matrix(script.Script):
 
         context = types.SimpleNamespace()
         context.params = types.SimpleNamespace()
-        context.params.driver = yaml_expe["driver"]
+        context.params.driver = yaml_expe.get("driver", None)
 
         for script_propery in (yaml_expe.get("scripts") or []):
             context.params.__dict__[script_propery] = None
