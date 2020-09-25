@@ -93,7 +93,7 @@ def parse_and_save_timing(agent, output_solver_fname):
             if not line.startswith(" Total elapsed time in seconds"): continue
             #  Total elapsed time in seconds =    269.54141061100000
             time_str = line.split("=")[-1].strip()
-            total_time = int(float(time_str)) # ignore decimals
+            total_time = float(time_str) # ignore decimals
             break
         else:
             print("ERROR: failed to find the total elapsed time ...")
