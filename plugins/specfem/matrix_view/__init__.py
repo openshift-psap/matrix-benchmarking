@@ -8,9 +8,21 @@ def rewrite_properties(params_dict):
         params_dict["mpi-slots"] = "999"
 
     NB_CORE_ON_MACHINES = 8
-    #params_dict["mpi_slots"] = str(int(NB_CORE_ON_MACHINES/int(params_dict["threads"])))
-    params_dict["machines"] = str(1+int(int(params_dict["processes"]) / int(params_dict["mpi-slots"])))
+    
+    machines = int(int(params_dict["processes"]) / int(params_dict["mpi-slots"]))
+    if machines * int(params_dict["mpi-slots"]) != int(params_dict["processes"]):
+        machines += 1
+    params_dict["machines"] = str(machines)
 
+    if "network" in params_dict:
+        network = params_dict["network"]
+        del params_dict["network"]
+        if network != "default":
+            params_dict["platform"] += f"_{network}"
+
+    if params_dict["platform"] == "podman":
+        params_dict["platform"] = "baremetal_podman"
+        
     del params_dict["processes"]
 
     if "gpu" in params_dict:
@@ -20,7 +32,13 @@ def rewrite_properties(params_dict):
             params_dict['gpu'] = ":"+params_dict['gpu']
     else:
         params_dict['gpu'] = 'off'
-        
+
+
+    if "relyOnSharedFS" not in params_dict:
+        params_dict["relyOnSharedFS"] = "False"
+    
+    params_dict["run"] = "2"
+    params_dict["relyOnSharedFS"] = params_dict["relyOnSharedFS"].lower()
     return params_dict
 
 plugins.adaptive.matrix_view.rewrite_properties = rewrite_properties
