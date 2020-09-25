@@ -6,19 +6,55 @@ from . import specfemsimpleagent
 GO_CLIENT_CWD = "<from configure>"
 GO_CLIENT_CMD = ["go", "run", ".", "-config", "specfem-benchmark"]
 
+NETWORK_MAPPING = {
+    "multus": "Multus",
+    "hostnet": "HostNetwork",
+    "default": "Default"
+}
+
+DEFAULT_YAML = """\
+apiVersion: specfem.kpouget.psap/v1alpha1
+kind: SpecfemApp
+metadata:
+  name: specfem-sample
+  namespace: specfem
+spec:
+  git:
+    uri: https://gitlab.com/kpouget_psap/specfem3d_globe.git
+    ref: master
+  exec:
+    nproc: 1
+    ncore: 8
+    slotsPerWorker: 1
+  specfem:
+    nex: 16
+  resources:
+    useUbiImage: true
+    storageClassName: "ocs-external-storagecluster-cephfs"
+    workerNodeSelector:
+      node-role.kubernetes.io/worker:
+    relyOnSharedFS: false
+    networkType: default
+    multus:
+      mainNic: enp1s0f1
+"""
+
 def configure(plugin_cfg, machines):
     global GO_CLIENT_CWD
     GO_CLIENT_CWD = plugin_cfg['openshift']['go_client_path']
 
 def _specfem_set_yaml(path_key, value):
-    with open(GO_CLIENT_CWD+"/config/specfem-benchmark.yaml", 'r') as f:
-        yaml_cfg = yaml.safe_load(f)
+    if path_key is not None:
+        with open(GO_CLIENT_CWD+"/config/specfem-benchmark.yaml", 'r') as f:
+            yaml_cfg = yaml.safe_load(f)
 
-    loc = yaml_cfg
-    *path, key = path_key.split(".")
-    for p in path: loc = loc[p]
-    loc[key] = value
-
+        loc = yaml_cfg
+        *path, key = path_key.split(".")
+        for p in path: loc = loc[p]
+        loc[key] = value
+    else:
+        yaml_cfg = yaml.safe_load(DEFAULT_YAML)
+        
     with open(GO_CLIENT_CWD+"/config/specfem-benchmark.yaml", 'w') as f:
         yaml.dump(yaml_cfg, f)
         
@@ -28,7 +64,7 @@ def _specfem_get_yaml():
         return yaml.dump(yaml_cfg)
 
 def reset():
-    cmd = GO_CLIENT_CMD + ["-delete", "config"]
+    cmd = GO_CLIENT_CMD + ["-delete", "mesher"]
     process = subprocess.Popen(cmd, cwd=GO_CLIENT_CWD, stdout=subprocess.PIPE)
     process.wait()
     errcode = process.returncode
@@ -43,6 +79,8 @@ def reset():
     return errcode
 
 def run_specfem(agent, driver, params):
+    _specfem_set_yaml(None, None) # reset YAML file
+    
     nex = int(specfemsimpleagent.get_param(params, "nex"))
     _specfem_set_yaml("spec.specfem.nex", nex)
 
@@ -50,11 +88,18 @@ def run_specfem(agent, driver, params):
     _specfem_set_yaml("spec.exec.nproc", mpi_nproc)
     
     num_threads = specfemsimpleagent.get_param(params, "threads")
-    _specfem_set_yaml("spec.exec.ncore", mpi_nproc)
+    _specfem_set_yaml("spec.exec.ncore", num_threads)
 
     mpi_slots = int(specfemsimpleagent.get_param(params, "mpi-slots"))
     _specfem_set_yaml("spec.exec.slotsPerWorker", mpi_slots)
 
+    network = specfemsimpleagent.get_param(params, "network")
+    _specfem_set_yaml("spec.resources.networkType", NETWORK_MAPPING[network])
+
+
+    shared_fs = specfemsimpleagent.get_param(params, "relyOnSharedFS")
+    _specfem_set_yaml("spec.resources.relyOnSharedFS", shared_fs)
+    
     agent.feedback("config: "+_specfem_get_yaml())
 
     process = subprocess.Popen(GO_CLIENT_CMD, cwd=GO_CLIENT_CWD, stderr=subprocess.PIPE)
@@ -74,10 +119,14 @@ def run_specfem(agent, driver, params):
     errcode = process.returncode
     
     if errcode != 0:
-        print(f"ERROR: Specfem finished with errcode={errcode}")
+        msg = f"ERROR: Specfem finished with errcode={errcode}"
+        print(msg)
+        agent.feedback(msg)
         return
     if log_filename is None:
-        print(f"ERROR: Specfem GO client failed to retrieve the solver logfile ...")
+        msg = f"ERROR: Specfem finished but the GO client failed to retrieve the solver logfile ..."
+        print(msg)
+        agent.feedback(msg)
         return
     print(f"INFO: Specfem finished successfully")
     specfemsimpleagent.parse_and_save_timing(agent,log_filename)
