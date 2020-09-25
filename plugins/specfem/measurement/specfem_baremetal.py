@@ -115,11 +115,6 @@ def reset():
     
 
 def run_specfem(agent, driver, params):
-    global first_run
-    if first_run:
-        _prepare_system()
-        first_run = False
-    
     try: os.remove(f"{SPECFEM_BUILD_PATH}/OUTPUT_FILES/output_solver.txt")
     except FileNotFoundError: pass # ignore
 
@@ -149,22 +144,42 @@ def run_specfem(agent, driver, params):
     num_threads = specfemsimpleagent.get_param(params, "threads")
 
     use_podman = 1 if specfemsimpleagent.get_param(params, "platform") == "podman" else 0
-
-    specfem_config = " | ".join([
-        f"USE_PODMAN={use_podman}",
-        f"MPI_NPROC={mpi_nproc}",
+    
+    use_shared_fs = specfemsimpleagent.get_param(params, "relyOnSharedFS").lower()
+    
+    env_cfg = [
+        f"SPECFEM_USE_PODMAN={use_podman}",
+        f"SPECFEM_MPI_NPROC={mpi_nproc}",
         f"MPI_SLOTS={mpi_slots}",
-        f"OMP_THREADS={num_threads}",
-        f"NEX={nex}"])
+        f"OMP_NUM_THREADS={num_threads}",
+        f"SPECFEM_USE_SHARED_FS={use_shared_fs}",
+        f"SPECFEM_NEX={nex}"]
+
+    try:
+        oflag = specfemsimpleagent.get_param(params, "libgomp_optim")
+        LIBGOMP_OPTIM_PATH = f"/data/kpouget/libgomp/libgomp/{oflag.upper()}/usr/lib64/"
+        env_cfg.append(f"LD_LIBRARY_PATH={LIBGOMP_OPTIM_PATH}")
+        if not os.path.exists(LIBGOMP_OPTIM_PATH):
+            agent.feedback(f"Specfem finished without starting: libgomp optim lib not found ({LIBGOMP_OPTIM_PATH})")
+            print(f"ERROR: libgomp optim directory doesn't exist ({LIBGOMP_OPTIM_PATH})")
+            return
+        msg = f"INFO: running with LIBGOMP flag '-{oflag.upper()}'"
+        print(msg)
+        agent.feedback(msg)
+    except KeyError:
+        msg = f"INFO: running with the system's libgomp"
+        print(msg)
+        agent.feedback(msg)
+        
+    _prepare_system(env_cfg)    
+    
+    specfem_config = " | ".join(env_cfg)
 
     agent.feedback("config: "+specfem_config)
     cwd = SPECFEM_BUILD_PATH
-    cmd = ["env",
-           f"OMP_NUM_THREADS={num_threads}",
-           f"SPECFEM_MPI_NPROC={mpi_nproc}",
-           f"SPECFEM_USE_PODMAN={use_podman}",
-           f"SPECFEM_CONFIG={specfem_config}", # for logging
-           "bash", "./build_and_run.sh"]
+    cmd = (["env"] + env_cfg + [f"SPECFEM_CONFIG={specfem_config}"] +  # for logging
+           ["bash", "./build_and_run.sh"])
+    
     msg = f"Running '{' '.join(cmd)}' in '{cwd}'"
     print(f"INFO:", msg)
     agent.feedback(msg)
