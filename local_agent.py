@@ -343,7 +343,9 @@ def main():
         with open(".plugin") as plugin_f:
             MODE_KEY = plugin_f.read().strip()
         if not MODE_KEY: raise ValueError(".plugin file is empty")
-    except FileNotFoundError: pass # ignore
+    except FileNotFoundError as e:
+        print("FATAL:", e.__class__.__name__, e)
+        raise e
     except Exception as e:
         MODE_KEY = "adaptive"
         print("FATAL:", e.__class__.__name__, e)
