@@ -4,12 +4,11 @@ setup:
 
 plugins:
   specfem:
-    
-    num_core_per_node: 8
-    use_scale_lab: true
+    build_path: /data/kpouget/specfem3d_globe
+    scale_lab_frontend: f13-h20-b03-5039ms.rdu2.scalelab.redhat.com
     scale_lab:
       num_worker_nodes: 7
-      build_path: /data/kpouget/specfem3d_globe
+      num_core_per_node: 8
     openshift:
       go_client_path: /home/kevin/openshift/specfem/specfem-client
 

@@ -1,4 +1,4 @@
-import types, sys, traceback
+import types, sys, traceback, socket
 
 import measurement.agentinterface
 from measurement.feedback import feedback
@@ -6,26 +6,31 @@ from measurement.feedback import feedback
 from . import specfem_baremetal as specfem_bm
 from . import specfem_openshift as specfem_oc
 
-SPECFEM_BUILD_PATH = "<from configure>"
-NUM_WORKER_NODES = "<from configure>"
 NUM_CORE_PER_NODE = "<from configure>"
 
 def configure(plugin_cfg, machines):
-    global SPECFEM_BUILD_PATH, NUM_WORKER_NODES, NUM_CORE_PER_NODE
-    SPECFEM_BUILD_PATH = plugin_cfg['build_path']
-    NUM_WORKER_NODES = int(plugin_cfg['num_worker_nodes'])
-    NUM_CORE_PER_NODE = int(plugin_cfg['num_core_per_node'])
+    global NUM_CORE_PER_NODE
+
+    in_scale_lab = socket.gethostname() == plugin_cfg['scale_lab_frontend']
+    if in_scale_lab:
+        NUM_CORE_PER_NODE = int(plugin_cfg['scale_lab']['num_core_per_node'])
+    else:
+        NUM_CORE_PER_NODE = 9999
+
     specfem_bm.configure(plugin_cfg, machines)
     specfem_oc.configure(plugin_cfg, machines)
-        
 
 def get_param(params, key):
-    if key == "threads":
-        return int(NUM_CORE_PER_NODE/int(get_param(params, "mpi-slots")))
+    try:
+        return params[key]
+    except KeyError as e:
+        if key == "relyOnSharedFS":
+            return "false"
+        elif key == "threads":
+            return int(NUM_CORE_PER_NODE/int(get_param(params, "mpi-slots")))
+        else:
+            raise e
     
-    return params[key]
-
-
 class SpecfemSimpleAgent(measurement.agentinterface.AgentInterface):
     def setup(self):
         self.register_timing()

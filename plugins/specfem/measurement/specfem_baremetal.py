@@ -1,184 +1,77 @@
-import os, subprocess, math
+import os, subprocess, math, socket
 
 from . import specfemsimpleagent
 
 NUM_WORKER_NODES = "<from configure>"
 SPECFEM_BUILD_PATH = "<from configure>"
 USE_SCALE_LAB = "<from configure>"
+CONFIGURE_SH = "<from configure()>"
+
+BUILD_AND_RUN_SH = "<from configure()>"
+RUN_MESHER_SH = "<from configure()>"
+RUN_SOLVER_SH = "<from configure()>"
 
 def configure(plugin_cfg, machines):
-    global SPECFEM_BUILD_PATH, NUM_WORKER_NODES, USE_SCALE_LAB
-    USE_SCALE_LAB = bool(plugin_cfg['use_scale_lab'])
+    global SPECFEM_BUILD_PATH, NUM_WORKER_NODES, USE_SCALE_LAB, CONFIGURE_SH
+    
+    USE_SCALE_LAB = socket.gethostname() == plugin_cfg['scale_lab_frontend']
+    print("USE_SCALE_LAB:", USE_SCALE_LAB)
+    SPECFEM_BUILD_PATH = plugin_cfg['build_path']
     if USE_SCALE_LAB:
-        SPECFEM_BUILD_PATH = plugin_cfg['scale_lab']['build_path']
         NUM_WORKER_NODES = int(plugin_cfg['scale_lab']['num_worker_nodes'])
 
-# must match plugin.specfem.scripts.install.sh
-CONFIGURE_SH = """
+    # must match plugin.specfem.scripts.install.sh
+    CONFIGURE_SH = f"""
 DATA_DIR="/data/kpouget"
-BUILD_DIR="$DATA_DIR/specfem3d_globe"
-SHARED_DIR="$DATA_DIR/shared"
+BUILD_DIR="{SPECFEM_BUILD_PATH}"
+SHARED_DIR="/mnt/cephfs/kevin"
 SHARED_SPECFEM="$SHARED_DIR/specfem"
 PODMAN_BASE_IMAGE="quay.io/kpouget/specfem"
 
-export PATH="$PATH:/usr/lib64/openmpi/bin/"
+export PATH="$PATH:/usr/lib64/openmpi/bin"
 """
+    
+    global BUILD_AND_RUN_SH, RUN_MESHER_SH, RUN_SOLVER_SH
+    script_dir = os.path.dirname(__file__) + "/../scripts"
+    with open(f"{script_dir}/build_and_run.sh") as f:
+        BUILD_AND_RUN_SH = "".join(f.readlines())
+    with open(f"{script_dir}/run_mesher.sh") as f:
+        RUN_MESHER_SH = "".join(f.readlines())
+    with open(f"{script_dir}/run_solver.sh") as f:
+        RUN_SOLVER_SH = "".join(f.readlines())
 
 # ssh -N -L localhost:1230:f12-h17-b01-5039ms.rdu2.scalelab.redhat.com:1230 root@f12-h17-b01-5039ms.rdu2.scalelab.redhat.com
 
-BUILD_AND_RUN_SH = """
-MPIRUN_CMD="mpirun --report-child-jobs-separately --allow-run-as-root --mca btl ^openib -mca pml ob1 --mca btl_tcp_if_include enp1s0f1 -np $SPECFEM_MPI_NPROC --hostfile $BUILD_DIR/hostfile.mpi"
 
-if [ "$SPECFEM_USE_PODMAN" == "1" ]; then
-  MPIRUN_CMD="$MPIRUN_CMD \
-        --mca orte_tmpdir_base /tmp/podman-mpirun \
-        --mca btl_base_warn_component_unused 0 \
-        --mca btl_vader_single_copy_mechanism none \
-    podman run --rm --env-host \
-     -v /tmp/podman-mpirun:/tmp/podman-mpirun \
-     -v $SHARED_SPECFEM:$SHARED_SPECFEM \
-     --userns=keep-id --net=host --pid=host --ipc=host \
-     --workdir=$SHARED_SPECFEM \
-     $PODMAN_BASE_IMAGE"
-   echo "$(date) Using PODMAN platform"
-else 
-   echo "$(date) Using BAREMETAL platform"
-fi
-
-cp "$BUILD_DIR"/run_{mesher,solver}.sh "$SHARED_SPECFEM"
-cp {"$BUILD_DIR","$SHARED_SPECFEM"}/DATA/Par_file
-
-rm -f {"$BUILD_DIR","$SHARED_SPECFEM"}/bin/xspecfem3D {"$BUILD_DIR","$SHARED_SPECFEM"}/bin/xmeshfem3D
-
-echo "$(date) Building the mesher ..."
-cd "$BUILD_DIR"
-make clean >/dev/null 2>/dev/null
-if ! make mesh -j8 >/dev/null 2>/dev/null; then
-  echo Mesher build failed ...
-  exit 1
-fi
-echo "$(date) Mesher built."
-
-cp {"$BUILD_DIR","$SHARED_SPECFEM"}/bin/xmeshfem3D
-
-rm -rf "$SHARED_SPECFEM"/{DATABASES_MPI,OUTPUT_FILES}/
-mkdir -p "$SHARED_SPECFEM"/{DATABASES_MPI,OUTPUT_FILES}/
-
-cd "$SHARED_SPECFEM"
-
-echo "$(date) Running the mesher ... $SPECFEM_CONFIG"
-$MPIRUN_CMD  bash ./run_mesher.sh |& grep -v "Warning: Permanently added"
-echo "$(date) Mesher execution done."
-
-cp {"$SHARED_SPECFEM","$BUILD_DIR"}/OUTPUT_FILES/values_from_mesher.h 
-
-cd "$BUILD_DIR"
-
-echo "$(date) Building the solver ..."
-if ! make spec -j8 >/dev/null 2>/dev/null; then
-  echo $(date) Build failed ...
-  exit 1
-fi
-echo "$(date) Solver built."
-
-cp {"$BUILD_DIR","$SHARED_SPECFEM"}/bin/xspecfem3D
-sync
-
-cd "$SHARED_SPECFEM"
-echo "$(date) Running the solver ... $SPECFEM_CONFIG"
-$MPIRUN_CMD bash ./run_solver.sh |& grep -v "Warning: Permanently added"
-echo "$(date) Solver execution done."
-
-cp {"$SHARED_SPECFEM","$BUILD_DIR"}/OUTPUT_FILES/output_solver.txt
-"""
-
-RUN_MESHER_SH = """
-WORK_DIR=$SHARED_SPECFEM-$OMPI_COMM_WORLD_NODE_RANK
-
-if [[ -z "$OMPI_COMM_WORLD_RANK" || "$OMPI_COMM_WORLD_RANK" -eq 0 ]]; then
-  set -x
-  echo $(date) Preparing the working directory to run the mesher ... >&2
-fi
-
-rm -rf "$WORK_DIR/"
-mkdir -p "$WORK_DIR/"
-
-cp ./ "$WORK_DIR/" -rf
-
-if [[ -z "$OMPI_COMM_WORLD_RANK" || "$OMPI_COMM_WORLD_RANK" -eq 0 ]]; then
-  echo Running the mesher from "$WORK_DIR" ...
-  echo $(date) Running the mesher >&2
-fi
-
-cd "$WORK_DIR/"
-./bin/xmeshfem3D "$@"
-
-if [[ -z "$OMPI_COMM_WORLD_RANK" || "$OMPI_COMM_WORLD_RANK" -eq 0 ]]; then
-  echo $(date) Mesher done >&2
-  rm -rf "$SHARED_SPECFEM/OUTPUT_FILES/"
-  cp OUTPUT_FILES/ "$SHARED_SPECFEM/" -r
-fi
-
-cp -f DATABASES_MPI/* "$SHARED_SPECFEM/DATABASES_MPI/"
-
-echo Mesher done $OMPI_COMM_WORLD_RANK
-"""
-
-RUN_SOLVER_SH = """
-WORK_DIR=/$SHARED_SPECFEM-$OMPI_COMM_WORLD_NODE_RANK
-
-if [[ -z "$OMPI_COMM_WORLD_RANK" || "$OMPI_COMM_WORLD_RANK" -eq 0 ]]; then
-  set -x
-
-  echo $(date) Preparing the working directory to run the solver... >&2
-fi
-
-mkdir -p "$WORK_DIR/"
-cp ./ "$WORK_DIR/" -rf
-
-if [[ -z "$OMPI_COMM_WORLD_RANK" || "$OMPI_COMM_WORLD_RANK" -eq 0 ]]; then
-  echo Running the solver from "$WORK_DIR" ...
-  echo $(date) Running the solver ... >&2
-fi
-
-cd "$WORK_DIR"
-./bin/xspecfem3D "$@"
-
-if [[ -z "$OMPI_COMM_WORLD_RANK" || "$OMPI_COMM_WORLD_RANK" -eq 0 ]]; then
-  echo $(date) Solver done. >&2
-
-  cp OUTPUT_FILES/output_solver.txt "$SHARED_SPECFEM/OUTPUT_FILES/"
-fi
-
-echo Solver done $OMPI_COMM_WORLD_RANK
-"""
-
-first_run = True
-def _prepare_system():
+def _prepare_system(env_cfg):
     with open(f"{SPECFEM_BUILD_PATH}/build_and_run.sh", "w") as script_f:
         print("#! /bin/bash", file=script_f)
         print("set -ex", file=script_f)
         print(CONFIGURE_SH, file=script_f)
+        for env in env_cfg: print(env, file=script_f)
         print(BUILD_AND_RUN_SH, file=script_f)
 
     with open(f"{SPECFEM_BUILD_PATH}/run_mesher.sh", "w") as script_f:
         print("#! /bin/bash", file=script_f)
         print("set -e", file=script_f)
         print(CONFIGURE_SH, file=script_f)
+        for env in env_cfg: print(env, file=script_f)
         print(RUN_MESHER_SH, file=script_f)
 
     with open(f"{SPECFEM_BUILD_PATH}/run_solver.sh", "w") as script_f:
         print("#! /bin/bash", file=script_f)
         print("set -e", file=script_f)
         print(CONFIGURE_SH, file=script_f)
+        for env in env_cfg: print(env, file=script_f)
         print(RUN_SOLVER_SH, file=script_f)        
         
 def _prepare_mpi_hostfile(nproc, mpi_slots):
     with open(f"{SPECFEM_BUILD_PATH}/hostfile.mpi", "w") as hostfile_f:
-        if SCALELAB:
-            print(f"manager slots={mpi_slots}", file=hostfile_f)
-            for i in range(1, NUM_WORKER_NODES):
-                print(f"worker{i} slots={mpi_slots}", file=hostfile_f)
+        if USE_SCALE_LAB:
+            IPS = ["10.1.36.166", "10.1.36.99", "10.1.36.242", 
+                   "10.1.39.243", "10.1.39.108", "10.1.36.165", "10.1.37.88", "10.1.39.93"]
+            for ip in IPS:
+                print(f"{ip} slots={mpi_slots}", file=hostfile_f)
         else:
             print(f"localhost slots=999", file=hostfile_f)
         
