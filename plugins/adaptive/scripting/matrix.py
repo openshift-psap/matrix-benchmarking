@@ -99,12 +99,15 @@ class Matrix(script.Script):
 
 
     def do_run_the_settings_matrix(self, exe, settings_matrix, context, yaml_expe):
-        def property_to_named_value(settings_dict, key):
+        def property_to_named_value(settings_dict, key, default=""):
             try:
                 val = context.params.__dict__[key]
             except KeyError:
-                val = settings_dict[key]
-                
+                try:
+                    val = settings_dict[key]
+                except KeyError:
+                    return default
+            
             return val[0] if isinstance(val, tuple) else val
         def param_to_named_value(key):
             try:
@@ -131,7 +134,7 @@ class Matrix(script.Script):
 
             current_key = settings_str.replace(';', "_")
 
-            file_path = "/".join(property_to_named_value(settings_dict, key) for key in path_properties)
+            file_path = "/".join(property_to_named_value(settings_dict, key, "") for key in path_properties)
             os.makedirs(f"{context.expe_dir}/{file_path}/", exist_ok=True)
 
             file_entry = " | ".join([fix_key, file_path, current_key])
