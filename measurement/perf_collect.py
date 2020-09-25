@@ -30,7 +30,10 @@ class Feedback():
 async def async_read_dataset(reader):
     b_line = b""
     while True:
-        b_char = await reader.read(1)
+        try: b_char = await reader.read(1)
+        except ConnectionResetError:
+            print("WARNING: connection reset while reading dataset.", reader)
+            return False
         if b_char == b"\0": break
         if not b_char: return False
         b_line += b_char
