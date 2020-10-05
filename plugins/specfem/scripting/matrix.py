@@ -29,8 +29,10 @@ class SpecfemMatrix():
             print(f"WARNING: invalid 'processes' configuration (={nproc}) in {settings_dict}")
             exe.expe_cnt.errors += 1
             return
-
-        running = True
+        
+        if not exe.dry:
+            running = True
+            
         exe.apply_settings(context.params.driver, settings_dict)
 
         exe.clear_record()
