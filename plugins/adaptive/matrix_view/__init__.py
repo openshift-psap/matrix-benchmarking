@@ -97,8 +97,10 @@ def parse_file(filename, reloading=False):
             params_dict[k] = v
 
         if not reloading:
-            param_dict = rewrite_properties(params_dict)
-
+            params_dict = rewrite_properties(params_dict)
+            if params_dict is None:
+                print(f"Skip (rewrite_properties) {entry_key}")
+                continue
         entry.params.__dict__.update(params_dict)
 
         global key_order
