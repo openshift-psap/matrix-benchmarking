@@ -36,9 +36,15 @@ def rewrite_properties(params_dict):
 
     if "relyOnSharedFS" not in params_dict:
         params_dict["relyOnSharedFS"] = "False"
+
+    try:
+        if str(params_dict["run"]) == "1":
+            return None
+    except KeyError:
+        pass
     
-    params_dict["run"] = "2"
     params_dict["relyOnSharedFS"] = params_dict["relyOnSharedFS"].lower()
+    
     return params_dict
 
 plugins.adaptive.matrix_view.rewrite_properties = rewrite_properties

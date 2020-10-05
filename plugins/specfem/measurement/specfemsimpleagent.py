@@ -6,16 +6,15 @@ from measurement.feedback import feedback
 from . import specfem_baremetal as specfem_bm
 from . import specfem_openshift as specfem_oc
 
-NUM_CORE_PER_NODE = "<from configure>"
+NUM_CORE_PER_NODE = "<from configure if in scale-lab>"
 
 def configure(plugin_cfg, machines):
     global NUM_CORE_PER_NODE
 
     in_scale_lab = socket.gethostname() == plugin_cfg['scale_lab_frontend']
-    if in_scale_lab:
+    try:
         NUM_CORE_PER_NODE = int(plugin_cfg['scale_lab']['num_core_per_node'])
-    else:
-        NUM_CORE_PER_NODE = 9999
+    except KeyError: pass
 
     specfem_bm.configure(plugin_cfg, machines)
     specfem_oc.configure(plugin_cfg, machines)

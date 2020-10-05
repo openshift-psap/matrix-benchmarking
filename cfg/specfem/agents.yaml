@@ -7,8 +7,8 @@ plugins:
     build_path: /data/kpouget/specfem3d_globe
     scale_lab_frontend: f13-h20-b03-5039ms.rdu2.scalelab.redhat.com
     scale_lab:
-      num_worker_nodes: 7
-      num_core_per_node: 8
+      num_bm_worker_nodes: 7
+      num_core_per_node: 4
     openshift:
       go_client_path: /home/kevin/openshift/specfem/specfem-client
 

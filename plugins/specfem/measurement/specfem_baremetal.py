@@ -18,7 +18,7 @@ def configure(plugin_cfg, machines):
     print("USE_SCALE_LAB:", USE_SCALE_LAB)
     SPECFEM_BUILD_PATH = plugin_cfg['build_path']
     if USE_SCALE_LAB:
-        NUM_WORKER_NODES = int(plugin_cfg['scale_lab']['num_worker_nodes'])
+        NUM_WORKER_NODES = int(plugin_cfg['scale_lab']['num_bm_worker_nodes'])
 
     # must match plugin.specfem.scripts.install.sh
     CONFIGURE_SH = f"""

@@ -82,16 +82,16 @@ def run_specfem(agent, driver, params):
     _specfem_set_yaml(None, None) # reset YAML file
     
     nex = int(specfemsimpleagent.get_param(params, "nex"))
-    _specfem_set_yaml("spec.specfem.nex", nex)
+    _specfem_set_yaml("spec.specfem.nex", int(nex))
 
     mpi_nproc = int(specfemsimpleagent.get_param(params, "processes"))
-    _specfem_set_yaml("spec.exec.nproc", mpi_nproc)
+    _specfem_set_yaml("spec.exec.nproc", int(mpi_nproc))
     
     num_threads = specfemsimpleagent.get_param(params, "threads")
-    _specfem_set_yaml("spec.exec.ncore", num_threads)
+    _specfem_set_yaml("spec.exec.ncore", int(num_threads))
 
     mpi_slots = int(specfemsimpleagent.get_param(params, "mpi-slots"))
-    _specfem_set_yaml("spec.exec.slotsPerWorker", mpi_slots)
+    _specfem_set_yaml("spec.exec.slotsPerWorker", int(mpi_slots))
 
     network = specfemsimpleagent.get_param(params, "network")
     _specfem_set_yaml("spec.resources.networkType", NETWORK_MAPPING[network])
