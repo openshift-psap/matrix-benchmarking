@@ -3,6 +3,8 @@ from ui.table_stats import TableStats
 import plugins.adaptive.matrix_view
 from plugins.adaptive.matrix_view import parse_data, all_records, get_record
 
+from . import perf
+
 def rewrite_properties(params_dict):
     if "mpi-slots" not in params_dict:
         params_dict["mpi-slots"] = "999"
@@ -54,3 +56,8 @@ def register():
                        "timing.total_time", ".0f", "s")
 
 
+    perf.Plot(mode="time")
+    perf.Plot(mode="speedup")
+    perf.Plot(mode="efficiency")
+    perf.Plot(mode="time_comparison")
+    
