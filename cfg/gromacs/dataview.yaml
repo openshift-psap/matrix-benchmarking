@@ -1,0 +1,5 @@
+Progress:
+  Final time:
+    table: ?.timing
+    x: timing.total_time
+    y: timing.total_time
