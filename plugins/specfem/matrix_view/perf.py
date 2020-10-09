@@ -39,9 +39,10 @@ class Plot():
         plot_title = f"Specfem {self.name}"
         
         index_for_colors = set()
-        if "nex" not in variables:
+        if "nex" not in variables and "nex" in params:
             plot_title += f" {params['nex']}nex"
-            
+
+        plot_title += f" (colored by {ordered_vars[-1]})"
         results = defaultdict(list)
         groups = {}
         symbols = {}
@@ -84,7 +85,7 @@ class Plot():
                 legend_name += f" {var}={params[var]}"
                 
                 if self.mode == "time_comparison":
-                    ref_key += f" {var}=" + (params[var] if var != ref_var else ref_value)
+                    ref_key += f" {var}=" + str((params[var] if var != ref_var else ref_value))
                 
             if self.mode == "time_comparison":
                 ref_keys[legend_name] = ref_key
@@ -95,9 +96,9 @@ class Plot():
                 symbols[legend_name] = SYMBOLS[entry.params.nex]
 
             results[legend_name].append(entry.params)
-
-            index_for_colors.add(entry.params.platform)
-            line_color[legend_name] = lambda: COLORS(sorted(index_for_colors).index(entry_params.platform))
+            
+            index_for_colors.add(entry.params.__dict__[ordered_vars[-1]])
+            line_color[legend_name] = lambda: COLORS(sorted(index_for_colors).index(entry_params.__dict__[ordered_vars[-1]]))
             
                 
         x_max = 0
