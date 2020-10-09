@@ -21,7 +21,10 @@ def rewrite_properties(params_dict):
         del params_dict["network"]
         if network != "default":
             params_dict["platform"] += f"_{network}"
-
+        else:
+            if params_dict["platform"] == "openshift" and network == "default":
+                params_dict["platform"] = "openshift_sdn"
+            
     if params_dict["platform"] == "podman":
         params_dict["platform"] = "baremetal_podman"
         
