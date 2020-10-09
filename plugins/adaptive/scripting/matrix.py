@@ -131,8 +131,9 @@ class Matrix(script.Script):
                     settings_dict[k] = v
                 
             settings_str = ";".join([f"{k.replace('_', '-')}={v.replace('_', '-')}" for k, v in settings_dict.items()])
-
-            current_key = settings_str.replace(';', "_")
+            
+            import plugins.adaptive.matrix_view
+            current_key = "_".join(f"{k}={settings_dict[k]}" for k in plugins.adaptive.matrix_view.key_order if k not in ("driver, ""experiment"))
 
             file_path = "/".join(property_to_named_value(settings_dict, key, "") for key in path_properties)
             os.makedirs(f"{context.expe_dir}/{file_path}/", exist_ok=True)
