@@ -35,21 +35,18 @@ def rewrite_properties(params_dict):
             params_dict["gpu"] = f":{int(params_dict['gpu']):02d}"
         else:
             params_dict['gpu'] = ":"+params_dict['gpu']
-    else:
-        params_dict['gpu'] = 'off'
 
+    del params_dict['driver']
 
     if "relyOnSharedFS" not in params_dict:
         params_dict["relyOnSharedFS"] = "False"
 
-    try:
-        if str(params_dict["run"]) == "1":
-            return None
-    except KeyError:
-        pass
-    
+    params_dict["run"] = str(params_dict.get("run", 0))+"."
+    params_dict["@run"] = params_dict["run"]
+    del params_dict["run"]
+
     params_dict["relyOnSharedFS"] = params_dict["relyOnSharedFS"].lower()
-    
+
     return params_dict
 
 plugins.adaptive.matrix_view.rewrite_properties = rewrite_properties
