@@ -22,9 +22,21 @@ def rewrite_properties(params_dict):
     elif platform == "bm":
         platform = "baremetal"
     params_dict["platform"] = platform
-    #params_dict["nex"] = "---"
+
+    if params_dict["isolated-infra"] == "---":
+        params_dict["isolated-infra"] = "no"
+    if params_dict["isolated-infra"] == "yes":
+        params_dict["platform"] += "_isolated_infra"
+    del params_dict["isolated-infra"]
+
+    del params_dict["experiment"]
+
     if "network" in params_dict: del params_dict["network"]
     if "network" in all_keys: all_keys.remove("network")
+
+    params_dict["@iteration"] = params_dict["iteration"]
+    del params_dict["iteration"]
+
     return params_dict
 
 def populate_matrix(props_res_lst):
