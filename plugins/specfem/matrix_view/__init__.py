@@ -10,7 +10,7 @@ def rewrite_properties(params_dict):
         params_dict["mpi-slots"] = "999"
 
     NB_CORE_ON_MACHINES = 8
-    
+
     machines = int(int(params_dict["processes"]) / int(params_dict["mpi-slots"]))
     if machines * int(params_dict["mpi-slots"]) != int(params_dict["processes"]):
         machines += 1
@@ -24,10 +24,10 @@ def rewrite_properties(params_dict):
         else:
             if params_dict["platform"] == "openshift" and network == "default":
                 params_dict["platform"] = "openshift_sdn"
-            
+
     if params_dict["platform"] == "podman":
         params_dict["platform"] = "baremetal_podman"
-        
+
     del params_dict["processes"]
 
     if "gpu" in params_dict:
@@ -63,4 +63,3 @@ def register():
     perf.Plot(mode="speedup")
     perf.Plot(mode="efficiency")
     perf.Plot(mode="time_comparison")
-    

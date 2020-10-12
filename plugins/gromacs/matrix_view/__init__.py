@@ -79,6 +79,7 @@ def populate_matrix(props_res_lst):
             except ValueError: pass # not a number, keep it as a string
             except TypeError: str(value) # cannot be parsed with int(), convert it to string
             Matrix.properties[param].add(value)
+
         Matrix.entry_map[entry.key] = entry
 
         entry.stats = {}

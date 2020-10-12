@@ -63,7 +63,7 @@ class TableStats():
         obj = clazz(*args, **kwargs)
         obj.do_process = obj.process_value_dev
         return obj
-    
+
     @classmethod
     def Average(clazz, *args, **kwargs):
         obj = clazz(*args, **kwargs)
@@ -200,19 +200,19 @@ class TableStats():
 
         if not rows:
             return None, None, None
-        
+
         if len(rows) != 1:
             print(f"WARNING: too many values in {table_def}+{self.field}: {values}")
 
         dev_field = self.kwargs.get('dev_field')
         dev_value = 0
-        
+
         if dev_field:
             dev_row_id = table_def.partition("|")[2].split(";").index(dev_field)
             dev_value = rows[0][dev_row_id]
 
         return rows[0][row_id], dev_value
-    
+
     def process_average(self, table_def, rows):
         row_id = table_def.partition("|")[2].split(";").index(self.field)
         values = [row[row_id] for row in rows if row[row_id] is not None]
@@ -396,7 +396,7 @@ class TableStats():
             print(f"Using var_length={var_length} instead of {len(variables)}")
         else:
             var_length = len(variables)
-            
+
         data = []
         layout = go.Layout()
         layout.hovermode = 'closest'
@@ -543,7 +543,7 @@ class TableStats():
         from .matrix_view import natural_keys
         legend_keys = sorted(list(legend_keys), key=natural_keys)
         legend_names = sorted(list(legend_names), key=natural_keys)
-        
+
         DO_LOCAL_SORT = True
         for legend_key in legend_keys:
             legend_name, subplots_key = legend_key
@@ -612,7 +612,6 @@ class TableStats():
             # force y_min = 0 | y_max = max visible value (cannot set only y_min)
             # if var_length <= 2:
             #   bar plot start from 0, y_max hard to compute with error bars
-
             layout.yaxis.range = [0, y_max]
 
         for i, ax in enumerate(sorted(subplots_used)):
