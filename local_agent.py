@@ -1,7 +1,7 @@
 #! /usr/bin/env python3.7
 
 import argparse
-import sys, signal
+import sys, signal, os
 import re
 import asyncio
 import importlib
@@ -340,8 +340,10 @@ async def check_timer(server, measurements, deads, loop, fatal):
 
 def main():
     try:
-        with open(".plugin") as plugin_f:
-            MODE_KEY = plugin_f.read().strip()
+        MODE_KEY = os.getenv("MATRIX_BENCHMARK_PLUGIN")
+        if MODE_KEY is None:
+            with open(".plugin") as plugin_f:
+                MODE_KEY = plugin_f.read().strip()
         if not MODE_KEY: raise ValueError(".plugin file is empty")
     except FileNotFoundError as e:
         print("FATAL:", e.__class__.__name__, e)
