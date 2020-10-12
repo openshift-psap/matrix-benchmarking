@@ -614,7 +614,7 @@ class TableStats():
             #   bar plot start from 0, y_max hard to compute with error bars
             layout.yaxis.range = [0, y_max]
 
-        for i, ax in enumerate(sorted(subplots_used)):
+        for i, ax in enumerate(sorted(subplots_used, key=lambda x: int(x[1:]))):
             axis = "xaxis"+ax[1:]
             layout[axis].domain = [i/len(subplots_used), (i+1)/len(subplots_used)]
 
