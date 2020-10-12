@@ -25,11 +25,11 @@ class Plot():
         self.name = mode.title().replace("_", " ")
         self.id_name = mode
         TableStats._register_stat(self)
-        
-        
+
+
     def do_hover(self, meta_value, variables, figure, data, click_info):
         return "nothing"
-    
+
     def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
         fig = go.Figure()
 
@@ -194,11 +194,11 @@ class Plot():
         elif self.mode == "time_comparison":
             y_title = "Slowdown comparison (in %)"
             if y_max == 0: y_max = 1
-            
+
         fig.update_layout(
             title=plot_title,
             yaxis=dict(title=y_title, range=[y_min*1.01, y_max*1.01]),
             xaxis=dict(title="Number of machines", range=[0, x_max+1]))
 
-            
+
         return fig, ""

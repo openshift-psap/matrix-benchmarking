@@ -31,22 +31,22 @@ def populate_matrix(props_res_lst):
     for params_dict, result in props_res_lst:
         entry = FileEntry()
         entry.params = Params()
-        
+
         for k in all_keys:
             if k not in params_dict:
                 params_dict[k] = "---"
-        
+
         params_dict = rewrite_properties(params_dict)
         if params_dict is None:
             print(f"Skip (rewrite_properties) {entry.key}")
             continue
-        
+
         if mv.key_order is None:
             mv.key_order = list(params_dict.keys())
-            
+
         entry.key = "_".join([f"{k}={params_dict.get(k)}" for k in mv.key_order])
         entry.params.__dict__.update(params_dict)
-        
+
         entry.filename = entry.linkname = "[not available]"
         try:
             dup_entry = Matrix.entry_map[entry.key]
@@ -88,20 +88,20 @@ def populate_matrix(props_res_lst):
 def parse_data():
     props_res_lst = parse_file("results/gromacs.csv")
     populate_matrix(props_res_lst)
-    
+
 def parse_file(filename):
     with open(filename) as record_f:
         lines = record_f.readlines()
 
     props_res_lst = []
-        
+
     keys = []
     experiment_properties = {}
 
     for _line in lines:
         if not _line.replace(',','').strip(): continue # ignore empty lines
         if _line.startswith("##") or _line.startswith('"##'): continue # ignore comments
-        
+
         line_entries = _line.strip("\n,").split(",") # remove EOL and empty trailing cells
 
         if _line.startswith("#"):
@@ -115,7 +115,7 @@ def parse_file(filename):
                     continue
                 experiment_properties[prop.strip()] = value.strip()
             continue
-        
+
         if not keys:
             # line: 'Physical Nodes,MPI procs,OMP threads/node,Iterations'
             keys = [k for k in line_entries if k]
@@ -123,7 +123,7 @@ def parse_file(filename):
 
         # line: 1,1,4,0.569,0.57,0.57,0.57,0.569
         # props ^^^^^| ^^^^^^^^^^^^^^^^^^^^^^^^^ results
-        
+
         line_properties = dict(zip(keys[:-1], line_entries))
         line_properties.update(experiment_properties)
         line_results = line_entries[len(keys)-1:]
@@ -132,7 +132,7 @@ def parse_file(filename):
             props["iteration"] = i
             props_res_lst.append((props, float(result)))
         all_keys.update(props.keys())
-        
+
     return props_res_lst
 
 def register():
@@ -145,4 +145,3 @@ def register():
     perf.Plot(mode="speedup")
     perf.Plot(mode="efficiency")
     perf.Plot(mode="time_comparison")
-    
