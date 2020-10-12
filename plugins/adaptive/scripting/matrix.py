@@ -8,7 +8,7 @@ from ui import script
 from ui import matrix_view as ui_matrix_view
 import plugins.adaptive.matrix_view as adaptive_matrix_view
 
-STOP_ON_ERRORS = True
+STOP_ON_ERRORS = False
 
 do_at_exit = {}
 def exit_cleanup():
