@@ -163,7 +163,8 @@ class Plot():
                     # shallow copy of the last entry_params
                     entry_params_cpy = entry_params.__class__(**entry_params.__dict__)
                     entry_params_cpy.time = stats.mean(times)
-                    entry_params_cpy.time_stdev = stats.stdev(times)
+                    entry_params_cpy.time_stdev = stats.stdev(times) if len(times) >= 2 else 0
+
                     results[legend_name].append(entry_params_cpy)
 
         if self.mode == "time_comparison":
