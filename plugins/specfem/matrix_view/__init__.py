@@ -56,7 +56,7 @@ def register():
                        "timing.total_time", ".0f", "s")
 
 
-    perf.Plot(mode="time")
-    perf.Plot(mode="speedup")
-    perf.Plot(mode="efficiency")
-    perf.Plot(mode="time_comparison")
+    perf.Plot(mode="specfem", what="time")
+    perf.Plot(mode="specfem", what="speedup")
+    perf.Plot(mode="specfem", what="efficiency")
+    perf.Plot(mode="specfem", what="time_comparison")

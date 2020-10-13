@@ -68,11 +68,14 @@ def populate_matrix(props_res_lst):
             continue
         except KeyError: pass # not duplicated
 
-        table_name = "worker.timing"
-        table_def = f"#{table_name}|timing.total_time" # to match specfem's table_def
-        table_rows = [[result]]
+        speed_result = result
+        time_result = 1/speed_result * 200
 
-        entry.tables = {table_def: (table_name, table_rows)}
+        table_name = "timing"
+        entry.tables = {
+            f"#worker.{table_name}|{table_name}.total_time,{table_name}.speed":
+                                            (table_name, [[time_result, speed_result]])
+        }
 
         for param, value in entry.params.__dict__.items():
             try: value = int(value)
@@ -150,11 +153,11 @@ def parse_file(filename):
 
 def register():
     import plugins.specfem.matrix_view.perf as perf
-    TableStats.Average("total_time", "Simulation speed", "?.timing",
-                       "timing.total_time", ".2f", "ns/day")
+    TableStats.Average("speed", "Simulation speed", "?.timing", "timing.speed", ".2f", "ns/day")
+    TableStats.Average("time", "Simulation time", "?.timing", "timing.total_time", ".2f", "s")
 
 
-    perf.Plot(mode="time")
-    perf.Plot(mode="speedup")
-    perf.Plot(mode="efficiency")
-    perf.Plot(mode="time_comparison")
+    perf.Plot(mode="gromacs", what="time")
+    perf.Plot(mode="gromacs", what="speedup")
+    perf.Plot(mode="gromacs", what="efficiency")
+    perf.Plot(mode="gromacs", what="time_comparison")

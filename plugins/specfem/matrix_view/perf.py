@@ -19,13 +19,14 @@ SYMBOLS = [
 ]
 
 class Plot():
-    def __init__(self, mode):
-        if mode not in ("time", "time_comparison", "speedup", "efficiency"):
+    def __init__(self, mode, what):
+        if what not in ("time", "time_comparison", "speedup", "efficiency"):
             raise KeyError(f"Invalid key: {mode}")
 
         self.mode = mode
-        self.name = mode.title().replace("_", " ")
-        self.id_name = mode
+        self.what = what
+        self.name = what.title().replace("_", " ")
+        self.id_name = what
         TableStats._register_stat(self)
 
 
@@ -37,15 +38,16 @@ class Plot():
 
         table_def = None
         table = "worker.timing"
-        field = "total_time"
-        plot_title = f"Specfem {self.name}"
+        field = "timing.total_time"
+
+        plot_title = f"{self.mode.title()} {self.name}"
 
         RESERVED_VARIABLES = ("machines", "mpi-slots")
 
         if "nex" not in variables and "nex" in params:
             plot_title += f" for {params['nex']}nex"
 
-        if self.mode == "time_comparison":
+        if self.what == "time_comparison":
             ref_var = None
         main_var = None
         second_var = None
@@ -54,7 +56,7 @@ class Plot():
             if var in RESERVED_VARIABLES: continue
             if main_var is None:
                 main_var = var
-                if self.mode == "time_comparison":
+                if self.what == "time_comparison":
                     ref_var = var
             elif second_var is None:
                 second_var = var
@@ -86,7 +88,7 @@ class Plot():
         line_symbol = {}
         line_color = {}
 
-        if self.mode == "time_comparison":
+        if self.what == "time_comparison":
             ref_keys = {}
             for ref_var in ordered_vars:
                 if ref_var in RESERVED_VARIABLES + (rolling_var, ): continue
@@ -111,7 +113,10 @@ class Plot():
                 else:
                     return {'layout': {'title': f"Error: no table named '{table_key}'"}}
 
-            time = entry.tables[table_def][1][0][0]
+                field_index = table_def.partition("|")[-1].split(",").index(field)
+                row_index = 0
+
+            time = entry.tables[table_def][1][row_index][field_index]
             entry.params.time = time
 
             ref_key = ""
@@ -120,12 +125,12 @@ class Plot():
                 if var in RESERVED_VARIABLES + (rolling_var, ): continue
                 legend_name += f" {var}={params[var]}"
 
-                if self.mode == "time_comparison":
+                if self.what == "time_comparison":
                     ref_key += f" {var}=" + str((params[var] if var != ref_var else ref_value))
 
             legend_name = legend_name.strip()
 
-            if self.mode == "time_comparison":
+            if self.what == "time_comparison":
                 ref_keys[legend_name] = ref_key.strip()
 
             main_var_value[legend_name] = entry.params.__dict__[main_var]
@@ -147,7 +152,7 @@ class Plot():
         y_min = 0
         def sort_key(legend_name):
             first_kv, _, other_kv = legend_name.partition(" ")
-            if self.mode == "time_comparison":
+            if self.what == "time_comparison":
                 first_kv, _, other_kv = other_kv.partition(" ")
             k, v = first_kv.split("=")
             try: new_v = "{:20}".format(int(v))
@@ -167,7 +172,7 @@ class Plot():
 
                     results[legend_name].append(entry_params_cpy)
 
-        if self.mode == "time_comparison":
+        if self.what == "time_comparison":
             ref_values = {}
 
             for ref_key in set(ref_keys.values()):
@@ -184,24 +189,23 @@ class Plot():
             if rolling_var is not None:
                 err = []
 
-            if self.mode in ("speedup", "efficiency"):
+            if self.what in ("speedup", "efficiency"):
                 ref_machine_time = [100, 0]
                 for entry_params in results[legend_name]:
                     if int(entry_params.machines) < ref_machine_time[0]:
                         ref_machine_time = [int(entry_params.machines), entry_params.time]
-
                 ref_time = ref_machine_time[1]/ref_machine_time[0]
 
             for entry_params in results[legend_name]:
-                if self.mode == "time":
+                if self.what == "time":
                     y_val = entry_params.time
                     if rolling_var is not None:
                         err.append(entry_params.time_stdev)
-                elif self.mode == "speedup":
+                elif self.what == "speedup":
                     y_val = ref_time/entry_params.time
-                elif self.mode == "efficiency":
+                elif self.what == "efficiency":
                     y_val = ref_time/entry_params.time/int(entry_params.machines)
-                elif self.mode == "time_comparison":
+                elif self.what == "time_comparison":
                     ref_values_key = ref_keys[legend_name] + f" && machines={entry_params.machines}"
                     try:
                         time_ref_value = ref_values[ref_values_key]
@@ -212,7 +216,7 @@ class Plot():
                         time = entry_params.time
                         y_val = (time_ref_value-time)/time_ref_value * 100
                 else:
-                    raise RuntimeError(f"Invalid mode: {self.mode}")
+                    raise RuntimeError(f"Invalid what: {self.what}")
                 if y_val is None: continue
                 x.append(int(entry_params.machines))
                 y.append(y_val)
@@ -222,7 +226,7 @@ class Plot():
             y_min = min([y_min] + [_y for _y in y if _y is not None])
 
             name = legend_name
-            if self.mode == "time_comparison":
+            if self.what == "time_comparison":
                 if legend_name in ref_keys.values():
                     #name += " (reference)"
 
@@ -231,7 +235,7 @@ class Plot():
                                        legendgroup=main_var_value[legend_name],
                                        hoverlabel= {'namelength' :-1},
                                        showlegend=False,
-                                       mode='markers+lines',
+                                       what='markers+lines',
                                        line=dict(color="black"))
                     fig.add_trace(trace)
                     continue
@@ -276,14 +280,17 @@ class Plot():
                                    line=dict(color=color))
                 fig.add_trace(trace)
 
-        if self.mode == "time":
-            y_title = "Execution time (in s)"
+        if self.what == "time":
+            if self.mode == "gromacs":
+                y_title = "Simulation time (arbitrary time unit)"
+            else:
+                y_title = "Execution time (in s)"
             y_min = 0
-        elif self.mode == "speedup":
-            y_title = "Speedup factor"
-        elif self.mode == "efficiency":
-            y_title = "Efficiency"
-        elif self.mode == "time_comparison":
+        elif self.what == "speedup":
+            y_title = "Speedup ratio"
+        elif self.what == "efficiency":
+            y_title = "Parallel Efficiency"
+        elif self.what == "time_comparison":
             y_title = "Slowdown comparison (in %)"
             if y_max == 0: y_max = 1
 
