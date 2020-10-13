@@ -198,9 +198,9 @@ class Plot():
                     if rolling_var is not None:
                         err.append(entry_params.time_stdev)
                 elif self.mode == "speedup":
-                    y_val = entry_params.time/ref_time
+                    y_val = ref_time/entry_params.time
                 elif self.mode == "efficiency":
-                    y_val = entry_params.time/ref_time/int(entry_params.machines)
+                    y_val = ref_time/entry_params.time/int(entry_params.machines)
                 elif self.mode == "time_comparison":
                     ref_values_key = ref_keys[legend_name] + f" && machines={entry_params.machines}"
                     try:
