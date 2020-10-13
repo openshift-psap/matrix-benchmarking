@@ -194,7 +194,7 @@ class Plot():
                 for entry_params in results[legend_name]:
                     if int(entry_params.machines) < ref_machine_time[0]:
                         ref_machine_time = [int(entry_params.machines), entry_params.time]
-                ref_time = ref_machine_time[1]/ref_machine_time[0]
+                ref_time = ref_machine_time[1]*ref_machine_time[0]
 
             for entry_params in results[legend_name]:
                 if self.what == "time":
@@ -204,7 +204,7 @@ class Plot():
                 elif self.what == "speedup":
                     y_val = ref_time/entry_params.time
                 elif self.what == "efficiency":
-                    y_val = ref_time/entry_params.time/int(entry_params.machines)
+                    y_val = (ref_time/entry_params.time)/int(entry_params.machines)
                 elif self.what == "time_comparison":
                     ref_values_key = ref_keys[legend_name] + f" && machines={entry_params.machines}"
                     try:
