@@ -146,7 +146,14 @@ def parse_file(filename):
         for i, result in enumerate(line_results):
             props = dict(line_properties)
             props["iteration"] = i
-            props_res_lst.append((props, float(result)))
+            try:
+                float_result = float(result)
+            except ValueError:
+                if result:
+                    print(f"ERROR: Failed to parse '{result}' for iteration #{i} of", line_properties)
+                continue
+            props_res_lst.append((props, float_result))
+            pass
         all_keys.update(props.keys())
 
     return props_res_lst
