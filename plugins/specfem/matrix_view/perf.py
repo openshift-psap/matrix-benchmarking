@@ -20,7 +20,7 @@ SYMBOLS = [
 
 class Plot():
     def __init__(self, mode, what):
-        if what not in ("time", "time_comparison", "speedup", "efficiency"):
+        if what not in ("time", "time_comparison", "speedup", "efficiency", "strong_scaling"):
             raise KeyError(f"Invalid key: {mode}")
 
         self.mode = mode
@@ -47,8 +47,9 @@ class Plot():
         if "nex" not in variables and "nex" in params:
             plot_title += f" for {params['nex']}nex"
 
-        if self.what == "time_comparison":
+        if self.what in ("time_comparison", "strong_scaling"):
             ref_var = None
+
         main_var = None
         second_var = None
         third_var = None
@@ -56,7 +57,7 @@ class Plot():
             if var in RESERVED_VARIABLES: continue
             if main_var is None:
                 main_var = var
-                if self.what == "time_comparison":
+                if self.what in ("time_comparison", "strong_scaling"):
                     ref_var = var
             elif second_var is None:
                 second_var = var
@@ -88,7 +89,7 @@ class Plot():
         line_symbol = {}
         line_color = {}
 
-        if self.what == "time_comparison":
+        if self.what in ("time_comparison", "strong_scaling"):
             ref_keys = {}
             for ref_var in ordered_vars:
                 if ref_var in RESERVED_VARIABLES + (rolling_var, ): continue
@@ -101,7 +102,9 @@ class Plot():
 
         plot_title += f" (colored by <b>{main_var}</b>"
         if second_var:
-            plot_title += f", symbols by <b>{second_var}</b>)"
+            plot_title += f", symbols by <b>{second_var}</b>"
+        if rolling_var:
+            plot_title += f", averaged by <b>{rolling_var}</b>"
         plot_title += ")"
 
         for entry in matrix_view.all_records(params, param_lists):
@@ -125,12 +128,12 @@ class Plot():
                 if var in RESERVED_VARIABLES + (rolling_var, ): continue
                 legend_name += f" {var}={params[var]}"
 
-                if self.what == "time_comparison":
+                if self.what in ("time_comparison", "strong_scaling"):
                     ref_key += f" {var}=" + str((params[var] if var != ref_var else ref_value))
 
             legend_name = legend_name.strip()
 
-            if self.what == "time_comparison":
+            if self.what in ("time_comparison", "strong_scaling"):
                 ref_keys[legend_name] = ref_key.strip()
 
             main_var_value[legend_name] = entry.params.__dict__[main_var]
@@ -152,8 +155,10 @@ class Plot():
         y_min = 0
         def sort_key(legend_name):
             first_kv, _, other_kv = legend_name.partition(" ")
-            if self.what == "time_comparison":
+            if self.what in ("time_comparison", "strong_scaling"):
                 first_kv, _, other_kv = other_kv.partition(" ")
+            if not first_kv: return legend_name
+
             k, v = first_kv.split("=")
             try: new_v = "{:20}".format(int(v))
             except Exception: new_v = v
@@ -172,16 +177,18 @@ class Plot():
 
                     results[legend_name].append(entry_params_cpy)
 
-        if self.what == "time_comparison":
+        if self.what in ("time_comparison", "strong_scaling"):
             ref_values = {}
-
             for ref_key in set(ref_keys.values()):
                 if ref_key not in results:
                     print("MISSING", ref_key)
                     continue
                 for entry_params in results[ref_key]:
                     if ref_key in ref_values: continue
-                    ref_values[ref_key + f" && machines={entry_params.machines}"] = entry_params.time
+                    if self.what in "time_comparison":
+                        ref_values[ref_key + f" && machines={entry_params.machines}"] = entry_params.time
+                    else:
+                        ref_values[ref_key] = entry_params.time*int(entry_params.machines)
 
         for legend_name in sorted(results.keys(), key=sort_key):
             x = []
@@ -205,8 +212,10 @@ class Plot():
                     y_val = ref_time/entry_params.time
                 elif self.what == "efficiency":
                     y_val = (ref_time/entry_params.time)/int(entry_params.machines)
-                elif self.what == "time_comparison":
-                    ref_values_key = ref_keys[legend_name] + f" && machines={entry_params.machines}"
+                elif self.what in ("time_comparison", "strong_scaling"):
+                    ref_values_key = ref_keys[legend_name]
+                    if self.what == "time_comparison":
+                        ref_values_key += f" && machines={entry_params.machines}"
                     try:
                         time_ref_value = ref_values[ref_values_key]
                     except KeyError:
@@ -214,7 +223,11 @@ class Plot():
                         #print("missing:", ref_values_key, ref_values.keys())
                     else:
                         time = entry_params.time
-                        y_val = (time_ref_value-time)/time_ref_value * 100
+                        if self.what == "time_comparison":
+                            y_val = (time_ref_value-time)/time_ref_value * 100
+                        else:
+                            y_val = (time_ref_value/time)/int(entry_params.machines)
+
                 else:
                     raise RuntimeError(f"Invalid what: {self.what}")
                 if y_val is None: continue
@@ -226,16 +239,17 @@ class Plot():
             y_min = min([y_min] + [_y for _y in y if _y is not None])
 
             name = legend_name
-            if self.what == "time_comparison":
+            if self.what in ("time_comparison", "strong_scaling"):
                 if legend_name in ref_keys.values():
-                    #name += " (reference)"
-
+                    showlegend = self.what == "strong_scaling"
+                    if showlegend:
+                        name += " (ref)"
                     trace = go.Scatter(x=x, y=y,
                                        name=name,
                                        legendgroup=main_var_value[legend_name],
                                        hoverlabel= {'namelength' :-1},
-                                       showlegend=False,
-                                       what='markers+lines',
+                                       showlegend=showlegend,
+                                       mode='markers+lines',
                                        line=dict(color="black"))
                     fig.add_trace(trace)
                     continue
@@ -288,7 +302,7 @@ class Plot():
             y_min = 0
         elif self.what == "speedup":
             y_title = "Speedup ratio"
-        elif self.what == "efficiency":
+        elif self.what in ("efficiency", "strong_scaling"):
             y_title = "Parallel Efficiency"
         elif self.what == "time_comparison":
             y_title = "Slowdown comparison (in %)"

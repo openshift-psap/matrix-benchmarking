@@ -61,3 +61,4 @@ def register():
     perf.Plot(mode="specfem", what="speedup")
     perf.Plot(mode="specfem", what="efficiency")
     perf.Plot(mode="specfem", what="time_comparison")
+    perf.Plot(mode="specfem", what="strong_scaling")
