@@ -1,39 +1,44 @@
 if [[ -z "$OMPI_COMM_WORLD_RANK" || "$OMPI_COMM_WORLD_RANK" -eq 0 ]]; then
+  echo "$(date) Preparing the working directory to run the mesher ..." >&2
   set -x
-  echo $(date) Preparing the working directory to run the mesher ... >&2
 fi
+
+SPECFEM_SHARED_CACHE=${SHARED_SPECFEM}/cache/${SPECFEM_MPI_NPROC}proc/${SPECFEM_NEX}nex
 
 if [ "$SPECFEM_USE_SHARED_FS" == true ]; then
-  WORK_DIR=/$SHARED_SPECFEM-$OMPI_COMM_WORLD_RANK
+  WORK_DIR=$SPECFEM_SHARED_CACHE
 else
   WORK_DIR=$DATA_DIR/specfem/$OMPI_COMM_WORLD_RANK
+  rm -rf "$WORK_DIR/"
+  mkdir -p "$WORK_DIR/"
+
+  cp "$SPECFEM_SHARED_CACHE" "$WORK_DIR/" -rf
 fi
-
-rm -rf "$WORK_DIR/"
-mkdir -p "$WORK_DIR/"
-
-cp ./ "$WORK_DIR/" -rf
 
 if [[ -z "$OMPI_COMM_WORLD_RANK" || "$OMPI_COMM_WORLD_RANK" -eq 0 ]]; then
-  echo Running the mesher from "$WORK_DIR" ...
+  NEX_VALUE=$(cat $WORK_DIR/DATA/Par_file | grep NEX_XI | awk '{ print $3}')
+
   echo $(date) Running the mesher >&2
 fi
+
 
 export OMP_NUM_THREADS
 
 cd "$WORK_DIR/"
-./bin/xmeshfem3D "$@"
+echo "$(date) Running the mesher with $OMP_NUM_THREADS threads on rank #$OMPI_COMM_WORLD_RANK/$OMPI_COMM_WORLD_SIZE nex=$NEX_VALUE from $PWD"
+./bin/xmeshfem3D
 
 if [[ -z "$OMPI_COMM_WORLD_RANK" || "$OMPI_COMM_WORLD_RANK" -eq 0 ]]; then
-  echo $(date) Mesher done >&2
-  rm -rf "$SHARED_SPECFEM/OUTPUT_FILES/"
-  cp OUTPUT_FILES/ "$SHARED_SPECFEM/" -r
+  echo "$(date) Mesher done" >&2
+
+  if [ "$SPECFEM_USE_SHARED_FS" != true ]; then
+      cp "$WORK_DIR/OUTPUT_FILES/" "$SPECFEM_SHARED_CACHE/" -r
+  fi
 fi
-
-cp -f DATABASES_MPI/* "$SHARED_SPECFEM/DATABASES_MPI/"
-
 if [ "$SPECFEM_USE_SHARED_FS" != true ]; then
-  rm -rf "$WORK_DIR"
+    cp -f DATABASES_MPI/* "$SPECFEM_SHARED_CACHE/DATABASES_MPI/"
+
+    rm -rf "$WORK_DIR"
 fi
 
-echo Mesher done $OMPI_COMM_WORLD_RANK
+echo "$(date) Mesher done $OMPI_COMM_WORLD_RANK"
