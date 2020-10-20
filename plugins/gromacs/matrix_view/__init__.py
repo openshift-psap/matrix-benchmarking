@@ -168,3 +168,4 @@ def register():
     perf.Plot(mode="gromacs", what="speedup")
     perf.Plot(mode="gromacs", what="efficiency")
     perf.Plot(mode="gromacs", what="time_comparison")
+    perf.Plot(mode="gromacs", what="strong_scaling")
