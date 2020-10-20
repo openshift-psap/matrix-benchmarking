@@ -11,6 +11,8 @@ BUILD_AND_RUN_SH = "<from configure()>"
 RUN_MESHER_SH = "<from configure()>"
 RUN_SOLVER_SH = "<from configure()>"
 
+SCALE_LAB_IPS = ["172.18.38.172", "172.18.37.12", "172.18.39.242", "172.18.36.125", "172.18.36.12", "172.18.37.96", "172.18.36.45", "172.18.38.11", "172.18.39.243", "172.18.36.166", "172.18.36.99", "172.18.36.242", "172.18.39.108", "172.18.36.165", "172.18.37.88", "172.18.39.93", "172.18.39.17", "172.18.39.100", "172.18.36.132", "172.18.38.149", "172.18.37.37", "172.18.38.211", "172.18.36.214", "172.18.36.15"] # , "172.18.38.32" "172.18.37.196", "172.18.36.224",, "172.18.38.111" "172.18.37.24",  "172.18.38.58",, "172.18.36.73",  "172.18.39.25"
+
 def configure(plugin_cfg, machines):
     global SPECFEM_BUILD_PATH, NUM_WORKER_NODES, USE_SCALE_LAB, CONFIGURE_SH
 
@@ -63,18 +65,18 @@ def _prepare_system(env_cfg):
         print("set -e", file=script_f)
         print(CONFIGURE_SH, file=script_f)
         for env in env_cfg: print(env, file=script_f)
-        print(RUN_SOLVER_SH, file=script_f)        
-        
+        print(RUN_SOLVER_SH, file=script_f)
+
 def _prepare_mpi_hostfile(nproc, mpi_slots):
-    with open(f"{SPECFEM_BUILD_PATH}/hostfile.mpi", "w") as hostfile_f:
+    hostfile = f"{SPECFEM_BUILD_PATH}/hostfile.mpi"
+    with open(hostfile, "w") as hostfile_f:
         if USE_SCALE_LAB:
-            IPS = ["10.1.36.166", "10.1.36.99", "10.1.36.242", 
-                   "10.1.39.243", "10.1.39.108", "10.1.36.165", "10.1.37.88", "10.1.39.93"]
-            for ip in IPS:
+            for ip in SCALE_LAB_IPS:
                 print(f"{ip} slots={mpi_slots}", file=hostfile_f)
         else:
             print(f"localhost slots=999", file=hostfile_f)
-        
+    return hostfile
+
 def _specfem_set_par(key, new_val):
     changed = 1 # buffer changes to avoid touching Par_file without changing anything
     par_file_lines = []
@@ -111,8 +113,17 @@ def _nvidia_mig_set_mode(_mode):
     print(subprocess.check_output("nvidia-smi mig -cci", shell=True).decode('utf8'))
 
 def reset():
-    os.system("pkill xspecfem3D")
-    
+    hostfile = _prepare_mpi_hostfile("all", "1")
+    cmd = ["mpirun",
+           "--allow-run-as-root",
+           "-hostfile", hostfile,
+           "-np", str(len(SCALE_LAB_IPS)),
+           "bash", "-c", "pkill xmeshfem3D; pkill xspecfem3D"
+           ]
+    print(" ".join(cmd))
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    process.wait()
+
 
 def run_specfem(agent, driver, params):
     try: os.remove(f"{SPECFEM_BUILD_PATH}/OUTPUT_FILES/output_solver.txt")
@@ -170,9 +181,9 @@ def run_specfem(agent, driver, params):
         msg = f"INFO: running with the system's libgomp"
         print(msg)
         agent.feedback(msg)
-        
-    _prepare_system(env_cfg)    
-    
+
+    _prepare_system(env_cfg)
+
     specfem_config = " | ".join(env_cfg)
 
     agent.feedback("config: "+specfem_config)
