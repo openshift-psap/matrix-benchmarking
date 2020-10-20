@@ -13,7 +13,7 @@ RUN_SOLVER_SH = "<from configure()>"
 
 def configure(plugin_cfg, machines):
     global SPECFEM_BUILD_PATH, NUM_WORKER_NODES, USE_SCALE_LAB, CONFIGURE_SH
-    
+
     USE_SCALE_LAB = socket.gethostname() == plugin_cfg['scale_lab_frontend']
     print("USE_SCALE_LAB:", USE_SCALE_LAB)
     SPECFEM_BUILD_PATH = plugin_cfg['build_path']
@@ -30,7 +30,7 @@ PODMAN_BASE_IMAGE="quay.io/kpouget/specfem"
 
 export PATH="$PATH:/usr/lib64/openmpi/bin"
 """
-    
+
     global BUILD_AND_RUN_SH, RUN_MESHER_SH, RUN_SOLVER_SH
     script_dir = os.path.dirname(__file__) + "/../scripts"
     with open(f"{script_dir}/build_and_run.sh") as f:
@@ -98,7 +98,7 @@ def _specfem_set_par(key, new_val):
     if not changed:
         return
 
-    
+
     with open(par_filename, "w") as par_f:
         for line in par_file_lines:
             par_f.write(line)
@@ -129,7 +129,7 @@ def run_specfem(agent, driver, params):
 
     except KeyError:
         _specfem_set_par("GPU_MODE", ".false.")
-        
+
     mpi_nproc = int(specfemsimpleagent.get_param(params, "processes"))
     specfem_nproc = int(math.sqrt(mpi_nproc))
     _specfem_set_par("NPROC_XI", specfem_nproc)
@@ -144,9 +144,9 @@ def run_specfem(agent, driver, params):
     num_threads = specfemsimpleagent.get_param(params, "threads")
 
     use_podman = 1 if specfemsimpleagent.get_param(params, "platform") == "podman" else 0
-    
+
     use_shared_fs = specfemsimpleagent.get_param(params, "relyOnSharedFS").lower()
-    
+
     env_cfg = [
         f"SPECFEM_USE_PODMAN={use_podman}",
         f"SPECFEM_MPI_NPROC={mpi_nproc}",
@@ -179,7 +179,7 @@ def run_specfem(agent, driver, params):
     cwd = SPECFEM_BUILD_PATH
     cmd = (["env"] + env_cfg + [f"SPECFEM_CONFIG={specfem_config}"] +  # for logging
            ["bash", "./build_and_run.sh"])
-    
+
     msg = f"Running '{' '.join(cmd)}' in '{cwd}'"
     print(f"INFO:", msg)
     agent.feedback(msg)
@@ -204,4 +204,3 @@ def run_specfem(agent, driver, params):
     print(f"INFO: Specfem finished successfully")
 
     specfemsimpleagent.parse_and_save_timing(agent, f"{SPECFEM_BUILD_PATH}/OUTPUT_FILES/output_solver.txt")
-

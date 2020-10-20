@@ -47,6 +47,7 @@ def rewrite_properties(params_dict):
 
     params_dict["relyOnSharedFS"] = params_dict["relyOnSharedFS"].lower()
 
+
     return params_dict
 
 plugins.adaptive.matrix_view.rewrite_properties = rewrite_properties

@@ -55,7 +55,7 @@ class AdaptiveMatrix():
         exe.wait(int(context.params.record_time[:-1]))
         return True
 
-    
+
 customized_matrix = AdaptiveMatrix
 
 
@@ -107,7 +107,7 @@ class Matrix(script.Script):
                     val = settings_dict[key]
                 except KeyError:
                     return default
-            
+
             return val[0] if isinstance(val, tuple) else val
         def param_to_named_value(key):
             try:
@@ -118,7 +118,7 @@ class Matrix(script.Script):
 
         fix_key = "_".join(f"{key}={param_to_named_value(key)}".replace("_", "-")
                            for key in sorted(context.params.__dict__))
-        
+
         path_properties = sorted(customized_matrix.get_path_properties(yaml_expe))
 
         for settings_items in itertools.product(*settings_matrix):
@@ -129,9 +129,9 @@ class Matrix(script.Script):
                 for kv in extra.split(", "):
                     k, v = kv.split("=")
                     settings_dict[k] = v
-                
+
             settings_str = ";".join([f"{k.replace('_', '-')}={v.replace('_', '-')}" for k, v in settings_dict.items()])
-            
+
             import plugins.adaptive.matrix_view
             current_key = "_".join(f"{k}={settings_dict[k]}" for k in plugins.adaptive.matrix_view.key_order if k not in ("driver, ""experiment"))
 
@@ -203,7 +203,7 @@ class Matrix(script.Script):
         else:
             exe.log(f"- {exe.expe_cnt.executed} have been executed,")
         exe.log(f"- {exe.expe_cnt.recorded} were already recorded,")
-        exe.log(f"- {exe.expe_cnt.errors} failed.") 
+        exe.log(f"- {exe.expe_cnt.errors} failed.")
 
     def do_run_expe(self, exe, expe):
         exe.log("setup()")
@@ -271,7 +271,7 @@ class Matrix(script.Script):
                 break
             if STOP_ON_ERRORS and exe.expe_cnt.errors > 0:
                 break
-            
+
         self.do_scripts_setup(exe, [(k, None) for k, v in script_items], context)
         exe.log("teardown()")
         teardown()
