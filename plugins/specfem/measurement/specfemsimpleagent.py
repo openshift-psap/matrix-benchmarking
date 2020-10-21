@@ -29,12 +29,12 @@ def get_param(params, key):
             return int(NUM_CORE_PER_NODE/int(get_param(params, "mpi-slots")))
         else:
             raise e
-    
+
 class SpecfemSimpleAgent(measurement.agentinterface.AgentInterface):
     def setup(self):
         self.register_timing()
         self.register_feedback()
-                
+
     def feedback(self, msg):
         src = "agent"
         self.feedback_table.add(0, src, msg.replace(", ", "||").encode('ascii', "ignore").decode())
@@ -45,7 +45,7 @@ class SpecfemSimpleAgent(measurement.agentinterface.AgentInterface):
 
         if action == "apply_settings":
             driver, _, params_str = action_params.partition(":")
-   
+
             params = dict([kv.split("=") for kv in params_str.split(",")])
 
             try:
@@ -58,7 +58,7 @@ class SpecfemSimpleAgent(measurement.agentinterface.AgentInterface):
                 print(f"ERROR: Specfem finished with exception={ex}")
                 fatal = sys.exc_info()
                 traceback.print_exception(*fatal)
-                
+
 
         elif action == "request" and action_params.startswith("reset"):
             if action_params.endswith("openshift"):

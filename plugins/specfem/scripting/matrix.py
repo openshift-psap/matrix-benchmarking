@@ -23,16 +23,16 @@ class SpecfemMatrix():
         if running: print("Already running ....")
 
         exe.reset(None, settings_dict)
-        
+
         nproc = int(settings_dict["processes"])
         if int(math.pow(int(math.sqrt(nproc)), 2)) != nproc:
             print(f"WARNING: invalid 'processes' configuration (={nproc}) in {settings_dict}")
             exe.expe_cnt.errors += 1
             return
-        
+
         if not exe.dry:
             running = True
-            
+
         exe.apply_settings(context.params.driver, settings_dict)
 
         exe.clear_record()
@@ -43,7 +43,7 @@ class SpecfemMatrix():
         if exe.dry:
             print("Waiting for the end of the execution ... [dry]")
             return True
-        
+
         exe.log("Waiting for the end of the execution ...")
         from utils.live import get_quit_signal
 
@@ -55,7 +55,7 @@ class SpecfemMatrix():
             if get_quit_signal():
                 raise KeyboardInterrupt()
         print()
-        
+
         exe.log(f"Execution completed after {i} seconds (={int(i/60)}min).")
 
         for table_def, table_vals in UIState().DB.table_contents.items():
@@ -66,14 +66,14 @@ class SpecfemMatrix():
                 # 'timin' table empty ...
                 exe.expe_cnt.errors += 1
                 return False
-            
+
             return True
-        
+
         # 'timing' table not found ...
         exe.expe_cnt.errors += 1
         exe.log("Timing table missing :(")
         return False
-    
+
 def add_to_feedback_cb(ts, src, msg):
     global running
     if src == "agent" and "Specfem finished" in msg:
