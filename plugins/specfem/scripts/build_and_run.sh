@@ -57,7 +57,7 @@ else
 
     echo "$(date) Running the mesher ..."
     echo "$(date) $SPECFEM_CONFIG"
-    $MPIRUN_CMD  bash ./run_mesher.sh
+    $MPIRUN_CMD  bash ./run_mesher.sh || true
 
     if ! [ -e "$SPECFEM_SHARED_CACHE/OUTPUT_FILES/values_from_mesher.h" ]; then
         echo "ERROR: Specfem finished after mesher execution failed ..."
