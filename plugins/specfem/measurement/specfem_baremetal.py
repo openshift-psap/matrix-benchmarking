@@ -154,7 +154,8 @@ def run_specfem(agent, driver, params):
 
     num_threads = specfemsimpleagent.get_param(params, "threads")
 
-    use_podman = 1 if specfemsimpleagent.get_param(params, "platform") == "podman" else 0
+    platform = specfemsimpleagent.get_param(params, "platform")
+    use_podman = 1 if "podman" in platform  else 0
 
     use_shared_fs = specfemsimpleagent.get_param(params, "relyOnSharedFS").lower()
 
@@ -164,7 +165,8 @@ def run_specfem(agent, driver, params):
         f"MPI_SLOTS={mpi_slots}",
         f"OMP_NUM_THREADS={num_threads}",
         f"SPECFEM_USE_SHARED_FS={use_shared_fs}",
-        f"SPECFEM_NEX={nex}"]
+        f"SPECFEM_NEX={nex}",
+        f"SPECFEM_PLATFORM='{platform}'"]
 
     try:
         oflag = specfemsimpleagent.get_param(params, "libgomp_optim")

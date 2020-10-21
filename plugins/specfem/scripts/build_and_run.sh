@@ -13,8 +13,14 @@ if [ "$SPECFEM_USE_PODMAN" == "1" ]; then
      -v /tmp/podman-mpirun:/tmp/podman-mpirun \
      -v $SPECFEM_SHARED_CACHE:$SPECFEM_SHARED_CACHE \
      --userns=keep-id --net=host --pid=host --ipc=host \
-     --workdir=$SPECFEM_SHARED_CACHE \
-     $PODMAN_BASE_IMAGE"
+     --workdir=$SPECFEM_SHARED_CACHE"
+
+  if [ "$SPECFEM_PLATFORM" == "podman-no-seccomp" ]; then
+      MPIRUN_CMD="$MPIRUN_CMD --security-opt seccomp=unconfined"
+  fi
+
+  MPIRUN_CMD="$MPIRUN_CMD \
+              $PODMAN_BASE_IMAGE"
    echo "$(date) Using PODMAN platform"
 else
    echo "$(date) Using BAREMETAL platform"
