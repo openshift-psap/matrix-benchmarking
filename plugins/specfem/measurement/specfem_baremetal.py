@@ -121,7 +121,7 @@ def reset():
            "bash", "-c", "pkill xmeshfem3D; pkill xspecfem3D"
            ]
     print(" ".join(cmd))
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     process.wait()
 
 
