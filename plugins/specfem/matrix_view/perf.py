@@ -203,7 +203,7 @@ class Plot():
                         ref_machine_time = [int(entry_params.machines), entry_params.time]
                 ref_time = ref_machine_time[1]*ref_machine_time[0]
 
-            for entry_params in results[legend_name]:
+            for entry_params in sorted(results[legend_name], key=lambda ep:int(ep.machines)):
                 if self.what == "time":
                     y_val = entry_params.time
                     if rolling_var is not None:
