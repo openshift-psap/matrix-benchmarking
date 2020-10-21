@@ -54,7 +54,7 @@ plugins.adaptive.matrix_view.rewrite_properties = rewrite_properties
 
 def register():
     TableStats.Average("total_time", "Total time", "?.timing",
-                       "timing.total_time", ".0f", "s")
+                       "timing.total_time", ".0f", "in seconds, lower is better")
 
 
     perf.Plot(mode="specfem", what="time")

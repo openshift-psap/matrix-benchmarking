@@ -296,16 +296,16 @@ class Plot():
 
         if self.what == "time":
             if self.mode == "gromacs":
-                y_title = "Simulation time (arbitrary time unit)"
+                y_title = "Simulation time (arbitrary time unit, lower is better)"
             else:
-                y_title = "Execution time (in s)"
+                y_title = "Execution time (in seconds, lower is better)"
             y_min = 0
         elif self.what == "speedup":
-            y_title = "Speedup ratio"
+            y_title = "Speedup ratio (higher is better)"
         elif self.what in ("efficiency", "strong_scaling"):
-            y_title = "Parallel Efficiency"
+            y_title = "Parallel Efficiency (higher is better)"
         elif self.what == "time_comparison":
-            y_title = "Slowdown comparison (in %)"
+            y_title = "Slowdown comparison (in %, higher is better)"
             if y_max == 0: y_max = 1
 
         fig.update_layout(
