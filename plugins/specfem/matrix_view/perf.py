@@ -369,7 +369,7 @@ class Plot():
             plot_title += " (higher is better)"
 
             if y_max == 0: y_max = 1
-        #fig.update_layout(showlegend=False)
+
         fig.update_layout(
             title=plot_title, title_x=0.5,
             yaxis=dict(title=y_title, range=[y_min*1.01, y_max*1.01]),
@@ -385,8 +385,11 @@ class Plot():
                 top = float(top)
                 right = float(right)
             except Exception:
-                print(f"WARNING: Could not parse 'perf.legend_pos={cfg__legend_pos}',"
-                      " ignoring it. Expecting =TOP,RIGHT")
+                if cfg__legend_pos == "off":
+                    fig.update_layout(showlegend=False)
+                else:
+                    print(f"WARNING: Could not parse 'perf.legend_pos={cfg__legend_pos}',"
+                          " ignoring it. Expecting =TOP,RIGHT")
             else:
                 print(f"INFO: Using legend position top={top}, right={right}")
                 fig.update_layout(legend=dict(
