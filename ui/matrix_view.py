@@ -87,7 +87,7 @@ def get_permalink(args, full=False):
 
     search = "?"+"&".join(val(k, v) for k, v in params.items() \
                             if v not in ('---', None) and (full or len(Matrix.properties[k]) != 1))
-    *_, custom_cfg, custom_cfg_saved, props_order = args
+    *_, custom_cfg, custom_cfg_saved, props_order, custom_cfg_saved_state = args
     if props_order:
         search += f"&property-order={props_order}"
 
@@ -164,6 +164,7 @@ def build_layout(search, serializing=False):
             + [''] # custom-config useless here
             + [cfg_data]
             + [defaults.get("property-order", [''])[0]]
+            + []
         ), full=True)
 
         control_children += [html.P(["from ",
@@ -369,7 +370,9 @@ def build_callbacks(app):
                   [Input('list-params-'+key, "value") for key in Matrix.properties]
                   +[Input('custom-config', 'value'),
                     Input('custom-config-saved', 'data'),
-                    Input('property-order', 'children')])
+                    Input('property-order', 'children')],
+                  [State('custom-config-saved', 'data-label')]
+                  )
     def get_permalink_cb(*args):
         try: triggered_id = dash.callback_context.triggered
         except IndexError: return dash.no_update, dash.no_update # nothing triggered the script (on multiapp load)

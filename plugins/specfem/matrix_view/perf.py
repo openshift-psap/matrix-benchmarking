@@ -40,7 +40,23 @@ class Plot():
         table = "worker.timing"
         field = "timing.total_time"
 
-        plot_title = f"{self.mode.title()} {self.name}"
+        cfg__invert_time = cfg.get('perf.invert_time', False)
+        cfg__no_avg = cfg.get('perf.no_avg', False)
+        cfg__legend_pos = cfg.get('perf.legend_pos', False)
+        cfg__include_only = cfg.get('perf.include_only', "")
+
+        if cfg__include_only:
+            cfg__include_only = cfg__include_only.split(",")
+            print(f"INFO: Include only '{', '.join(cfg__include_only)}' platforms.")
+
+        plot_title = f"{self.mode.title()}"
+
+        if cfg__invert_time and self.what == "time":
+            plot_title += f" Simulation Speed"
+        else:
+            if self.mode == "gromacs":
+                plot_title += " Simulation"
+            plot_title += f" {self.name}"
 
         RESERVED_VARIABLES = ("machines", "mpi-slots")
 
@@ -68,9 +84,9 @@ class Plot():
             if main_var is None:
                 return None, "Error, not enough variables selected ..."
 
-        for var in ordered_vars:
+        for var in ordered_vars if not cfg__no_avg else []:
             if var in RESERVED_VARIABLES + (main_var, ): continue
-            if var.startswith("@") and var != ordered_vars[-1]:
+            if var.startswith("@"):
                 rolling_var = var
                 if rolling_var == second_var:
                     second_var = third_var
@@ -88,6 +104,7 @@ class Plot():
         second_var_value = {}
         line_symbol = {}
         line_color = {}
+        ADD_DETAILS = False
 
         if self.what in ("time_comparison", "strong_scaling"):
             ref_keys = {}
@@ -98,14 +115,18 @@ class Plot():
             ref_value = cfg.get('perf.cmp.ref_value', None)
             if ref_value is None:
                 ref_value = str(variables.get(ref_var, ["<invalid ref_key>"])[0])
-            plot_title += f". Reference: <b>{ref_var}={ref_value}</b>"
+            if ADD_DETAILS:
+                plot_title += f". Reference: <b>{ref_var}={ref_value}</b>"
+            else:
+                plot_title += f". Reference: {ref_value}"
 
-        plot_title += f" (colored by <b>{main_var}</b>"
-        if second_var:
-            plot_title += f", symbols by <b>{second_var}</b>"
-        if rolling_var:
-            plot_title += f", averaged by <b>{rolling_var}</b>"
-        plot_title += ")"
+        if ADD_DETAILS:
+            plot_title += f" (colored by <b>{main_var}</b>"
+            if second_var:
+                plot_title += f", symbols by <b>{second_var}</b>"
+            if rolling_var:
+                plot_title += f", averaged by <b>{rolling_var}</b>"
+            plot_title += ")"
 
         for entry in matrix_view.all_records(params, param_lists):
             if table_def is None:
@@ -120,7 +141,15 @@ class Plot():
                 row_index = 0
 
             time = entry.tables[table_def][1][row_index][field_index]
-            entry.params.time = time
+
+            if cfg__invert_time:
+                entry.params.time = 1/time
+            else:
+                entry.params.time = time
+                if self.mode == "specfem":
+                    entry.params.time /= 60
+                if self.mode == "gromacs":
+                    entry.params.time *= 24
 
             ref_key = ""
             legend_name = ""
@@ -189,7 +218,7 @@ class Plot():
                         ref_values[ref_key + f" && machines={entry_params.machines}"] = entry_params.time
                     else:
                         ref_values[ref_key] = entry_params.time*int(entry_params.machines)
-
+        all_x = set()
         for legend_name in sorted(results.keys(), key=sort_key):
             x = []
             y = []
@@ -239,6 +268,10 @@ class Plot():
             y_min = min([y_min] + [_y for _y in y if _y is not None])
 
             name = legend_name
+            if name.startswith("platform="):
+                name = name.partition("=")[-1]
+            color = line_color[legend_name]()
+
             if self.what in ("time_comparison", "strong_scaling"):
                 if legend_name in ref_keys.values():
                     showlegend = self.what == "strong_scaling"
@@ -250,14 +283,12 @@ class Plot():
                                        hoverlabel= {'namelength' :-1},
                                        showlegend=showlegend,
                                        mode='markers+lines',
-                                       line=dict(color="black"))
+                                       line=dict(color=color))
                     fig.add_trace(trace)
                     continue
                 else:
                     # do not plot if no reference data available at all
                     if not [_y for _y in y if _y is not None]: continue
-
-            color = line_color[legend_name]()
 
             try:
                 symbol = line_symbol[legend_name]()
@@ -268,6 +299,15 @@ class Plot():
                               size=8, line_width=2,
                               line_color="black", color=color)
 
+            for inc in cfg__include_only:
+                if inc in name:
+                    break
+            else:
+                if cfg__include_only:
+                    print(f"INFO: Skip '{name}'.")
+                    continue
+
+
             trace = go.Scatter(x=x, y=y,
                                name=name,
                                legendgroup=main_var_value[legend_name],
@@ -276,42 +316,82 @@ class Plot():
                                line=dict(color=color),
                                marker=marker)
             fig.add_trace(trace)
+            all_x.update(x)
             if rolling_var is not None:
+
                 trace = go.Scatter(x=x, y=[_y - _err for _y, _err in zip(y, err)],
                                    name=name,
                                    legendgroup=main_var_value[legend_name],
                                    hoverlabel= {'namelength' :-1},
                                    showlegend=False, mode="lines",
-                                   line=dict(color=color))
+                                   line=dict(color=color, width=0))
 
                 fig.add_trace(trace)
                 trace = go.Scatter(x=x, y=[_y + _err for _y, _err in zip(y, err)],
                                    name=name,
                                    legendgroup=main_var_value[legend_name],
                                    hoverlabel= {'namelength' :-1},
-                                   mode="lines",
-                                   fill='tonexty', showlegend=False,
-                                   line=dict(color=color))
+                                   fill='tonexty', showlegend=False, mode="lines",
+                                   line=dict(color=color, width=0))
                 fig.add_trace(trace)
+
+        if self.what in ("efficiency", "strong_scaling"):
+            trace = go.Scatter(x=[min(all_x), max(all_x)], y=[1, 1],
+                               name="Linear",
+                               showlegend=True,
+                               hoverlabel= {'namelength' :-1},
+                               mode='lines',
+                               line=dict(color="black", width=1, dash="longdash"))
+            fig.add_trace(trace)
 
         if self.what == "time":
             if self.mode == "gromacs":
-                y_title = "Simulation time (arbitrary time unit, lower is better)"
+                if cfg__invert_time:
+                    y_title = "Simulation speed (ns/day)"
+                    plot_title += " (higher is better)"
+                else:
+                    y_title = "Simulation time (hours of computation / ns simulated)"
+                    plot_title += " (lower is better)"
             else:
-                y_title = "Execution time (in seconds, lower is better)"
+                y_title = "Execution time (in minutes)"
+                plot_title += " (lower is better)"
             y_min = 0
         elif self.what == "speedup":
-            y_title = "Speedup ratio (higher is better)"
-        elif self.what in ("efficiency", "strong_scaling"):
-            y_title = "Parallel Efficiency (higher is better)"
-        elif self.what == "time_comparison":
-            y_title = "Slowdown comparison (in %, higher is better)"
-            if y_max == 0: y_max = 1
+            y_title = "Speedup ratio"
+            plot_title += " (higher is better)"
 
+        elif self.what in ("efficiency", "strong_scaling"):
+            y_title = "Parallel Efficiency"
+            plot_title += " (higher is better)"
+
+        elif self.what == "time_comparison":
+            y_title = "Slowdown comparison (in %)"
+            plot_title += " (higher is better)"
+
+            if y_max == 0: y_max = 1
+        #fig.update_layout(showlegend=False)
         fig.update_layout(
-            title=plot_title,
+            title=plot_title, title_x=0.5,
             yaxis=dict(title=y_title, range=[y_min*1.01, y_max*1.01]),
             xaxis=dict(title="Number of machines", range=[0, x_max+1]))
 
+        if self.what in ("efficiency", "strong_scaling"):
+            # use automatic Y range
+            fig.update_layout(yaxis=dict(range=None))
+
+        if cfg__legend_pos:
+            try:
+                top, right = cfg__legend_pos.split(",")
+                top = float(top)
+                right = float(right)
+            except Exception:
+                print(f"WARNING: Could not parse 'perf.legend_pos={cfg__legend_pos}',"
+                      " ignoring it. Expecting =TOP,RIGHT")
+            else:
+                print(f"INFO: Using legend position top={top}, right={right}")
+                fig.update_layout(legend=dict(
+                    yanchor="top", y=top,
+                    xanchor="right", x=right,
+                ))
 
         return fig, ""

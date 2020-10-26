@@ -37,6 +37,7 @@ def rewrite_properties(params_dict):
     params_dict["@iteration"] = params_dict["iteration"]
     del params_dict["iteration"]
 
+
     return params_dict
 
 def populate_matrix(props_res_lst):
@@ -50,7 +51,6 @@ def populate_matrix(props_res_lst):
 
         params_dict = rewrite_properties(params_dict)
         if params_dict is None:
-            print(f"Skip (rewrite_properties) {entry.key}")
             continue
 
         if mv.key_order is None:
@@ -69,7 +69,7 @@ def populate_matrix(props_res_lst):
         except KeyError: pass # not duplicated
 
         speed_result = result
-        time_result = 1/speed_result * 200
+        time_result = 1/speed_result
 
         table_name = "timing"
         entry.tables = {
