@@ -253,7 +253,7 @@ class Plot():
                     else:
                         time = entry_params.time
                         if self.what == "time_comparison":
-                            y_val = (time_ref_value-time)/time_ref_value * 100
+                            y_val = (time-time_ref_value)/time_ref_value * 100
                         else:
                             y_val = (time_ref_value/time)/int(entry_params.machines)
 
@@ -365,8 +365,8 @@ class Plot():
             plot_title += " (higher is better)"
 
         elif self.what == "time_comparison":
-            y_title = "Slowdown comparison (in %)"
-            plot_title += " (higher is better)"
+            y_title = "Time overhead (in %)"
+            plot_title += " (lower is better)"
 
             if y_max == 0: y_max = 1
 
