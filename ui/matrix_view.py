@@ -188,7 +188,7 @@ def build_layout(search, serializing=False):
                 + defaults.get("property-order", ['']) # Input('property-order', 'children')
                 + [None]                               # Input('config-title', 'n_clicks') | None->not clicked yet
                 + ['']                                 # Input('custom-config', 'value')
-                + ['']                                 # Input('custom-config-saved', 'data')
+                + ['']                                 # Input('custom-config-saved', 'data-label')
                 + [defaults.get("cfg", [''])]          # State('custom-config-saved', 'data-label')
             ))
 
@@ -275,10 +275,10 @@ def build_callbacks(app):
     )
 
     @app.callback([Output('custom-config-saved', 'children'),
-                   Output('custom-config-saved', 'data'),
+                   Output('custom-config-saved', 'data-label'),
                    Output('custom-config', 'value')],
                   [Input('config-title', 'n_clicks')],
-                  [State('custom-config-saved', 'data'),
+                  [State('custom-config-saved', 'data-label'),
                    State('custom-config', 'value')])
     def save_config(*args):
         title_click, data, value = args
@@ -369,7 +369,7 @@ def build_callbacks(app):
     @app.callback([Output("permalink", 'href'), Output("download", 'href')],
                   [Input('list-params-'+key, "value") for key in Matrix.properties]
                   +[Input('custom-config', 'value'),
-                    Input('custom-config-saved', 'data'),
+                    Input('custom-config-saved', 'data-label'),
                     Input('property-order', 'children')],
                   [State('custom-config-saved', 'data-label')]
                   )
@@ -422,7 +422,7 @@ def build_callbacks(app):
                           +[Input('property-order', 'children')]
                           +[Input('config-title', 'n_clicks'),
                             Input('custom-config', 'value'),
-                            Input('custom-config-saved', 'data')],
+                            Input('custom-config-saved', 'data-label')],
                           [State('custom-config-saved', 'data-label')]
             )
             def graph_figure_cb(*args):
@@ -444,8 +444,8 @@ def build_callbacks(app):
 
                 cfg = {}
                 lst = (config_saved if config_saved else []) \
-                    + ([config] if config else []) \
-                    + (config_init if cfg_n_clicks is None else [])
+                    + (config_init if cfg_n_clicks is None else []) \
+                    + ([config] if config else [])
 
                 for cf in lst:
                     k, _, v = cf.partition("=")
