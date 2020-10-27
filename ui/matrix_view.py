@@ -477,7 +477,7 @@ def build_callbacks(app):
                 variables = {k:(Matrix.properties[k]) for k, v in params.items() \
                              if k != "stats" and v == "---"}
 
-                ordered_vars = sorted(variables.keys(), key=var_order.index)
+                ordered_vars = sorted(variables.keys(), key=lambda x: var_order.index(x) if x in var_order else 999)
                 ordered_vars.reverse()
 
                 param_lists = [[(key, v) for v in variables[key]] for key in ordered_vars]
