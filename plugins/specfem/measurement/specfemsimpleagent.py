@@ -26,7 +26,10 @@ def get_param(params, key):
         if key == "relyOnSharedFS":
             return "false"
         elif key == "threads":
-            return int(NUM_CORE_PER_NODE/int(get_param(params, "mpi-slots")))
+            threads = int(NUM_CORE_PER_NODE/int(get_param(params, "mpi-slots")))
+            if "hyperthreads" in params.get("platform"):
+                threads *= 2
+            return threads
         else:
             raise e
 
