@@ -45,6 +45,12 @@ class Plot():
         cfg__legend_pos = cfg.get('perf.legend_pos', False)
         cfg__include_only = cfg.get('perf.include_only', "")
 
+        try:
+            cfg__x_var = cfg['perf.x_var']
+            print(f"INFO: using {cfg__x_var} as X variable")
+        except KeyError:
+            cfg__x_var = "machines"
+
         if cfg__include_only:
             cfg__include_only = cfg__include_only.split(",")
             print(f"INFO: Include only '{', '.join(cfg__include_only)}' platforms.")
@@ -58,7 +64,7 @@ class Plot():
                 plot_title += " Simulation"
             plot_title += f" {self.name}"
 
-        RESERVED_VARIABLES = ("machines", "mpi-slots")
+        RESERVED_VARIABLES = (cfg__x_var, "mpi-slots")
 
         if "nex" not in variables and "nex" in params:
             plot_title += f" for {params['nex']}nex"
@@ -140,6 +146,8 @@ class Plot():
                 field_index = table_def.partition("|")[-1].split(",").index(field)
                 row_index = 0
 
+            entry.params.__x_var = entry.params.__dict__[cfg__x_var]
+
             time = entry.tables[table_def][1][row_index][field_index]
 
             if cfg__invert_time:
@@ -172,7 +180,7 @@ class Plot():
                 results[legend_name].append(entry.params)
             else:
                 rolling_val = entry.params.__dict__[rolling_var]
-                all_rolling_results[legend_name][f"machines={entry.params.machines}"].append(entry.params)
+                all_rolling_results[legend_name][f"{cfg__x_var}={entry.params.__x_var}"].append(entry.params)
 
             index_for_colors.add(main_var_value[legend_name])
             index_for_symbols.add(second_var_value[legend_name])
@@ -215,9 +223,9 @@ class Plot():
                 for entry_params in results[ref_key]:
                     if ref_key in ref_values: continue
                     if self.what in "time_comparison":
-                        ref_values[ref_key + f" && machines={entry_params.machines}"] = entry_params.time
+                        ref_values[ref_key + f" && {cfg__x_var}={entry_params.__x_var}"] = entry_params.time
                     else:
-                        ref_values[ref_key] = entry_params.time*int(entry_params.machines)
+                        ref_values[ref_key] = entry_params.time*int(entry_params.__x_var)
         all_x = set()
         for legend_name in sorted(results.keys(), key=sort_key):
             x = []
@@ -228,11 +236,11 @@ class Plot():
             if self.what in ("speedup", "efficiency"):
                 ref_machine_time = [100, 0]
                 for entry_params in results[legend_name]:
-                    if int(entry_params.machines) < ref_machine_time[0]:
-                        ref_machine_time = [int(entry_params.machines), entry_params.time]
+                    if int(entry_params.__x_var) < ref_machine_time[0]:
+                        ref_machine_time = [int(entry_params.__x_var), entry_params.time]
                 ref_time = ref_machine_time[1]*ref_machine_time[0]
 
-            for entry_params in sorted(results[legend_name], key=lambda ep:int(ep.machines)):
+            for entry_params in sorted(results[legend_name], key=lambda ep:int(ep.__x_var)):
                 if self.what == "time":
                     y_val = entry_params.time
                     if rolling_var is not None:
@@ -240,11 +248,11 @@ class Plot():
                 elif self.what == "speedup":
                     y_val = ref_time/entry_params.time
                 elif self.what == "efficiency":
-                    y_val = (ref_time/entry_params.time)/int(entry_params.machines)
+                    y_val = (ref_time/entry_params.time)/int(entry_params.__x_var)
                 elif self.what in ("time_comparison", "strong_scaling"):
                     ref_values_key = ref_keys[legend_name]
                     if self.what == "time_comparison":
-                        ref_values_key += f" && machines={entry_params.machines}"
+                        ref_values_key += f" && {cfg__x_var}={entry_params.__x_var}"
                     try:
                         time_ref_value = ref_values[ref_values_key]
                     except KeyError:
@@ -255,12 +263,12 @@ class Plot():
                         if self.what == "time_comparison":
                             y_val = (time-time_ref_value)/time_ref_value * 100
                         else:
-                            y_val = (time_ref_value/time)/int(entry_params.machines)
+                            y_val = (time_ref_value/time)/int(entry_params.__x_var)
 
                 else:
                     raise RuntimeError(f"Invalid what: {self.what}")
                 if y_val is None: continue
-                x.append(int(entry_params.machines))
+                x.append(int(entry_params.__x_var))
                 y.append(y_val)
 
             x_max = max([x_max] + x)
@@ -373,7 +381,7 @@ class Plot():
         fig.update_layout(
             title=plot_title, title_x=0.5,
             yaxis=dict(title=y_title, range=[y_min*1.01, y_max*1.01]),
-            xaxis=dict(title="Number of machines", range=[0, x_max+1]))
+            xaxis=dict(title=f"Number of {cfg__x_var}", range=[0, x_max+1]))
 
         if self.what in ("efficiency", "strong_scaling"):
             # use automatic Y range
