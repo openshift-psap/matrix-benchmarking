@@ -44,6 +44,7 @@ class Plot():
         cfg__no_avg = cfg.get('perf.no_avg', False)
         cfg__legend_pos = cfg.get('perf.legend_pos', False)
         cfg__include_only = cfg.get('perf.include_only', "")
+        cfg__weak_scaling = cfg.get('perf.weak_scaling', False)
 
         try:
             cfg__x_var = cfg['perf.x_var']
@@ -57,12 +58,21 @@ class Plot():
 
         plot_title = f"{self.mode.title()}"
 
+        if cfg__weak_scaling:
+            plot_title += f" Weak Scaling"
+
         if cfg__invert_time and self.what == "time":
             plot_title += f" Simulation Speed"
         else:
             if self.mode == "gromacs":
                 plot_title += " Simulation"
-            plot_title += f" {self.name}"
+            if self.mode == "specfem" and self.what == "time":
+                plot_title += " Execution"
+
+            if self.what == "strong_scaling":
+                plot_title += " Efficiency"
+            else:
+                plot_title += f" {self.name}"
 
         RESERVED_VARIABLES = (cfg__x_var, "mpi-slots")
 
@@ -106,6 +116,9 @@ class Plot():
         results = defaultdict(list)
         if rolling_var is not None:
             all_rolling_results = defaultdict(lambda:defaultdict(list))
+        if cfg__weak_scaling:
+            weak_values = {}
+
         main_var_value = {}
         second_var_value = {}
         line_symbol = {}
@@ -147,7 +160,24 @@ class Plot():
                 row_index = 0
 
             entry.params.__x_var = entry.params.__dict__[cfg__x_var]
+            if cfg__weak_scaling:
+                weak_key = f"{cfg__x_var}={entry.params.__x_var}"
+                try:
+                    nex = weak_values[weak_key]
+                except KeyError:
+                    if int(entry.params.nex) not in weak_values.values():
+                        weak_values[weak_key] = int(entry.params.nex)
+                    else:
+                        weak_values[weak_key] = 0
+                else:
+                    if int(entry.params.nex) > nex:
+                        if int(entry.params.nex) not in weak_values.values():
+                            weak_values[weak_key] = int(entry.params.nex)
+                        else:
+                            weak_values[weak_key] = 0
 
+                            if int(entry.params.nex) == 256:
+                                weak_values[weak_key] = int(entry.params.nex)
             time = entry.tables[table_def][1][row_index][field_index]
 
             if cfg__invert_time:
@@ -180,10 +210,13 @@ class Plot():
                 results[legend_name].append(entry.params)
             else:
                 rolling_val = entry.params.__dict__[rolling_var]
-                all_rolling_results[legend_name][f"{cfg__x_var}={entry.params.__x_var}"].append(entry.params)
+                key = f"{cfg__x_var}={entry.params.__x_var}"
+                all_rolling_results[legend_name][key].append(entry.params)
+                pass
 
             index_for_colors.add(main_var_value[legend_name])
             index_for_symbols.add(second_var_value[legend_name])
+
             line_color[legend_name] = lambda: COLORS(sorted(index_for_colors).index(entry_params.__dict__[main_var]))
             line_symbol[legend_name] = lambda: SYMBOLS[sorted(index_for_symbols).index(entry_params.__dict__[second_var])]
 
@@ -194,11 +227,27 @@ class Plot():
             first_kv, _, other_kv = legend_name.partition(" ")
             if self.what in ("time_comparison", "strong_scaling"):
                 first_kv, _, other_kv = other_kv.partition(" ")
-            if not first_kv: return legend_name
+            if not first_kv:
+                if cfg__weak_scaling:
+                    return 1
+                return legend_name
 
             k, v = first_kv.split("=")
             try: new_v = "{:20}".format(int(v))
             except Exception: new_v = v
+
+            pos = {"baremetal": 0,
+                   "openshift_hostnet": 1,
+                   "openshift_multus": 2,
+                   "openshift_snd": 3}
+
+            try:
+                nex = int(other_kv.split("=")[1])
+            except Exception:
+                return -1
+
+            return pos.get(new_v, 10) * 1000 + 256-nex
+
             return f"{new_v} {other_kv}"
 
         if rolling_var is not None:
@@ -206,16 +255,24 @@ class Plot():
                 for machine_count, entries_params in rolling_results.items():
                     times = []
                     for entry_params in entries_params:
+                        if cfg__weak_scaling:
+                            weak_key = f"{cfg__x_var}={entry_params.__x_var}"
+                            if weak_values[weak_key] != int(entry_params.nex): continue
                         times.append(entry_params.time)
                     # shallow copy of the last entry_params
                     entry_params_cpy = entry_params.__class__(**entry_params.__dict__)
-                    entry_params_cpy.time = stats.mean(times)
+                    entry_params_cpy.time = stats.mean(times) if len(times) >= 1 else 0
                     entry_params_cpy.time_stdev = stats.stdev(times) if len(times) >= 2 else 0
 
                     results[legend_name].append(entry_params_cpy)
-
+                    if cfg__weak_scaling:
+                        weak_legend_name = " ".join([kv for kv in legend_name.split() if not kv.startswith("nex=")])
+                        results[weak_legend_name].append(entry_params_cpy)
+                        line_symbol[weak_legend_name] = lambda: None
+                        line_color[weak_legend_name] = line_color[legend_name]
+                        main_var_value[weak_legend_name] = weak_legend_name
+        ref_values = {}
         if self.what in ("time_comparison", "strong_scaling"):
-            ref_values = {}
             for ref_key in set(ref_keys.values()):
                 if ref_key not in results:
                     print("MISSING", ref_key)
@@ -226,21 +283,48 @@ class Plot():
                         ref_values[ref_key + f" && {cfg__x_var}={entry_params.__x_var}"] = entry_params.time
                     else:
                         ref_values[ref_key] = entry_params.time*int(entry_params.__x_var)
+
+        elif self.what in ("speedup", "efficiency"):
+            for legend_name in sorted(results.keys(), key=sort_key):
+                if cfg__weak_scaling and "nex=" not in legend_name:
+                    continue
+                ref_value = None
+                for entry_params in results[legend_name]:
+                    if not ref_value or int(entry_params.__x_var) < int(ref_value.__x_var):
+                        ref_value = entry_params
+                ref_values_key = f"{legend_name} {cfg__x_var}={entry_params.__x_var}"
+                ref_values[legend_name] = ref_value
+
+            for legend_name in sorted(results.keys(), key=sort_key):
+                if not cfg__weak_scaling or "nex=" in legend_name:
+                    continue
+                #import pdb;pdb.set_trace()
+                for entry_params in results[legend_name]:
+                    weak_key = f"{cfg__x_var}={entry_params.__x_var}"
+                    ref_nex = weak_values[weak_key]
+                    ref_values_key = f"{legend_name} {weak_key}"
+                    ref_values[ref_values_key] = ref_values[f"{legend_name} nex={entry_params.nex}"]
+
         all_x = set()
+
         for legend_name in sorted(results.keys(), key=sort_key):
             x = []
             y = []
             if rolling_var is not None:
                 err = []
 
-            if self.what in ("speedup", "efficiency"):
-                ref_machine_time = [100, 0]
-                for entry_params in results[legend_name]:
-                    if int(entry_params.__x_var) < ref_machine_time[0]:
-                        ref_machine_time = [int(entry_params.__x_var), entry_params.time]
-                ref_time = ref_machine_time[1]*ref_machine_time[0]
-
             for entry_params in sorted(results[legend_name], key=lambda ep:int(ep.__x_var)):
+                if cfg__weak_scaling:
+                    weak_key = f"{cfg__x_var}={entry_params.__x_var}"
+                    if weak_values[weak_key] != int(entry_params.nex): continue
+
+                if self.what in ("speedup", "efficiency"):
+                    ref_values_key = f"{legend_name}"
+                    if cfg__weak_scaling and "nex=" not in legend_name:
+                        ref_values_key += f" {cfg__x_var}={entry_params.__x_var}"
+                    ref_value = ref_values[ref_values_key]
+                    ref_time = ref_value.time * int(ref_value.__x_var)
+
                 if self.what == "time":
                     y_val = entry_params.time
                     if rolling_var is not None:
@@ -250,14 +334,20 @@ class Plot():
                 elif self.what == "efficiency":
                     y_val = (ref_time/entry_params.time)/int(entry_params.__x_var)
                 elif self.what in ("time_comparison", "strong_scaling"):
-                    ref_values_key = ref_keys[legend_name]
+                    ref_keys_key = legend_name
+                    if cfg__weak_scaling and "nex=" not in legend_name:
+                        ref_nex = weak_values[weak_key]
+                        ref_keys_key += f" nex={ref_nex}"
+                    ref_values_key = ref_keys[ref_keys_key]
+
                     if self.what == "time_comparison":
                         ref_values_key += f" && {cfg__x_var}={entry_params.__x_var}"
                     try:
                         time_ref_value = ref_values[ref_values_key]
                     except KeyError:
                         y_val = None
-                        #print("missing:", ref_values_key, ref_values.keys())
+
+                        print("missing:", ref_values_key, "IN", ', '.join(ref_values.keys()))
                     else:
                         time = entry_params.time
                         if self.what == "time_comparison":
@@ -268,6 +358,7 @@ class Plot():
                 else:
                     raise RuntimeError(f"Invalid what: {self.what}")
                 if y_val is None: continue
+
                 x.append(int(entry_params.__x_var))
                 y.append(y_val)
 
@@ -299,9 +390,12 @@ class Plot():
             except Exception:
                 marker = dict(symbol="circle-dot")
             else:
-                marker = dict(symbol=symbol,
-                              size=8, line_width=2,
-                              line_color="black", color=color)
+                if symbol is not None:
+                    marker = dict(symbol=symbol,
+                                  size=8, line_width=2,
+                                  line_color="black", color=color)
+                else:
+                    marker = dict()
 
             for inc in cfg__include_only:
                 if inc in name:
@@ -323,9 +417,9 @@ class Plot():
                                line=dict(color=color),
                                marker=marker)
             fig.add_trace(trace)
+
             all_x.update(x)
             if rolling_var is not None:
-
                 trace = go.Scatter(x=x, y=[_y - _err for _y, _err in zip(y, err)],
                                    name=name,
                                    legendgroup=main_var_value[legend_name],
@@ -341,8 +435,15 @@ class Plot():
                                    fill='tonexty', showlegend=False, mode="lines",
                                    line=dict(color=color, width=0))
                 fig.add_trace(trace)
-
-        if self.what in ("efficiency", "strong_scaling"):
+        if self.what in ("speedup"):
+            trace = go.Scatter(x=[0, max(all_x)], y=[0, max(all_x)],
+                               name="Linear",
+                               showlegend=True,
+                               hoverlabel= {'namelength' :-1},
+                               mode='lines',
+                               line=dict(color="black", width=2, dash="longdash"))
+            fig.add_trace(trace)
+        elif self.what in ("efficiency", "strong_scaling"):
             trace = go.Scatter(x=[min(all_x), max(all_x)], y=[1, 1],
                                name="Linear",
                                showlegend=True,
