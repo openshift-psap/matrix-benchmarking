@@ -271,10 +271,6 @@ class Plot():
                 x.append(int(entry_params.__x_var))
                 y.append(y_val)
 
-            x_max = max([x_max] + x)
-            y_max = max([y_max] + [_y for _y in y if _y is not None])
-            y_min = min([y_min] + [_y for _y in y if _y is not None])
-
             name = legend_name
             if name.startswith("platform="):
                 name = name.partition("=")[-1]
@@ -315,6 +311,9 @@ class Plot():
                     print(f"INFO: Skip '{name}'.")
                     continue
 
+            x_max = max([x_max] + x)
+            y_max = max([y_max] + [_y for _y in y if _y is not None])
+            y_min = min([y_min] + [_y for _y in y if _y is not None])
 
             trace = go.Scatter(x=x, y=y,
                                name=name,
