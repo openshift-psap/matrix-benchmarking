@@ -133,6 +133,8 @@ class Matrix(script.Script):
             settings_str = ";".join([f"{k.replace('_', '-')}={v.replace('_', '-')}" for k, v in settings_dict.items()])
 
             import plugins.adaptive.matrix_view
+            if plugins.adaptive.matrix_view.key_order is None:
+                plugins.adaptive.matrix_view.key_order = list(settings_dict.keys())
             current_key = "_".join(f"{k}={settings_dict[k]}" for k in plugins.adaptive.matrix_view.key_order if k not in ("driver, ""experiment"))
 
             file_path = "/".join(property_to_named_value(settings_dict, key, "") for key in path_properties)
