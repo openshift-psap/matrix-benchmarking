@@ -54,10 +54,10 @@ def _specfem_set_yaml(path_key, value):
         loc[key] = value
     else:
         yaml_cfg = yaml.safe_load(DEFAULT_YAML)
-        
+
     with open(GO_CLIENT_CWD+"/config/specfem-benchmark.yaml", 'w') as f:
         yaml.dump(yaml_cfg, f)
-        
+
 def _specfem_get_yaml():
     with open(GO_CLIENT_CWD+"/config/specfem-benchmark.yaml", 'r') as f:
         yaml_cfg = yaml.safe_load(f)
@@ -75,18 +75,18 @@ def reset():
         print("8<--8<--8<--")
         print(output)
         print("8<--8<--8<--")
-        
+
     return errcode
 
 def run_specfem(agent, driver, params):
     _specfem_set_yaml(None, None) # reset YAML file
-    
+
     nex = int(specfemsimpleagent.get_param(params, "nex"))
     _specfem_set_yaml("spec.specfem.nex", int(nex))
 
     mpi_nproc = int(specfemsimpleagent.get_param(params, "processes"))
     _specfem_set_yaml("spec.exec.nproc", int(mpi_nproc))
-    
+
     num_threads = specfemsimpleagent.get_param(params, "threads")
     _specfem_set_yaml("spec.exec.ncore", int(num_threads))
 
@@ -99,7 +99,7 @@ def run_specfem(agent, driver, params):
 
     shared_fs = specfemsimpleagent.get_param(params, "relyOnSharedFS")
     _specfem_set_yaml("spec.resources.relyOnSharedFS", shared_fs)
-    
+
     agent.feedback("config: "+_specfem_get_yaml())
 
     process = subprocess.Popen(GO_CLIENT_CMD, cwd=GO_CLIENT_CWD, stderr=subprocess.PIPE)
@@ -117,7 +117,7 @@ def run_specfem(agent, driver, params):
     process.wait()
 
     errcode = process.returncode
-    
+
     if errcode != 0:
         msg = f"ERROR: Specfem finished with errcode={errcode}"
         print(msg)
