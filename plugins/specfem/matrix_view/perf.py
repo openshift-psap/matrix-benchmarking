@@ -45,6 +45,7 @@ class Plot():
         cfg__legend_pos = cfg.get('perf.legend_pos', False)
         cfg__include_only = cfg.get('perf.include_only', "")
         cfg__weak_scaling = cfg.get('perf.weak_scaling', False)
+        cfg__remove_details = cfg.get('perf.rm_details', False)
 
         try:
             cfg__x_var = cfg['perf.x_var']
@@ -123,7 +124,7 @@ class Plot():
         second_var_value = {}
         line_symbol = {}
         line_color = {}
-        ADD_DETAILS = False
+
 
         if self.what in ("time_comparison", "strong_scaling"):
             ref_keys = {}
@@ -134,12 +135,12 @@ class Plot():
             ref_value = cfg.get('perf.cmp.ref_value', None)
             if ref_value is None:
                 ref_value = str(variables.get(ref_var, ["<invalid ref_key>"])[0])
-            if ADD_DETAILS:
-                plot_title += f". Reference: <b>{ref_var}={ref_value}</b>"
-            else:
+            if cfg__remove_details:
                 plot_title += f". Reference: {ref_value}"
+            else:
+                plot_title += f". Reference: <b>{ref_var}={ref_value}</b>"
 
-        if ADD_DETAILS:
+        if not cfg__remove_details:
             plot_title += f" (colored by <b>{main_var}</b>"
             if second_var:
                 plot_title += f", symbols by <b>{second_var}</b>"
@@ -369,7 +370,8 @@ class Plot():
 
             if self.what in ("time_comparison", "strong_scaling"):
                 if legend_name in ref_keys.values():
-                    showlegend = self.what == "strong_scaling"
+                    showlegend = False
+
                     if showlegend:
                         name += " (ref)"
                     trace = go.Scatter(x=x, y=y,
@@ -411,6 +413,7 @@ class Plot():
 
             trace = go.Scatter(x=x, y=y,
                                name=name,
+                               showlegend=True,
                                legendgroup=main_var_value[legend_name],
                                hoverlabel= {'namelength' :-1},
                                mode='markers+lines',
