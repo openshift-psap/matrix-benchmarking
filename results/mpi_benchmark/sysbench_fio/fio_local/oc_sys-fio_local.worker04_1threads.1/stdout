@@ -1,0 +1,93 @@
+sysbench 1.0.17 (using system LuaJIT 2.1.0-beta3)
+
+Running the test with following options:
+Number of threads: 1
+Initializing random number generator from current time
+
+
+Extra file open flags: (none)
+128 files, 16MiB each
+2GiB total file size
+Block size 16KiB
+Number of IO requests: 0
+Read/Write ratio for combined random IO test: 1.50
+Periodic FSYNC enabled, calling fsync() each 100 requests.
+Calling fsync() at the end of test, Enabled.
+Using synchronous I/O mode
+Doing random write test
+Initializing worker threads...
+
+Threads started!
+
+
+File operations:
+    reads/s:                      0.00
+    writes/s:                     8471.60
+    fsyncs/s:                     10848.34
+
+Throughput:
+    read, MiB/s:                  0.00
+    written, MiB/s:               132.37
+
+General statistics:
+    total time:                          10.0087s
+    total number of events:              193263
+
+Latency (ms):
+         min:                                    0.00
+         avg:                                    0.05
+         max:                                    4.47
+         95th percentile:                        0.17
+         sum:                                 9952.06
+
+Threads fairness:
+    events (avg/stddev):           193263.0000/0.00
+    execution time (avg/stddev):   9.9521/0.00
+
+sysbench 1.0.17 (using system LuaJIT 2.1.0-beta3)
+
+Running the test with following options:
+Number of threads: 1
+Initializing random number generator from current time
+
+
+Extra file open flags: (none)
+128 files, 16MiB each
+2GiB total file size
+Block size 16KiB
+Number of IO requests: 0
+Read/Write ratio for combined random IO test: 1.50
+Periodic FSYNC enabled, calling fsync() each 100 requests.
+Calling fsync() at the end of test, Enabled.
+Using synchronous I/O mode
+Doing random read test
+Initializing worker threads...
+
+Threads started!
+
+
+File operations:
+    reads/s:                      488548.33
+    writes/s:                     0.00
+    fsyncs/s:                     0.00
+
+Throughput:
+    read, MiB/s:                  7633.57
+    written, MiB/s:               0.00
+
+General statistics:
+    total time:                          10.0001s
+    total number of events:              4886071
+
+Latency (ms):
+         min:                                    0.00
+         avg:                                    0.00
+         max:                                    0.12
+         95th percentile:                        0.00
+         sum:                                 9281.21
+
+Threads fairness:
+    events (avg/stddev):           4886071.0000/0.00
+    execution time (avg/stddev):   9.2812/0.00
+
+DONE

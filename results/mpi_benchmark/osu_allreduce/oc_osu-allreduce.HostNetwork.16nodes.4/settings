@@ -1,0 +1,6 @@
+platform=oc
+benchmark=osu.allreduce
+network=HostNetwork
+nodes=16nodes
+@run=4
+

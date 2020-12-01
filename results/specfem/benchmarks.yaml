@@ -1,0 +1,80 @@
+path_fmt: "{platform}/network={network}_"
+
+run:
+  - NVa100
+
+expe:
+  threading:
+    settings:
+      relyOnSharedFS: true
+      platform: podman, podman-no-seccomp
+      nex: 32
+      network: default
+      threads: 8, 7, 6, 5, 4, 3, 2, 1
+      extra:
+        - processes=1, mpi-slots=1, run=2
+
+  libgomp:
+    settings:
+      platform: baremetal
+      nex: 32 #32, 64
+      threads: 1, 8, 16, 32, 48, 64, 256, 512, 1024
+      extra:
+        - processes=1, mpi-slots=1
+      libgomp_optim: O0, O2, O3
+
+  NVa100:
+    settings:
+      platform: openshift
+      threads: 8, 16, 32, 64, 96, 128
+      network: default
+      mpi-slots: 4
+      run: 2, 3, 4, 5
+      extra:
+        - processes=1, nex=64, gpu=off
+        - processes=1, nex=128, gpu=off
+        - processes=4, nex=128, gpu=off
+
+  openshift:
+    settings:
+      #gpu: false
+      relyOnSharedFS: true
+      platform:  baremetal #podman, podman-no-seccomp, podman-hyperthreads #baremetal,  # openshift,
+      network: default #, multus #, hostnet
+      run: scale-1
+      extra:
+        # 32 nex
+        - nex=32, processes=1, mpi-slots=1 # 1 machine
+        - nex=32, processes=4, mpi-slots=2 # 2 machines
+        - nex=32, processes=4, mpi-slots=1 # 4 machines
+
+        # 64 nex
+        - nex=64, processes=1, mpi-slots=1 # 1 machine
+        - nex=64, processes=4, mpi-slots=2 # 2 machines
+        - nex=64, processes=4, mpi-slots=1 # 4 machines
+        - nex=64, processes=16, mpi-slots=2 # 8 machines
+        - nex=64, processes=16, mpi-slots=1 # 16 machines
+        - nex=64, processes=64, mpi-slots=2 # 32 machines
+
+        # 96 nex
+        - nex=96, processes=4, mpi-slots=1 # 4 machines
+        - nex=96, processes=9, mpi-slots=1 # 9 machines
+        - nex=96, processes=16, mpi-slots=2 # 8 machines
+        - nex=96, processes=16, mpi-slots=1 # 16 machines
+        - nex=96, processes=36, mpi-slots=2 # 18 machines
+
+        # 128 NEX
+        - processes=4, mpi-slots=1, nex=128 # 4 machines
+        - processes=16, mpi-slots=2, nex=128 # 8 machines
+        - processes=16, mpi-slots=1, nex=128 # 16 machines
+        - processes=64, mpi-slots=2, nex=128 # 32 machines
+
+        # 192 nex
+        - nex=192, processes=9, mpi-slots=1 # 9 machines
+        - nex=192, processes=16, mpi-slots=1 # 16 machines
+        - nex=192, processes=36, mpi-slots=2 # 18 machines
+        - nex=192, processes=64, mpi-slots=2 # 32 machines
+
+        # 256 nex
+        - nex=256, processes=16, mpi-slots=1 # 16 machines
+        - nex=256, processes=64, mpi-slots=2 # 32 machines

@@ -1,0 +1,5 @@
+benchmark=osu.p2p.bandwidth
+worker=worker1-23
+network=baremetal
+@run=1
+

@@ -1,0 +1,3 @@
+platform=podman
+threads=3threads
+benchmark=linpack

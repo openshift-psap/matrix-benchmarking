@@ -1,0 +1,6 @@
+platform=oc
+benchmark=osu.alltoall
+network=Multus
+nodes=32nodes
+@run=2
+

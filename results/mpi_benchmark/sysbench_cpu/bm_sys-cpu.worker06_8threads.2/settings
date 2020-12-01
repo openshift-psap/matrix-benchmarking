@@ -1,0 +1,6 @@
+platform=bm
+benchmark=sysbench-cpu
+worker=worker06
+threads=8threads
+@run=2
+

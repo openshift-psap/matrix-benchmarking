@@ -1,0 +1,6 @@
+platform=oc
+benchmark=osu.alltoall
+network=SDN
+nodes=28nodes
+@run=2
+

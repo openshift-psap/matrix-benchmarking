@@ -1,0 +1,44 @@
+Sample Intel(R) Optimized LINPACK Benchmark data file (lininput_xeon64)
+Intel(R) Optimized LINPACK Benchmark data
+1 # number of tests
+20000 # problem sizes
+20016 # leading dimensions
+1 # times to run a test
+4 # alignment values (in KBytes)
+This is a SAMPLE run script for SMP LINPACK. Change it to reflect
+the correct number of CPUs/threads, problem input files, etc..
+Wed Oct 21 14:10:02 UTC 2020
+Intel(R) Optimized LINPACK Benchmark data
+
+Current date/time: Wed Oct 21 14:10:02 2020
+
+CPU frequency:    4.199 GHz
+Number of CPUs: 1
+Number of cores: 4
+Number of threads: 2
+
+Parameters are set to:
+
+Number of tests: 1
+Number of equations to solve (problem size) : 20000
+Leading dimension of array                  : 20016
+Number of trials to run                     : 1    
+Data alignment value (in Kbytes)            : 4    
+
+Maximum memory requested that can be used=3202964416, at the size=20000
+
+=================== Timing linear equation system solver ===================
+
+Size   LDA    Align. Time(s)    GFlops   Residual     Residual(norm) Check
+20000  20016  4      46.801     113.9737 2.280085e-10 2.018375e-02   pass
+
+Performance Summary (GFlops)
+
+Size   LDA    Align.  Average  Maximal
+20000  20016  4       113.9737 113.9737
+
+Residual checks PASSED
+
+End of tests
+
+Done: Wed Oct 21 14:11:03 UTC 2020

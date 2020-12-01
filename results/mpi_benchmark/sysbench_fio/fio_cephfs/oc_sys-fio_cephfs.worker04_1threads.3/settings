@@ -1,0 +1,6 @@
+platform=oc
+benchmark=sysbench-fio.cephfs
+worker=worker04
+threads=1threads
+@run=3
+

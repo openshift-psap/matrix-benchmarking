@@ -1,0 +1,360 @@
+sysbench 1.0.17 (using system LuaJIT 2.1.0-beta3)
+
+128 files, 16384Kb each, 2048Mb total
+Creating files for the test...
+Extra file open flags: (none)
+Reusing existing file test_file.0
+Reusing existing file test_file.1
+Reusing existing file test_file.2
+Reusing existing file test_file.3
+Reusing existing file test_file.4
+Reusing existing file test_file.5
+Reusing existing file test_file.6
+Reusing existing file test_file.7
+Reusing existing file test_file.8
+Reusing existing file test_file.9
+Reusing existing file test_file.10
+Reusing existing file test_file.11
+Reusing existing file test_file.12
+Reusing existing file test_file.13
+Reusing existing file test_file.14
+Reusing existing file test_file.15
+Reusing existing file test_file.16
+Reusing existing file test_file.17
+Reusing existing file test_file.18
+Reusing existing file test_file.19
+Reusing existing file test_file.20
+Reusing existing file test_file.21
+Reusing existing file test_file.22
+Reusing existing file test_file.23
+Reusing existing file test_file.24
+Reusing existing file test_file.25
+Reusing existing file test_file.26
+Reusing existing file test_file.27
+Reusing existing file test_file.28
+Reusing existing file test_file.29
+Reusing existing file test_file.30
+Reusing existing file test_file.31
+Reusing existing file test_file.32
+Reusing existing file test_file.33
+Reusing existing file test_file.34
+Reusing existing file test_file.35
+Reusing existing file test_file.36
+Reusing existing file test_file.37
+Reusing existing file test_file.38
+Reusing existing file test_file.39
+Reusing existing file test_file.40
+Reusing existing file test_file.41
+Reusing existing file test_file.42
+Reusing existing file test_file.43
+Reusing existing file test_file.44
+Reusing existing file test_file.45
+Reusing existing file test_file.46
+Reusing existing file test_file.47
+Reusing existing file test_file.48
+Reusing existing file test_file.49
+Reusing existing file test_file.50
+Reusing existing file test_file.51
+Reusing existing file test_file.52
+Reusing existing file test_file.53
+Reusing existing file test_file.54
+Reusing existing file test_file.55
+Reusing existing file test_file.56
+Reusing existing file test_file.57
+Reusing existing file test_file.58
+Reusing existing file test_file.59
+Reusing existing file test_file.60
+Reusing existing file test_file.61
+Reusing existing file test_file.62
+Reusing existing file test_file.63
+Reusing existing file test_file.64
+Reusing existing file test_file.65
+Reusing existing file test_file.66
+Reusing existing file test_file.67
+Reusing existing file test_file.68
+Reusing existing file test_file.69
+Reusing existing file test_file.70
+Reusing existing file test_file.71
+Reusing existing file test_file.72
+Reusing existing file test_file.73
+Reusing existing file test_file.74
+Reusing existing file test_file.75
+Reusing existing file test_file.76
+Reusing existing file test_file.77
+Reusing existing file test_file.78
+Reusing existing file test_file.79
+Reusing existing file test_file.80
+Reusing existing file test_file.81
+Reusing existing file test_file.82
+Reusing existing file test_file.83
+Reusing existing file test_file.84
+Reusing existing file test_file.85
+Reusing existing file test_file.86
+Reusing existing file test_file.87
+Reusing existing file test_file.88
+Reusing existing file test_file.89
+Reusing existing file test_file.90
+Reusing existing file test_file.91
+Reusing existing file test_file.92
+Reusing existing file test_file.93
+Reusing existing file test_file.94
+Reusing existing file test_file.95
+Reusing existing file test_file.96
+Reusing existing file test_file.97
+Reusing existing file test_file.98
+Reusing existing file test_file.99
+Reusing existing file test_file.100
+Reusing existing file test_file.101
+Reusing existing file test_file.102
+Reusing existing file test_file.103
+Reusing existing file test_file.104
+Reusing existing file test_file.105
+Reusing existing file test_file.106
+Reusing existing file test_file.107
+Reusing existing file test_file.108
+Reusing existing file test_file.109
+Reusing existing file test_file.110
+Reusing existing file test_file.111
+Reusing existing file test_file.112
+Reusing existing file test_file.113
+Reusing existing file test_file.114
+Reusing existing file test_file.115
+Reusing existing file test_file.116
+Reusing existing file test_file.117
+Reusing existing file test_file.118
+Reusing existing file test_file.119
+Reusing existing file test_file.120
+Reusing existing file test_file.121
+Reusing existing file test_file.122
+Reusing existing file test_file.123
+Reusing existing file test_file.124
+Reusing existing file test_file.125
+Reusing existing file test_file.126
+Reusing existing file test_file.127
+No bytes written.
+sysbench 1.0.17 (using system LuaJIT 2.1.0-beta3)
+
+Running the test with following options:
+Number of threads: 1
+Initializing random number generator from current time
+
+
+Extra file open flags: (none)
+128 files, 16MiB each
+2GiB total file size
+Block size 16KiB
+Number of IO requests: 0
+Read/Write ratio for combined random IO test: 1.50
+Periodic FSYNC enabled, calling fsync() each 100 requests.
+Calling fsync() at the end of test, Enabled.
+Using synchronous I/O mode
+Doing random write test
+Initializing worker threads...
+
+Threads started!
+
+
+File operations:
+    reads/s:                      0.00
+    writes/s:                     6376.09
+    fsyncs/s:                     8165.09
+
+Throughput:
+    read, MiB/s:                  0.00
+    written, MiB/s:               99.63
+
+General statistics:
+    total time:                          10.0206s
+    total number of events:              145601
+
+Latency (ms):
+         min:                                    0.00
+         avg:                                    0.07
+         max:                                    0.89
+         95th percentile:                        0.27
+         sum:                                 9962.97
+
+Threads fairness:
+    events (avg/stddev):           145601.0000/0.00
+    execution time (avg/stddev):   9.9630/0.00
+
+sysbench 1.0.17 (using system LuaJIT 2.1.0-beta3)
+
+128 files, 16384Kb each, 2048Mb total
+Creating files for the test...
+Extra file open flags: (none)
+Reusing existing file test_file.0
+Reusing existing file test_file.1
+Reusing existing file test_file.2
+Reusing existing file test_file.3
+Reusing existing file test_file.4
+Reusing existing file test_file.5
+Reusing existing file test_file.6
+Reusing existing file test_file.7
+Reusing existing file test_file.8
+Reusing existing file test_file.9
+Reusing existing file test_file.10
+Reusing existing file test_file.11
+Reusing existing file test_file.12
+Reusing existing file test_file.13
+Reusing existing file test_file.14
+Reusing existing file test_file.15
+Reusing existing file test_file.16
+Reusing existing file test_file.17
+Reusing existing file test_file.18
+Reusing existing file test_file.19
+Reusing existing file test_file.20
+Reusing existing file test_file.21
+Reusing existing file test_file.22
+Reusing existing file test_file.23
+Reusing existing file test_file.24
+Reusing existing file test_file.25
+Reusing existing file test_file.26
+Reusing existing file test_file.27
+Reusing existing file test_file.28
+Reusing existing file test_file.29
+Reusing existing file test_file.30
+Reusing existing file test_file.31
+Reusing existing file test_file.32
+Reusing existing file test_file.33
+Reusing existing file test_file.34
+Reusing existing file test_file.35
+Reusing existing file test_file.36
+Reusing existing file test_file.37
+Reusing existing file test_file.38
+Reusing existing file test_file.39
+Reusing existing file test_file.40
+Reusing existing file test_file.41
+Reusing existing file test_file.42
+Reusing existing file test_file.43
+Reusing existing file test_file.44
+Reusing existing file test_file.45
+Reusing existing file test_file.46
+Reusing existing file test_file.47
+Reusing existing file test_file.48
+Reusing existing file test_file.49
+Reusing existing file test_file.50
+Reusing existing file test_file.51
+Reusing existing file test_file.52
+Reusing existing file test_file.53
+Reusing existing file test_file.54
+Reusing existing file test_file.55
+Reusing existing file test_file.56
+Reusing existing file test_file.57
+Reusing existing file test_file.58
+Reusing existing file test_file.59
+Reusing existing file test_file.60
+Reusing existing file test_file.61
+Reusing existing file test_file.62
+Reusing existing file test_file.63
+Reusing existing file test_file.64
+Reusing existing file test_file.65
+Reusing existing file test_file.66
+Reusing existing file test_file.67
+Reusing existing file test_file.68
+Reusing existing file test_file.69
+Reusing existing file test_file.70
+Reusing existing file test_file.71
+Reusing existing file test_file.72
+Reusing existing file test_file.73
+Reusing existing file test_file.74
+Reusing existing file test_file.75
+Reusing existing file test_file.76
+Reusing existing file test_file.77
+Reusing existing file test_file.78
+Reusing existing file test_file.79
+Reusing existing file test_file.80
+Reusing existing file test_file.81
+Reusing existing file test_file.82
+Reusing existing file test_file.83
+Reusing existing file test_file.84
+Reusing existing file test_file.85
+Reusing existing file test_file.86
+Reusing existing file test_file.87
+Reusing existing file test_file.88
+Reusing existing file test_file.89
+Reusing existing file test_file.90
+Reusing existing file test_file.91
+Reusing existing file test_file.92
+Reusing existing file test_file.93
+Reusing existing file test_file.94
+Reusing existing file test_file.95
+Reusing existing file test_file.96
+Reusing existing file test_file.97
+Reusing existing file test_file.98
+Reusing existing file test_file.99
+Reusing existing file test_file.100
+Reusing existing file test_file.101
+Reusing existing file test_file.102
+Reusing existing file test_file.103
+Reusing existing file test_file.104
+Reusing existing file test_file.105
+Reusing existing file test_file.106
+Reusing existing file test_file.107
+Reusing existing file test_file.108
+Reusing existing file test_file.109
+Reusing existing file test_file.110
+Reusing existing file test_file.111
+Reusing existing file test_file.112
+Reusing existing file test_file.113
+Reusing existing file test_file.114
+Reusing existing file test_file.115
+Reusing existing file test_file.116
+Reusing existing file test_file.117
+Reusing existing file test_file.118
+Reusing existing file test_file.119
+Reusing existing file test_file.120
+Reusing existing file test_file.121
+Reusing existing file test_file.122
+Reusing existing file test_file.123
+Reusing existing file test_file.124
+Reusing existing file test_file.125
+Reusing existing file test_file.126
+Reusing existing file test_file.127
+No bytes written.
+sysbench 1.0.17 (using system LuaJIT 2.1.0-beta3)
+
+Running the test with following options:
+Number of threads: 1
+Initializing random number generator from current time
+
+
+Extra file open flags: (none)
+128 files, 16MiB each
+2GiB total file size
+Block size 16KiB
+Number of IO requests: 0
+Read/Write ratio for combined random IO test: 1.50
+Periodic FSYNC enabled, calling fsync() each 100 requests.
+Calling fsync() at the end of test, Enabled.
+Using synchronous I/O mode
+Doing random read test
+Initializing worker threads...
+
+Threads started!
+
+
+File operations:
+    reads/s:                      508735.87
+    writes/s:                     0.00
+    fsyncs/s:                     0.00
+
+Throughput:
+    read, MiB/s:                  7949.00
+    written, MiB/s:               0.00
+
+General statistics:
+    total time:                          10.0001s
+    total number of events:              5087989
+
+Latency (ms):
+         min:                                    0.00
+         avg:                                    0.00
+         max:                                    0.18
+         95th percentile:                        0.00
+         sum:                                 9269.53
+
+Threads fairness:
+    events (avg/stddev):           5087989.0000/0.00
+    execution time (avg/stddev):   9.2695/0.00
+

@@ -1,0 +1,6 @@
+platform=oc
+benchmark=sysbench-fio.tmp
+worker=worker07
+threads=1threads
+@run=2
+

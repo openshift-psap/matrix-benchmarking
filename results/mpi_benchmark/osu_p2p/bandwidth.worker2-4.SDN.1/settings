@@ -1,0 +1,5 @@
+benchmark=osu.p2p.bandwidth
+worker=worker2-4
+network=SDN
+@run=1
+

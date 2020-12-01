@@ -1,0 +1,6 @@
+platform=oc
+benchmark=sysbench-cpu
+worker=worker03
+threads=8threads
+@run=1
+

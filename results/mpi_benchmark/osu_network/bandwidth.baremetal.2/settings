@@ -1,0 +1,4 @@
+benchmark=osu.net.bandwidth
+network=baremetal
+@run=2
+

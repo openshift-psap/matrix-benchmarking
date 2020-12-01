@@ -1,0 +1,5 @@
+benchmark=osu.p2p.latency
+worker=worker1-25
+network=baremetal
+@run=3
+

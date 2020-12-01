@@ -1,0 +1,4 @@
+benchmark=osu.net.latency
+network=Multus
+@run=3
+

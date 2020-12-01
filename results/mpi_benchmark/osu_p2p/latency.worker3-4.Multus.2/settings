@@ -1,0 +1,5 @@
+benchmark=osu.p2p.latency
+worker=worker3-4
+network=Multus
+@run=2
+
