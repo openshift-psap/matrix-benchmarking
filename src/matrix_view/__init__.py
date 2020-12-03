@@ -70,8 +70,9 @@ def get_permalink(args, full=False):
     search = "?"+"&".join(val(k, v) for k, v in params.items() \
                             if v not in ('---', None) and (full or len(Matrix.properties[k]) != 1))
     *_, custom_cfg, custom_cfg_saved, props_order, custom_cfg_saved_state = args
+
     if props_order:
-        search += f"&property-order={props_order}"
+        search += f"&property-order={'|'.join(props_order)}"
 
     if custom_cfg_saved or custom_cfg:
         lst = custom_cfg_saved[:] if custom_cfg_saved else []
@@ -127,27 +128,38 @@ def build_layout(search, serializing=False):
     cfg_children = list([html.P(e) for e in cfg_data])
 
     config = [html.B("Configuration:", id='config-title'), html.Br(),
-              dcc.Input(id='custom-config', placeholder='Config settings', debounce=True),
+              dcc.Input(id='custom-config', placeholder='Config settings', debounce=True, style={"width": "100%"}),
               html.Div(id='custom-config-saved', children=cfg_children, **{'data-label': cfg_data})]
 
-    aspect = [html.Div(defaults.get("property-order", [''])[0], id='property-order')]
+    permalink_download = [html.P([html.A('Permalink', href='', id='permalink'), " ",
+                                 html.A('Download', href='', id='download', target="_blank")])]
 
-    permalink = [html.P(html.A('Permalink', href='', id='permalink'))]
-    download = [html.P(html.A('Download', href='', id='download', target="_blank"))]
+    try:
+        props_order = defaults["property-order"][0].split("|")
+        props_order_children = html.Ol([html.Li(prop) for prop in props_order])
+        props_order_data = {'data-order': props_order}
+    except KeyError:
+        props_order_children = ''
+        props_order_data = {}
+    aspect = [html.Div(props_order_children, id='property-order', **props_order_data)]
 
     control_children = matrix_controls
 
     if not serializing:
-        control_children += config + aspect + permalink + download
+        control_children += config + permalink_download + aspect
     else:
         control_children += [html.I(["Saved on ",
                                     str(datetime.datetime.today()).rpartition(":")[0]])]
+        props_order = defaults.get("property-order", [])
+
+        if props_order:
+            props_order = props_order.split("|")
 
         permalink = "/matrix/"+get_permalink((
             serial_params # [Input('list-params-'+key, "value") for key in Matrix.properties]
             + [''] # custom-config useless here
             + [cfg_data]
-            + [defaults.get("property-order", [''])[0]]
+            + [props_order]
             + []
         ), full=True)
 
@@ -169,7 +181,7 @@ def build_layout(search, serializing=False):
             figure_text = TableStats.graph_figure(*(
                 serial_params                          # [Input('list-params-'+key, "value") for key in Matrix.properties]
                 + [0]                                  # Input("lbl_params", "n_clicks")
-                + defaults.get("property-order", ['']) # Input('property-order', 'children')
+                + defaults.get("property-order", [[]]) # Input('property-order', 'data-order')
                 + [None]                               # Input('config-title', 'n_clicks') | None->not clicked yet
                 + ['']                                 # Input('custom-config', 'value')
                 + ['']                                 # Input('custom-config-saved', 'data-label')
@@ -267,29 +279,30 @@ def build_callbacks(app):
 
         return list([html.P(e) for e in data]), data, ''
 
-    @app.callback(Output('property-order', 'children'),
+    @app.callback([Output('property-order', 'children'), Output('property-order', 'data-order')],
                   [Input(f"label_{key}", 'n_clicks') for key in Matrix.properties] +
                   [Input(f"property-order", 'n_clicks')],
-                  [State('property-order', 'children')])
+                  [State('property-order', 'data-order')])
     def varname_click(*args):
-        current_str = args[-1]
+        props_order = args[-1]
 
         try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
         except IndexError: triggered_id = None # nothing triggered the script (on multiapp load)
 
-        current = current_str.split("|") if current_str else list(Matrix.properties.keys())
+        if not props_order:
+            props_order = list(Matrix.properties.keys())
 
         if triggered_id == "property-order.n_clicks":
-            current.insert(0, current.pop())
-        elif triggered_id: # label_keyframe-period.n_clicks
-            key = triggered_id.partition("_")[-1].rpartition(".")[0]
-            if key in current: current.remove(key)
-            current.append(key)
+            props_order.append(props_order.pop(0))
+        elif triggered_id and triggered_id != ".": # label_keyframe-period.n_clicks
+            prop = triggered_id.partition("_")[-1].rpartition(".")[0]
+            if prop in props_order: props_order.remove(prop)
+            props_order.insert(0, prop)
 
-        try: current.remove("stats")
+        try: props_order.remove("stats")
         except ValueError: pass
 
-        return "|".join(current)
+        return html.Ol([html.Li(prop) for prop in props_order]), props_order
 
     @app.callback(
         Output('graph-hover-info', 'children'),
@@ -333,7 +346,7 @@ def build_callbacks(app):
                   [Input('list-params-'+key, "value") for key in Matrix.properties]
                   +[Input('custom-config', 'value'),
                     Input('custom-config-saved', 'data-label'),
-                    Input('property-order', 'children')],
+                    Input('property-order', 'data-order')],
                   [State('custom-config-saved', 'data-label')]
                   )
     def get_permalink_cb(*args):
@@ -382,7 +395,7 @@ def build_callbacks(app):
                            Output(graph_id+"-txt", 'children')],
                           [Input('list-params-'+key, "value") for key in Matrix.properties]
                           +[Input("lbl_params", "n_clicks")]
-                          +[Input('property-order', 'children')]
+                          +[Input('property-order', 'data-order')]
                           +[Input('config-title', 'n_clicks'),
                             Input('custom-config', 'value'),
                             Input('custom-config-saved', 'data-label')],
@@ -416,9 +429,9 @@ def build_callbacks(app):
                     v = int(v) if v.isdigit() else v
                     cfg[k] = v
 
-                order_str = args[-1]
-                var_order = order_str.split("|")+['stats'] if order_str \
-                    else list(Matrix.properties.keys())
+                var_order = args[-1]
+                if not var_order:
+                    var_order = list(Matrix.properties.keys())
 
                 params = dict(zip(Matrix.properties.keys(), args[:len(Matrix.properties)]))
 

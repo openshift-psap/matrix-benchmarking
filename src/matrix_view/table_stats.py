@@ -418,7 +418,7 @@ class TableStats():
             data.append(go.Scatter(
                 x=x_err_data, y=y_err_data,
                 legendgroup=legend_name + ("(stdev)" if var_length >= 4 else ""),
-                showlegend=(ax == "x1" and var_length >= 4), hoverinfo="skip",
+                showlegend=False, hoverinfo="skip",
                 fill='toself', fillcolor='rgba(0,100,80,0.2)',
                 line_color='rgba(0,0,0,0)', xaxis=ax,
                 name=legend_name + (" (stdev)" if var_length >= 4 else "")

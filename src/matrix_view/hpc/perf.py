@@ -72,7 +72,7 @@ class Plot():
             else:
                 plot_title += f" {self.name}"
 
-        RESERVED_VARIABLES = (cfg__x_var, "mpi-slots")
+        RESERVED_VARIABLES = [cfg__x_var, "mpi-slots"]
 
         if "nex" not in variables and "nex" in params:
             plot_title += f" for {params['nex']}nex"
@@ -98,21 +98,17 @@ class Plot():
             if main_var is None:
                 return None, "Error, not enough variables selected ..."
 
-        for var in ordered_vars if not cfg__no_avg else []:
-            if var in RESERVED_VARIABLES + (main_var, ): continue
-            if var.startswith("@"):
-                rolling_var = var
-                if rolling_var == second_var:
-                    second_var = third_var
-                break
-        else:
-            rolling_var = None
+        rolling_vars = []
+        for var, val in params.items():
+            if var.startswith("@") and val == "<all>":
+                rolling_vars.append(var)
+                RESERVED_VARIABLES.append(var)
 
         index_for_colors = set()
         index_for_symbols = set()
 
         results = defaultdict(list)
-        if rolling_var is not None:
+        if rolling_vars:
             all_rolling_results = defaultdict(lambda:defaultdict(list))
         if cfg__weak_scaling:
             weak_values = {}
@@ -122,11 +118,10 @@ class Plot():
         line_symbol = {}
         line_color = {}
 
-
         if self.what in ("time_comparison", "strong_scaling"):
             ref_keys = {}
             for ref_var in ordered_vars:
-                if ref_var in RESERVED_VARIABLES + (rolling_var, ): continue
+                if ref_var in RESERVED_VARIABLES: continue
                 break # ref_var set to the first (main) variable
             ref_var = cfg.get('perf.cmp.ref_var', ref_var)
             ref_value = cfg.get('perf.cmp.ref_value', None)
@@ -141,8 +136,8 @@ class Plot():
             plot_title += f" (colored by <b>{main_var}</b>"
             if second_var:
                 plot_title += f", symbols by <b>{second_var}</b>"
-            if rolling_var:
-                plot_title += f", averaged by <b>{rolling_var}</b>"
+            if rolling_vars:
+                plot_title += f", averaged by <b>{', '.join(rolling_vars)}</b>"
             plot_title += ")"
 
         for entry in Matrix.all_records(params, param_lists):
@@ -166,21 +161,27 @@ class Plot():
                             if int(entry.params.nex) == 256:
                                 weak_values[weak_key] = int(entry.params.nex)
 
-            time = entry.results.time
+            def get_time(_entry):
+                time = _entry.results.time
 
-            if cfg__invert_time:
-                entry.params.time = 1/time
+                if cfg__invert_time:
+                    time = 1/time
+                else:
+                    if self.mode == "specfem":
+                        time /= 60
+                    if self.mode == "gromacs":
+                        time *= 24
+                return time
+
+            if not entry.is_gathered:
+                entry.params.time = get_time(entry)
             else:
-                entry.params.time = time
-                if self.mode == "specfem":
-                    entry.params.time /= 60
-                if self.mode == "gromacs":
-                    entry.params.time *= 24
+                entry.params.times = [get_time(_entry) for _entry in entry.results]
 
             ref_key = ""
             legend_name = ""
             for var in ordered_vars:
-                if var in RESERVED_VARIABLES + (rolling_var, ): continue
+                if var in RESERVED_VARIABLES: continue
                 legend_name += f" {var}={params[var]}"
 
                 if self.what in ("time_comparison", "strong_scaling"):
@@ -194,13 +195,7 @@ class Plot():
             main_var_value[legend_name] = entry.params.__dict__[main_var]
             second_var_value[legend_name] = entry.params.__dict__.get(second_var, None)
 
-            if rolling_var is None:
-                results[legend_name].append(entry.params)
-            else:
-                rolling_val = entry.params.__dict__[rolling_var]
-                key = f"{cfg__x_var}={entry.params.__x_var}"
-                all_rolling_results[legend_name][key].append(entry.params)
-                pass
+            results[legend_name].append(entry.params)
 
             index_for_colors.add(main_var_value[legend_name])
             index_for_symbols.add(second_var_value[legend_name])
@@ -238,27 +233,6 @@ class Plot():
 
             return f"{new_v} {other_kv}"
 
-        if rolling_var is not None:
-            for legend_name, rolling_results in all_rolling_results.items():
-                for machine_count, entries_params in rolling_results.items():
-                    times = []
-                    for entry_params in entries_params:
-                        if cfg__weak_scaling:
-                            weak_key = f"{cfg__x_var}={entry_params.__x_var}"
-                            if weak_values[weak_key] != int(entry_params.nex): continue
-                        times.append(entry_params.time)
-                    # shallow copy of the last entry_params
-                    entry_params_cpy = entry_params.__class__(**entry_params.__dict__)
-                    entry_params_cpy.time = stats.mean(times) if len(times) >= 1 else 0
-                    entry_params_cpy.time_stdev = stats.stdev(times) if len(times) >= 2 else 0
-
-                    results[legend_name].append(entry_params_cpy)
-                    if cfg__weak_scaling:
-                        weak_legend_name = " ".join([kv for kv in legend_name.split() if not kv.startswith("nex=")])
-                        results[weak_legend_name].append(entry_params_cpy)
-                        line_symbol[weak_legend_name] = lambda: None
-                        line_color[weak_legend_name] = line_color[legend_name]
-                        main_var_value[weak_legend_name] = weak_legend_name
         ref_values = {}
         if self.what in ("time_comparison", "strong_scaling"):
             for ref_key in set(ref_keys.values()):
@@ -267,10 +241,13 @@ class Plot():
                     continue
                 for entry_params in results[ref_key]:
                     if ref_key in ref_values: continue
+                    time = entry_params.time if not rolling_vars \
+                        else stats.mean(entry_params.times)
+
                     if self.what in "time_comparison":
-                        ref_values[ref_key + f" && {cfg__x_var}={entry_params.__x_var}"] = entry_params.time
+                        ref_values[ref_key + f" && {cfg__x_var}={entry_params.__x_var}"] = time
                     else:
-                        ref_values[ref_key] = entry_params.time*int(entry_params.__x_var)
+                        ref_values[ref_key] = time * int(entry_params.__x_var)
 
         elif self.what in ("speedup", "efficiency"):
             for legend_name in sorted(results.keys(), key=sort_key):
@@ -298,7 +275,7 @@ class Plot():
         for legend_name in sorted(results.keys(), key=sort_key):
             x = []
             y = []
-            if rolling_var is not None:
+            if rolling_vars:
                 err = []
 
             for entry_params in sorted(results[legend_name], key=lambda ep:int(ep.__x_var)):
@@ -311,16 +288,31 @@ class Plot():
                     if cfg__weak_scaling and "nex=" not in legend_name:
                         ref_values_key += f" {cfg__x_var}={entry_params.__x_var}"
                     ref_value = ref_values[ref_values_key]
-                    ref_time = ref_value.time * int(ref_value.__x_var)
+
+                    ref_time = stats.mean(ref_value.times) if rolling_vars else ref_value.time
+
+                    ref_time *= int(ref_value.__x_var)
+
+                if rolling_vars:
+                    if not entry_params.times:
+                        time, time_stdev = 0
+                    elif len(entry_params.times) == 1:
+                        time = entry_params.times[0]
+                        time_stdev = 0
+                    else:
+                        time = stats.mean(entry_params.times)
+                        time_stdev = stats.stdev(entry_params.times)
+                else:
+                    time = entry_params.time
 
                 if self.what == "time":
-                    y_val = entry_params.time
-                    if rolling_var is not None:
-                        err.append(entry_params.time_stdev)
+                    y_val = time
+                    if rolling_vars:
+                        err.append(time_stdev)
                 elif self.what == "speedup":
-                    y_val = ref_time/entry_params.time
+                    y_val = ref_time/time
                 elif self.what == "efficiency":
-                    y_val = (ref_time/entry_params.time)/int(entry_params.__x_var)
+                    y_val = (ref_time/time)/int(entry_params.__x_var)
                 elif self.what in ("time_comparison", "strong_scaling"):
                     ref_keys_key = legend_name
                     if cfg__weak_scaling and "nex=" not in legend_name:
@@ -337,7 +329,6 @@ class Plot():
 
                         print("missing:", ref_values_key, "IN", ', '.join(ref_values.keys()))
                     else:
-                        time = entry_params.time
                         if self.what == "time_comparison":
                             y_val = (time-time_ref_value)/time_ref_value * 100
                         else:
@@ -409,7 +400,7 @@ class Plot():
             fig.add_trace(trace)
 
             all_x.update(x)
-            if rolling_var is not None:
+            if rolling_vars:
                 trace = go.Scatter(x=x, y=[_y - _err for _y, _err in zip(y, err)],
                                    name=name,
                                    legendgroup=main_var_value[legend_name],

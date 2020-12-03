@@ -1,7 +1,8 @@
 import common
 import store
+import types
 
-def rewrite_settings(params_dict):
+def gromacs_rewrite_settings(params_dict):
     params_dict["machines"] = params_dict["Physical Nodes"]
     del params_dict["Physical Nodes"]
     del params_dict["MPI procs"]
@@ -23,7 +24,7 @@ def rewrite_settings(params_dict):
         params_dict["platform"] += "_isolated_infra"
     del params_dict["isolated-infra"]
 
-    del params_dict["experiment"]
+    del params_dict["expe"]
 
     if "network" in params_dict: del params_dict["network"]
     if "network" in all_keys: all_keys.remove("network")
@@ -31,8 +32,10 @@ def rewrite_settings(params_dict):
     params_dict["@iteration"] = params_dict["iteration"]
     del params_dict["iteration"]
 
-
     return params_dict
+
+store.custom_rewrite_settings = gromacs_rewrite_settings
+
 
 all_keys = set()
 def _populate_matrix(props_res_lst):
@@ -41,7 +44,8 @@ def _populate_matrix(props_res_lst):
             if k not in params_dict:
                 params_dict[k] = "---"
 
-        entry = store.add_to_matrix(params_dict, rewrite_settings, location)
+        results = types.SimpleNamespace()
+        entry = store.add_to_matrix(params_dict, location, results)
         if not entry: return
 
         speed_result = result
@@ -51,7 +55,8 @@ def _populate_matrix(props_res_lst):
         entry.results.time = time_result
 
 def parse_data(mode):
-    props_res_lst = _parse_file(f"{common.RESULTS_PATH}/gromacs/results.csv")
+    res_file = f"{common.RESULTS_PATH}/{mode}/results.csv"
+    props_res_lst = _parse_file(res_file)
     _populate_matrix(props_res_lst)
 
 def _parse_file(filename):
@@ -71,12 +76,12 @@ def _parse_file(filename):
 
         if _line.startswith("#"):
             # line: # 1536k BM,platform: bm
-            experiment_properties = {"experiment": line_entries.pop(0)[1:].strip()}
+            experiment_properties = {"expe": line_entries.pop(0)[1:].strip()}
             for prop_value in line_entries:
                 prop, found, value = prop_value.partition(":")
                 if not found:
                     print("WARNING: invalid property for expe "
-                          f"'{experiment_properties['experiment']}': '{prop_value}'")
+                          f"'{experiment_properties['expe']}': '{prop_value}'")
                     continue
                 experiment_properties[prop.strip()] = value.strip()
             continue

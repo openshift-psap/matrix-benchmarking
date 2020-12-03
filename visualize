@@ -3,4 +3,4 @@
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 cd $THIS_DIR/src
-exec python3 visualize.py "$*"
+exec python3 visualize.py "$@"

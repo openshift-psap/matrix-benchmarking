@@ -28,12 +28,7 @@ def _parse_directory(expe, dirname):
         entry = store.add_to_matrix(entry_import_settings, dirname, results)
         if not entry: continue
 
-        has_rolling = [k for k in common.Matrix.properties if k.startswith("@")]
-        if has_rolling:
-            store.gather_rolling_entries(entry)
-
-
-def parse_data(mode, expe_filter):
+def parse_data(mode):
     path = os.walk(f"{common.RESULTS_PATH}/{mode}/")
 
     for this_dir, directories, files in path:
@@ -41,8 +36,6 @@ def parse_data(mode, expe_filter):
         if "properties" not in files: continue
 
         expe = this_dir.replace(common.RESULTS_PATH+f"/{mode}/", "").partition("/")[0]
-
-        if expe_filter and expe != expe_filter: continue
 
         _parse_directory(expe, this_dir)
 

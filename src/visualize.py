@@ -8,18 +8,22 @@ import matrix
 import store
 import common
 
+DEFAULT_MODE = "specfem"
 def main():
-    mode = "mpi_benchmark"
+    for expe_filter in sys.argv[1:]:
+        key, _, value = expe_filter.partition("=") if "=" in expe_filter \
+            else ("expe", True, expe_filter)
 
+        store.experiment_filter[key] = value
+
+    mode = store.experiment_filter.get("mode", DEFAULT_MODE)
+
+    print(f"Loading {mode} storage module ...")
     store_pkg_name = f"store.{mode}"
     store_plugin = importlib.import_module(store_pkg_name)
 
     print(f"Parsing {mode} data ...")
-
-    try: expe_filter = sys.argv[1]
-    except IndexError: expe_filter = None
-
-    store_plugin.parse_data(mode, expe_filter)
+    store_plugin.parse_data(mode)
     print(f"Parsing {mode} data ... done")
 
     print(f"Found {len(common.Matrix.processed_map)} results")

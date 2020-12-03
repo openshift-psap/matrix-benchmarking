@@ -1,3 +1,5 @@
+import types
+
 import store.simple
 from store.simple import *
 
@@ -45,11 +47,14 @@ def specfem_rewrite_settings(params_dict):
 
     return params_dict
 
-store.simple.custom_rewrite_settings = specfem_rewrite_settings
+store.custom_rewrite_settings = specfem_rewrite_settings
 
 
-def specfem_parse_results(dirname, entry):
+def specfem_parse_results(dirname, import_settings):
+    results = types.SimpleNamespace()
+
     with open(f"{dirname}/timing") as f:
-        entry.results.time = float(f.read().strip())
+        results.time = float(f.read().strip())
 
+    return [({}, results)]
 store.simple.custom_parse_results = specfem_parse_results
