@@ -16,14 +16,21 @@ def _parse_directory(expe, dirname):
                 print(f"ERROR: {line.strip()}")
             import_settings[key] = value
 
-    entry = store.add_to_matrix(import_settings, custom_rewrite_settings, dirname)
-    if not entry: return
-
     try:
-        custom_parse_results(dirname, entry)
+        extra_settings__results = custom_parse_results(dirname, import_settings)
     except Exception as e:
         print(f"ERROR: Failed to parse {dirname} ...")
         raise e
+
+    for extra_settings, results in extra_settings__results:
+        entry_import_settings = dict(import_settings)
+        entry_import_settings.update(extra_settings)
+        entry = store.add_to_matrix(entry_import_settings, dirname, results)
+        if not entry: continue
+
+        has_rolling = [k for k in common.Matrix.properties if k.startswith("@")]
+        if has_rolling:
+            store.gather_rolling_entries(entry)
 
 
 def parse_data(mode, expe_filter):
@@ -40,5 +47,4 @@ def parse_data(mode, expe_filter):
         _parse_directory(expe, this_dir)
 
 
-custom_rewrite_settings = lambda x:x # may be overriden
 custom_parse_results = lambda x, y: None

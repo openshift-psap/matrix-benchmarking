@@ -101,7 +101,9 @@ def build_layout(search, serializing=False):
             options.insert(0, {'label': "[ all ]", 'value': "---"})
             attr["searchable"] = False
 
-            if key == "experiment" and "current" in values:
+            if key.startswith("@") and "<all>" in values:
+                attr["value"] = "<all>"
+            elif key == "experiment" and "current" in values:
                 attr["value"] = "current"
             else:
                 attr["value"] = "---"
@@ -433,10 +435,16 @@ def build_callbacks(app):
                                                     or (graph_idx + 1) > len(stats_values)):
                     return dash.no_update, dash.no_update
 
-                table_stat = TableStats.stats_by_name[stats_values[graph_idx]]
+                try:
+                    table_stat = TableStats.stats_by_name[stats_values[graph_idx]]
+                except KeyError:
+                    return "Stat '{stats_values[graph_idx]}' not found ...", None
 
                 variables = {k:(Matrix.properties[k]) for k, v in params.items() \
                              if k != "stats" and v == "---"}
+                for k in list(variables.keys()):
+                    if k.startswith("@"):
+                        variables[k] = [v for v in variables[k] if v != "<all>"]
 
                 ordered_vars = sorted(variables.keys(), key=lambda x: var_order.index(x) if x in var_order else 999)
                 ordered_vars.reverse()

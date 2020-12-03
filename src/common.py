@@ -5,20 +5,20 @@ RESULTS_PATH = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/
 
 
 class MatrixEntry(types.SimpleNamespace):
-    def __init__(self, location,
+    def __init__(self, location, results,
                  processed_key, import_key,
                  processed_settings, import_settings):
-
+        self.params = types.SimpleNamespace()
+        self.stats = {}
 
         self.location = location
-
-        self.params = types.SimpleNamespace()
-        self.results = types.SimpleNamespace()
-        self.stats = {}
+        self.results = results
 
         self.params.__dict__.update(processed_settings)
         self.processed_key = processed_key
         self.import_settings = processed_settings
+
+        self.is_gathered = False
 
         Matrix.import_map[import_key] = \
         Matrix.processed_map[processed_key] = self

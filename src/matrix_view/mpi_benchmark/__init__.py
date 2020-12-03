@@ -1,6 +1,7 @@
 import matrix_view.mpi_benchmark.osu
 import matrix_view.table_stats
 from common import Matrix
+
 def register():
     matrix_view.mpi_benchmark.osu.SimpleNet()
     matrix_view.table_stats.TableStats.Value(
@@ -27,4 +28,22 @@ def register():
         fmt="%d MiB/s",
         unit="MiB per seconds",
         higher_better=True,
+    )
+
+    matrix_view.table_stats.TableStats.Value(
+        id_name="osu-bandwidth",
+        name="MPI Bandwidth",
+        field="bandwidth",
+        fmt="%d MiB/s",
+        unit="MiB per seconds",
+        higher_better=True,
+    )
+
+    matrix_view.table_stats.TableStats.Value(
+        id_name="osu-latency",
+        name="MPI Latency",
+        field="latency",
+        fmt="%.2f us",
+        unit="useconds",
+        higher_better=False,
     )

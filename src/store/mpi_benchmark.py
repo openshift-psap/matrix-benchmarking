@@ -1,18 +1,28 @@
+import types
+
 import store
 import store.simple
 from store.simple import *
 
 def mpi_benchmark_rewrite_settings(params_dict):
+    benchmark = params_dict["benchmark"]
+    if benchmark.startswith("sysbench-fio"):
+        params_dict["@worker"] = params_dict["worker"]
+        del params_dict["worker"]
+    if params_dict["@run"] == "":
+        params_dict["@run"] = "0"
+
     return params_dict
 
-store.simple.custom_rewrite_settings = mpi_benchmark_rewrite_settings
+store.custom_rewrite_settings = mpi_benchmark_rewrite_settings
 
-def __parse_linpack(fname, entry):
+def __parse_linpack(fname, properties):
+    results = types.SimpleNamespace()
     in_summary = False
     is_next = False
 
-    avg_lst = entry.results.avg = []
-    max_lst = entry.results.maxi = []
+    avg_lst = results.avg = []
+    max_lst = results.maxi = []
 
     with open(fname) as f:
         for _line in f:
@@ -34,8 +44,10 @@ def __parse_linpack(fname, entry):
 
             avg_lst.append(float(avg))
             max_lst.append(float(maxi))
+    return [({}, results)]
 
-def __parse_sysbench_cpu(fname, entry):
+def __parse_sysbench_cpu(fname, properties):
+    results = types.SimpleNamespace()
     with open(fname) as f:
         evt_per_sec = None
         for _line in f:
@@ -43,9 +55,12 @@ def __parse_sysbench_cpu(fname, entry):
             if line.startswith("events per second"):
                 evt_per_sec = float(line.split(":")[-1].strip())
 
-    entry.results.cpu_evt_per_sec = evt_per_sec
+    results.cpu_evt_per_sec = evt_per_sec
+    return [({}, results)]
 
-def __parse_sysbench_fio(fname, entry):
+def __parse_sysbench_fio(fname, properties):
+    results = types.SimpleNamespace()
+
     thput_read = None
     thput_write = None
 
@@ -71,49 +86,71 @@ def __parse_sysbench_fio(fname, entry):
             if key == "read, MiB/s":
                 thput_read = val
 
-    entry.results.fio_thput_read = thput_read
-    entry.results.fio_thput_write = thput_write
+    results.fio_thput_read = thput_read
+    results.fio_thput_write = thput_write
+    return [({}, results)]
 
-def __parse_osu(fname, entry):
-    entry.results.osu_results = {}
-    entry.results.osu_title = None
-    entry.results.osu_legend = None
+def __parse_osu(fname, properties):
+    all_results = []
+
+    osu_title = None
+    osu_legend = None
 
     with open(fname) as f:
         for _line in f:
+            current_settings = {}
+            current_results = types.SimpleNamespace()
+
             line = _line.strip()
             if line == "TIMEOUT": break
             if not line: continue
 
             if line.startswith('#'):
-                if entry.results.osu_title is None:
-                    entry.results.osu_title = line[1:].strip()
-                elif entry.results.osu_legend is None:
-                    entry.results.osu_legend = line[1:].strip()
+                if osu_title is None:
+                    osu_title = line[1:].strip()
+                elif osu_legend is None:
+                    osu_legend = line[1:].strip()
                 continue
-            else:
-                x, y = line.strip().split()
-                entry.results.osu_results[int(x)] = float(y)
 
+            x, y = line.strip().split()
 
-def mpi_benchmark_parse_results(dirname, entry):
+            field = " ".join(osu_legend.split())\
+                       .partition(" ")[-1]\
+                       .partition("(")[0]\
+                       .strip()\
+                       .replace(" ", "_")\
+                       .lower()
+
+            current_settings["message size"] = int(x)
+            current_results.__dict__[field] = float(y)
+            current_results.osu_title = osu_title
+            current_results.osu_legend = osu_legend
+
+            all_results.append([current_settings, current_results])
+
+    return all_results
+
+def mpi_benchmark_parse_results(dirname, properties):
     fname = f"{dirname}/stdout"
 
     try:
-        benchmark, _, flavor = entry.params.benchmark.partition(".")
+        benchmark, _, flavor = properties["benchmark"].partition(".")
     except AttributeError as e:
-        print(f"ERROR: Failed to parse {entry.location}")
-        print("ERROR: --> no benchmark property ...")
+        print(f"ERROR: Failed to parse {dirname}: --> no benchmark property ...")
         return
     except Exception as e:
-        print(f"ERROR: Failed to parse benchmark name in {entry.location} ({entry.params.benchmark})")
+        print(f"ERROR: Failed to parse benchmark name in {dirname} "
+              "({properties['benchmark']})")
         return
-    {
+
+    fct = {
         "linpack": __parse_linpack,
         "sysbench-cpu": __parse_sysbench_cpu,
         "sysbench-fio": __parse_sysbench_fio,
         "osu": __parse_osu,
-    }[benchmark](fname, entry)
+    }[benchmark]
+
+    return fct(fname, properties)
 
 
 store.simple.custom_parse_results = mpi_benchmark_parse_results

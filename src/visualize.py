@@ -26,7 +26,7 @@ def main():
 
     matrix_view.configure(store, mode)
     matrix_view.table_stats.register_all()
-    import pdb;pdb.set_trace()
+
     matrix_view.web.run(store_plugin, mode)
 
     return 0

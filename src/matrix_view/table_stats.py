@@ -16,8 +16,16 @@ def register_all():
         register = False
         if not isinstance(stat, TableStats): continue
         for entry in Matrix.processed_map.values():
-            if stat.field not in entry.results.__dict__: continue
-            register = True
+            if entry.is_gathered:
+                entry.stats[stat.name] = gathered_stats = []
+                for gathered_entry in entry.results:
+                    if stat.field not in gathered_entry.results.__dict__: continue
+                    gathered_stats.append(stat.process(gathered_entry))
+                if gathered_stats:
+                    register = True
+            else:
+                if stat.field not in entry.results.__dict__: continue
+                register = True
 
             entry.stats[stat.name] = stat.process(entry)
 
@@ -100,9 +108,9 @@ class TableStats():
                 try:
                     v = self.do_process(entry)
                 except Exception as e:
-                    print(f"ERROR: Failed to process field {self.field} with"
+                    print(f"ERROR: Failed to process field '{self.field}' with"
                           f"{self.do_process.__self__.__class__.__name__}.{self.do_process.__name__}:")
-                    print(e)
+                    print(e.__class__.__name__, e)
                     print()
                     return 0
 
@@ -138,11 +146,29 @@ class TableStats():
 
         return FutureValue()
 
+    def process_gathered_value_dev(self, entry):
+        values = [self.process_value_dev(gathered_entry)[0]
+                  for gathered_entry in entry.results]
+        values = [v for v in values if v is not None]
+
+        mean = statistics.mean(values) / self.divisor
+
+        stdev = statistics.stdev(values) if len(values) > 2 else 0
+
+        return mean, (stdev / self.divisor)
+
     def process_value_dev(self, entry):
+        if entry.is_gathered:
+            return self.process_gathered_value_dev(entry)
+
         value = entry.results.__dict__[self.field]
 
+        if value is None:
+            return None, None
+
         if isinstance(value, list):
-            print(f"WARNING: {entry.location}.results.{self.field} is a list of length {len(value)}")
+            print(f"WARNING: {entry.location}.results.{self.field} is "
+                  f"a list of length {len(value)}")
             value = value[0]
 
         dev_field = self.kwargs.get('dev_field')
@@ -155,11 +181,13 @@ class TableStats():
         values = entry.results.__dict__[self.field]
 
         if not isinstance(value, list):
-            print(f"WARNING: {entry.location}.results.{self.field} is NOT a list of length ({values})")
+            print(f"WARNING: {entry.location}.results.{self.field} is "
+                  f"NOT a list of length ({values})")
             values = [values]
 
         if not values:
-            print(f"WARNING: {entry.location}.results.{self.field} is an empty list")
+            print(f"WARNING: {entry.location}.results.{self.field} is "
+                  f"an empty list")
             return 0, 0
 
         mean = statistics.mean(values) / self.divisor
@@ -294,7 +322,7 @@ class TableStats():
 
         for entry in Matrix.all_records(params, param_lists):
             if self.name not in entry.stats:
-                print(f"Stats not found: {self.name} for entry '{entry.key}' ")
+                print(f"Stat '{self.name}' not found for entry '{entry.location}'")
                 continue
 
             x_key = ", ".join([f'{v}={params[v]}' for v in reversed(second_vars) if v != subplots_var])
@@ -344,7 +372,7 @@ class TableStats():
             y_err_above = [];  y_err_below = []
             for _y, _y_error in zip(y[legend_key], y_err[legend_key]):
                 # above == below iff len(_y_error) == 1
-                if _y is None: continue
+                if None in (_y, _y_error): continue
                 y_err_above.append(_y+_y_error[0])
                 y_err_below.append(_y-_y_error[-1])
 
@@ -361,8 +389,9 @@ class TableStats():
             for _x, _y, _y_error in zip(x[legend_key] + [None],
                                         y[legend_key] + [None],
                                         y_err[legend_key] + [None]):
+
                 if _x is not None:
-                    if _y is not None:
+                    if None not in (_y, _y_error):
                         # above == below iff len(_y_error) == 1
                         y_err_above.append(_y+_y_error[0])
                         y_err_below.append(_y-_y_error[-1])
