@@ -31,7 +31,7 @@ def register_all():
 
         if not register: continue
 
-        Matrix.properties["stats"].add(stat.name)
+        Matrix.settings["stats"].add(stat.name)
 
 class TableStats():
     all_stats = []
@@ -210,12 +210,15 @@ class TableStats():
 
         entry, msg = TableStats.props_to_hoverlink(variables, props, value)
 
-        graph = self.props_to_hovergraph(entry) \
+        graph = self.entry_to_hovergraph(entry) \
             if entry else ""
 
         return [*msg, graph]
 
-    def props_to_hovergraph(self, entry):
+    def entry_to_hovergraph(self, entry):
+        #
+        # needs to be changed
+        #
         if not hasattr(entry, "tables"):
             return ""
 

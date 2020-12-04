@@ -26,7 +26,8 @@ def specfem_rewrite_settings(params_dict):
     if params_dict["platform"] == "podman":
         params_dict["platform"] = "baremetal_podman"
 
-    del params_dict["processes"]
+    if params_dict['expe'] != "NVa100":
+        del params_dict["processes"]
 
     if "gpu" in params_dict:
         if params_dict['gpu'].isdigit():
@@ -35,6 +36,7 @@ def specfem_rewrite_settings(params_dict):
             params_dict['gpu'] = ":"+params_dict['gpu']
 
     del params_dict['driver']
+
 
     if "relyOnSharedFS" not in params_dict:
         params_dict["relyOnSharedFS"] = "False"

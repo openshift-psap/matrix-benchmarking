@@ -6,13 +6,13 @@ import store
 
 def _parse_directory(expe, dirname):
     import_settings = {"expe": expe}
-    with open(f"{dirname}/properties") as f:
+    with open(f"{dirname}/settings") as f:
         for line in f.readlines():
             if not line.strip(): continue
 
             key, found, value = line.strip().partition("=")
             if not found:
-                print(f"ERROR: invalid line in {dirname}/properties:")
+                print(f"ERROR: invalid line in {dirname}/settings:")
                 print(f"ERROR: {line.strip()}")
             import_settings[key] = value
 
@@ -33,7 +33,7 @@ def parse_data(mode):
 
     for this_dir, directories, files in path:
         if "skip" in files: continue
-        if "properties" not in files: continue
+        if "settings" not in files: continue
 
         expe = this_dir.replace(common.RESULTS_PATH+f"/{mode}/", "").partition("/")[0]
 

@@ -24,8 +24,6 @@ def gromacs_rewrite_settings(params_dict):
         params_dict["platform"] += "_isolated_infra"
     del params_dict["isolated-infra"]
 
-    del params_dict["expe"]
-
     if "network" in params_dict: del params_dict["network"]
     if "network" in all_keys: all_keys.remove("network")
 
@@ -38,8 +36,8 @@ store.custom_rewrite_settings = gromacs_rewrite_settings
 
 
 all_keys = set()
-def _populate_matrix(props_res_lst):
-    for params_dict, result, location in props_res_lst:
+def _populate_matrix(settings_res_lst):
+    for params_dict, result, location in settings_res_lst:
         for k in all_keys:
             if k not in params_dict:
                 params_dict[k] = "---"
@@ -56,17 +54,17 @@ def _populate_matrix(props_res_lst):
 
 def parse_data(mode):
     res_file = f"{common.RESULTS_PATH}/{mode}/results.csv"
-    props_res_lst = _parse_file(res_file)
-    _populate_matrix(props_res_lst)
+    settings_res_lst = _parse_file(res_file)
+    _populate_matrix(settings_res_lst)
 
 def _parse_file(filename):
     with open(filename) as record_f:
         lines = record_f.readlines()
 
-    props_res_lst = []
+    settings_res_lst = []
 
     keys = []
-    experiment_properties = {}
+    experiment_settings = {}
 
     for lineno, _line in enumerate(lines):
         if not _line.replace(',','').strip(): continue # ignore empty lines
@@ -76,14 +74,14 @@ def _parse_file(filename):
 
         if _line.startswith("#"):
             # line: # 1536k BM,platform: bm
-            experiment_properties = {"expe": line_entries.pop(0)[1:].strip()}
-            for prop_value in line_entries:
-                prop, found, value = prop_value.partition(":")
+            experiment_settings = {"experiment": line_entries.pop(0)[1:].strip()}
+            for name_value in line_entries:
+                name, found, value = name_value.partition(":")
                 if not found:
-                    print("WARNING: invalid property for expe "
-                          f"'{experiment_properties['expe']}': '{prop_value}'")
+                    print("WARNING: invalid setting for expe "
+                          f"'{experiment_settings['expe']}': '{name_value}'")
                     continue
-                experiment_properties[prop.strip()] = value.strip()
+                experiment_settings[name.strip()] = value.strip()
             continue
 
         if not keys:
@@ -92,22 +90,22 @@ def _parse_file(filename):
             continue
 
         # line: 1,1,4,0.569,0.57,0.57,0.57,0.569
-        # props ^^^^^| ^^^^^^^^^^^^^^^^^^^^^^^^^ results
+        # settings ^^^^^| ^^^^^^^^^^^^^^^^^^^^^^^^^ results
 
-        line_properties = dict(zip(keys[:-1], line_entries))
-        line_properties.update(experiment_properties)
+        line_settings = dict(zip(keys[:-1], line_entries))
+        line_settings.update(experiment_settings)
         line_results = line_entries[len(keys)-1:]
         for ite, result in enumerate(line_results):
-            props = dict(line_properties)
-            props["iteration"] = ite
+            settings = dict(line_settings)
+            settings["iteration"] = ite
             try:
                 float_result = float(result)
             except ValueError:
                 if result:
-                    print(f"ERROR: Failed to parse '{result}' for iteration #{ite} of", line_properties)
+                    print(f"ERROR: Failed to parse '{result}' for iteration #{ite} of", line_settings)
                 continue
-            props_res_lst.append((props, float_result, f"{filename}:{lineno} iteration#{ite}"))
+            settings_res_lst.append((settings, float_result, f"{filename}:{lineno} iteration#{ite}"))
             pass
-        all_keys.update(props.keys())
+        all_keys.update(settings.keys())
 
-    return props_res_lst
+    return settings_res_lst

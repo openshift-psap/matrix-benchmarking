@@ -29,7 +29,7 @@ class Plot():
         self.id_name = what
 
         matrix_view.table_stats.TableStats._register_stat(self)
-        Matrix.properties["stats"].add(self.name)
+        Matrix.settings["stats"].add(self.name)
 
     def do_hover(self, meta_value, variables, figure, data, click_info):
         return "nothing"

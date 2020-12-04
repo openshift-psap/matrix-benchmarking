@@ -104,7 +104,7 @@ class Matrix():
             exe.expe_cnt.executed += 1
 
     def execute_benchmark(self, bench_fullpath, settings):
-        with open(f"{bench_fullpath}/properties", "w") as f:
+        with open(f"{bench_fullpath}/settings", "w") as f:
             for k, v in settings.items():
                 print(f"{k}={v}", file=f)
             print(f"", file=f)

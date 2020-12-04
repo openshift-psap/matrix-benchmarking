@@ -62,18 +62,18 @@ def configure(store, mode):
         plotting_plugin.register()
 
 def get_permalink(args, full=False):
-    params = dict(zip(Matrix.properties.keys(), args[:len(Matrix.properties)]))
+    params = dict(zip(Matrix.settings.keys(), args[:len(Matrix.settings)]))
 
     def val(k, v):
         if isinstance(v, list): return "&".join(f"{k}={vv}" for vv in v)
         else: return f"{k}={v}"
 
     search = "?"+"&".join(val(k, v) for k, v in params.items() \
-                            if v not in ('---', None) and (full or len(Matrix.properties[k]) != 1))
-    *_, custom_cfg, custom_cfg_saved, props_order, custom_cfg_saved_state = args
+                            if v not in ('---', None) and (full or len(Matrix.settings[k]) != 1))
+    *_, custom_cfg, custom_cfg_saved, settings_order, custom_cfg_saved_state = args
 
-    if props_order:
-        search += f"&property-order={'|'.join(props_order)}"
+    if settings_order:
+        search += f"&settings-order={'|'.join(settings_order)}"
 
     if custom_cfg_saved or custom_cfg:
         lst = custom_cfg_saved[:] if custom_cfg_saved else []
@@ -89,7 +89,7 @@ def build_layout(search, serializing=False):
 
     matrix_controls = [html.B("Parameters:", id="lbl_params"), html.Br()]
     serial_params = []
-    for key, values in Matrix.properties.items():
+    for key, values in Matrix.settings.items():
         options = [{'label': i, 'value': i} for i in sorted(values, key=natural_keys)]
 
         attr = {}
@@ -136,13 +136,13 @@ def build_layout(search, serializing=False):
                                  html.A('Download', href='', id='download', target="_blank")])]
 
     try:
-        props_order = defaults["property-order"][0].split("|")
-        props_order_children = html.Ol([html.Li(prop) for prop in props_order])
-        props_order_data = {'data-order': props_order}
+        settings_order = defaults["settings-order"][0].split("|")
+        settings_order_children = html.Ol([html.Li(setting) for setting in settings_order])
+        settings_order_data = {'data-order': settings_order}
     except KeyError:
-        props_order_children = ''
-        props_order_data = {}
-    aspect = [html.Div(props_order_children, id='property-order', **props_order_data)]
+        settings_order_children = ''
+        settings_order_data = {}
+    aspect = [html.Div(settings_order_children, id='settings-order', **settings_order_data)]
 
     control_children = matrix_controls
 
@@ -151,16 +151,16 @@ def build_layout(search, serializing=False):
     else:
         control_children += [html.I(["Saved on ",
                                     str(datetime.datetime.today()).rpartition(":")[0]])]
-        props_order = defaults.get("property-order", [])
+        settings_order = defaults.get("settings-order", [])
 
-        if props_order:
-            props_order = props_order.split("|")
+        if settings_order:
+            settings_order = settings_order.split("|")
 
         permalink = "/matrix/"+get_permalink((
-            serial_params # [Input('list-params-'+key, "value") for key in Matrix.properties]
+            serial_params # [Input('list-params-'+key, "value") for key in Matrix.settings]
             + [''] # custom-config useless here
             + [cfg_data]
-            + [props_order]
+            + [settings_order]
             + []
         ), full=True)
 
@@ -180,9 +180,9 @@ def build_layout(search, serializing=False):
                                html.P(id=table_stat.id_name+'-txt')]
 
             figure_text = TableStats.graph_figure(*(
-                serial_params                          # [Input('list-params-'+key, "value") for key in Matrix.properties]
+                serial_params                          # [Input('list-params-'+key, "value") for key in Matrix.settings]
                 + [0]                                  # Input("lbl_params", "n_clicks")
-                + defaults.get("property-order", [[]]) # Input('property-order', 'data-order')
+                + defaults.get("settings-order", [[]]) # Input('settings-order', 'data-order')
                 + [None]                               # Input('config-title', 'n_clicks') | None->not clicked yet
                 + ['']                                 # Input('custom-config', 'value')
                 + ['']                                 # Input('custom-config-saved', 'data-label')
@@ -215,15 +215,15 @@ def build_callbacks(app):
     # Dash doesn't support creating the callbacks AFTER the app is running,
     # can the Matrix callback IDs are dynamic (base on the name of the parameters)
 
-    if not Matrix.properties:
+    if not Matrix.settings:
         print("WARNING: Matrix empty, cannot build its GUI")
         return
 
     print("---")
-    for key, values in Matrix.properties.items():
+    for key, values in Matrix.settings.items():
         if key == "stats": continue
-        Matrix.properties[key] = sorted(values, key=natural_keys)
-        print(f"{key:20s}: {', '.join(map(str, Matrix.properties[key]))}")
+        Matrix.settings[key] = sorted(values, key=natural_keys)
+        print(f"{key:20s}: {', '.join(map(str, Matrix.settings[key]))}")
     print("---")
 
     @app.server.route('/matrix/dl')
@@ -280,36 +280,36 @@ def build_callbacks(app):
 
         return list([html.P(e) for e in data]), data, ''
 
-    @app.callback([Output('property-order', 'children'), Output('property-order', 'data-order')],
-                  [Input(f"label_{key}", 'n_clicks') for key in Matrix.properties] +
-                  [Input(f"property-order", 'n_clicks')],
-                  [State('property-order', 'data-order')])
+    @app.callback([Output('settings-order', 'children'), Output('settings-order', 'data-order')],
+                  [Input(f"label_{key}", 'n_clicks') for key in Matrix.settings] +
+                  [Input(f"settings-order", 'n_clicks')],
+                  [State('settings-order', 'data-order')])
     def varname_click(*args):
-        props_order = args[-1]
+        settings_order = args[-1]
 
         try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
         except IndexError: triggered_id = None # nothing triggered the script (on multiapp load)
 
-        if not props_order:
-            props_order = list(Matrix.properties.keys())
+        if not settings_order:
+            settings_order = list(Matrix.settings.keys())
 
-        if triggered_id == "property-order.n_clicks":
-            props_order.append(props_order.pop(0))
+        if triggered_id == "settings-order.n_clicks":
+            settings_order.append(settings_order.pop(0))
         elif triggered_id and triggered_id != ".": # label_keyframe-period.n_clicks
-            prop = triggered_id.partition("_")[-1].rpartition(".")[0]
-            if prop in props_order: props_order.remove(prop)
-            props_order.insert(0, prop)
+            setting_name = triggered_id.partition("_")[-1].rpartition(".")[0]
+            if setting_name in settings_order: settings_order.remove(setting_name)
+            settings_order.insert(0, setting_name)
 
-        try: props_order.remove("stats")
+        try: settings_order.remove("stats")
         except ValueError: pass
 
-        return html.Ol([html.Li(prop) for prop in props_order]), props_order
+        return html.Ol([html.Li(setting_name) for setting_name in settings_order]), settings_order
 
     @app.callback(
         Output('graph-hover-info', 'children'),
         [Input(graph_id, 'clickData') for graph_id in GRAPH_IDS],
         [State(graph_id, 'figure') for graph_id in GRAPH_IDS]
-       +[State('list-params-'+key, "value") for key in Matrix.properties])
+       +[State('list-params-'+key, "value") for key in Matrix.settings])
     def display_hover_data(*args):
         hoverData = args[:NB_GRAPHS]
 
@@ -321,7 +321,7 @@ def build_callbacks(app):
         data = hoverData[pos]
 
         figure = args[NB_GRAPHS:2*NB_GRAPHS][pos]
-        variables = dict(zip(Matrix.properties.keys(), args[2*NB_GRAPHS:]))
+        variables = dict(zip(Matrix.settings.keys(), args[2*NB_GRAPHS:]))
 
         if not figure:
             return "Error, figure not found ..."
@@ -344,10 +344,10 @@ def build_callbacks(app):
         return obj.do_hover(meta.get('value'), variables, figure, data, click_info)
 
     @app.callback([Output("permalink", 'href'), Output("download", 'href')],
-                  [Input('list-params-'+key, "value") for key in Matrix.properties]
+                  [Input('list-params-'+key, "value") for key in Matrix.settings]
                   +[Input('custom-config', 'value'),
                     Input('custom-config-saved', 'data-label'),
-                    Input('property-order', 'data-order')],
+                    Input('settings-order', 'data-order')],
                   [State('custom-config-saved', 'data-label')]
                   )
     def get_permalink_cb(*args):
@@ -394,9 +394,9 @@ def build_callbacks(app):
 
             @app.callback([Output(graph_id, 'figure'),
                            Output(graph_id+"-txt", 'children')],
-                          [Input('list-params-'+key, "value") for key in Matrix.properties]
+                          [Input('list-params-'+key, "value") for key in Matrix.settings]
                           +[Input("lbl_params", "n_clicks")]
-                          +[Input('property-order', 'data-order')]
+                          +[Input('settings-order', 'data-order')]
                           +[Input('config-title', 'n_clicks'),
                             Input('custom-config', 'value'),
                             Input('custom-config-saved', 'data-label')],
@@ -443,9 +443,9 @@ def build_callbacks(app):
 
                 var_order = args[-1]
                 if not var_order:
-                    var_order = list(Matrix.properties.keys())
+                    var_order = list(Matrix.settings.keys())
 
-                params = dict(zip(Matrix.properties.keys(), args[:len(Matrix.properties)]))
+                params = dict(zip(Matrix.settings.keys(), args[:len(Matrix.settings)]))
 
                 stats_values = params.get("stats")
                 if not stats_values:
@@ -465,7 +465,7 @@ def build_callbacks(app):
                 except KeyError:
                     return "Stat '{stats_values[graph_idx]}' not found ...", None
 
-                variables = {k:(Matrix.properties[k]) for k, v in params.items() \
+                variables = {k:(Matrix.settings[k]) for k, v in params.items() \
                              if k != "stats" and v == "---"}
                 for k in list(variables.keys()):
                     if k.startswith("@"):

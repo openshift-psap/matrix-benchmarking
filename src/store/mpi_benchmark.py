@@ -16,7 +16,7 @@ def mpi_benchmark_rewrite_settings(params_dict):
 
 store.custom_rewrite_settings = mpi_benchmark_rewrite_settings
 
-def __parse_linpack(fname, properties):
+def __parse_linpack(fname, settings):
     results = types.SimpleNamespace()
     in_summary = False
     is_next = False
@@ -46,7 +46,7 @@ def __parse_linpack(fname, properties):
             max_lst.append(float(maxi))
     return [({}, results)]
 
-def __parse_sysbench_cpu(fname, properties):
+def __parse_sysbench_cpu(fname, settings):
     results = types.SimpleNamespace()
     with open(fname) as f:
         evt_per_sec = None
@@ -58,7 +58,7 @@ def __parse_sysbench_cpu(fname, properties):
     results.cpu_evt_per_sec = evt_per_sec
     return [({}, results)]
 
-def __parse_sysbench_fio(fname, properties):
+def __parse_sysbench_fio(fname, settings):
     results = types.SimpleNamespace()
 
     thput_read = None
@@ -90,7 +90,7 @@ def __parse_sysbench_fio(fname, properties):
     results.fio_thput_write = thput_write
     return [({}, results)]
 
-def __parse_osu(fname, properties):
+def __parse_osu(fname, settings):
     all_results = []
 
     osu_title = None
@@ -130,17 +130,17 @@ def __parse_osu(fname, properties):
 
     return all_results
 
-def mpi_benchmark_parse_results(dirname, properties):
+def mpi_benchmark_parse_results(dirname, settings):
     fname = f"{dirname}/stdout"
 
     try:
-        benchmark, _, flavor = properties["benchmark"].partition(".")
+        benchmark, _, flavor = settings["benchmark"].partition(".")
     except AttributeError as e:
-        print(f"ERROR: Failed to parse {dirname}: --> no benchmark property ...")
+        print(f"ERROR: Failed to parse {dirname}: --> no benchmark setting ...")
         return
     except Exception as e:
         print(f"ERROR: Failed to parse benchmark name in {dirname} "
-              "({properties['benchmark']})")
+              "({settings['benchmark']})")
         return
 
     fct = {
@@ -150,7 +150,7 @@ def mpi_benchmark_parse_results(dirname, properties):
         "osu": __parse_osu,
     }[benchmark]
 
-    return fct(fname, properties)
+    return fct(fname, settings)
 
 
 store.simple.custom_parse_results = mpi_benchmark_parse_results

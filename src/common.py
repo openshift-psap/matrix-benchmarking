@@ -23,10 +23,10 @@ class MatrixEntry(types.SimpleNamespace):
         Matrix.import_map[import_key] = \
         Matrix.processed_map[processed_key] = self
 
-        [Matrix.properties[k].add(v) for k, v in processed_settings.items()]
+        [Matrix.settings[k].add(v) for k, v in processed_settings.items()]
 
 class Matrix():
-    properties = defaultdict(set)
+    settings = defaultdict(set)
     import_map = {}
     processed_map = {}
 

@@ -11,7 +11,11 @@ def add_to_matrix(import_settings, location, results):
         print(f"WARNING:   new: {location}")
         return
 
-    processed_settings = custom_rewrite_settings(import_settings)
+    try: processed_settings = custom_rewrite_settings(import_settings)
+    except Exception as e:
+        print(f"ERROR: failed to rewrite settings for entry at '{location}'")
+        raise e
+
     if not processed_settings:
         print(f"INFO: entry '{import_key}' skipped by rewrite_settings()")
         common.Matrix.import_map[import_key] = True
