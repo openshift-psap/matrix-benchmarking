@@ -45,7 +45,7 @@ class Plot():
         cfg__remove_details = cfg.get('perf.rm_details', False)
 
         try:
-            cfg__x_var = cfg['perf.x_var']
+            cfg__x_var = cfg.get('perf.x_var')
             print(f"INFO: using {cfg__x_var} as X variable")
         except KeyError:
             cfg__x_var = "machines"

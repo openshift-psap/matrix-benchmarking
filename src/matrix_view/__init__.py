@@ -8,6 +8,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Output, Input, State, ClientsideFunction
+import plotly.graph_objs as go
 
 import flask
 print("Loading dash ... done")
@@ -418,7 +419,18 @@ def build_callbacks(app):
                     if not config or config.startswith("_"):
                         return dash.no_update, dash.no_update
 
-                cfg = {}
+                class Cfg():
+                    def __init__(self):
+                        self.requests = set()
+                        self.d = {}
+
+                    def get(self, key, default=...):
+                        self.requests.add(key)
+
+                        return self.d[key] if default is ... else self.d.get(key, default)
+
+
+                cfg = Cfg()
                 lst = (config_saved if config_saved else []) \
                     + (config_init if cfg_n_clicks is None else []) \
                     + ([config] if config else [])
@@ -427,7 +439,7 @@ def build_callbacks(app):
                     k, _, v = cf.partition("=")
                     if k.startswith("_"): continue
                     v = int(v) if v.isdigit() else v
-                    cfg[k] = v
+                    cfg.d[k] = v
 
                 var_order = args[-1]
                 if not var_order:
@@ -464,7 +476,28 @@ def build_callbacks(app):
 
                 param_lists = [[(key, v) for v in variables[key]] for key in ordered_vars]
 
-                return table_stat.do_plot(ordered_vars, params, param_lists, variables, cfg)
+                plot, msg = table_stat.do_plot(ordered_vars, params, param_lists, variables, cfg)
+
+                if "help" not in cfg.d:
+                    return plot, msg
+
+                #
+                # config help
+                #
+
+                fig = go.Figure()
+                fig.update_layout( title="help: see below the graph ...")
+
+                help_msg = [
+                    html.B(f"Config helper for '{stats_values[graph_idx]}' plot:"),
+                    html.Ul([
+                        html.Li([html.I(k)," ⇒ ",  cfg.d.get(k, "")])
+                                for k in cfg.requests
+                    ])
+                ]
+
+                return plot, help_msg
+
 
             if graph_id == "graph-for-dl":
                 TableStats.graph_figure = graph_figure
