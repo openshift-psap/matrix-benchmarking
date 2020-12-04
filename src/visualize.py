@@ -16,7 +16,7 @@ def main():
 
         store.experiment_filter[key] = value
 
-    mode = store.experiment_filter.get("mode", DEFAULT_MODE)
+    mode = store.experiment_filter.pop("_mode_", DEFAULT_MODE)
 
     print(f"Loading {mode} storage module ...")
     store_pkg_name = f"store.{mode}"
