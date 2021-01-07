@@ -40,4 +40,4 @@ def parse_data(mode):
         _parse_directory(expe, this_dir)
 
 
-custom_parse_results = lambda x, y: None
+custom_parse_results = lambda x, y: []
