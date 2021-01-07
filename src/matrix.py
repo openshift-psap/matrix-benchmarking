@@ -80,11 +80,11 @@ class Matrix():
                     k, v = kv.split("=")
                     settings[k] = v
 
-            key = common.settings_to_key(settings)
+            key = common.Matrix.settings_to_key(settings)
 
-            if key in common.results:
+            if key in common.Matrix.processed_map:
                 print("INFO: experiment already recorded, skipping")
-                print("INFO: >", common.results[key][1].replace(common.RESULTS_PATH+f"/{self.mode}/", ''))
+                print("INFO: >", common.Matrix.processed_map[key][1].replace(common.RESULTS_PATH+f"/{self.mode}/", ''))
                 exe.expe_cnt.recorded += 1
                 continue
 
