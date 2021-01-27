@@ -3,7 +3,7 @@ import os, sys
 import yaml
 
 import matrix
-import store.simple as store
+import store
 import common
 
 class Exec():
@@ -11,12 +11,14 @@ class Exec():
         self.dry = dry
 
     def log(self, *msg):
-        print(*msg)
+        print("INFO:", *msg)
 
-
+DEFAULT_MODE =  "mlperf"
 def main():
-    mode = "specfem"
-    dry = "run" not in sys.argv
+    mode = store.parse_argv(sys.argv[1:])
+    store_plugin = store.mode_store(mode)
+
+    dry = "run" in store.experiment_filter
 
     benchmark_desc_file = os.path.realpath(common.RESULTS_PATH
                                            + f"/{mode}/benchmarks.yaml")
@@ -26,7 +28,7 @@ def main():
     exe = Exec(dry)
 
     exe.log("Loading previous matrix results: ... ")
-    store.parse_data(mode)
+    store_plugin.parse_data(mode)
     exe.log("Loading previous matrix results: done")
 
     for yaml_benchmark_desc in all_yaml_benchmark_desc:

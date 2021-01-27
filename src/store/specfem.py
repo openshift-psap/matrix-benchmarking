@@ -55,8 +55,11 @@ store.custom_rewrite_settings = specfem_rewrite_settings
 def specfem_parse_results(dirname, import_settings):
     results = types.SimpleNamespace()
 
-    with open(f"{dirname}/timing") as f:
-        results.time = float(f.read().strip())
-
+    try:
+        with open(f"{dirname}/timing") as f:
+            results.time = float(f.read().strip())
+    except FileNotFoundError as e:
+        print(f"ERROR: Could not find 'timing' file in {dirname} ...")
+        raise e
     return [({}, results)]
 store.simple.custom_parse_results = specfem_parse_results

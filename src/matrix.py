@@ -1,4 +1,5 @@
 import os, types, itertools, datetime
+import subprocess
 
 import common
 
@@ -21,7 +22,8 @@ class Matrix():
                 exe.log(f"Skip disabled expe '{expe}'")
                 continue
 
-            self.do_run_expe(exe, expe)
+            stop = self.do_run_expe(exe, expe)
+            if stop: break
             expe_ran.append(expe)
 
         exe.log(f"Ran {len(expe_ran)} matri{'ces' if len(expe_ran) > 1 else 'x'}:", ", ".join(expe_ran))
@@ -52,25 +54,28 @@ class Matrix():
 
         context.expe = expe
         context.expe_dir = f"{common.RESULTS_PATH}/{self.mode}/{context.expe}"
-        context.path_fmt = self.yaml_desc['path_fmt']
+        context.path_tpl = self.yaml_desc['path_tpl']
+        context.remote_mode = self.yaml_desc.get('remote_mode', False)
+        context.script_tpl = self.yaml_desc['script_tpl']
+        context.stop_on_error = self.yaml_desc.get('stop_on_error', False)
 
         # do fail in drymode if we cannot create the directories
         os.makedirs(context.expe_dir, exist_ok=True)
 
-        if not exe.dry:
-            with open(context.results_filename, "a") as f:
-                print(f"# {datetime.datetime.now()}", file=f)
-
-        self.do_run_matrix(exe, all_settings_items, context, yaml_expe)
+        stop = self.do_run_matrix(exe, all_settings_items, context, yaml_expe)
+        if stop: return stop
 
         exe.log("#")
         exe.log(f"# Finished with '{context.expe}'")
         exe.log("#")
 
+        return False
+
     def do_run_matrix(self, exe, all_settings_items, context, yaml_expe):
         for settings_items in itertools.product(*all_settings_items):
             settings = dict(settings_items)
             settings['expe'] = context.expe
+            exe.expe_cnt.current_idx += 1
 
             if "extra" in settings:
                 extra = settings["extra"]
@@ -83,32 +88,70 @@ class Matrix():
             key = common.Matrix.settings_to_key(settings)
 
             if key in common.Matrix.processed_map:
-                print("INFO: experiment already recorded, skipping")
-                print("INFO: >", common.Matrix.processed_map[key][1].replace(common.RESULTS_PATH+f"/{self.mode}/", ''))
+                exe.log(f"experiment {exe.expe_cnt.current_idx}/{exe.expe_cnt.total} already recorded, skipping")
+                exe.log(">", common.Matrix.processed_map[key].location.replace(common.RESULTS_PATH+f"/{self.mode}/", ''))
                 exe.expe_cnt.recorded += 1
                 continue
 
-            bench_common_path = context.path_fmt.format(**settings)
+            bench_common_path = context.path_tpl.format(**settings)
             bench_uid = datetime.datetime.today().strftime("%Y%m%d_%H%M%S_%f")
             bench_fullpath = f"{context.expe_dir}/{bench_common_path}{bench_uid}"
 
             os.makedirs(bench_fullpath)
 
-            exe.expe_cnt.current_idx += 1
-
             exe.log("---")
             exe.log(f"running {exe.expe_cnt.current_idx}/{exe.expe_cnt.total}")
+            for k, v in settings.items():
+                exe.log(f"    {k}: {v}")
 
-            self.execute_benchmark(bench_fullpath, settings)
+            ret = self.execute_benchmark(bench_fullpath, settings, context, exe)
+            if ret != None and not ret:
+                exe.expe_cnt.errors += 1
+                if context.stop_on_error:
+                    print("Stopping on error.")
+                    return True
 
             exe.expe_cnt.executed += 1
+        return False
 
-    def execute_benchmark(self, bench_fullpath, settings):
+    def execute_benchmark(self, bench_fullpath, settings, context, exe):
         with open(f"{bench_fullpath}/settings", "w") as f:
             for k, v in settings.items():
                 print(f"{k}={v}", file=f)
             print(f"", file=f)
 
-        print(" ".join(f"{k}={v}" for k, v in settings.items()))
 
-        pass
+        settings_str = ""
+        for k, v in settings.items():
+            settings_str += f" '{k}={v}'"
+
+        script = context.script_tpl.format(**settings)
+        script_fullpath = os.path.realpath(os.getcwd()+'/../') + f"/{script}"
+
+        cmd = f"{script_fullpath} {settings_str} 1> >(tee stdout) 2> >(tee stderr >&2)"
+        if context.remote_mode:
+            print(f"""
+cd "{bench_fullpath}"
+if [[ "$(cat ./exit_code)" != 0 ]]; then
+  {cmd}
+  echo "$?" > ./exit_code
+else
+  echo "Already recorded."
+fi
+""")
+            return None
+
+        # no need to check here if ./exit_code exists and == 0,
+        # we wouldn't reach this step if it did
+        # (whereas the remote_mode generated script can be executed multiple times)
+
+        exe.log(f"cd {bench_fullpath}")
+        exe.log(cmd)
+
+        proc = subprocess.run(cmd, cwd=bench_fullpath, shell=True, executable='/bin/bash')
+        exe.log(f"exit code: {proc.returncode}")
+        # ^^^ blocks until the process terminates
+        with open(f"{bench_fullpath}/exit_code", "w") as f:
+            print(f"{proc.returncode}", file=f)
+
+        return proc.returncode == 0

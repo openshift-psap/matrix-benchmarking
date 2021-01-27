@@ -6,6 +6,18 @@ import store
 
 def _parse_directory(expe, dirname):
     import_settings = {"expe": expe}
+
+    try:
+        with open(f"{dirname}/exit_code") as f:
+            exit_code = int(f.read().strip())
+        if exit_code != 0:
+            print(f"{dirname}: exit_code == {exit_code}, skipping ...")
+            return
+
+    except FileNotFoundError as e:
+        print(f"{dirname}: 'exit_code' file not found, skipping ...")
+        return
+
     with open(f"{dirname}/settings") as f:
         for line in f.readlines():
             if not line.strip(): continue
@@ -20,7 +32,7 @@ def _parse_directory(expe, dirname):
         extra_settings__results = custom_parse_results(dirname, import_settings)
     except Exception as e:
         print(f"ERROR: Failed to parse {dirname} ...")
-        raise e
+        return
 
     for extra_settings, results in extra_settings__results:
         entry_import_settings = dict(import_settings)

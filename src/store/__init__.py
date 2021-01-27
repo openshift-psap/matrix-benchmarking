@@ -1,7 +1,28 @@
 import common
 import copy
+import importlib
 
 experiment_filter = {}
+
+DEFAULT_MODE = "mlperf"
+def parse_argv(argv):
+    for expe_filter in argv:
+        key, _, value = expe_filter.partition("=") if "=" in expe_filter \
+            else ("expe", True, expe_filter)
+
+        experiment_filter[key] = value
+
+    return experiment_filter.pop("_mode_", DEFAULT_MODE)
+
+def mode_store(mode):
+    print(f"Loading {mode} storage module ...")
+    store_pkg_name = f"store.{mode}"
+    try: store_plugin = importlib.import_module(store_pkg_name)
+    except ModuleNotFoundError as e:
+        print(f"FATAL: Failed to load module '{mode}': {e}")
+        return 1
+    print(f"Loading {mode} storage module ... done")
+    return store_plugin
 
 def add_to_matrix(import_settings, location, results):
     import_key = common.Matrix.settings_to_key(import_settings)
