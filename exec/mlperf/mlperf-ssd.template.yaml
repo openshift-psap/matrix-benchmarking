@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {pod_name}
+  namespace: {pod_namespace}
+spec:
+  restartPolicy: Never
+  containers:
+    - name: mlperf-ssd
+      image: "quay.io/openshift-psap/mlperf_v06_ubi8_images:ssd"
+      command:
+        - "/bin/bash"
+        - "-x"
+        - ./my_run_and_time.sh
+      env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: all
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "compute,utility"
+        - name: NVIDIA_REQUIRE_CUDA
+          value: "cuda>=5.0"
+        - name: DGX_SYSTEM
+          value: CUSTOM
+      securityContext:
+        privileged: true
+      resources:
+{gpu_resources}
+      volumeMounts:
+      - mountPath: /dev/shm
+        name: dshm
+
+      - mountPath: /data/
+        name: mlperf-data
+
+      - name: config-volume
+        mountPath: /workspace/single_stage_detector/config_CUSTOM.sh
+        readOnly: false
+        subPath: config_CUSTOM.sh
+      - name: config-volume
+        mountPath: /workspace/single_stage_detector/my_run_and_time.sh
+        readOnly: false
+        subPath: my_run_and_time.sh
+      - name: config-volume
+        mountPath: /workspace/single_stage_detector/bind_launch.py
+        readOnly: false
+        subPath: bind_launch.py
+  volumes:
+  - name: mlperf-data
+    persistentVolumeClaim:
+      claimName: mlperf-data-pvc
+  - name: dshm
+    emptyDir:
+      medium: Memory
+  - name: config-volume
+    configMap:
+      defaultMode: 0777
+      name: custom-config-script
+  imagePullSecrets:
+    - name: openshift-psap-kpouget-nva100-mlperf-pull-secret

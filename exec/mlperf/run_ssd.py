@@ -3,7 +3,11 @@
 import sys
 import os
 import subprocess
+import time
+
 from collections import defaultdict
+
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 MIG_ID_TO_RES = {
     19: "nvidia.com/mig-1g.5gb",
@@ -13,23 +17,15 @@ MIG_ID_TO_RES = {
     0: "nvidia.com/mig-7g.40gb",
 }
 
-MLPERF_SSH_POD_TEMPLATE = """
-apiVersion: v1
-kind: Pod
-metadata:
-  name: run-ssd
-  namespace: mlperf
-spec:
-  containers:
-  - image: "nvcr.io/nvidia/driver:450.80.02-rhcos4.6"
-    name: nvidia
-    command: # in the CLI debug command
-    securityContext:
-      privileged: {privileged}
-    resources:
-{gpu_resources}
-"""
-MLPERF_SSH_POD_COMMAND = "nvidia-smi -L"
+POD_NAME = "run-ssd"
+POD_NAMESPACE = "mlperf"
+CONFIG_CM_NAME = "custom-config-script"
+MLPERF_SSD_POD_TEMPLATE = "mlperf-ssd.template.yaml"
+MLPERF_SSD_CM_FILES = [
+    "config_CUSTOM.sh",
+    "bind_launch.py",
+    "my_run_and_time.sh",
+]
 
 def main():
     settings = {}
@@ -48,34 +44,73 @@ def main():
 
     gpu_resources = ""
     for name, count in resources.items():
-        gpu_resources += f'        {name}: "{count}"\n'
+        gpu_resources += f'          {name}: "{count}"\n'
 
     gpu_resources = f"""\
-      # MIG mode: {mig_mode}
-      limits:
+        # MIG mode: {mig_mode}
+        limits:
 {gpu_resources}
-      requests:
+        requests:
 {gpu_resources}\
 """
 
     privileged = settings.get('privileged', "false")
-    pod_def = MLPERF_SSH_POD_TEMPLATE.format(
+    with open(f"{THIS_DIR}/{MLPERF_SSD_POD_TEMPLATE}") as f:
+        mlperf_ssd_pod_template = f.read()
+    pod_def = mlperf_ssd_pod_template.format(
+        pod_name=POD_NAME,
+        pod_namespace=POD_NAMESPACE,
         privileged=privileged,
         gpu_resources=gpu_resources[:-1])
     print("=====")
     print(pod_def, end="")
     print("-----")
+
     sys.stdout.flush()
     sys.stderr.flush()
-    output = subprocess.check_output(f"oc debug -f- -- {MLPERF_SSH_POD_COMMAND}",
-                          shell=True, input=pod_def.encode('utf-8'))
+
+    subprocess.run(f"oc delete cm/{CONFIG_CM_NAME} -n {POD_NAMESPACE} 2>/dev/null", shell=True)
+
+    cm_files = ""
+    for cm_file in MLPERF_SSD_CM_FILES:
+        cm_file_fullpath = f"{THIS_DIR}/{cm_file}"
+        cm_files += f" --from-file={cm_file_fullpath}"
+        print(f"Include {cm_file_fullpath}")
+
+    subprocess.run(f"oc create configmap {CONFIG_CM_NAME} -n {POD_NAMESPACE} "+cm_files, shell=True)
+
+    subprocess.run(f"oc delete pod/{POD_NAME} -n {POD_NAMESPACE} 2>/dev/null", shell=True)
+    subprocess.run(f"oc create -f-", input=pod_def.encode('utf-8'),
+                          shell=True, check=True)
 
     print("-----")
-    print(output.decode('utf-8'))
+    print(f"Waiting for pod/{POD_NAME} to terminate successfully ...")
+    cmd = f"oc get pod  --field-selector=status.phase=Succeeded,metadata.name={POD_NAME} --no-headers -oname -n {POD_NAMESPACE} | grep '{POD_NAME}' -q"
+    print(cmd)
+    while True:
+        try:
+
+            subprocess.check_call(cmd, shell=True)
+            print("")
+            break
+        except subprocess.CalledProcessError: pass
+        time.sleep(5)
+        print(".", end="")
+        sys.stdout.flush()
+    print("-----")
+
+    output = subprocess.check_output(f"oc logs pod/{POD_NAME} -n {POD_NAMESPACE} ", shell=True)
+    subprocess.run(f"oc delete pod/{POD_NAME} -n {POD_NAMESPACE} ", shell=True)
+    print("-----")
+    print(output.decode('utf-8'), end="")
+    print("-----")
+    if not sys.stdout.isatty():
+        print("Saving the logs in 'pod.logs' ...")
+        with open("pod.logs", "w") as out_f:
+            print(output.decode('utf-8'), file=out_f, end="")
+    else:
+        print("stdout is a TTY, not saving the logs into 'pod.logs'.")
     print("=====")
-    print("Saving the logs in 'pod.logs' ...")
-    with open("pod.logs", "w") as out_f:
-        print(output.decode('utf-8'), file=out_f, end="")
     print("Done!")
 
     return 0
