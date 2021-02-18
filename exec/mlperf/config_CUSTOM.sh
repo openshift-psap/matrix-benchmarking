@@ -15,7 +15,7 @@ EXTRA_PARAMS=(
 WALLTIME=01:00:00
 
 ## System config params
-DGX_NGPU=$(nvidia-smi -L | grep UUID)
+DGX_NGPU=$(nvidia-smi -L | grep UUID | wc -l)
 DGX_SOCKET_CORES=23
 DGX_NSOCKET=1
 #DGXHT=2         # HT is on is 2, HT off is 1
