@@ -65,16 +65,21 @@ def main():
 
     slicing = subprocess.check_output("nvidia-smi -L", shell=True).decode('utf-8')
 
-    mig_uids = [l.split("UUID: ")[1][:-1] for l in slicing.split("\n") if "MIG" in l]
-    for i, uid in enumerate(mig_uids):
-      print(f"{i} --> {uid}")
+    uuid_key = "UUID: MIG-GPU"
+    if not uuid_key in slicing: uuid_key = "UUID: GPU"
+
+
+    gpu_uids = [l.split("UUID: ")[1][:-1] for l in slicing.split("\n") if uuid_key in l]
+    for i, uid in enumerate(gpu_uids):
+        print(f"{i} --> {uid}")
+
 
     # variables for numactrl binding
     NSOCKETS = args.nsockets_per_node
     NGPUS_PER_SOCKET = 1
-    NCORES_PER_GPU = args.ncores_per_socket // len(mig_uids)
+    NCORES_PER_GPU = args.ncores_per_socket // len(gpu_uids)
 
-    args.nproc_per_node = len(mig_uids)
+    args.nproc_per_node = len(gpu_uids)
     # world size in terms of number of processes
     dist_world_size = args.nproc_per_node * args.nnodes
 
@@ -86,8 +91,8 @@ def main():
 
     processes = []
 
-    if args.nproc_per_node != len(mig_uids):
-        print(f"Got --nproc_per_node={args.nproc_per_node} and {len(mig_uids)} MIG devices ...")
+    if args.nproc_per_node != len(gpu_uids):
+        print(f"Got --nproc_per_node={args.nproc_per_node} and {len(gpu_uids)} MIG devices ...")
         print(slicing)
         exit(1)
 
@@ -114,7 +119,7 @@ def main():
 
         # spawn the processes
         cmd = [ #"echo",
-                "/usr/bin/env", f"CUDA_VISIBLE_DEVICES={mig_uids[local_rank]}",
+                "/usr/bin/env", f"CUDA_VISIBLE_DEVICES={gpu_uids[local_rank]}",
                 "/usr/bin/numactl" ] \
             + numactlargs \
             + [ sys.executable,
