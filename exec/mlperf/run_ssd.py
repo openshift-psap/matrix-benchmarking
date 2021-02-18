@@ -15,6 +15,7 @@ MIG_ID_TO_RES = {
     9: "nvidia.com/mig-3g.20gb",
     5: "nvidia.com/mig-4g.20gb",
     0: "nvidia.com/mig-7g.40gb",
+    99: "nvidia.com/gpu",
 }
 
 POD_NAME = "run-ssd"
@@ -34,12 +35,18 @@ def main():
         settings[k] = v
 
     mig_mode = settings["gpu"].replace("-", ",")
-    mig_cmd = """oc patch clusterpolicy/cluster-policy --type merge --patch '{"spec": {"driver": {"migMode": "'""" + mig_mode + """'" }}}'"""
+    mig_cmd = """echo oc patch clusterpolicy/cluster-policy --type merge --patch '{"spec": {"driver": {"migMode": "'""" + mig_mode + """'" }}}'"""
     print(mig_cmd)
     subprocess.check_call(mig_cmd, shell=True)
 
     resources = defaultdict(int)
-    for mig_id in map(int, mig_mode.split(",")):
+    try:
+        mig_ids = list(map(int, mig_mode.split(",")))
+    except Exception as e:
+        print(f"ERROR: failed to parse mig_mode='{mig_mode}'")
+        print(e)
+        return 1
+    for mig_id in mig_ids:
         resources[MIG_ID_TO_RES[mig_id]] += 1
 
     gpu_resources = ""
