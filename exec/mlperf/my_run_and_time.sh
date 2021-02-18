@@ -36,6 +36,7 @@ echo "Run vars: jobid $SLURM_JOB_ID gpus $SLURM_NTASKS_PER_NODE mparams $MULTI_N
 # runs benchmark and reports time to convergence
 # to use the script:
 #   run_and_time.sh
+export NCCL_DEBUG=INFO
 
 set -e
 
