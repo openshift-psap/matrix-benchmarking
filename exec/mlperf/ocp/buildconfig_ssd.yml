@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: mlperf
+  name: mlperf
+  namespace: mlperf
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: mlperf_0_7:ssd
+      namespace: mlperf
+  resources: {}
+  source:
+    type: Git
+    git:
+      uri: "https://github.com/mlcommons/training_results_v0.7.git"
+      ref: "master"
+    contextDir: "NVIDIA/benchmarks/ssd/implementations/pytorch"
+  triggers:
+  - type: "ConfigChange"
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+      from:
+        kind: DockerImage
+        name: nvcr.io/nvidia/pytorch:20.06-py3

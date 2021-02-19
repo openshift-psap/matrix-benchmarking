@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# base file at https://github.com/mlcommons/training_results_v0.7/blob/master/NVIDIA/benchmarks/ssd/implementations/pytorch/run_and_time.sh
+
 # Copyright (c) 2018-2019, NVIDIA CORPORATION. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,31 +16,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-export INSLURM=0;
-export NEXP=1;
-export DATADIR=/data/coco2017;
-export LOGDIR=/data;
-
-DGX_SYSTEM=${DGX_SYSTEM:-"DGX1"}
-if [[ ! -f config_${DGX_SYSTEM}.sh ]]; then
-  echo "Unknown DGX system"
-  exit 1
-fi
-echo "Loading config_${DGX_SYSTEM}.sh"
-source config_${DGX_SYSTEM}.sh
-
-SLURM_NTASKS_PER_NODE=${SLURM_NTASKS_PER_NODE:-$DGX_NGPU}
-SLURM_JOB_ID=${SLURM_JOB_ID:-$RANDOM}
-MULTI_NODE=${MULTI_NODE:-''}
-
-echo "Run vars: jobid $SLURM_JOB_ID gpus $SLURM_NTASKS_PER_NODE mparams $MULTI_NODE"
-
 # runs benchmark and reports time to convergence
 # to use the script:
 #   run_and_time.sh
 export NCCL_DEBUG=INFO
 
 set -e
+set -x
+
+DGXNGPU=$(nvidia-smi -L | grep UUID | wc -l)
+DGXNSOCKET=1
+DGXSOCKETCORES=16
 
 # start timing
 start=$(date +%s)
@@ -46,33 +34,45 @@ start_fmt=$(date +%Y-%m-%d\ %r)
 echo "STARTING TIMING RUN AT $start_fmt"
 
 # run benchmark
-NUM_EPOCHS=${NUM_EPOCHS:-80}
+set -x
+NUMEPOCHS=${NUMEPOCHS:-80}
 
-echo "running benchmark with MIG GPUs"
+echo "running benchmark"
 nvidia-smi -L
 
 export DATASET_DIR="/data/coco2017"
-export TORCH_MODEL_ZOO="/data/torchvision"
+export TORCH_HOME="/data/torchvision"
+
+declare -a CMD
+if [ -n "${SLURM_LOCALID-}" ]; then
+  # Mode 1: Slurm launched a task for each GPU and set some envvars; no need for parallel launch
+  if [ "${SLURM_NTASKS}" -gt "${SLURM_JOB_NUM_NODES}" ]; then
+    CMD=( './bind.sh' '--' 'python' '-u' )
+  else
+    CMD=( 'python' '-u' )
+  fi
+else
+  # Mode 2: Single-node Docker; need to launch tasks with Pytorch's distributed launch
+  # TODO: use bind.sh instead of bind_launch.py
+  #       torch.distributed.launch only accepts Python programs (not bash scripts) to exec
+  CMD=( 'python' '-u' '-m' 'bind_launch' "--nsockets_per_node=${DGXNSOCKET}" \
+    "--ncores_per_socket=${DGXSOCKETCORES}" "--nproc_per_node=${DGXNGPU}" )
+fi
 
 # run training
-python3 -m bind_launch  \
-  --nsockets_per_node ${DGX_NSOCKET} \
-  --ncores_per_socket ${DGX_SOCKET_CORES} \
-  --nproc_per_node $SLURM_NTASKS_PER_NODE $MULTI_NODE \
-      train.py \
-        --use-fp16 \
-        --nhwc \
-        --pad-input \
-        --jit \
-        --delay-allreduce \
-        --opt-loss \
-        --epochs "${NUM_EPOCHS}" \
-        --warmup-factor 0 \
-        --no-save \
-        --threshold=0.23 \
-        --data ${DATASET_DIR} \
-        --evaluation 120000 160000 180000 200000 220000 240000 260000 280000 \
-        ${EXTRA_PARAMS[@]} ; ret_code=$?
+"${CMD[@]}" train.py \
+  --use-fp16 \
+  --nhwc \
+  --pad-input \
+  --jit \
+  --delay-allreduce \
+  --opt-loss \
+  --epochs "${NUMEPOCHS}" \
+  --warmup-factor 0 \
+  --no-save \
+  --threshold=0.23 \
+  --data ${DATASET_DIR} \
+  ${EXTRA_PARAMS} ; ret_code=$?
 
 [[ $ret_code != 0 ]] && exit $ret_code
 
@@ -89,4 +89,3 @@ result=$(($end - $start))
 result_name="SINGLE_STAGE_DETECTOR"
 
 echo "RESULT,$result_name,,$result,nvidia,$start_fmt"
-#

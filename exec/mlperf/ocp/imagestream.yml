@@ -1,0 +1,8 @@
+kind: ImageStream
+apiVersion: v1
+metadata:
+  name: mlperf_0_7
+  namespace: mlperf
+  labels:
+    app: mlperf
+spec: {}

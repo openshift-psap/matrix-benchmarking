@@ -23,8 +23,6 @@ POD_NAMESPACE = "mlperf"
 CONFIG_CM_NAME = "custom-config-script"
 MLPERF_SSD_POD_TEMPLATE = "mlperf-ssd.template.yaml"
 MLPERF_SSD_CM_FILES = [
-    "config_CUSTOM.sh",
-    "bind_launch.py",
     "my_run_and_time.sh",
 ]
 
@@ -107,7 +105,7 @@ def main():
     print("-----")
 
     output = subprocess.check_output(f"oc logs pod/{POD_NAME} -n {POD_NAMESPACE} ", shell=True)
-    subprocess.run(f"oc delete pod/{POD_NAME} -n {POD_NAMESPACE} ", shell=True)
+    #subprocess.run(f"oc delete pod/{POD_NAME} -n {POD_NAMESPACE} ", shell=True)
     print("-----")
     print(output.decode('utf-8'), end="")
     print("-----")
