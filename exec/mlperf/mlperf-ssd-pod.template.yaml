@@ -21,6 +21,7 @@ spec:
           value: "cuda>=5.0"
         - name: DGX_SYSTEM
           value: CUSTOM
+{env_values}
       securityContext:
         privileged: true
       resources:
@@ -28,10 +29,8 @@ spec:
       volumeMounts:
       - mountPath: /dev/shm
         name: dshm
-
       - mountPath: /data/
         name: mlperf-data
-
       - name: config-volume
         mountPath: /workspace/single_stage_detector/my_run_and_time.sh
         readOnly: false

@@ -21,7 +21,7 @@ MIG_ID_TO_RES = {
 POD_NAME = "run-ssd"
 POD_NAMESPACE = "mlperf"
 CONFIG_CM_NAME = "custom-config-script"
-MLPERF_SSD_POD_TEMPLATE = "mlperf-ssd.template.yaml"
+MLPERF_SSD_POD_TEMPLATE = "mlperf-ssd-pod.template.yaml"
 MLPERF_SSD_CM_FILES = [
     "my_run_and_time.sh",
 ]
@@ -33,7 +33,12 @@ def main():
         settings[k] = v
 
     mig_mode = settings["gpu"].replace("-", ",")
-    mig_cmd = """echo oc patch clusterpolicy/cluster-policy --type merge --patch '{"spec": {"driver": {"migMode": "'""" + mig_mode + """'" }}}'"""
+
+    strategy = "none" if mig_mode == "99" else "mixed"
+    mig_cmd = """oc patch clusterpolicy/gpu-cluster-policy --type merge --patch '{"spec": {"gfd": {"migStrategy": "'""" + strategy + """'" }}}'"""
+    if mig_mode != "99":
+        mig_cmd += """;oc patch clusterpolicy/gpu-cluster-policy --type merge --patch '{"spec": {"driver": {"migMode": "'""" + mig_mode + """'" }}}'"""
+
     print(mig_cmd)
     subprocess.check_call(mig_cmd, shell=True)
 
@@ -59,13 +64,22 @@ def main():
 {gpu_resources}\
 """
 
+    env_values = f"""
+        - name: SSD_THRESHOLD
+          value: "{settings['threshold']}"
+        - name: DGXSOCKETCORES
+          value: "{settings['cores']}"
+"""
+
     privileged = settings.get('privileged', "false")
     with open(f"{THIS_DIR}/{MLPERF_SSD_POD_TEMPLATE}") as f:
         mlperf_ssd_pod_template = f.read()
+
     pod_def = mlperf_ssd_pod_template.format(
         pod_name=POD_NAME,
         pod_namespace=POD_NAMESPACE,
         privileged=privileged,
+        env_values=env_values,
         gpu_resources=gpu_resources[:-1])
     print("=====")
     print(pod_def, end="")

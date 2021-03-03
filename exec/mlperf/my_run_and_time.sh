@@ -24,9 +24,14 @@ export NCCL_DEBUG=INFO
 set -e
 set -x
 
-DGXNGPU=$(nvidia-smi -L | grep UUID | wc -l)
+DGXNGPU=$(nvidia-smi -L | grep "UUID: MIG-GPU" | wc -l)
+if [[ "$DGXNGPU" == 0 ]]; then
+    DGXNGPU=$(nvidia-smi -L | grep "UUID: GPU" | wc -l)
+    echo "No MIG GPU available, using the GPUs."
+fi
 DGXNSOCKET=1
-DGXSOCKETCORES=16
+DGXSOCKETCORES=${DGXSOCKETCORES:-16}
+SSD_THRESHOLD=${SSD_THRESHOLD:-0.23}
 
 # start timing
 start=$(date +%s)
@@ -70,7 +75,7 @@ fi
   --epochs "${NUMEPOCHS}" \
   --warmup-factor 0 \
   --no-save \
-  --threshold=0.23 \
+  --threshold=${SSD_THRESHOLD} \
   --data ${DATASET_DIR} \
   ${EXTRA_PARAMS} ; ret_code=$?
 
