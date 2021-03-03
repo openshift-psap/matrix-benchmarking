@@ -97,7 +97,8 @@ class Matrix():
             bench_uid = datetime.datetime.today().strftime("%Y%m%d_%H%M%S_%f")
             bench_fullpath = f"{context.expe_dir}/{bench_common_path}{bench_uid}"
 
-            os.makedirs(bench_fullpath)
+            if not exe.dry:
+                os.makedirs(bench_fullpath)
 
             exe.log("---")
             exe.log(f"running {exe.expe_cnt.current_idx}/{exe.expe_cnt.total}")
@@ -115,11 +116,11 @@ class Matrix():
         return False
 
     def execute_benchmark(self, bench_fullpath, settings, context, exe):
-        with open(f"{bench_fullpath}/settings", "w") as f:
-            for k, v in settings.items():
-                print(f"{k}={v}", file=f)
-            print(f"", file=f)
-
+        if not exe.dry:
+            with open(f"{bench_fullpath}/settings", "w") as f:
+                for k, v in settings.items():
+                    print(f"{k}={v}", file=f)
+                print(f"", file=f)
 
         settings_str = ""
         for k, v in settings.items():
@@ -129,7 +130,15 @@ class Matrix():
         script_fullpath = os.path.realpath(os.getcwd()+'/../') + f"/{script}"
 
         cmd = f"{script_fullpath} {settings_str} 1> >(tee stdout) 2> >(tee stderr >&2)"
-        if context.remote_mode:
+        if exe.dry:
+            exe.log(f"""\n
+Results: {bench_fullpath.replace(common.RESULTS_PATH+'/', '')}
+Command: {script} {settings_str}
+---
+""")
+
+            return None
+        elif context.remote_mode:
             print(f"""
 cd "{bench_fullpath}"
 if [[ "$(cat ./exit_code)" != 0 ]]; then

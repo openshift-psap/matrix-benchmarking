@@ -7,8 +7,14 @@ experiment_filter = {}
 DEFAULT_MODE = "mlperf"
 def parse_argv(argv):
     for expe_filter in argv:
-        key, _, value = expe_filter.partition("=") if "=" in expe_filter \
-            else ("expe", True, expe_filter)
+        if expe_filter == "run":
+            key, value = "__run__", True
+        elif "=" not in expe_filter:
+            if "expe" in experiment_filter:
+                raise ValueError(f"Unexpected argument '{expe_filter}'")
+            key, value = "expe", expe_filter
+        else:
+            key, _, value = expe_filter.partition("=")
 
         experiment_filter[key] = value
 
