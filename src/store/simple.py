@@ -26,6 +26,7 @@ def _parse_directory(expe, dirname):
             if not found:
                 print(f"ERROR: invalid line in {dirname}/settings:")
                 print(f"ERROR: {line.strip()}")
+                continue
             import_settings[key] = value
 
     try:
