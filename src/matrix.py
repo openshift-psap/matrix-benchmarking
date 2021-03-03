@@ -26,13 +26,13 @@ class Matrix():
             if stop: break
             expe_ran.append(expe)
 
-        exe.log(f"Ran {len(expe_ran)} matri{'ces' if len(expe_ran) > 1 else 'x'}:", ", ".join(expe_ran))
+        exe.log(f"Ran {len(expe_ran)} {'matrices' if len(expe_ran) > 1 else 'matrix'}:", ", ".join(expe_ran))
         exe.log(f"Out of {exe.expe_cnt.total} experiments configured:")
         if exe.dry:
             exe.log(f"- {exe.expe_cnt.executed} would have been executed,")
         else:
-            exe.log(f"- {exe.expe_cnt.executed} have been executed,")
-        exe.log(f"- {exe.expe_cnt.recorded} were already recorded,")
+            exe.log(f"- {exe.expe_cnt.executed} {'has' if exe.expe_cnt.executed == 1 else 'have' } been executed,")
+        exe.log(f"- {exe.expe_cnt.recorded} {'was' if exe.expe_cnt.recorded == 1 else 'were'} already recorded,")
         exe.log(f"- {exe.expe_cnt.errors} failed.")
 
     def do_run_expe(self, exe, expe):
@@ -67,7 +67,7 @@ class Matrix():
 
         exe.log("#")
         exe.log(f"# Finished with '{context.expe}'")
-        exe.log("#")
+        exe.log("#\n")
 
         return False
 
@@ -156,8 +156,13 @@ fi
 
         exe.log(f"cd {bench_fullpath}")
         exe.log(cmd)
+        try:
+            proc = subprocess.run(cmd, cwd=bench_fullpath, shell=True, executable='/bin/bash')
+        except KeyboardInterrupt:
+            print("")
+            exe.log("KeyboardInterrupt registered.")
+            return False
 
-        proc = subprocess.run(cmd, cwd=bench_fullpath, shell=True, executable='/bin/bash')
         exe.log(f"exit code: {proc.returncode}")
         # ^^^ blocks until the process terminates
         with open(f"{bench_fullpath}/exit_code", "w") as f:
