@@ -1,8 +1,21 @@
 import os
+import shutil
 
 import matrix
 import common
 import store
+
+def _failed_directory(dirname):
+    return _incomplete_directory(dirname)
+
+
+def _incomplete_directory(dirname):
+    if not store.experiment_filter.get("__clean__", False):
+        return
+
+    shutil.rmtree(dirname)
+    print(f"{dirname}: removed")
+
 
 def _parse_directory(expe, dirname):
     import_settings = {"expe": expe}
@@ -12,10 +25,12 @@ def _parse_directory(expe, dirname):
             exit_code = int(f.read().strip())
         if exit_code != 0:
             print(f"{dirname}: exit_code == {exit_code}, skipping ...")
+            _failed_directory(dirname)
             return
 
     except FileNotFoundError as e:
-        print(f"{dirname}: 'exit_code' file not found, skipping ...")
+        if not _incomplete_directory(dirname):
+            print(f"{dirname}: 'exit_code' file not found, skipping ...")
         return
 
     with open(f"{dirname}/settings") as f:
@@ -33,6 +48,8 @@ def _parse_directory(expe, dirname):
         extra_settings__results = custom_parse_results(dirname, import_settings)
     except Exception as e:
         print(f"ERROR: Failed to parse {dirname} ...")
+        print(f"       {e.__class__.__name__}: {e}")
+        print()
         return
 
     for extra_settings, results in extra_settings__results:

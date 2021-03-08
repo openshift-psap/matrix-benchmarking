@@ -9,6 +9,8 @@ def parse_argv(argv):
     for expe_filter in argv:
         if expe_filter == "run":
             key, value = "__run__", True
+        elif expe_filter == "clean":
+            key, value = "__clean__", True
         elif "=" not in expe_filter:
             if "expe" in experiment_filter:
                 raise ValueError(f"Unexpected argument '{expe_filter}'")
@@ -18,7 +20,7 @@ def parse_argv(argv):
 
         experiment_filter[key] = value
 
-    return experiment_filter.pop("_mode_", DEFAULT_MODE)
+    return experiment_filter.pop("mode", DEFAULT_MODE)
 
 def mode_store(mode):
     print(f"Loading {mode} storage module ...")
@@ -50,6 +52,7 @@ def add_to_matrix(import_settings, location, results):
 
     keep = True
     for k, v in experiment_filter.items():
+        if k.startswith("__"): continue
         if str(processed_settings.get(k, None)) != v:
             return None
 
