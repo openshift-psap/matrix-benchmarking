@@ -4,8 +4,12 @@ import sys
 import os
 import subprocess
 import time
+import datetime
+import json
 
 from collections import defaultdict
+
+import query_thanos
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -27,6 +31,8 @@ MLPERF_SSD_CM_FILES = [
 ]
 
 def main():
+    print(datetime.datetime.now())
+
     settings = {}
     for arg in sys.argv[1:]:
         k, _, v = arg.partition("=")
@@ -35,9 +41,13 @@ def main():
     mig_mode = settings["gpu"].replace("-", ",")
 
     strategy = "none" if mig_mode == "99" else "mixed"
-    mig_cmd = """oc patch clusterpolicy/gpu-cluster-policy --type merge --patch '{"spec": {"gfd": {"migStrategy": "'""" + strategy + """'" }}}'"""
+    mig_cmd = """oc patch clusterpolicy/gpu-cluster-policy \
+                    --type merge --patch \
+                    '{"spec": {"gfd": {"migStrategy": "'""" + strategy + """'" }}}'"""
     if mig_mode != "99":
-        mig_cmd += """;oc patch clusterpolicy/gpu-cluster-policy --type merge --patch '{"spec": {"driver": {"migMode": "'""" + mig_mode + """'" }}}'"""
+        mig_cmd += """;oc patch clusterpolicy/gpu-cluster-policy \
+                          --type merge --patch \
+                          '{"spec": {"driver": {"migMode": "'""" + mig_mode + """'" }}}'"""
 
     print(mig_cmd)
     subprocess.check_call(mig_cmd, shell=True)
@@ -103,34 +113,75 @@ def main():
                           shell=True, check=True)
 
     print("-----")
-    print(f"Waiting for pod/{POD_NAME} to terminate successfully ...")
-    cmd = f"oc get pod  --field-selector=status.phase=Succeeded,metadata.name={POD_NAME} --no-headers -oname -n {POD_NAMESPACE} | grep '{POD_NAME}' -q"
-    print(cmd)
-    while True:
-        try:
+    print("Thanos: Preparing  ...")
+    thanos = query_thanos.prepare_thanos()
+    thanos_start = None
 
-            subprocess.check_call(cmd, shell=True)
-            print("")
+    print("-----")
+    print(f"Waiting for pod/{POD_NAME} to terminate successfully ...")
+    cmd = f"oc get pod/{POD_NAME} -n {POD_NAMESPACE} \
+               --no-headers \
+               -o custom-columns=:status.phase"
+    print(cmd)
+    print(datetime.datetime.now())
+    current_phase = None
+    while True:
+        phase = subprocess.check_output(cmd, shell=True).decode('ascii').strip()
+        if phase != current_phase:
+            current_phase = phase
+            print(f"\n{current_phase}")
+
+        if thanos_start is None and phase == "Running":
+            thanos_start = query_thanos.query_current_ts(thanos)
+            print(f"Thanos: start time: {thanos_start}")
+        if phase in ("Succeeded", "Error", "Failed"):
             break
-        except subprocess.CalledProcessError: pass
+
         time.sleep(5)
         print(".", end="")
         sys.stdout.flush()
+
     print("-----")
+    print(datetime.datetime.now())
 
     output = subprocess.check_output(f"oc logs pod/{POD_NAME} -n {POD_NAMESPACE} ", shell=True)
-    #subprocess.run(f"oc delete pod/{POD_NAME} -n {POD_NAMESPACE} ", shell=True)
+
+    thanos_stop = query_thanos.query_current_ts(thanos)
+    print(f"Thanos: stop time: {thanos_start}")
+
     print("-----")
     print(output.decode('utf-8'), end="")
-    print("-----")
+    print("-----", os.getcwd())
     if not sys.stdout.isatty():
         print("Saving the logs in 'pod.logs' ...")
         with open("pod.logs", "w") as out_f:
             print(output.decode('utf-8'), file=out_f, end="")
     else:
         print("stdout is a TTY, not saving the logs into 'pod.logs'.")
-    print("=====")
-    print("Done!")
+    print("-----")
+    for metrics in ["DCGM_FI_DEV_MEM_COPY_UTIL", "DCGM_FI_DEV_GPU_UTIL", "DCGM_FI_DEV_POWER_USAGE",
+                    "cluster:cpu_usage_cores:sum",]:
+        try:
+            print("Thanos: query {metrics} ({thanos_start} --> {thanos_stop})")
+            thanos_values = query_thanos.query_values(thanos, metrics, thanos_start, thanos_stop)
+
+            if not thanos_values:
+                print("No metric values collected for {metrics}")
+                with open(f'{metrics}.json', 'w'): pass
+                continue
+
+            print(f"Saving {len(thanos_values['result'][0]['values'])} values for {metrics}")
+            with open(f'{metrics}.json', 'w') as f:
+                json.dump(thanos_values, f)
+        except Exception as e:
+            print(f"WARNING: Failed to save {metrics} logs:")
+            print(f"WARNING: {e.__class__.__name__}: {e}")
+
+            with open(f'{metrics}.json.failed', 'w') as f:
+                print(f"{e.__class__.__name__}: {e}", file=f)
+            pass
+
+    print(datetime.datetime.now())
 
     return 0
 
