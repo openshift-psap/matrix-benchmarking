@@ -74,6 +74,7 @@ fi
   --opt-loss \
   --epochs "${NUMEPOCHS}" \
   --warmup-factor 0 \
+  --evaluation 5 10 15 20 25 30 35 40 50 55 60 65 70 75 80 85 \
   --no-save \
   --threshold=${SSD_THRESHOLD} \
   --data ${DATASET_DIR} \
