@@ -63,7 +63,7 @@ def _do_query(thanos, api_cmd, **data):
     url = f"https://{thanos['host']}/api/v1/{api_cmd}"
     encoded_data = urllib.parse.urlencode(data)
     url += "?" + encoded_data
-    print(url)
+
     req = urllib.request.Request(url, method='GET',
                                  headers={f"Authorization": f"Bearer {thanos['token']}"})
     context = ssl._create_unverified_context()
@@ -72,7 +72,11 @@ def _do_query(thanos, api_cmd, **data):
     return json.loads(content.decode('utf-8'))['data']
 
 def query_current_ts(thanos):
-    return _do_query(thanos, "query", query="cluster:memory_usage:ratio")['result'][0]['value'][0]
+    try:
+        return _do_query(thanos, "query", query="cluster:memory_usage:ratio")['result'][0]['value'][0]
+    except IndexError:
+        return None
+
 
 def query_metrics(thanos):
     return _do_query(thanos, "label/__name__/values")

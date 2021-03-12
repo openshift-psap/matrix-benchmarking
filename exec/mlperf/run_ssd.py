@@ -13,22 +13,72 @@ import query_thanos
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-MIG_ID_TO_RES = {
-    19: "nvidia.com/mig-1g.5gb",
-    14: "nvidia.com/mig-2g.10gb",
-    9: "nvidia.com/mig-3g.20gb",
-    5: "nvidia.com/mig-4g.20gb",
-    0: "nvidia.com/mig-7g.40gb",
-    99: "nvidia.com/gpu",
+MIG_RES_TYPES = {
+    "1g.5gb",
+    "2g.10gb",
+    "3g.20gb",
+    "4g.20gb",
+    "7g.40gb",
+    "full"
 }
 
-POD_NAME = "run-ssd"
-POD_NAMESPACE = "mlperf"
-CONFIG_CM_NAME = "custom-config-script"
-MLPERF_SSD_POD_TEMPLATE = "mlperf-ssd-pod.template.yaml"
-MLPERF_SSD_CM_FILES = [
-    "my_run_and_time.sh",
-]
+def prepare_mig_gpu(mig_mode):
+    try:
+        res_type, _, res_count = mig_mode.rpartition("_")
+        if not res_type in MIG_RES_TYPES: raise ValueError(f"{res_type} is invalid")
+        res_count = int(res_count)
+        if res_type == "full": res_type = "nvidia.com/gpu"
+    except Exception as e:
+        print(f"ERROR: failed to parse mig_mode='{mig_mode}'")
+        print(e)
+        return 1
+
+    strategy = "none" if res_type == "full" else "mixed"
+    mig_cmd = """oc patch clusterpolicy/gpu-cluster-policy \
+                    --type merge \
+                    --patch '{"spec": {"gfd": {"migStrategy": "'""" + strategy + """'" }}}'"""
+
+    mig_cmd += """;oc patch clusterpolicy/gpu-cluster-policy \
+                      --type merge \
+                      --patch '{"spec": {"driver": {"migMode": "'all-""" + res_type + """'" }}}'"""
+
+    print(mig_cmd)
+    subprocess.check_call(mig_cmd, shell=True)
+
+
+def save_thanos_metrics(thanos, thanos_start, thanos_stop):
+    if not sys.stdout.isatty():
+        with open("thanos.ts", "w") as out_f:
+            print("start: {thanos_start}", file=out_f)
+            print("stop: {thanos_stop}", file=out_f)
+
+    for metrics in ["DCGM_FI_DEV_MEM_COPY_UTIL", "DCGM_FI_DEV_GPU_UTIL", "DCGM_FI_DEV_POWER_USAGE",
+                    "cluster:cpu_usage_cores:sum",]:
+        try:
+            print(f"Thanos: query {metrics} ({thanos_start} --> {thanos_stop})")
+            if not (thanos_start and thanos_stop):
+                print("... invalid thanos values, skipping.")
+                continue
+            thanos_values = query_thanos.query_values(thanos, metrics, thanos_start, thanos_stop)
+
+            if not thanos_values:
+                print("No metric values collected for {metrics}")
+                with open(f'{metrics}.json', 'w'): pass
+                continue
+
+            if sys.stdout.isatty():
+                print(f"Found {len(str(thanos_values))} chars for {os.getcwd()}/{metrics}.json")
+            else:
+                print(f"Saving {len(str(thanos_values))} chars for {os.getcwd()}/{metrics}.json")
+                with open(f'{metrics}.json', 'w') as f:
+                    json.dump(thanos_values, f)
+        except Exception as e:
+            print(f"WARNING: Failed to save {metrics} logs:")
+            print(f"WARNING: {e.__class__.__name__}: {e}")
+
+            with open(f'{metrics}.json.failed', 'w') as f:
+                print(f"{e.__class__.__name__}: {e}", file=f)
+            pass
 
 def main():
     print(datetime.datetime.now())
@@ -38,43 +88,36 @@ def main():
         k, _, v = arg.partition("=")
         settings[k] = v
 
-    mig_mode = settings["gpu"].replace("-", ",")
+    mig_mode = settings["gpu"]
+    ret = prepare_mig_gpu(mig_mode)
+    if ret != 0:
+        return ret
 
-    strategy = "none" if mig_mode == "99" else "mixed"
-    mig_cmd = """oc patch clusterpolicy/gpu-cluster-policy \
-                    --type merge --patch \
-                    '{"spec": {"gfd": {"migStrategy": "'""" + strategy + """'" }}}'"""
-    if mig_mode != "99":
-        mig_cmd += """;oc patch clusterpolicy/gpu-cluster-policy \
-                          --type merge --patch \
-                          '{"spec": {"driver": {"migMode": "'""" + mig_mode + """'" }}}'"""
+    if settings['benchmark'] == "ssd":
+        POD_NAME = "run-ssd"
+        POD_NAMESPACE = "mlperf"
+        CONFIG_CM_NAME = "custom-config-script"
+        POD_TEMPLATE = "mlperf-ssd-pod.template.yaml"
+        CM_FILES = [
+            "my_run_and_time.sh",
+        ]
 
-    print(mig_cmd)
-    subprocess.check_call(mig_cmd, shell=True)
+    k8s_res_type = "nvidia.com/gpu" if strategy == "none" else \
+        f"nvidia.com/mig-{res_type}"
 
-    resources = defaultdict(int)
-    try:
-        mig_ids = list(map(int, mig_mode.split(",")))
-    except Exception as e:
-        print(f"ERROR: failed to parse mig_mode='{mig_mode}'")
-        print(e)
-        return 1
-    for mig_id in mig_ids:
-        resources[MIG_ID_TO_RES[mig_id]] += 1
-
-    gpu_resources = ""
-    for name, count in resources.items():
-        gpu_resources += f'          {name}: "{count}"\n'
-
-    gpu_resources = f"""\
+    if res_count != 0:
+        gpu_resources = f"""\
         # MIG mode: {mig_mode}
         limits:
-{gpu_resources}
+          {k8s_res_type}: "{res_count}"
         requests:
-{gpu_resources}\
+          {k8s_res_type}: "{res_count}"
 """
+    else:
+        gpu_resources = ""
 
-    env_values = f"""
+    if settings['benchmark'] == "ssd":
+        env_values = f"""
         - name: SSD_THRESHOLD
           value: "{settings['threshold']}"
         - name: DGXSOCKETCORES
@@ -82,10 +125,11 @@ def main():
 """
 
     privileged = settings.get('privileged', "false")
-    with open(f"{THIS_DIR}/{MLPERF_SSD_POD_TEMPLATE}") as f:
-        mlperf_ssd_pod_template = f.read()
 
-    pod_def = mlperf_ssd_pod_template.format(
+    with open(f"{THIS_DIR}/{POD_TEMPLATE}") as f:
+        pod_template = f.read()
+
+    pod_def = pod_template.format(
         pod_name=POD_NAME,
         pod_namespace=POD_NAMESPACE,
         privileged=privileged,
@@ -101,7 +145,7 @@ def main():
     subprocess.run(f"oc delete cm/{CONFIG_CM_NAME} -n {POD_NAMESPACE} 2>/dev/null", shell=True)
 
     cm_files = ""
-    for cm_file in MLPERF_SSD_CM_FILES:
+    for cm_file in CM_FILES:
         cm_file_fullpath = f"{THIS_DIR}/{cm_file}"
         cm_files += f" --from-file={cm_file_fullpath}"
         print(f"Include {cm_file_fullpath}")
@@ -151,35 +195,18 @@ def main():
 
     print("-----")
     print(output.decode('utf-8'), end="")
-    print("-----", os.getcwd())
+    print("-----")
+    print("Directory:", os.getcwd())
     if not sys.stdout.isatty():
         print("Saving the logs in 'pod.logs' ...")
         with open("pod.logs", "w") as out_f:
             print(output.decode('utf-8'), file=out_f, end="")
     else:
         print("stdout is a TTY, not saving the logs into 'pod.logs'.")
+
     print("-----")
-    for metrics in ["DCGM_FI_DEV_MEM_COPY_UTIL", "DCGM_FI_DEV_GPU_UTIL", "DCGM_FI_DEV_POWER_USAGE",
-                    "cluster:cpu_usage_cores:sum",]:
-        try:
-            print("Thanos: query {metrics} ({thanos_start} --> {thanos_stop})")
-            thanos_values = query_thanos.query_values(thanos, metrics, thanos_start, thanos_stop)
-
-            if not thanos_values:
-                print("No metric values collected for {metrics}")
-                with open(f'{metrics}.json', 'w'): pass
-                continue
-
-            print(f"Saving {len(thanos_values['result'][0]['values'])} values for {metrics}")
-            with open(f'{metrics}.json', 'w') as f:
-                json.dump(thanos_values, f)
-        except Exception as e:
-            print(f"WARNING: Failed to save {metrics} logs:")
-            print(f"WARNING: {e.__class__.__name__}: {e}")
-
-            with open(f'{metrics}.json.failed', 'w') as f:
-                print(f"{e.__class__.__name__}: {e}", file=f)
-            pass
+    save_thanos_metrics(thanos, thanos_start, thanos_stop)
+    print("-----")
 
     print(datetime.datetime.now())
 
