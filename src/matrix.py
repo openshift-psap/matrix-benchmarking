@@ -119,6 +119,8 @@ class Matrix():
         if not exe.dry:
             with open(f"{bench_fullpath}/settings", "w") as f:
                 for k, v in settings.items():
+                    if k == "expe": continue
+
                     print(f"{k}={v}", file=f)
                 print(f"", file=f)
 

@@ -30,6 +30,8 @@ def main():
     store_plugin.parse_data(mode)
     exe.log("Loading previous matrix results: done")
 
+    if store.experiment_filter.pop("__parse_only__", False):
+        return 0
 
     if exe.dry:
         exe.log("#")

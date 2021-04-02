@@ -11,6 +11,8 @@ def parse_argv(argv):
             key, value = "__run__", True
         elif expe_filter == "clean":
             key, value = "__clean__", True
+        elif expe_filter == "parse_only":
+            key, value = "__parse_only__", True
         elif "=" not in expe_filter:
             if "expe" in experiment_filter:
                 raise ValueError(f"Unexpected argument '{expe_filter}'")

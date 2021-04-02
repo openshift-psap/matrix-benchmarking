@@ -127,5 +127,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"WARNING: Failed to save {metrics} logs:")
         print(f"WARNING: {e.__class__.__name__}: {e}")
-        import pdb;pdb.set_trace()
+        raise e
         pass

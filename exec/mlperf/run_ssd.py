@@ -31,7 +31,7 @@ def prepare_mig_gpu(mig_mode):
     except Exception as e:
         print(f"ERROR: failed to parse mig_mode='{mig_mode}'")
         print(e)
-        return 1
+        return 1, ""
 
     strategy = "none" if res_type == "full" else "mixed"
     mig_cmd = """oc patch clusterpolicy/gpu-cluster-policy \
@@ -45,6 +45,18 @@ def prepare_mig_gpu(mig_mode):
     print(mig_cmd)
     subprocess.check_call(mig_cmd, shell=True)
 
+    k8s_res_type = "nvidia.com/gpu" if strategy == "none" else \
+        f"nvidia.com/mig-{res_type}"
+
+    gpu_resources = f"""\
+        # MIG mode: {mig_mode}
+        limits:
+          {k8s_res_type}: "{res_count}"
+        requests:
+          {k8s_res_type}: "{res_count}"
+"""
+
+    return 0, gpu_resources
 
 def save_thanos_metrics(thanos, thanos_start, thanos_stop):
     if not sys.stdout.isatty():
@@ -61,22 +73,23 @@ def save_thanos_metrics(thanos, thanos_start, thanos_stop):
                 continue
             thanos_values = query_thanos.query_values(thanos, metrics, thanos_start, thanos_stop)
 
+            dest_fname = f"prom_{metrics}.json"
             if not thanos_values:
                 print("No metric values collected for {metrics}")
-                with open(f'{metrics}.json', 'w'): pass
+                with open(dest_fname, 'w'): pass
                 continue
 
             if sys.stdout.isatty():
-                print(f"Found {len(str(thanos_values))} chars for {os.getcwd()}/{metrics}.json")
+                print(f"Found {len(str(thanos_values))} chars for {os.getcwd()}/{dest_fname}")
             else:
-                print(f"Saving {len(str(thanos_values))} chars for {os.getcwd()}/{metrics}.json")
-                with open(f'{metrics}.json', 'w') as f:
+                print(f"Saving {len(str(thanos_values))} chars for {os.getcwd()}/{dest_fname}")
+                with open(dest_fname, 'w') as f:
                     json.dump(thanos_values, f)
         except Exception as e:
-            print(f"WARNING: Failed to save {metrics} logs:")
+            print(f"WARNING: Failed to save {dest_fname} logs:")
             print(f"WARNING: {e.__class__.__name__}: {e}")
 
-            with open(f'{metrics}.json.failed', 'w') as f:
+            with open(f'{dest_fname}failed', 'w') as f:
                 print(f"{e.__class__.__name__}: {e}", file=f)
             pass
 
@@ -89,7 +102,7 @@ def main():
         settings[k] = v
 
     mig_mode = settings["gpu"]
-    ret = prepare_mig_gpu(mig_mode)
+    ret, gpu_resources = prepare_mig_gpu(mig_mode)
     if ret != 0:
         return ret
 
@@ -101,20 +114,6 @@ def main():
         CM_FILES = [
             "my_run_and_time.sh",
         ]
-
-    k8s_res_type = "nvidia.com/gpu" if strategy == "none" else \
-        f"nvidia.com/mig-{res_type}"
-
-    if res_count != 0:
-        gpu_resources = f"""\
-        # MIG mode: {mig_mode}
-        limits:
-          {k8s_res_type}: "{res_count}"
-        requests:
-          {k8s_res_type}: "{res_count}"
-"""
-    else:
-        gpu_resources = ""
 
     if settings['benchmark'] == "ssd":
         env_values = f"""

@@ -24,13 +24,14 @@ def _parse_directory(expe, dirname):
         with open(f"{dirname}/exit_code") as f:
             exit_code = int(f.read().strip())
         if exit_code != 0:
-            print(f"{dirname}: exit_code == {exit_code}, skipping ...")
+            #print(f"{dirname}: exit_code == {exit_code}, skipping ...")
             _failed_directory(dirname)
             return
 
     except FileNotFoundError as e:
         if not _incomplete_directory(dirname):
-            print(f"{dirname}: 'exit_code' file not found, skipping ...")
+            #print(f"{dirname}: 'exit_code' file not found, skipping ...")
+            pass
         return
 
     with open(f"{dirname}/settings") as f:
@@ -43,6 +44,9 @@ def _parse_directory(expe, dirname):
                 print(f"ERROR: {line.strip()}")
                 continue
             import_settings[key] = value
+            try:
+                if store.experiment_filter[key] != value: return
+            except KeyError: pass
 
     try:
         extra_settings__results = custom_parse_results(dirname, import_settings)
@@ -50,6 +54,7 @@ def _parse_directory(expe, dirname):
         print(f"ERROR: Failed to parse {dirname} ...")
         print(f"       {e.__class__.__name__}: {e}")
         print()
+        raise e
         return
 
     for extra_settings, results in extra_settings__results:
