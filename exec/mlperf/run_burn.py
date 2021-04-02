@@ -9,6 +9,9 @@ import datetime
 import run_ssd
 import query_thanos
 
+MLPERF_EXEC = "/home/kevin/openshift/matrix_benchmark/exec/mlperf"
+GPU_BURN = "run_gpu_burn.sh"
+
 def main():
     print(datetime.datetime.now())
 
@@ -18,12 +21,9 @@ def main():
         settings[k] = v
 
     mig_mode = settings["gpu"]
-    ret = 0 #prepare_mig_gpu(mig_mode)
+    ret, gpu_resources = run_ssd.prepare_mig_gpu(mig_mode)
     if ret != 0:
         return ret
-
-    CI_ARTIFACTS = "/home/kevin/openshift/ci-artifacts"
-    GPU_BURN_TOOLBOX = "toolbox/gpu-operator/run_gpu_burn.sh"
 
     duration = int(settings["duration"])
 
@@ -35,10 +35,13 @@ def main():
 
     print("-----")
 
-    subprocess.run(["mkdir", "-p", "/tmp/benchmark"], check=True)
-    ret = subprocess.run(["env", "ANSIBLE_OPTS=-e artifact_extra_logs_dir=/tmp/benchmark", f"{CI_ARTIFACTS}/{GPU_BURN_TOOLBOX}", str(duration)]).returncode
+    subprocess.run(["rm", "-f", "/tmp/gpu_burn.log"], check=True)
+
+    ret = subprocess.run(["bash", f"{MLPERF_EXEC}/{GPU_BURN}", gpu_resources, str(duration)]).returncode
     if ret != 0:
+        print(f"GPU burn failed ... ({ret})")
         return ret
+
     thanos_stop = query_thanos.query_current_ts(thanos)
 
     print("-----")
@@ -46,10 +49,10 @@ def main():
     print("-----")
     if sys.stdout.isatty():
         print("GPU burn logs:")
-        subprocess.run("cat /tmp/benchmark/gpu_burn*", shell=True, check=True)
+        subprocess.run("cat /tmp/gpu_burn.log", shell=True, check=True)
     else:
         print("Save GPU burn logs ...")
-        subprocess.run("mv /tmp/benchmark/gpu_burn* .", shell=True, check=True)
+        subprocess.run("mv /tmp/gpu_burn.log .", shell=True, check=True)
     print("-----")
 
     print(datetime.datetime.now())
