@@ -99,8 +99,10 @@ class Matrix():
 
             if not exe.dry:
                 os.makedirs(bench_fullpath)
+            exe.log("---"*5)
+            exe.log("")
+            exe.log("")
 
-            exe.log("---")
             exe.log(f"running {exe.expe_cnt.current_idx}/{exe.expe_cnt.total}")
             for k, v in settings.items():
                 exe.log(f"    {k}: {v}")
