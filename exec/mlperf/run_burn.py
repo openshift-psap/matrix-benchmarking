@@ -21,7 +21,7 @@ def main():
         settings[k] = v
 
     mig_mode = settings["gpu"]
-    ret, gpu_resources = run_ssd.prepare_mig_gpu(mig_mode)
+    ret, gpu_resources, nvidia_visible_devices = run_ssd.prepare_mig_gpu(mig_mode)
     if ret != 0:
         return ret
 
@@ -37,7 +37,8 @@ def main():
 
     subprocess.run(["rm", "-f", "/tmp/gpu_burn.log"], check=True)
 
-    ret = subprocess.run(["bash", f"{MLPERF_EXEC}/{GPU_BURN}", gpu_resources, str(duration)]).returncode
+    ret = subprocess.run(["bash", f"{MLPERF_EXEC}/{GPU_BURN}", str(duration),
+                          gpu_resources, nvidia_visible_devices]).returncode
     if ret != 0:
         print(f"GPU burn failed ... ({ret})")
         return ret

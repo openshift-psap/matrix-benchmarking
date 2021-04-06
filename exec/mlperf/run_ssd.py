@@ -23,30 +23,24 @@ MIG_RES_TYPES = {
 }
 
 def prepare_mig_gpu(mig_mode):
-    try:
-        res_type, _, res_count = mig_mode.rpartition("_")
-        if not res_type in MIG_RES_TYPES: raise ValueError(f"{res_type} is invalid")
-        res_count = int(res_count)
-        if res_type == "full": res_type = "nvidia.com/gpu"
-    except Exception as e:
-        print(f"ERROR: failed to parse mig_mode='{mig_mode}'")
-        print(e)
-        return 1, ""
-
-    strategy = "none" if res_type == "full" else "mixed"
-    mig_cmd = """oc patch clusterpolicy/gpu-cluster-policy \
-                    --type merge \
-                    --patch '{"spec": {"gfd": {"migStrategy": "'""" + strategy + """'" }}}'"""
-
-    mig_cmd += """;oc patch clusterpolicy/gpu-cluster-policy \
-                      --type merge \
-                      --patch '{"spec": {"driver": {"migMode": "'all-""" + res_type + """'" }}}'"""
-
-    print(mig_cmd)
-    subprocess.check_call(mig_cmd, shell=True)
-
-    k8s_res_type = "nvidia.com/gpu" if strategy == "none" else \
-        f"nvidia.com/mig-{res_type}"
+    if mig_mode == "full":
+        migparted_res_type = "full"
+        res_count = 1
+        strategy = "none"
+        k8s_res_type = "nvidia.com/gpu"
+        nvidia_visible_devices = "all"
+    else:
+        try:
+            migparted_res_type, _, res_count = mig_mode.rpartition("_")
+            res_count = int(res_count)
+            if not migparted_res_type in MIG_RES_TYPES: raise ValueError(f"{migparted_res_type} is invalid")
+        except Exception as e:
+            print(f"ERROR: failed to parse mig_mode='{mig_mode}'")
+            print(e)
+            return 1, ""
+        strategy = "mixed"
+        k8s_res_type = f"nvidia.com/mig-{migparted_res_type}"
+        nvidia_visible_devices = "0:0"
 
     gpu_resources = f"""\
         # MIG mode: {mig_mode}
@@ -56,7 +50,18 @@ def prepare_mig_gpu(mig_mode):
           {k8s_res_type}: "{res_count}"
 """
 
-    return 0, gpu_resources
+    mig_cmd = """oc patch clusterpolicy/gpu-cluster-policy \
+                    --type merge \
+                    --patch '{"spec": {"gfd": {"migStrategy": "'""" + strategy + """'" }}}'"""
+
+    mig_cmd += """;oc patch clusterpolicy/gpu-cluster-policy \
+                      --type merge \
+                      --patch '{"spec": {"driver": {"migMode": "'all-""" + migparted_res_type + """'" }}}'"""
+
+    print(mig_cmd)
+    subprocess.check_call(mig_cmd, shell=True)
+
+    return 0, gpu_resources, nvidia_visible_devices
 
 def save_thanos_metrics(thanos, thanos_start, thanos_stop):
     if not sys.stdout.isatty():
@@ -102,9 +107,8 @@ def main():
         settings[k] = v
 
     mig_mode = settings["gpu"]
-    ret, gpu_resources = prepare_mig_gpu(mig_mode)
-    if ret != 0:
-        return ret
+    ret, gpu_resources, nvidia_visible_devices = prepare_mig_gpu(mig_mode)
+    if ret: return ret
 
     if settings['benchmark'] == "ssd":
         POD_NAME = "run-ssd"
@@ -121,6 +125,8 @@ def main():
           value: "{settings['threshold']}"
         - name: DGXSOCKETCORES
           value: "{settings['cores']}"
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "{nvidia_visible_devices}"
 """
 
     privileged = settings.get('privileged', "false")
