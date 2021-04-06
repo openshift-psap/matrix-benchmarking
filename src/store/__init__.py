@@ -38,7 +38,12 @@ def add_to_matrix(import_settings, location, results):
     import_key = common.Matrix.settings_to_key(import_settings)
     if import_key in common.Matrix.import_map:
         print(f"WARNING: duplicated results key: {import_key}")
-        print(f"WARNING:   old: {common.Matrix.import_map[import_key].location}")
+        try:
+            old_location = common.Matrix.import_map[import_key].location
+        except AttributeError:
+            _, old_location = common.Matrix.import_map[import_key]
+
+        print(f"WARNING:   old: {old_location}")
         print(f"WARNING:   new: {location}")
         return
 
@@ -49,7 +54,7 @@ def add_to_matrix(import_settings, location, results):
 
     if not processed_settings:
         print(f"INFO: entry '{import_key}' skipped by rewrite_settings()")
-        common.Matrix.import_map[import_key] = True
+        common.Matrix.import_map[import_key] = True, location
         return
 
     keep = True
