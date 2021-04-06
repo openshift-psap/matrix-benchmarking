@@ -106,8 +106,12 @@ class Matrix():
             exe.log(f"running {exe.expe_cnt.current_idx}/{exe.expe_cnt.total}")
             for k, v in settings.items():
                 exe.log(f"    {k}: {v}")
+            try:
+                ret = self.execute_benchmark(bench_fullpath, settings, context, exe)
+            except KeyboardInterrupt:
+                print("Stopping on keyboard interrupt.")
+                return True
 
-            ret = self.execute_benchmark(bench_fullpath, settings, context, exe)
             if ret != None and not ret:
                 exe.expe_cnt.errors += 1
                 if context.stop_on_error:
@@ -162,10 +166,10 @@ fi
         exe.log(cmd)
         try:
             proc = subprocess.run(cmd, cwd=bench_fullpath, shell=True, executable='/bin/bash')
-        except KeyboardInterrupt:
+        except KeyboardInterrupt as e:
             print("")
             exe.log("KeyboardInterrupt registered.")
-            return False
+            raise e
 
         exe.log(f"exit code: {proc.returncode}")
         # ^^^ blocks until the process terminates
