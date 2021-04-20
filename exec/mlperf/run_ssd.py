@@ -50,13 +50,7 @@ def prepare_mig_gpu(mig_mode):
           {k8s_res_type}: "{res_count}"
 """
 
-    mig_cmd = """oc patch clusterpolicy/gpu-cluster-policy \
-                    --type merge \
-                    --patch '{"spec": {"gfd": {"migStrategy": "'""" + strategy + """'" }}}'"""
-
-    mig_cmd += """;oc patch clusterpolicy/gpu-cluster-policy \
-                      --type merge \
-                      --patch '{"spec": {"driver": {"migMode": "'all-""" + migparted_res_type + """'" }}}'"""
+    mig_cmd = f"/home/kevin/openshift/matrix_benchmark/exec/mlperf/mig_reconfigure.sh all-{migparted_res_type}"
 
     print(mig_cmd)
     subprocess.check_call(mig_cmd, shell=True)
