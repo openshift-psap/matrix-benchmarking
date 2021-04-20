@@ -7,14 +7,9 @@ import json
 from collections import defaultdict
 
 def mlperf_rewrite_settings(params_dict):
-    try: int(params_dict['gpu'])
-    except ValueError:
-        return None
-
     run = params_dict['run']
     del params_dict['run']
     params_dict['@run'] = run
-    if params_dict['gpu'] == "99": params_dict['gpu'] = "-1 full"
 
     if params_dict['benchmark'] == "ssd":
         params_dict['threshold'] = f"{float(params_dict['threshold']):.03f}"

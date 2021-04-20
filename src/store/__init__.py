@@ -1,6 +1,7 @@
 import common
 import copy
 import importlib
+import datetime
 
 experiment_filter = {}
 
@@ -69,6 +70,9 @@ def add_to_matrix(import_settings, location, results):
         print(f"WARNING: duplicated processed key: {processed_key}")
         print(f"WARNING:   old: {common.Matrix.processed_map[processed_key].location}")
         print(f"WARNING:   new: {location}")
+        processed_settings["run"] = (str(processed_settings.get("run")) + "_" +
+                                     datetime.datetime.now().strftime("%H%M%S.%f"))
+        processed_key = common.Matrix.settings_to_key(processed_settings)
         return
 
     entry = common.MatrixEntry(location, results,

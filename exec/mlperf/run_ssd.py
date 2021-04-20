@@ -71,6 +71,7 @@ def save_thanos_metrics(thanos, thanos_start, thanos_stop):
 
     for metrics in ["DCGM_FI_DEV_MEM_COPY_UTIL", "DCGM_FI_DEV_GPU_UTIL", "DCGM_FI_DEV_POWER_USAGE",
                     "cluster:cpu_usage_cores:sum",]:
+        dest_fname = f"prom_{metrics}.json"
         try:
             print(f"Thanos: query {metrics} ({thanos_start} --> {thanos_stop})")
             if not (thanos_start and thanos_stop):
@@ -78,7 +79,6 @@ def save_thanos_metrics(thanos, thanos_start, thanos_stop):
                 continue
             thanos_values = query_thanos.query_values(thanos, metrics, thanos_start, thanos_stop)
 
-            dest_fname = f"prom_{metrics}.json"
             if not thanos_values:
                 print("No metric values collected for {metrics}")
                 with open(dest_fname, 'w'): pass
@@ -175,7 +175,11 @@ def main():
     print(datetime.datetime.now())
     current_phase = None
     while True:
-        phase = subprocess.check_output(cmd, shell=True).decode('ascii').strip()
+        try:
+            phase = subprocess.check_output(cmd, shell=True).decode('ascii').strip()
+        except subprocess.CalledProcessError:
+            phase = "Runtime error"
+
         if phase != current_phase:
             current_phase = phase
             print(f"\n{current_phase}")
