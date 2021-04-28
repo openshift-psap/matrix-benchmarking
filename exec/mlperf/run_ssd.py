@@ -50,7 +50,8 @@ def prepare_mig_gpu(mig_mode):
           {k8s_res_type}: "{res_count}"
 """
 
-    mig_cmd = f"/home/kevin/openshift/matrix_benchmark/exec/mlperf/mig_reconfigure.sh all-{migparted_res_type}"
+    if migparted_res_type == "full": migparted_res_type = "disabled"
+    mig_cmd = f"oc label --overwrite node/perf23-nva100 nvidia.com/mig.config=all-{migparted_res_type}"
 
     print(mig_cmd)
     subprocess.check_call(mig_cmd, shell=True)
