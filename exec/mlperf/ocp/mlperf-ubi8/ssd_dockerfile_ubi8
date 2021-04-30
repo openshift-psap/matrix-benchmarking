@@ -1,0 +1,436 @@
+
+# mlcc -i RHEL8.1,CUDA10.2.min,Numpy
+# mlcc version: 20181224a: Nov 12 2019
+
+# Install RHEL-UBI-8.1 backed by lower priority RHEL8 repos
+
+FROM registry.access.redhat.com/ubi8:8.1
+
+RUN set -vx \
+\
+&& yum -y -v install yum-utils \
+&& yum-config-manager --enable \
+    rhel-8-for-x86_64-baseos-rpms \
+    rhel-8-for-x86_64-appstream-rpms \
+    rhel-8-for-x86_64-supplementary-rpms \
+\
+&& sed -i '/enabled = 1/ a priority =  1' /etc/yum.repos.d/ubi.repo \
+&& sed -i '/enabled = 1/ a priority = 99' /etc/yum.repos.d/redhat.repo \
+\
+&& yum -y -v install "https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm" \
+\
+&& yum clean all \
+&& yum -y update \
+\
+&& cd /var/cache \
+&& /bin/rm -rf dnf yum
+
+
+# Install Basic OS Tools
+
+RUN set -vx \
+\
+&& echo -e '\
+set -vx \n\
+for (( TRY=1; TRY<=11; TRY++ )); do \n\
+    yum -y -v install $@ \n\
+    result=$? \n\
+    for PKG in $@ ; do \n\
+        yum list installed | grep "^$PKG" \n\
+        (( result += $? )) \n\
+    done \n\
+    if (( $result == 0 )); then \n\
+        /bin/rm -rf /var/cache/yum \n\
+        /bin/rm -rf /var/cache/dnf \n\
+        exit 0 \n\
+    fi \n\
+    sleep 10 \n\
+done \n\
+exit 1 \n' \
+> /tmp/yum_install.sh \
+\
+&& chmod +x /tmp/yum_install.sh \
+\
+&& cd /usr/local \
+&& /bin/rm -rf lib64 \
+&& ln -s lib lib64 \
+\
+&& /tmp/yum_install.sh \
+    binutils \
+    bzip2 \
+    findutils \
+    gcc \
+    gcc-c++ \
+    gcc-gfortran \
+    git \
+    gzip \
+    make \
+    openssl-devel \
+    patch \
+    pciutils \
+    unzip \
+    vim-enhanced \
+    wget \
+    xz \
+    zip
+
+
+
+# Install Python v3.8.2, if no python3 already present
+
+
+RUN set -vx \
+\
+&& if whereis python3 | grep -q "python3.." ; then \
+\
+    if yum info python3-devel > /dev/null 2>&1; then \
+        PYTHON3_DEVEL="python3-devel"; \
+    else \
+        PYTHON3_DEVEL="python3[0-9]-devel"; \
+    fi; \
+    \
+    /tmp/yum_install.sh python3 python3-pip ${PYTHON3_DEVEL} python3-setuptools; \
+\
+    ln -s /usr/bin/python3 /usr/local/bin/python3; \
+    ln -s /usr/bin/pip3 /usr/local/bin/pip3; \
+    for d in /usr/lib/python3*; do PYLIBDIR="$d"; echo 'PYLIBDIR: ' $PYLIBDIR; done; \
+    ln -s $PYLIBDIR /usr/local/lib/`basename $PYLIBDIR`; \
+    for d in /usr/include/python3*; do PYINCDIR="$d"; echo 'PYINCDIR: ' $PYINCDIR; done; \
+    ln -s $PYINCDIR /usr/local/include/`basename $PYINCDIR`; \
+\
+else \
+\
+    /tmp/yum_install.sh \
+        bzip2-devel \
+        expat-devel \
+        gdbm-devel \
+        libdb4-devel \
+        libffi-devel \
+        ncurses-devel \
+        openssl-devel \
+        readline-devel \
+        sqlite-devel \
+        tk-devel \
+        xz-devel \
+        zlib-devel; \
+    cd /var/cache; \
+    /bin/rm -rf dnf yum; \
+    \
+    cd /tmp; \
+    wget "https://www.python.org/ftp/python/3.8.2/Python-3.8.2.tar.xz"; \
+    tar -xf Python*.xz; \
+    /bin/rm Python*.xz; \
+    cd /tmp/Python*; \
+    ./configure \
+        --enable-optimizations \
+        --enable-shared \
+        --prefix=/usr/local \
+        --with-ensurepip=install \
+        LDFLAGS="-Wl,-rpath /usr/local/lib"; \
+    make -j`getconf _NPROCESSORS_ONLN` install; \
+    \
+    cd /tmp; \
+    /bin/rm -r /tmp/Python*; \
+\
+fi \
+\
+&& cd /usr/local/include \
+&& PYTHON_INC_DIR_NAME=`ls -d ./python*` \
+&& ALT_PYTHON_INC_DIR_NAME=${PYTHON_INC_DIR_NAME%m} \
+&& if [ "$ALT_PYTHON_INC_DIR_NAME" != "$PYTHON_INC_DIR_NAME" ]; then \
+    ln -s "$PYTHON_INC_DIR_NAME" "$ALT_PYTHON_INC_DIR_NAME"; \
+fi \
+\
+&& /usr/local/bin/pip3 -v install --upgrade \
+    pip \
+    setuptools \
+\
+&& if python --version > /dev/null 2>&1; then \
+    whereis python; \
+    python --version; \
+else \
+    cd /usr/bin; \
+    ln -s python3 python; \
+    cd /usr/local/bin; \
+    ln -s python3 python; \
+fi \
+\
+&& /bin/ls -RFCa /usr/local/include/python*
+
+
+
+# Install CMake v3.17.0
+
+RUN set -vx \
+\
+&& cd /tmp \
+&& wget "https://cmake.org/files/v3.17/cmake-3.17.0.tar.gz" \
+&& tar -xf cmake*.gz \
+&& /bin/rm cmake*.gz \
+&& cd /tmp/cmake* \
+&& ./bootstrap \
+&& make -j`getconf _NPROCESSORS_ONLN` install \
+&& cd /tmp \
+&& /bin/rm -rf /tmp/cmake* \
+&& cmake --version
+
+
+
+
+RUN date; df -h
+
+# Install minimal subsets of CUDA 10.2
+
+RUN set -vx \
+\
+&& echo -e '\
+exec > /etc/yum.repos.d/cuda.repo \n\
+echo [cuda] \n\
+echo name=cuda \n\
+if [ "`/bin/arch`" = "aarch64" ]; then \n\
+echo baseurl="file:///var/cuda-repo" \n\
+elif [ -f /etc/fedora-release ]; then \n\
+echo baseurl="http://developer.download.nvidia.com/compute/cuda/repos/fedora29/`/bin/arch`" \n\
+else \n\
+OS_MAJ_VER=`(. /etc/os-release; echo ${VERSION_ID:0:1})` \n\
+echo baseurl="http://developer.download.nvidia.com/compute/cuda/repos/rhel${OS_MAJ_VER}/`/bin/arch`" \n\
+fi \n\
+echo enabled=1 \n\
+echo gpgcheck=0 \n' \
+>> /tmp/Make_CUDA_Repo.sh \
+&& sh /tmp/Make_CUDA_Repo.sh \
+\
+&& /tmp/yum_install.sh \
+    cuda-libraries-10-2 \
+    cuda-libraries-dev-10-2 \
+    cuda-command-line-tools-10-2 \
+&& ln -s /usr/local/cuda-10.2 /usr/local/cuda
+
+ENV \
+CUDA_VERSION="10.2" \
+CUDA_HOME="/usr/local/cuda" \
+CUDA_PATH="/usr/local/cuda" \
+PATH="/usr/local/cuda/bin:/usr/local/bin:/usr/bin:${PATH:+:${PATH}}" \
+LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+
+
+# Install old GCC v8.3 if necessary
+
+RUN set -vx \
+\
+&& GCC_VERSION_OUTPUT=`gcc --version` \
+&& if [ "${GCC_VERSION_OUTPUT:10:1}" -gt 8 ]; then \
+\
+    mkdir -p /tmp/gcc_tmp_build_dir; \
+    cd /tmp/gcc_tmp_build_dir; \
+\
+    wget -q "https://ftp.gnu.org/gnu/gcc/gcc-8.3.0/gcc-8.3.0.tar.xz"; \
+    wget -q "https://gcc.gnu.org/pub/gcc/infrastructure/gmp-6.1.0.tar.bz2"; \
+    wget -q "https://gcc.gnu.org/pub/gcc/infrastructure/mpfr-3.1.4.tar.bz2"; \
+    wget -q "https://gcc.gnu.org/pub/gcc/infrastructure/mpc-1.0.3.tar.gz"; \
+    wget -q "https://gcc.gnu.org/pub/gcc/infrastructure/isl-0.18.tar.bz2"; \
+\
+    tar -xf gcc-8.3.0.tar.xz; \
+    tar -xf gmp-6.1.0.tar.bz2; \
+    tar -xf mpfr-3.1.4.tar.bz2; \
+    tar -xf mpc-1.0.3.tar.gz; \
+    tar -xf isl-0.18.tar.bz2; \
+\
+    ln -s /tmp/gcc_tmp_build_dir/gmp-6.1.0 gcc-8.3.0/gmp; \
+    ln -s /tmp/gcc_tmp_build_dir/mpfr-3.1.4 gcc-8.3.0/mpfr; \
+    ln -s /tmp/gcc_tmp_build_dir/mpc-1.0.3 gcc-8.3.0/mpc; \
+    ln -s /tmp/gcc_tmp_build_dir/isl-0.18 gcc-8.3.0/isl; \
+\
+    gcc-8.3.0/configure --disable-multilib --enable-languages=c,c++,fortran --prefix=/usr/local; \
+    make -j`getconf _NPROCESSORS_ONLN`; \
+    make install-strip; \
+\
+    cd /tmp; \
+    /bin/rm -rf /tmp/gcc_tmp_build_dir; \
+\
+    ln -s /usr/local/bin/gcc /usr/local/cuda/bin/gcc; \
+    ln -s /usr/local/bin/g++ /usr/local/cuda/bin/g++; \
+    export CC="/usr/local/bin/gcc"; \
+    export CXX="/usr/local/bin/g++"; \
+\
+    echo -e '\
+    \n\
+    export CC="/usr/local/bin/gcc" \n\
+    export CXX="/usr/local/bin/g++" \n\
+    \n' \
+    >> ~/.bashrc; \
+\
+fi
+
+
+
+# Install NVIDIA NCCL
+# See: https://developer.nvidia.com/nccl
+
+RUN set -vx \
+\
+&& cd /tmp \
+&& git clone --depth 1 "https://github.com/NVIDIA/nccl.git" \
+&& cd /tmp/nccl \
+\
+&& if grep install Makefile ; then \
+    echo "Makefile already has install target"; \
+else \
+    echo "install: src.install" >> Makefile; \
+fi \
+\
+&& make -j`getconf _NPROCESSORS_ONLN` src.build \
+&& make -j`getconf _NPROCESSORS_ONLN` install \
+\
+&& cd /tmp \
+&& /bin/rm -rf /tmp/nccl* \
+\
+&& ldconfig 
+
+
+
+# Install NVIDIA cuDNN
+# See: https://developer.nvidia.com/cudnn
+
+RUN set -vx \
+\
+&& cd /tmp \
+\
+&& echo -e '\
+set -vx \n\
+if [ -d "/usr/local/cuda-10.2" ]; then \n\
+    CUDNN_VER="v7.6.5/cudnn-10.2-linux-x64-v7.6.5.32.tgz" \n\
+elif [ -d "/usr/local/cuda-10.1" ]; then \n\
+    CUDNN_VER="v7.5.0/cudnn-10.1-linux-x64-v7.5.0.56.tgz" \n\
+    CUDNN_VER="v7.6.5/cudnn-10.1-linux-x64-v7.6.5.32.tgz" \n\
+elif [ -d "/usr/local/cuda-10.0" ]; then \n\
+    CUDNN_VER="v7.5.0/cudnn-10.0-linux-x64-v7.5.0.56.tgz" \n\
+    CUDNN_VER="v7.6.5/cudnn-10.0-linux-x64-v7.6.5.32.tgz" \n\
+elif [ -d "/usr/local/cuda-9.2" ]; then \n\
+    CUDNN_VER="v7.5.0/cudnn-9.2-linux-x64-v7.5.0.56.tgz" \n\
+    CUDNN_VER="v7.6.5/cudnn-9.2-linux-x64-v7.6.5.32.tgz" \n\
+elif [ -d "/usr/local/cuda-9.1" ]; then \n\
+    CUDNN_VER="v7.1.3/cudnn-9.1-linux-x64-v7.1.tgz" \n\
+elif [ -d "/usr/local/cuda-9.0" ]; then \n\
+    CUDNN_VER="v7.5.0/cudnn-9.0-linux-x64-v7.5.0.56.tgz" \n\
+    CUDNN_VER="v7.6.5/cudnn-9.0-linux-x64-v7.6.5.32.tgz" \n\
+elif [ -d "/usr/local/cuda-8.0" ]; then \n\
+    CUDNN_VER="v7.1.3/cudnn-8.0-linux-x64-v7.1.tgz" \n\
+else \n\
+    CUDNN_VER="idk_cudnn_version" \n\
+fi \n\
+echo "http://developer.download.nvidia.com/compute/redist/cudnn/$CUDNN_VER" \n' \
+> /tmp/select_cudnn.sh \
+\
+&& if [ "`/bin/arch`" = "x86_64" ]; then \
+\
+wget `sh /tmp/select_cudnn.sh` \
+\
+&& tar -xvf cudnn*.tgz \
+&& cd /tmp/cuda \
+\
+&& mv include/cudnn.h /usr/local/cuda/include \
+&& mv lib64/lib* /usr/local/cuda/lib64 \
+\
+&& cd /tmp \
+&& /bin/rm -rf /tmp/cud* \
+\
+&& ldconfig; \
+\
+fi
+
+
+
+
+RUN date; df -h
+
+# Install Numpy
+
+RUN set -vx \
+\
+&& /usr/local/bin/pip3 -v install \
+    numpy \
+\
+&& /usr/local/bin/python3 -c 'import numpy'
+
+
+RUN date; df -h
+
+# Build PyTorch from NGC code
+RUN pip3 install tqdm pyyaml
+
+WORKDIR /opt/pytorch
+COPY pytorch .
+
+WORKDIR /opt/pytorch/pytorch
+
+ENV PYTORCH_BUILD_VERSION=1.1.0a0+828a6a3 PYTORCH_VERSION=1.1.0a0+828a6a3 PYTORCH_BUILD_NUMBER=0
+
+RUN python3 setup.py install \
+&& cp -a /opt/pytorch/pytorch/third_party/ideep/mkl-dnn/external/mklml_lnx*/lib/* /usr/lib64 \
+&& python3 setup.py clean \
+&& rm -rf /opt/pytorch/pytorch/build
+
+RUN pip3 install pillow==6.2.1
+WORKDIR /opt/pytorch/vision
+RUN python3 setup.py install \
+&& python3 setup.py clean
+
+#Install NVIDIA apex
+WORKDIR /opt/pytorch/apex
+RUN rm -rf build \
+&& python3 setup.py install --cuda_ext --cpp_ext --bnp
+
+# Install NVIDIA  DALI
+RUN pip3 install --extra-index-url https://developer.download.nvidia.com/compute/redist/cuda/10.0  nvidia-dali==0.12.0
+
+# Install COCO API
+WORKDIR /opt
+ENV COCOAPI_VERSION=2.0+nv0.3.1
+
+RUN pip3 install pybind11
+
+ENV C_INCLUDE_PATH=/usr/local/include/python3.6m/
+ENV CPLUS_INCLUDE_PATH=/usr/local/include/python3.6m/
+
+ENV COCOAPI_VERSION=2.0+nv0.3.1
+
+#RUN export COCOAPI_TAG=$(echo ${COCOAPI_VERSION} | sed 's/^.*+n//') \
+#&& pip3 install --verbose --no-cache-dir git+https://github.com/nvidia/cocoapi.git@${COCOAPI_TAG}#subdirectory=PythonAPI
+
+RUN pip3 install --no-cache-dir git+https://github.com/dagrayvid/cocoapi.git@fix_vector_assertion#subdirectory=PythonAPI
+
+# install numactl
+RUN yum -y install numactl \
+        infiniband-diags \
+        pciutils
+
+ENV NVIDIA_PYTORCH_VERSION="RHEL"
+ENV OPENMPI_VERSION=3.1.2
+
+ENV CUDA_DRIVER_VERSION=418.67
+ENV NCCL_VERSION=2.3.7
+ENV CUDNN_VERSION=7.4
+ENV CUBLAS_VERSION=10.0.130
+ENV TRT_VERSION=none
+ENV DALI_VERSION=none
+
+# Install Python dependencies
+WORKDIR /workspace/single_stage_detector
+
+COPY ssd/requirements.txt .
+
+RUN  pip3 install --no-cache-dir https://github.com/mlperf/training/archive/6289993e1e9f0f5c4534336df83ff199bd0cdb75.zip#subdirectory=compliance \
+&& pip3 install --no-cache-dir -r requirements.txt
+
+RUN dnf -y install openmpi
+
+# Copy SSD code and build
+COPY ssd  .
+RUN pip3 install .
+
+RUN rm -rf ./pytorch
+
+# Configure environment variables
+ENV OMP_NUM_THREADS=1
+ENV OPENCV_FOR_THREADS_NUM=1
