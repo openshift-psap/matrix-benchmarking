@@ -64,7 +64,7 @@ def save_thanos_metrics(thanos, thanos_start, thanos_stop):
             print("start: {thanos_start}", file=out_f)
             print("stop: {thanos_stop}", file=out_f)
 
-    for metrics in ["DCGM_FI_DEV_MEM_COPY_UTIL", "DCGM_FI_DEV_GPU_UTIL", "DCGM_FI_DEV_POWER_USAGE",
+    for metrics in ["DCGM_FI_PROF_GR_ENGINE_ACTIVE", "DCGM_FI_PROF_DRAM_ACTIVE", "DCGM_FI_DEV_POWER_USAGE",
                     "cluster:cpu_usage_cores:sum",]:
         dest_fname = f"prom_{metrics}.json"
         try:
