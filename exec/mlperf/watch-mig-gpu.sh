@@ -37,6 +37,8 @@ for gpu_node in $(echo $GPU_NODES); do
                 [[ "$line" != *".product="* ]] && \
                 [[ "$line" != *".memory="* ]] && \
                 [[ "$line" != *".strategy="* ]] && \
+                [[ "$line" != *".count="* ]] && \
+                [[ "$line" != *"/mig.config"* ]] && \
                 [[ "$line" != *".slices."* ]] && continue
 
             echo "  $line"
