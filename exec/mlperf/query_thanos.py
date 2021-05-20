@@ -91,6 +91,8 @@ def query_values(thanos, metrics, ts_start, ts_stop):
 
 
 def prepare_thanos():
+    if not has_user_monitoring():
+        raise Exception("""Thanos monitoring not enabled. See https://docs.openshift.com/container-platform/4.7/monitoring/enabling-monitoring-for-user-defined-projects.html#enabling-monitoring-for-user-defined-projects_enabling-monitoring-for-user-defined-projects""")
 
     secret_name = get_secret_name()
     return dict(
