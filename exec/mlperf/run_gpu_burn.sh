@@ -60,17 +60,23 @@ $GPU_RESOURCES
 EOF
 
 sleep $GPU_BURN_DURATION
-
+set +x
+prev_state=""
 while true; do
     pod_state=$(oc get pod/gpu-burn-$GPU_NODE_HOSTNAME \
        -n default \
        -o custom-columns=:.status.phase \
        --no-headers || true)
+    if [ "$pod_state" != "$prev_state" ]; then
+        echo "$(date) pod/gpu-burn-$GPU_NODE_HOSTNAME status: $pod_state"
+        prev_state=$pod_state
+    fi
     if [[ "$pod_state" == Succeeded || "$pod_state" == Failed || "$pod_state" == Error ]]; then
         break
     fi
     sleep 10
 done
+set -x
 
 oc logs pod/gpu-burn-$GPU_NODE_HOSTNAME -n default > /tmp/gpu_burn.log
 echo "Log saved into /tmp/gpu_burn.log"
