@@ -28,7 +28,7 @@ def prepare_mig_gpu(mig_mode):
         res_count = 1
         strategy = "none"
         k8s_res_type = "nvidia.com/gpu"
-        nvidia_visible_devices = "all"
+
     else:
         try:
             migparted_res_type, _, res_count = mig_mode.rpartition("_")
@@ -40,7 +40,6 @@ def prepare_mig_gpu(mig_mode):
             return 1, ""
         strategy = "mixed"
         k8s_res_type = f"nvidia.com/mig-{migparted_res_type}"
-        nvidia_visible_devices = "0:0"
 
     gpu_resources = f"""\
         # MIG mode: {mig_mode}
@@ -56,7 +55,7 @@ def prepare_mig_gpu(mig_mode):
     print(mig_cmd)
     subprocess.check_call(mig_cmd, shell=True)
 
-    return 0, gpu_resources, nvidia_visible_devices
+    return 0, gpu_resources
 
 def save_thanos_metrics(thanos, thanos_start, thanos_stop):
     if not sys.stdout.isatty():
@@ -102,7 +101,7 @@ def main():
         settings[k] = v
 
     mig_mode = settings["gpu"]
-    ret, gpu_resources, nvidia_visible_devices = prepare_mig_gpu(mig_mode)
+    ret, gpu_resources = prepare_mig_gpu(mig_mode)
     if ret: return ret
 
     if settings['benchmark'] == "ssd":
@@ -120,8 +119,6 @@ def main():
           value: "{settings['threshold']}"
         - name: DGXSOCKETCORES
           value: "{settings['cores']}"
-        - name: NVIDIA_VISIBLE_DEVICES
-          value: "{nvidia_visible_devices}"
 """
 
     privileged = settings.get('privileged', "false")
