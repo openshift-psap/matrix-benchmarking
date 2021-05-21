@@ -214,6 +214,8 @@ def main():
 
     print(datetime.datetime.now())
 
+    if not "ALL FINISHED" in output.decode('utf-8'): return 1
+
     return 0
 
 if __name__ == "__main__":
