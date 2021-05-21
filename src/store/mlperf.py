@@ -33,7 +33,7 @@ def mlperf_parse_prom_gpu_metrics(dirname, results):
             values = [[ts, float(val)] for ts, val in result_per_gpu['values']]
 
             prom[metric][prom_group] = values
-            print(metric, ":", len(values))
+            #print(metric, ":", len(values))
         pass
 
 
@@ -46,8 +46,8 @@ def mlperf_parse_gpu_burn_results(dirname, import_settings):
             for line in f.readlines():
                 if "proc'd" not in line: continue
                 speed = line.partition("(")[-1].partition(" ")[0]
-            print()
-            print(import_settings['gpu'], speed, "Gflop/s")
+            #print()
+            #print(import_settings['gpu'], speed, "Gflop/s")
             results.speed = int(speed)
 
     except FileNotFoundError as e:
@@ -71,8 +71,8 @@ def mlperf_parse_ssd_results(dirname, import_settings):
         print(f"{dirname}: Could not find 'stdout' file ...")
         raise e
 
-    if import_settings['cores'] == "8":
-        print("\t".join([str(import_settings[k]) for k in  sorted(import_settings)]), "\t", int(int(results.exec_time)/60), "min", "\t", results.avg_sample_sec, "avg. samples / sec")
+    #if import_settings['cores'] == "8":
+    #    print("\t".join([str(import_settings[k]) for k in  sorted(import_settings)]), "\t", int(int(results.exec_time)/60), "min", "\t", results.avg_sample_sec, "avg. samples / sec")
     return results
 
 
