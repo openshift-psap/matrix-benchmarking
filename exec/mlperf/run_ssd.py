@@ -212,6 +212,7 @@ def main():
     print(datetime.datetime.now())
 
     if not "ALL FINISHED" in output.decode('utf-8'): return 1
+    if "CUDNN_STATUS_INTERNAL_ERROR" in output.decode('utf-8'): return 1
 
     return 0
 

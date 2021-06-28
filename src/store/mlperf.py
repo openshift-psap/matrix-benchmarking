@@ -13,6 +13,8 @@ def mlperf_rewrite_settings(params_dict):
 
     if params_dict['benchmark'] == "ssd":
         params_dict['threshold'] = f"{float(params_dict['threshold']):.03f}"
+        if float(params_dict['threshold']) < 0.22: return {}
+
     return params_dict
 
 store.custom_rewrite_settings = mlperf_rewrite_settings
@@ -59,20 +61,47 @@ def mlperf_parse_gpu_burn_results(dirname, import_settings):
 def mlperf_parse_ssd_results(dirname, import_settings):
     results = types.SimpleNamespace()
 
+    #start_ts = None
+    start_timestamps = {}
+    results.thresholds = {}
     try:
-        with open(f"{dirname}/stdout") as f:
+        with open(f"{dirname}/pod.logs") as f:
             for line in f.readlines():
                 if "result=" in line:
-                    results.exec_time = int(line.split('=')[-1].strip())
+                    results.exec_time = int(line.split('=')[-1].strip())/60
                 if "avg. samples / sec" in line:
                     results.avg_sample_sec = float(line.split("avg. samples / sec: ")[-1].strip())
+                if '"key": "eval_accuracy"' in line or '"key": "init_start"' in line:
+                    MLLOG_PREFIX = ":::MLLOG "
+                    if line.startswith(MLLOG_PREFIX):
+                        gpu_name = "single_gpu"
+                    else:
+                        gpu_name = line.partition(MLLOG_PREFIX)[0]
+
+                    json_content = json.loads(line.partition(MLLOG_PREFIX)[-1])
+                    line_ts = json_content['time_ms']
+
+                    if json_content['key'] == "eval_accuracy":
+                        line_threshold = json_content['value']
+                        try:
+                            threadhold_time = line_ts - start_timestamps[gpu_name]
+                            results.thresholds[gpu_name].append([line_threshold, threadhold_time])
+                        except KeyError:
+                            raise Exception(f"gpu_name={gpu_name} didn't start in {dirname}/pod.logs")
+
+                    elif json_content['key'] == "init_start":
+                        if gpu_name in start_timestamps:
+                            raise Exception(f"Duplicated gpu_name={gpu_name} found in {dirname}/pod.logs")
+                        start_timestamps[gpu_name] = line_ts
+                        #if start_ts is None:
+                        #    start_ts = line_ts
+
+                        results.thresholds[gpu_name] = []
 
     except FileNotFoundError as e:
         print(f"{dirname}: Could not find 'stdout' file ...")
         raise e
 
-    #if import_settings['cores'] == "8":
-    #    print("\t".join([str(import_settings[k]) for k in  sorted(import_settings)]), "\t", int(int(results.exec_time)/60), "min", "\t", results.avg_sample_sec, "avg. samples / sec")
     return results
 
 

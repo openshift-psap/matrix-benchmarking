@@ -28,14 +28,14 @@ echo "Running with Parallel mode activated."
 
 DGXNGPU=1
 
-NB_GPU=$(nvidia-smi -L | grep "UUID: MIG-GPU" | wc -l)
-if [[ "$NB_MIG_GPU" == 0 ]]; then
+NB_GPUS=$(nvidia-smi -L | grep "UUID: MIG-GPU" | wc -l)
+if [[ "$NB_GPUS" == 0 ]]; then
     ALL_GPUS=$(nvidia-smi -L | grep "UUID: GPU" | cut -d" " -f5 | cut -d')' -f1)
 
     echo "No MIG GPU available, using the full GPUs ($ALL_GPUS)."
 else
     ALL_GPUS=$(nvidia-smi -L | grep "UUID: MIG-GPU" | cut -d" " -f8 | cut -d')' -f1)
-    echo "Found $NB_MIG_GPU MIG instances: $ALL_GPUS"
+    echo "Found $NB_GPU MIG instances: $ALL_GPUS"
 fi
 
 DGXNSOCKET=1
@@ -84,6 +84,8 @@ trap "date; echo failed :(; exit 1" ERR
 
 for gpu in $(echo "$ALL_GPUS"); do
     export NVIDIA_VISIBLE_DEVICES=$gpu
+    export CUDA_VISIBLE_DEVICES=$gpu
+
     nvidia-smi -L
     dest=/tmp/ssd_$(echo $gpu | sed 's|/|_|g').log
 

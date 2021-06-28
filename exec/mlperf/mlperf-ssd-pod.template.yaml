@@ -13,8 +13,6 @@ spec:
         - "-x"
         - ./my_run_and_time.sh
       env:
-        - name: NVIDIA_VISIBLE_DEVICES
-          value: all
         - name: NVIDIA_DRIVER_CAPABILITIES
           value: "compute,utility"
         - name: NVIDIA_REQUIRE_CUDA
