@@ -31,7 +31,8 @@ def mode_store(mode):
     try: store_plugin = importlib.import_module(store_pkg_name)
     except ModuleNotFoundError as e:
         print(f"FATAL: Failed to load module '{mode}': {e}")
-        return 1
+        raise e
+
     print(f"Loading {mode} storage module ... done")
     return store_plugin
 

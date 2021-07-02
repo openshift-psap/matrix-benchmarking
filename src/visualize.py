@@ -10,9 +10,15 @@ import common
 
 def main():
     mode = store.parse_argv(sys.argv[1:])
-    store_plugin = store.mode_store(mode)
+
+    try:
+        store_plugin = store.mode_store(mode)
+    except Exception as e:
+        print(f"FATAL: Could not load store_plugin for '{mode}': {e}")
+        sys.exit(1)
 
     print(f"Parsing {mode} data ...")
+
     store_plugin.parse_data(mode)
     print(f"Parsing {mode} data ... done")
 
