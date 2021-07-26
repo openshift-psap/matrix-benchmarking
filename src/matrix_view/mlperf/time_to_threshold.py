@@ -112,7 +112,7 @@ class MigThresholdOverTime():
             gpus.add(gpu_name)
             entries.append(entry)
 
-        gpus_plotted = []
+        gpus_to_plot = defaultdict(list)
         for entry in entries:
             def add_plot(an_entry):
                 nonlocal y_min, y_max
@@ -123,29 +123,139 @@ class MigThresholdOverTime():
                     if gpu_name.endswith("_1"): gpu_name = gpu_full_name[:-2]
                     if gpu_name == "full": gpu_name = "8g.40gb (full)"
 
+                xy = []
                 for log_filename, values in an_entry.results.thresholds.items():
+                    if not values: continue
                     sorted_values = sorted(values, key=lambda x:x[0])
                     thr = [xy[0] for xy in values]
 
                     y_min = min([y_min]+thr)
                     y_max = max([y_max]+thr)
                     ts = [xy[1]/1000/60/60 for xy in values]
-                    showlegend = gpu_name not in gpus_plotted
-                    gpus_plotted.append(gpu_name)
-                    trace = go.Scatter(x=thr, y=ts,
-                                       name=gpu_name,
-                                       hoverlabel= {'namelength' :-1},
-                                       line=dict(color=COLORS(sorted(gpus).index(gpu_full_name))),
-                                       showlegend=showlegend,
-                                       legendgroup=gpu_name,
-                                       mode='markers+lines')
-                    fig.add_trace(trace)
 
+                    gpus_to_plot[(gpu_name, gpu_full_name)].append([ts, thr])
             if entry.is_gathered:
                 for single_entry in entry.results:
                     add_plot(single_entry)
             else:
                 add_plot(entry)
+
+        def do_complete_ts(all_thr, thr, ts):
+            prev_pt = thr[0], ts[0]
+            if not thr or not ts: import pdb;pdb.set_trace()
+            next_pt = thr[1], ts[1]
+
+            current_idx = 0
+
+            complete_ts = []
+
+            for a_thr in all_thr:
+                if a_thr < thr[0]:
+                    # we're before the beginning
+                    complete_ts.append(None)
+                    continue
+
+                while a_thr > next_pt[0] and current_idx != len(thr):
+                    # we're above the current range
+                    # go to the next one
+
+                    current_idx += 1
+                    if current_idx == len(thr): break
+
+                    prev_pt = next_pt[:]
+                    next_pt = thr[current_idx], ts[current_idx]
+
+                if current_idx == len(thr):
+                    # we're above the full range
+                    complete_ts.append(None)
+                    continue
+
+                # now we have the right range. Do a linear interpolation
+
+                if a_thr == next_pt[0]:
+                    a_ts = next_pt[1]
+                else:
+                    a_ts = prev_pt[1] + (a_thr-prev_pt[0])*(next_pt[1]-prev_pt[1])/(next_pt[0]-prev_pt[0])
+
+                complete_ts.append(a_ts)
+
+            return complete_ts
+
+        for [gpu_name, gpu_full_name], xy_values in gpus_to_plot.items():
+            all_thr = set()
+            for ts, thr in xy_values:
+                all_thr.update(thr)
+            all_thr = sorted(all_thr)
+
+            all_ts_values = defaultdict(list)
+
+            for ts, thr in xy_values:
+                all_ts = do_complete_ts(all_thr, thr, ts)
+
+                trace = go.Scatter(x=thr, y=ts,
+                               name=gpu_name + " before",
+                               hoverlabel= {'namelength' :-1},
+                               showlegend=True,
+
+                               mode='lines+markers',
+                               )
+                #fig.add_trace(trace)
+                trace = go.Scatter(x=all_thr, y=all_ts,
+                               name=gpu_name + " after",
+                               hoverlabel= {'namelength' :-1},
+                               showlegend=True,
+                               mode='lines+markers',
+                               )
+                #fig.add_trace(trace)
+
+                for a_ts, a_thr in zip(all_ts, all_thr):
+                    all_ts_values[a_thr].append(a_ts)
+
+            y = []
+            y_err_upper = []
+            y_err_lower = []
+            x = []
+
+            for thr, ts in all_ts_values.items():
+                ts_values = [t for t in ts if t is not None]
+                if len(ts_values) == 1 and thr == list(all_ts_values)[-1]: continue
+
+                x.append(thr)
+                y.append(stats.mean(ts_values) if ts_values else None)
+                y_err = stats.stdev(ts_values) if len(ts_values) > 2 else None
+                if y[-1] is None:
+                    y_err_upper.append(None)
+                    y_err_lower.append(None)
+                    continue
+                if y_err is None: y_err = 0
+                y_err_upper.append(y[-1]+y_err)
+                y_err_lower.append(y[-1]-y_err)
+
+            trace = go.Scatter(x=x, y=y,
+                               name=(gpu_name + " (mean)").replace(") (", ", "),
+                               hoverlabel= {'namelength' :-1},
+                               line=dict(color=COLORS(sorted(gpus).index(gpu_full_name))),
+                               showlegend=True,
+                               legendgroup=gpu_name,
+                               mode='lines',
+                               )
+
+            fig.add_trace(trace)
+            showlegend_stdev = "full" not in gpu_name
+            trace = go.Scatter(
+                x=x+x[::-1], # x, then x reversed
+                y=y_err_upper+y_err_lower[::-1], # upper, then lower reversed
+                fill='toself',
+                fillcolor=COLORS(sorted(gpus).index(gpu_full_name)),
+                opacity=0.2,
+                line=dict(color='rgba(255,255,255,0)'),
+                hoverinfo="skip",
+                name=(gpu_name+" (stdev)").replace(") (", ", "),
+                legendgroup=gpu_name,
+                showlegend=showlegend_stdev
+            )
+            fig.add_trace(trace)
+
 
         fig.update_layout(
             title=plot_title, title_x=0.5,
@@ -189,20 +299,19 @@ class MigTimeToThreshold():
         else:
             plot_title += "Time to 0.23 threshold (lower is better)"
 
+        # remove unwanted entries from the `all_records` list
         entries = []
         for entry in Matrix.all_records(params, param_lists):
-            threshold = float(entry.params.threshold)
             gpu_name = entry.params.gpu
             if self.mig_type:
                 if not self.mig_type in gpu_name: continue
             else:
                 if not (gpu_name == "full" or gpu_name.endswith("_1")): continue
 
-            exec_times = []
-
             entries.append(entry)
 
         plot_values = defaultdict(list)
+        x_names = {}
         for entry in entries:
             def add_plot(an_entry):
                 gpu_name = gpu_full_name = an_entry.params.gpu
@@ -211,17 +320,24 @@ class MigTimeToThreshold():
                 else:
                     if gpu_name.endswith("_1"): gpu_name = gpu_full_name[:-2]
                     if gpu_name == "full": gpu_name = "8g.40gb (full)"
+                if self.mig_type:
+                    x_value = int(gpu_name.split(" ")[-1])
+                else:
+                    x_value = int(gpu_name.split("g")[0])
+
+                x_names[x_value] = gpu_name
 
                 if self.speed:
                     for mig_name, speed in an_entry.results.avg_sample_sec.items():
-                        plot_values[gpu_name].append(speed)
+                        plot_values[x_value].append(speed)
                 else:
                     for log_filename, values in an_entry.results.thresholds.items():
                         ts = [xy[1]/1000/60/60 for xy in values]
                         thr = [xy[0] for xy in values]
                         if not ts: continue
                         if thr[-1] < 0.22: continue
-                        plot_values[gpu_name].append(ts[-1])
+
+                        plot_values[x_value].append(ts[-1])
 
             if entry.is_gathered:
                 for single_entry in entry.results:
@@ -230,47 +346,92 @@ class MigTimeToThreshold():
                 add_plot(entry)
 
         y_means = [stats.mean(y_values) for y_values in plot_values.values()]
-        y_mean_ref = max(y_means) if self.speed else min(y_means)
-        y_max = 0
+        if self.mig_type:
+            y_mean_ref = max(y_means) if self.speed else min(y_means)
+        else:
+            y_mean_ref = min(y_means) if self.speed else max(y_means)
 
-        idx = 0
-        for gpu_name, y_values in plot_values.items():
-            x = [None for _ in range(len(plot_values))]
-            y = [None for _ in range(len(plot_values))]
-            y_err = [None for _ in range(len(plot_values))]
-            y_relative = [None for _ in range(len(plot_values))]
-            if gpu_name == "full": gpu_name = "8g.40gb (full)"
-            y_max = max([y_max] + y_values)
-            x[idx] = gpu_name
-            y[idx] = stats.mean(y_values)
-            y_err[idx] = stats.stdev(y_values) \
-              if len(y_values) > 2 else None
+        x = sorted(plot_values.keys())
+        y = [stats.mean(plot_values[x_value]) for x_value in x]
+        y_err = [(stats.stdev(plot_values[x_value]) if len(plot_values[x_value]) > 2 else None) for x_value in x]
+
+        xy_slowdown = {x_value:y_value/y_mean_ref for x_value, y_value in zip(x,y)}
+        if not self.speed:
+            xy_slowdown = {x_value:1/y_value for x_value, y_value in xy_slowdown.items()}
+
+        if self.mig_type:
+            x_names = [f"{x_value} instance{'s' if x_value > 1 else ''}: " +
+                       (f"{xy_slowdown[x_value]:.2f}x "
+                        f"{'speed' if self.speed else 'slower'}" if x_value != x[0] else f"reference {'speed' if self.speed else 'time'}")
+                        for x_value in x]
+
+            x_baseline = [-100, x[-1], 100]
+            y_baseline = [y_mean_ref, y_mean_ref, y_mean_ref]
 
             if self.speed:
-                y_relative[idx] = f"{int(y[idx]/y_mean_ref*100)}%"
+                textposition = "bottom right"
             else:
-                y_relative[idx] = f"{y[idx]/y_mean_ref:.2f}x"
-            y_relative[idx] += " "*12 # push outside of error bar
+                textposition = "top right"
 
-            fig.add_trace(go.Bar(x=x, y=y,
-                                 text=y_relative,
-                                 textposition='outside',
-                                 name=gpu_name,
-                                 marker_color=COLORS(idx),
+            baseline_text = [None for _ in x_baseline]
+            baseline_text[-2] = "        Reference " + ("speed" if self.speed else "time")
+            baseline_textposition = "top right"
+        else:
+            x_names = [f"{x_names[x_value]}: " +
+                       (f"{xy_slowdown[x_value]:.2f}x "
+                        f"{'speed' if self.speed else 'faster'}" if x_value != x[0] else f"reference {'speed' if self.speed else 'time'}")
+
+                       for x_value in x]
+            if self.speed:
+                textposition = "bottom right"
+            else:
+                textposition = "top right"
+
+            x_baseline = x
+            baseline_text = [None for _ in x_baseline]
+            if self.speed:
+                y_baseline = [y_mean_ref * x_value for x_value in x_baseline]
+                baseline_text[4] = "Perfect scaling"
+                baseline_textposition = "bottom right"
+            else:
+                y_baseline = [y_mean_ref / x_value for x_value in x_baseline]
+                baseline_text[-1] = "Perfect scaling"
+                baseline_textposition = "bottom center"
+        y_max = max(y_baseline + y)
+
+        fig.add_trace(go.Scatter(x=x_baseline, y=y_baseline,
+                                 mode="lines+text" + ("+markers" if not self.mig_type else ""),
+                                 name="Perfect scaling",
+                                 text=baseline_text,
+                                 line=dict(color='royalblue', width=2, dash='dot'),
+                                 textposition=baseline_textposition,
+                                 ))
+
+        fig.add_trace(go.Scatter(x=x, y=y,
+                                 text=x_names,
+                                 mode="lines+markers+text",
+                                 textposition=textposition,
                                  error_y=dict(
                                      type='data', # value of error bar given in data coordinates
                                      array=y_err,
+                                     color='black',
+                                     visible=True)
+                                 ))
 
-                                     visible=True)))
-            idx += 1
+        if self.mig_type:
+            x_title = "Number of parallel executions"
+        else:
+            x_title = "Number of GPU execution engines"
+
         fig.update_layout(
             showlegend=False,
             yaxis=dict(
                 title='Avg Samples / sec' if self.speed else "Time (in hr)",
-                range=[0, y_max*(1.10 if self.speed else 1.1)],
-                #titlefont_size=16,
-                #tickfont_size=14,
+                range=[0, y_max*(1.05 if self.speed else 1.1)],
             ),
-            barmode='stack',
+            xaxis=dict(
+                range=[0.9, max(x)*1.35],
+                title=x_title,
+            ),
             title=plot_title, title_x=0.5)
         return fig, ""
