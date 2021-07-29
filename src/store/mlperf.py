@@ -64,13 +64,25 @@ def mlperf_parse_ssd_results(dirname, import_settings):
     #start_ts = None
     start_timestamps = {}
     results.thresholds = {}
+    results.avg_sample_sec = {}
+
+    if import_settings.get("threshold") != "0.23": return
+
     try:
         with open(f"{dirname}/pod.logs") as f:
+            has_thr020 = {}
+            prev_thr = {}
+
             for line in f.readlines():
                 if "result=" in line:
                     results.exec_time = int(line.split('=')[-1].strip())/60
+
                 if "avg. samples / sec" in line:
-                    results.avg_sample_sec = float(line.split("avg. samples / sec: ")[-1].strip())
+                    gpu_name = "single" if not line.startswith("/tmp") else \
+                        line.split(":")[0]
+
+                    results.avg_sample_sec[gpu_name] = float(line.split("avg. samples / sec: ")[-1].strip())
+
                 if '"key": "eval_accuracy"' in line or '"key": "init_start"' in line:
                     MLLOG_PREFIX = ":::MLLOG "
                     if line.startswith(MLLOG_PREFIX):
@@ -82,10 +94,14 @@ def mlperf_parse_ssd_results(dirname, import_settings):
                     line_ts = json_content['time_ms']
 
                     if json_content['key'] == "eval_accuracy":
+                        if gpu_name in has_thr020: continue
                         line_threshold = json_content['value']
+                        if line_threshold < prev_thr.get(gpu_name, 0): continue
+                        prev_thr[gpu_name] = line_threshold
                         try:
                             threadhold_time = line_ts - start_timestamps[gpu_name]
                             results.thresholds[gpu_name].append([line_threshold, threadhold_time])
+                            if line_threshold > 0.2: has_thr020[gpu_name] = True
                         except KeyError:
                             raise Exception(f"gpu_name={gpu_name} didn't start in {dirname}/pod.logs")
 
@@ -112,6 +128,8 @@ def mlperf_parse_results(dirname, import_settings):
      }
 
     results = PARSERS[import_settings['benchmark']](dirname, import_settings)
+    if results is None:
+        return [({}, {})]
 
     mlperf_parse_prom_gpu_metrics(dirname, results)
 

@@ -11,8 +11,17 @@ def register():
 
         time_to_threshold.Plot()
 
+        time_to_threshold.MigThresholdOverTime()
+        time_to_threshold.MigTimeToThreshold()
+        time_to_threshold.MigTimeToThreshold(speed=True)
+
+        for mig_type in ("1g.5gb", "2g.10gb", "3g.20gb"):
+            time_to_threshold.MigThresholdOverTime(mig_type)
+            time_to_threshold.MigTimeToThreshold(mig_type)
+            time_to_threshold.MigTimeToThreshold(mig_type, speed=True)
+
     elif store.experiment_filter.get("benchmark", "burn") == "burn":
         TableStats.ValueDev("speed", "Speed", "speed", ".0f", "Gflop/s", higher_better=True)
 
-    prom_overview.Plot(metric='DCGM_FI_DEV_POWER_USAGE', y_title="Watt")
-    prom_overview.Plot(metric='cluster:cpu_usage_cores:sum', y_title="# of cores")
+    #prom_overview.Plot(metric='DCGM_FI_DEV_POWER_USAGE', y_title="Watt")
+    #prom_overview.Plot(metric='cluster:cpu_usage_cores:sum', y_title="# of cores")
