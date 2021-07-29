@@ -13,7 +13,6 @@ class Exec():
     def log(self, *msg):
         print("INFO:", *msg)
 
-DEFAULT_MODE =  "mlperf"
 def main():
     mode = store.parse_argv(sys.argv[1:])
     store_plugin = store.mode_store(mode)

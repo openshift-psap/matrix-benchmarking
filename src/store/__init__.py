@@ -5,7 +5,7 @@ import datetime
 
 experiment_filter = {}
 
-DEFAULT_MODE = "mlperf"
+DEFAULT_MODE = "nightly"
 def parse_argv(argv):
     for expe_filter in argv:
         if expe_filter == "run":
@@ -31,7 +31,8 @@ def mode_store(mode):
     try: store_plugin = importlib.import_module(store_pkg_name)
     except ModuleNotFoundError as e:
         print(f"FATAL: Failed to load module '{mode}': {e}")
-        return 1
+        raise e
+
     print(f"Loading {mode} storage module ... done")
     return store_plugin
 
@@ -54,7 +55,7 @@ def add_to_matrix(import_settings, location, results):
         raise e
 
     if not processed_settings:
-        print(f"INFO: entry '{import_key}' skipped by rewrite_settings()")
+        #print(f"INFO: entry '{import_key}' skipped by rewrite_settings()")
         common.Matrix.import_map[import_key] = True, location
         return
 
