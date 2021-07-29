@@ -25,9 +25,28 @@ def parse_gpu_burn_results(dirname, import_settings):
 
     return results
 
+def parse_test_properties_results(dirname, import_settings):
+    results = types.SimpleNamespace()
+    try:
+        with open(f"{dirname}/step_count") as f:
+            results.step_count = int(f.read())
+
+        with open(f"{dirname}/test_passed") as f:
+            results.test_passed = int(f.read())
+
+        with open(f"{dirname}/ansible_tasks_ok") as f:
+            results.ansible_tasks_ok = int(f.read())
+
+    except FileNotFoundError as e:
+        print(f"{dirname}: Could not find 'pod.log' file ...")
+        raise e
+
+    return results
+
 def parse_results(dirname, import_settings):
     PARSERS = {
-        "gpu-burn": parse_gpu_burn_results
+        "gpu-burn": parse_gpu_burn_results,
+        "test-properties": parse_test_properties_results,
     }
 
     try:
@@ -39,7 +58,7 @@ def parse_results(dirname, import_settings):
     try:
         parser = PARSERS[benchmark]
     except KeyError as e:
-        print(f"ERROR: no parser for benchmark={bencharmk} in {dirname}")
+        print(f"ERROR: no parser for benchmark={benchmark} in {dirname}")
         raise e
 
     results = parser(dirname, import_settings)
