@@ -55,7 +55,7 @@ def add_to_matrix(import_settings, location, results):
         raise e
 
     if not processed_settings:
-        print(f"INFO: entry '{import_key}' skipped by rewrite_settings()")
+        #print(f"INFO: entry '{import_key}' skipped by rewrite_settings()")
         common.Matrix.import_map[import_key] = True, location
         return
 
