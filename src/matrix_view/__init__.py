@@ -169,8 +169,8 @@ def build_layout(search, serializing=False):
                                      "."])]
 
     graph_children = []
+    stats = defaults.get("stats", [])
     if serializing:
-        stats = defaults.get("stats", [])
         for stats_name in stats:
             print("Generate", stats_name)
             table_stat = TableStats.stats_by_name[stats_name]
@@ -198,8 +198,9 @@ def build_layout(search, serializing=False):
 
             text.children = figure_text[1]
     else:
-        for graph_id in GRAPH_IDS:
-            graph_children += [dcc.Graph(id=graph_id, style={'display': 'none'},
+        for idx, graph_id in enumerate(GRAPH_IDS):
+            display = 'none' if idx >= len(stats) else "block"
+            graph_children += [dcc.Graph(id=graph_id, style={'display': display},
                                          config=dict(showTips=False)),
                                html.P(id=graph_id+"-txt")]
 
