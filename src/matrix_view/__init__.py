@@ -151,7 +151,7 @@ def build_layout(search, serializing=False):
     else:
         control_children += [html.I(["Saved on ",
                                     str(datetime.datetime.today()).rpartition(":")[0]])]
-        settings_order = defaults.get("settings-order", [])
+        settings_order = defaults.get("settings-order", [""])[0]
 
         if settings_order:
             settings_order = settings_order.split("|")
