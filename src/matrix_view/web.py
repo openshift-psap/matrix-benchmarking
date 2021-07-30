@@ -12,6 +12,7 @@ try: import numpy
 except ImportError: pass
 
 import matrix_view
+import store
 
 # stylesheets now served via assets/bWLwgP.css and automatically included
 main_app = dash.Dash(__name__)
@@ -52,9 +53,24 @@ def construct_dispatcher():
 
             return [msg, index]
 
-def run(store, mode):
+
+def run(mode_store, mode):
     matrix_view.build_callbacks(main_app)
-    construct_dispatcher()
+    display_page = construct_dispatcher()
+
+    generate = store.experiment_filter.pop("__generate__")
+    if generate:
+        print(f"Generating http://127.0.0.1:8050/matrix?{generate} ...")
+
+        page = matrix_view.build_layout(generate, serializing=True)
+
+        for idx, graph in enumerate(page.children[1].children[::2]):
+            if not isinstance(graph, dcc.Graph): continue
+            figure = graph.figure
+            print(f"Saving fig{idx}.html ...")
+            figure.write_html(f"../fig{idx}.html")
+
+        sys.exit(0)
 
     try: main_app.run_server()
     except OSError as e:
