@@ -118,6 +118,7 @@ def build_layout(search, serializing=False):
         if serializing:
             attr["disabled"] = True
             serial_params.append(attr["value"])
+            serial_stats_position = len(serial_params) - 1
 
         tag = dcc.Dropdown(id='list-params-'+key, options=options,
                            **attr, clearable=False)
@@ -179,8 +180,11 @@ def build_layout(search, serializing=False):
                                          config=dict(showTips=False)),
                                html.P(id=table_stat.id_name+'-txt')]
 
+            current_serial_params = [e for e in serial_params]
+            current_serial_params[serial_stats_position] = [stats_name]
+
             figure_text = TableStats.graph_figure(*(
-                serial_params                          # [Input('list-params-'+key, "value") for key in Matrix.settings]
+                current_serial_params                  # [Input('list-params-'+key, "value") for key in Matrix.settings]
                 + [0]                                  # Input("lbl_params", "n_clicks")
                 + defaults.get("settings-order", [[]]) # Input('settings-order', 'data-order')
                 + [None]                               # Input('config-title', 'n_clicks') | None->not clicked yet
@@ -407,12 +411,11 @@ def build_callbacks(app):
                 return graph_figure(*args)
 
             def graph_figure(*_args):
-                if dash.callback_context.triggered:
-                    try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
-                    except IndexError:
-                        return dash.no_update, "" # nothing triggered the script (on multiapp load)
-                    except dash.exceptions.MissingCallbackContextException: triggered_id = '<manually triggered>'
-                else: triggered_id = '<manually triggered>'
+
+                try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
+                except IndexError:
+                    return dash.no_update, "" # nothing triggered the script (on multiapp load)
+                except dash.exceptions.MissingCallbackContextException: triggered_id = '<manually triggered>'
 
                 *args, cfg_n_clicks, config, config_saved, config_init = _args
 
