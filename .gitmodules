@@ -1,0 +1,3 @@
+[submodule "ci-dashboard"]
+	path = submodules/ci-dashboard
+	url = https://github.com/openshift-psap/ci-dashboard/
