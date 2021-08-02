@@ -118,6 +118,7 @@ def build_layout(search, serializing=False):
         if serializing:
             attr["disabled"] = True
             serial_params.append(attr["value"])
+            serial_stats_position = len(serial_params) - 1
 
         tag = dcc.Dropdown(id='list-params-'+key, options=options,
                            **attr, clearable=False)
@@ -151,7 +152,7 @@ def build_layout(search, serializing=False):
     else:
         control_children += [html.I(["Saved on ",
                                     str(datetime.datetime.today()).rpartition(":")[0]])]
-        settings_order = defaults.get("settings-order", [])
+        settings_order = defaults.get("settings-order", [""])[0]
 
         if settings_order:
             settings_order = settings_order.split("|")
@@ -169,8 +170,8 @@ def build_layout(search, serializing=False):
                                      "."])]
 
     graph_children = []
+    stats = defaults.get("stats", [])
     if serializing:
-        stats = defaults.get("stats", [])
         for stats_name in stats:
             print("Generate", stats_name)
             table_stat = TableStats.stats_by_name[stats_name]
@@ -179,8 +180,11 @@ def build_layout(search, serializing=False):
                                          config=dict(showTips=False)),
                                html.P(id=table_stat.id_name+'-txt')]
 
+            current_serial_params = [e for e in serial_params]
+            current_serial_params[serial_stats_position] = [stats_name]
+
             figure_text = TableStats.graph_figure(*(
-                serial_params                          # [Input('list-params-'+key, "value") for key in Matrix.settings]
+                current_serial_params                  # [Input('list-params-'+key, "value") for key in Matrix.settings]
                 + [0]                                  # Input("lbl_params", "n_clicks")
                 + defaults.get("settings-order", [[]]) # Input('settings-order', 'data-order')
                 + [None]                               # Input('config-title', 'n_clicks') | None->not clicked yet
@@ -198,8 +202,9 @@ def build_layout(search, serializing=False):
 
             text.children = figure_text[1]
     else:
-        for graph_id in GRAPH_IDS:
-            graph_children += [dcc.Graph(id=graph_id, style={'display': 'none'},
+        for idx, graph_id in enumerate(GRAPH_IDS):
+            display = 'none' if idx >= len(stats) else "block"
+            graph_children += [dcc.Graph(id=graph_id, style={'display': display},
                                          config=dict(showTips=False)),
                                html.P(id=graph_id+"-txt")]
 
@@ -406,12 +411,11 @@ def build_callbacks(app):
                 return graph_figure(*args)
 
             def graph_figure(*_args):
-                if dash.callback_context.triggered:
-                    try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
-                    except IndexError:
-                        return dash.no_update, "" # nothing triggered the script (on multiapp load)
-                    except dash.exceptions.MissingCallbackContextException: triggered_id = '<manually triggered>'
-                else: triggered_id = '<manually triggered>'
+
+                try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
+                except IndexError:
+                    return dash.no_update, "" # nothing triggered the script (on multiapp load)
+                except dash.exceptions.MissingCallbackContextException: triggered_id = '<manually triggered>'
 
                 *args, cfg_n_clicks, config, config_saved, config_init = _args
 
