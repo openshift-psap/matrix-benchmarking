@@ -58,17 +58,37 @@ def run(mode_store, mode):
     matrix_view.build_callbacks(main_app)
     display_page = construct_dispatcher()
 
-    generate = store.experiment_filter.pop("__generate__")
+    generate = store.experiment_filter.pop("__generate__", False)
     if generate:
-        print(f"Generating http://127.0.0.1:8050/matrix?{generate} ...")
+        print(f"Generating http://127.0.0.1:8050/matrix?{generate.replace(' ', '%20')} ...")
 
         page = matrix_view.build_layout(generate, serializing=True)
 
-        for idx, graph in enumerate(page.children[1].children[::2]):
-            if not isinstance(graph, dcc.Graph): continue
+
+        for param in page.children[0].children:
+            if not isinstance(param, dcc.Dropdown): continue
+            print(param.id)
+            if param.id != "list-params-stats": continue
+            stats = param.value
+            break
+        else:
+            stats = []
+        if not stats:
+            print("WARNING: could not find any stats enabled ...")
+        if isinstance(stats, str):
+            stats = [stats]
+
+        idx = 0
+        for graph in page.children[1].children[::2]:
+            if not isinstance(graph, dcc.Graph):
+                #print("Not a graph...", graph)
+                continue
             figure = graph.figure
-            print(f"Saving fig{idx}.html ...")
-            figure.write_html(f"../fig{idx}.html")
+            dest = f"{idx}_{stats[idx].replace(' ', '_')}"
+            print(f"Saving {dest} ...")
+            figure.write_html(f"../{dest}.html")
+            figure.write_image(f"../{dest}.png")
+            idx += 1
 
         sys.exit(0)
 

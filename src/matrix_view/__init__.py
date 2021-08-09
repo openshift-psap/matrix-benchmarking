@@ -85,7 +85,7 @@ def get_permalink(args, full=False):
     return search
 
 def build_layout(search, serializing=False):
-    defaults = urllib.parse.parse_qs(search[1:]) if search else {}
+    defaults = urllib.parse.parse_qs(search.split("?", maxsplit=1)[-1]) if search else {}
 
     matrix_controls = [html.B("Parameters:", id="lbl_params"), html.Br()]
     serial_params = []
