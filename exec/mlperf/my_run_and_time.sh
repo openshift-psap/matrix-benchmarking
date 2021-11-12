@@ -24,22 +24,22 @@ export NCCL_DEBUG=INFO
 set -e
 set -x
 
-echo "Running with Parallel mode activated."
-
-DGXNGPU=1
+nvidia-smi -L
 
 NB_GPUS=$(nvidia-smi -L | grep "UUID: MIG-GPU" | wc -l)
 if [[ "$NB_GPUS" == 0 ]]; then
-    ALL_GPUS=$(nvidia-smi -L | grep "UUID: GPU" | cut -d" " -f5 | cut -d')' -f1)
+    ALL_GPUS=$(nvidia-smi -L | grep "UUID: GPU" | cut -d" " -f6 | cut -d')' -f1)
+    NB_GPUS=$(nvidia-smi -L | grep "UUID: GPU" | wc -l)
+    MIG_MODE=1
 
     echo "No MIG GPU available, using the full GPUs ($ALL_GPUS)."
 else
     ALL_GPUS=$(nvidia-smi -L | grep "UUID: MIG-GPU" | cut -d" " -f8 | cut -d')' -f1)
+    MIG_MODE=0
+
     echo "Found $NB_GPU MIG instances: $ALL_GPUS"
 fi
 
-DGXNSOCKET=1
-DGXSOCKETCORES=${DGXSOCKETCORES:-16}
 SSD_THRESHOLD=${SSD_THRESHOLD:-0.23}
 
 # start timing
@@ -52,16 +52,48 @@ set -x
 NUMEPOCHS=${NUMEPOCHS:-80}
 
 echo "running benchmark"
-nvidia-smi -L
 
 export DATASET_DIR="/data/coco2017"
-export TORCH_HOME="/data/torchvision"
+export TORCH_HOME="${DATASET_DIR}/torchvision"
+
+# prepare dataset according to download_dataset.sh
+
+if [ ! -f ${DATASET_DIR}/annotations/bbox_only_instances_val2017.json ]; then
+    echo "Prepare instances_val2017.json ..."
+    ./prepare-json.py --keep-keys \
+        "${DATASET_DIR}/annotations/instances_val2017.json" \
+        "${DATASET_DIR}/annotations/bbox_only_instances_val2017.json"
+fi
+
+if [ ! -f ${DATASET_DIR}/annotations/bbox_only_instances_train2017.json ]; then
+    echo "Prepare instances_train2017.json ..."
+    ./prepare-json.py \
+        "${DATASET_DIR}/annotations/instances_train2017.json" \
+        "${DATASET_DIR}/annotations/bbox_only_instances_train2017.json"
+fi
+
+# prepare the DGXA100-specific configuration (config_DGXA100.sh)
+
+EXTRA_PARAMS='--batch-size=114 --warmup=650 --lr=3.2e-3 --wd=1.3e-4'
+
+DGXNSOCKET=1
+DGXSOCKETCORES=${DGXSOCKETCORES:-16}
+
+if [[ $MIG_MODE == "1" ]]; then
+   DGXNGPU=1
+   echo "Running in parallel mode."
+
+else
+    DGXNGPU=$NB_GPUS
+    echo "Running in multi-gpu mode."
+fi
+
+# run training
 
 declare -a CMD
 CMD=('python' '-u' '-m' 'bind_launch' "--nsockets_per_node=${DGXNSOCKET}" \
                "--ncores_per_socket=${DGXSOCKETCORES}" "--nproc_per_node=${DGXNGPU}" )
 
-# run training
 declare -a ARGS
 ARGS=(train.py
   --use-fp16
@@ -72,7 +104,7 @@ ARGS=(train.py
   --opt-loss
   --epochs "${NUMEPOCHS}"
   --warmup-factor 0
-  --evaluation 5 10 15 20 25 30 35 40 50 55 60 65 70 75 80 85
+  #--evaluation 5 10 15 20 25 30 35 40 50 55 60 65 70 75 80 85
   --no-save
   --threshold=${SSD_THRESHOLD}
   --data ${DATASET_DIR}
@@ -80,7 +112,7 @@ ARGS=(train.py
 
 declare -a pids
 
-trap "date; echo failed :(; exit 1" ERR
+trap "date; echo failed; exit 1" ERR
 
 for gpu in $(echo "$ALL_GPUS"); do
     export NVIDIA_VISIBLE_DEVICES=$gpu
@@ -89,17 +121,22 @@ for gpu in $(echo "$ALL_GPUS"); do
     nvidia-smi -L
     dest=/tmp/ssd_$(echo $gpu | sed 's|/|_|g').log
 
-    echo "${CMD[@]} ${ARGS[@]} ===> $dest"
+    # run training
     "${CMD[@]}" "${ARGS[@]}" > "$dest" &
     pids+=($!)
+    echo "Running on $gpu ===> $dest: PID $!"
 done
 
-echo "$(date): starting waiting for $NB_GPU executions: ${pids[@]}"
+echo "$(date): starting waiting for $NB_GPUS executions: ${pids[@]}"
 
-wait
+for pid in ${pids[@]};
+do
+    wait $pid
+done
 
-echo "$(date): done waiting for $NB_GPU executions"
+echo "$(date): done waiting for $NB_GPUS executions"
 
+ls /tmp/ssd*
 grep . /tmp/ssd_*.log
 
 # end timing

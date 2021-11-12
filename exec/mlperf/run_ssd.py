@@ -12,6 +12,7 @@ from collections import defaultdict
 import query_thanos
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+NODE_NAME = "dgxa100"
 
 MIG_RES_TYPES = {
     "1g.5gb",
@@ -50,7 +51,7 @@ def prepare_mig_gpu(mig_mode):
 """
 
     if migparted_res_type == "full": migparted_res_type = "disabled"
-    mig_cmd = f"oc label --overwrite node/perf23-nva100 nvidia.com/mig.config=all-{migparted_res_type}"
+    mig_cmd = f"oc label --overwrite node/{NODE_NAME} nvidia.com/mig.config=all-{migparted_res_type}"
 
     print(mig_cmd)
     subprocess.check_call(mig_cmd, shell=True)
@@ -106,7 +107,7 @@ def main():
 
     if settings['benchmark'] == "ssd":
         POD_NAME = "run-ssd"
-        POD_NAMESPACE = "mlperf"
+        POD_NAMESPACE = "default"
         CONFIG_CM_NAME = "custom-config-script"
         POD_TEMPLATE = "mlperf-ssd-pod.template.yaml"
         CM_FILES = [
@@ -155,7 +156,7 @@ def main():
 
     print("-----")
     print("Thanos: Preparing  ...")
-    thanos = query_thanos.prepare_thanos()
+    #thanos = query_thanos.prepare_thanos()
     thanos_start = None
 
     print("-----")
@@ -176,9 +177,9 @@ def main():
             current_phase = phase
             print(f"\n{current_phase}")
 
-        if thanos_start is None and phase == "Running":
-            thanos_start = query_thanos.query_current_ts(thanos)
-            print(f"Thanos: start time: {thanos_start}")
+        #if thanos_start is None and phase == "Running":
+        #    thanos_start = query_thanos.query_current_ts(thanos)
+        #    print(f"Thanos: start time: {thanos_start}")
         if phase in ("Succeeded", "Error", "Failed"):
             break
 
@@ -191,8 +192,8 @@ def main():
 
     output = subprocess.check_output(f"oc logs pod/{POD_NAME} -n {POD_NAMESPACE} ", shell=True)
 
-    thanos_stop = query_thanos.query_current_ts(thanos)
-    print(f"Thanos: stop time: {thanos_start}")
+    #thanos_stop = query_thanos.query_current_ts(thanos)
+    #print(f"Thanos: stop time: {thanos_start}")
 
     print("-----")
     print(output.decode('utf-8'), end="")
@@ -205,8 +206,8 @@ def main():
     else:
         print("stdout is a TTY, not saving the logs into 'pod.logs'.")
 
-    print("-----")
-    save_thanos_metrics(thanos, thanos_start, thanos_stop)
+    #print("-----")
+    #save_thanos_metrics(thanos, thanos_start, thanos_stop)
     print("-----")
 
     print(datetime.datetime.now())

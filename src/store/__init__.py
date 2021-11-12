@@ -5,7 +5,7 @@ import datetime
 
 experiment_filter = {}
 
-DEFAULT_MODE = "nightly"
+DEFAULT_MODE = "mlperf"
 def parse_argv(argv):
     for expe_filter in argv:
         if expe_filter == "run":

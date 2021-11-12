@@ -1,23 +1,23 @@
-apiVersion: v1
+apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
   labels:
     app: mlperf
-  name: mlperf
-  namespace: mlperf
+  name: mlperf0.7
+  namespace: default
 spec:
   output:
     to:
       kind: ImageStreamTag
-      name: mlperf_0_7:ssd
-      namespace: mlperf
+      name: mlperf:ssd_0.7
+      namespace: default
   resources: {}
   source:
     type: Git
     git:
-      uri: "https://github.com/mlcommons/training_results_v0.7.git"
+      uri: "https://github.com/kpouget/training_results_v0.7.git"
       ref: "master"
-    contextDir: "NVIDIA/benchmarks/ssd/implementations/pytorch"
+    contextDir: NVIDIA/benchmarks/ssd/implementations/pytorch
   triggers:
   - type: "ConfigChange"
   strategy:
