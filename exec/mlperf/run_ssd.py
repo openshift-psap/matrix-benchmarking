@@ -6,12 +6,39 @@ import subprocess
 import time
 import datetime
 import json
-
+from pathlib import Path
 from collections import defaultdict
+
+import yaml
+
+import kubernetes.client
+import kubernetes.config
+import kubernetes.utils
 
 import query_thanos
 
-THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+from kubernetes.client import V1ConfigMap, V1ObjectMeta
+
+kubernetes.config.load_kube_config()
+
+v1 = kubernetes.client.CoreV1Api()
+appsv1 = kubernetes.client.AppsV1Api()
+batchv1 = kubernetes.client.BatchV1Api()
+k8s_client = kubernetes.client.ApiClient()
+
+THIS_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
+
+if not sys.stdout.isatty():
+    ARTIFACTS_DIR = Path(os.getcwd())
+else:
+    base_dir = Path("/tmp") / ("ci-artifacts_" + datetime.datetime.today().strftime("%Y%m%d"))
+    base_dir.mkdir(exist_ok=True)
+    current_length = len(list(base_dir.glob("*__*")))
+    ARTIFACTS_DIR = base_dir / f"{current_length:03d}__benchmarking__run_ssd"
+    ARTIFACTS_DIR.mkdir(exist_ok=True)
+
+print(f"Saving artifacts files into {ARTIFACTS_DIR}")
+
 NODE_NAME = "dgxa100"
 
 MIG_RES_TYPES = {
@@ -23,50 +50,57 @@ MIG_RES_TYPES = {
     "full"
 }
 
-def prepare_mig_gpu(mig_mode):
-    if mig_mode == "full":
-        migparted_res_type = "full"
-        res_count = 1
-        strategy = "none"
-        k8s_res_type = "nvidia.com/gpu"
+###
 
+APP_NAME = "run-ssd"
+NAMESPACE = "default"
+CONFIG_CM_NAME = "custom-config-script"
+JOB_TEMPLATE = "mlperf-ssd-job.template.yaml"
+CM_FILES = [
+    "my_run_and_time.sh",
+]
+ENABLE_THANOS = False
+
+###
+class objectview(object):
+    def __init__(self, d):
+        self.__dict__ = d
+
+def parse_gpu_settings(settings):
+    ret = objectview({})
+
+    mig_mode = settings["gpu"]
+
+    try:
+        mig_res_type, res_count_str, parallelism_str, *extra = mig_mode.split("_")
+        ret.res_count = int(res_count_str)
+        ret.parallelism = int(parallelism_str)
+
+        if not mig_res_type in MIG_RES_TYPES:
+            raise ValueError(f"{ret.mig_res_type} is invalid")
+    except Exception as e:
+        print(f"ERROR: failed to parse mig_mode='{mig_mode}'")
+        raise e
+
+    if mig_res_type == "full":
+        ret.k8s_res_type = "nvidia.com/gpu"
+        ret.mig_label = "all-disabled"
     else:
-        try:
-            migparted_res_type, _, res_count = mig_mode.rpartition("_")
-            res_count = int(res_count)
-            if not migparted_res_type in MIG_RES_TYPES: raise ValueError(f"{migparted_res_type} is invalid")
-        except Exception as e:
-            print(f"ERROR: failed to parse mig_mode='{mig_mode}'")
-            print(e)
-            return 1, ""
-        strategy = "mixed"
-        k8s_res_type = f"nvidia.com/mig-{migparted_res_type}"
+        ret.k8s_res_type = f"nvidia.com/mig-{mig_res_type}"
+        ret.mig_label = f"all-{mig_res_type}"
 
-    gpu_resources = f"""\
-        # MIG mode: {mig_mode}
-        limits:
-          {k8s_res_type}: "{res_count}"
-        requests:
-          {k8s_res_type}: "{res_count}"
-"""
+    return ret, extra
 
-    if migparted_res_type == "full": migparted_res_type = "disabled"
-    mig_cmd = f"oc label --overwrite node/{NODE_NAME} nvidia.com/mig.config=all-{migparted_res_type}"
-
-    print(mig_cmd)
-    subprocess.check_call(mig_cmd, shell=True)
-
-    return 0, gpu_resources
 
 def save_thanos_metrics(thanos, thanos_start, thanos_stop):
     if not sys.stdout.isatty():
-        with open("thanos.ts", "w") as out_f:
+        with open(ARTIFACTS_DIR / "thanos.ts", "w") as out_f:
             print("start: {thanos_start}", file=out_f)
             print("stop: {thanos_stop}", file=out_f)
 
     for metrics in ["DCGM_FI_PROF_GR_ENGINE_ACTIVE", "DCGM_FI_PROF_DRAM_ACTIVE", "DCGM_FI_DEV_POWER_USAGE",
                     "cluster:cpu_usage_cores:sum",]:
-        dest_fname = f"prom_{metrics}.json"
+        dest_fname = ARTIFACTS_DIR / f"prom_{metrics}.json"
         try:
             print(f"Thanos: query {metrics} ({thanos_start} --> {thanos_stop})")
             if not (thanos_start and thanos_stop):
@@ -79,108 +113,178 @@ def save_thanos_metrics(thanos, thanos_start, thanos_stop):
                 with open(dest_fname, 'w'): pass
                 continue
 
-            if sys.stdout.isatty():
-                print(f"Found {len(str(thanos_values))} chars for {os.getcwd()}/{dest_fname}")
-            else:
-                print(f"Saving {len(str(thanos_values))} chars for {os.getcwd()}/{dest_fname}")
-                with open(dest_fname, 'w') as f:
-                    json.dump(thanos_values, f)
+            print(f"Saving {len(str(thanos_values))} chars for {os.getcwd()}/{dest_fname}")
+            with open(dest_fname, 'w') as f:
+                json.dump(thanos_values, f)
         except Exception as e:
             print(f"WARNING: Failed to save {dest_fname} logs:")
             print(f"WARNING: {e.__class__.__name__}: {e}")
 
-            with open(f'{dest_fname}failed', 'w') as f:
+            with open(f'{dest_fname}.failed', 'w') as f:
                 print(f"{e.__class__.__name__}: {e}", file=f)
             pass
 
-def main():
-    print(datetime.datetime.now())
+def prepare_configmap():
+    print("Deleting the old ConfigMap, if any ...")
+    try:
+        v1.delete_namespaced_config_map(namespace=NAMESPACE, name=CONFIG_CM_NAME)
+        print("Existed.")
+    except kubernetes.client.exceptions.ApiException as e:
+        if e.reason != "Not Found":
+            raise e
+        print("Didn't exist.")
 
-    settings = {}
-    for arg in sys.argv[1:]:
-        k, _, v = arg.partition("=")
-        settings[k] = v
+    print("Creating the new ConfigMap ...")
+    cm_data = {}
+    for cm_file in CM_FILES:
+        cm_file_fullpath = THIS_DIR / cm_file
 
-    mig_mode = settings["gpu"]
-    ret, gpu_resources = prepare_mig_gpu(mig_mode)
-    if ret: return ret
+        print(f"Including {cm_file} ...")
+        with open(cm_file_fullpath) as f:
+            cm_data[cm_file] = "".join(f.readlines())
 
-    if settings['benchmark'] == "ssd":
-        POD_NAME = "run-ssd"
-        POD_NAMESPACE = "default"
-        CONFIG_CM_NAME = "custom-config-script"
-        POD_TEMPLATE = "mlperf-ssd-pod.template.yaml"
-        CM_FILES = [
-            "my_run_and_time.sh",
-        ]
+    body = V1ConfigMap(
+        metadata=V1ObjectMeta(
+            name=CONFIG_CM_NAME,
+        ), data=cm_data)
 
-    if settings['benchmark'] == "ssd":
-        env_values = f"""
-        - name: SSD_THRESHOLD
-          value: "{settings['threshold']}"
-        - name: DGXSOCKETCORES
-          value: "{settings['cores']}"
-"""
+    v1.create_namespaced_config_map(namespace=NAMESPACE, body=body)
 
-    privileged = settings.get('privileged', "false")
 
-    with open(f"{THIS_DIR}/{POD_TEMPLATE}") as f:
-        pod_template = f.read()
+def cleanup_pod_jobs():
+    print("Deleting the old Job, if any ...")
+    jobs = batchv1.list_namespaced_job(namespace=NAMESPACE,
+                                  label_selector=f"app={APP_NAME}")
 
-    pod_def = pod_template.format(
-        pod_name=POD_NAME,
-        pod_namespace=POD_NAMESPACE,
-        privileged=privileged,
-        env_values=env_values,
-        gpu_resources=gpu_resources[:-1])
+    for job in jobs.items:
+        try:
+            print("-", job.metadata.name)
+            batchv1.delete_namespaced_job(namespace=NAMESPACE, name=job.metadata.name)
+        except kubernetes.client.exceptions.ApiException as e:
+            if e.reason != "Not Found":
+                raise e
+
+    print("Deleting the old job Pods, if any ...")
+    while True:
+        pods = v1.list_namespaced_pod(namespace=NAMESPACE,
+                                      label_selector=f"app={APP_NAME}")
+        if not len(pods.items):
+            break
+        deleting_pods = []
+        for pod in pods.items:
+            try:
+                print("-", pod.metadata.name)
+                v1.delete_namespaced_pod(namespace=NAMESPACE, name=pod.metadata.name)
+                deleting_pods.append(pod.metadata.name)
+            except kubernetes.client.exceptions.ApiException as e:
+                if e.reason != "Not Found":
+                    raise e
+        print(f"Deleting {len(deleting_pods)} Pods:", " ".join(deleting_pods))
+        time.sleep(5)
+    print("Done with the Pods.")
+
+def create_job(settings, gpu_config, extra):
+    print(f"Running {gpu_config.parallelism} Pods in parallel")
+    print(f"Requesting {gpu_config.res_count} {gpu_config.k8s_res_type} per Pod")
+
+    over_requesting = "y" if "over" in extra else "n"
+    if over_requesting == "y":
+        print("Over requesting mode enabled.")
+
+    sync_identifier = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    with open(THIS_DIR / JOB_TEMPLATE) as f:
+        job_template = f.read()
+
+    job_spec = job_template.format(
+        job_name=APP_NAME,
+        namespace=NAMESPACE,
+
+        k8s_res_type=gpu_config.k8s_res_type,
+        res_count=gpu_config.res_count,
+
+        parallelism=gpu_config.parallelism,
+        over_requesting=over_requesting,
+
+        sync_identifier=sync_identifier,
+
+        settings_gpu=settings["gpu"],
+        settings_cores=settings["cores"],
+        settings_exec_mode=settings["execution_mode"],
+        settings_threshold=settings["threshold"],
+
+    )
+
+    print("Creating the new Job ...")
+    spec_file = ARTIFACTS_DIR / "job_spec.yaml"
+    with open(spec_file, "w") as out_f:
+        print(job_spec, file=out_f, end="")
+
+    kubernetes.utils.create_from_yaml(k8s_client, spec_file)
+
+def await_jobs():
     print("=====")
-    print(pod_def, end="")
-    print("-----")
 
+    if ENABLE_THANOS:
+        print("Thanos: Preparing  ...")
+        thanos = query_thanos.prepare_thanos()
+        thanos_start = None
+
+        print("-----")
+
+    print(datetime.datetime.now())
+    print(f"Waiting for {APP_NAME} to terminate ...")
     sys.stdout.flush()
     sys.stderr.flush()
 
-    subprocess.run(f"oc delete cm/{CONFIG_CM_NAME} -n {POD_NAMESPACE} 2>/dev/null", shell=True)
+    started = False
+    current_phase = "..."
 
-    cm_files = ""
-    for cm_file in CM_FILES:
-        cm_file_fullpath = f"{THIS_DIR}/{cm_file}"
-        cm_files += f" --from-file={cm_file_fullpath}"
-        print(f"Include {cm_file_fullpath}")
+    pod_phases = defaultdict(str)
+    ERASE_LINE = "\x1b[2K\r"
 
-    subprocess.run(f"oc create configmap {CONFIG_CM_NAME} -n {POD_NAMESPACE} "+cm_files, shell=True)
-
-    subprocess.run(f"oc delete pod/{POD_NAME} -n {POD_NAMESPACE} 2>/dev/null", shell=True)
-    subprocess.run(f"oc create -f-", input=pod_def.encode('utf-8'),
-                          shell=True, check=True)
-
-    print("-----")
-    print("Thanos: Preparing  ...")
-    #thanos = query_thanos.prepare_thanos()
-    thanos_start = None
-
-    print("-----")
-    print(f"Waiting for pod/{POD_NAME} to terminate successfully ...")
-    cmd = f"oc get pod/{POD_NAME} -n {POD_NAMESPACE} \
-               --no-headers \
-               -o custom-columns=:status.phase"
-    print(cmd)
-    print(datetime.datetime.now())
-    current_phase = None
     while True:
-        try:
-            phase = subprocess.check_output(cmd, shell=True).decode('ascii').strip()
-        except subprocess.CalledProcessError:
-            phase = "Runtime error"
+        jobs = batchv1.list_namespaced_job(namespace=NAMESPACE,
+                                  label_selector=f"app={APP_NAME}")
+        all_finished = True
+        for job in jobs.items:
+            job = batchv1.read_namespaced_job(namespace=NAMESPACE, name=APP_NAME)
+            active = job.status.active
+            succeeded = job.status.succeeded
+            failed = job.status.failed
 
-        if phase != current_phase:
-            current_phase = phase
-            print(f"\n{current_phase}")
+            if not active: active = 0
+            if not succeeded: succeeded = 0
+            if not failed: failed = 0
 
-        #if thanos_start is None and phase == "Running":
-        #    thanos_start = query_thanos.query_current_ts(thanos)
-        #    print(f"Thanos: start time: {thanos_start}")
-        if phase in ("Succeeded", "Error", "Failed"):
+            if sum([active, succeeded, failed]) == 0:
+                phase = "Not started"
+            else:
+                phase = "Active" if active else "Finished"
+
+            if phase != "Finished":
+                all_finished = False
+
+            if phase != current_phase:
+                current_phase = phase
+                print("\n"+f"{job.metadata.name} - {current_phase} (active={active}, succeeded={succeeded}, failed={failed})")
+
+        pods = v1.list_namespaced_pod(namespace=NAMESPACE,
+                                          label_selector=f"app={APP_NAME}")
+        for pod in pods.items:
+            phase = pod.status.phase
+
+            if pod_phases[pod.metadata.name] != phase:
+                print(ERASE_LINE+f"{pod.metadata.name} --> {phase}")
+                pod_phases[pod.metadata.name] = phase
+
+            if ENABLE_THANOS:
+                if thanos_start is None and phase == "Running":
+                    thanos_start = query_thanos.query_current_ts(thanos)
+                    print(ERASE_LINE+f"Thanos: start time: {thanos_start}")
+
+
+        if all_finished:
             break
 
         time.sleep(5)
@@ -190,32 +294,85 @@ def main():
     print("-----")
     print(datetime.datetime.now())
 
-    output = subprocess.check_output(f"oc logs pod/{POD_NAME} -n {POD_NAMESPACE} ", shell=True)
+def save_artifacts():
+    failed = False
 
-    #thanos_stop = query_thanos.query_current_ts(thanos)
-    #print(f"Thanos: stop time: {thanos_start}")
+    pods = v1.list_namespaced_pod(namespace=NAMESPACE,
+                                  label_selector=f"app={APP_NAME}")
+    for pod in pods.items:
+        phase = pod.status.phase
+
+        print(f"{pod.metadata.name} --> {phase}")
+        logs = v1.read_namespaced_pod_log(namespace=NAMESPACE, name=pod.metadata.name)
+        dest_fname = ARTIFACTS_DIR /  f"{pod.metadata.name}.log"
+
+        print(dest_fname)
+        with open(dest_fname, "w") as log_f:
+            print(logs, file=log_f, end="")
+
+        if phase != "Succeeded": failed = True
+        if not "ALL FINISHED" in logs: failed = True
+        if "CUDNN_STATUS_INTERNAL_ERROR" in logs: failed = True
+
+    if ENABLE_THANOS:
+        thanos_stop = query_thanos.query_current_ts(thanos)
+        print(f"Thanos: stop time: {thanos_start}")
+
+        print("-----")
+        save_thanos_metrics(thanos, thanos_start, thanos_stop)
 
     print("-----")
-    print(output.decode('utf-8'), end="")
-    print("-----")
-    print("Directory:", os.getcwd())
-    if not sys.stdout.isatty():
-        print("Saving the logs in 'pod.logs' ...")
-        with open("pod.logs", "w") as out_f:
-            print(output.decode('utf-8'), file=out_f, end="")
-    else:
-        print("stdout is a TTY, not saving the logs into 'pod.logs'.")
-
-    #print("-----")
-    #save_thanos_metrics(thanos, thanos_start, thanos_stop)
-    print("-----")
-
     print(datetime.datetime.now())
+    print(f"Artifacts files saved into {ARTIFACTS_DIR}")
 
-    if not "ALL FINISHED" in output.decode('utf-8'): return 1
-    if "CUDNN_STATUS_INTERNAL_ERROR" in output.decode('utf-8'): return 1
+    if failed: return 1
 
     return 0
 
+def apply_gpu_label(mig_label):
+    print(f"Labeling node/{NODE_NAME} with MIG label '{mig_label}'")
+
+    body = {
+        "metadata": {
+            "labels": {
+                "nvidia.com/mig.config": mig_label}
+        }
+    }
+
+    v1.patch_node(NODE_NAME, body)
+
+
+def prepare_settings():
+    settings = {}
+    for arg in sys.argv[1:]:
+        k, _, v = arg.partition("=")
+        settings[k] = v
+    return settings
+
+
+def main():
+    print(datetime.datetime.now())
+
+    settings = prepare_settings()
+
+    gpu_config, extra = parse_gpu_settings(settings)
+
+    #
+
+    apply_gpu_label(gpu_config.mig_label)
+
+    prepare_configmap()
+
+    cleanup_pod_jobs()
+
+    create_job(settings, gpu_config, extra)
+
+    await_job()
+
+    return save_artifacts()
+
 if __name__ == "__main__":
-    exit(main())
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        print("\nInterrupted ...")

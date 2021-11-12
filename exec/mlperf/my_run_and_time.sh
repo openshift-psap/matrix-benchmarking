@@ -26,18 +26,33 @@ set -x
 
 nvidia-smi -L
 
-NB_GPUS=$(nvidia-smi -L | grep "UUID: MIG-GPU" | wc -l)
+NB_GPUS=$(nvidia-smi -L | grep "UUID: MIG-" | wc -l)
 if [[ "$NB_GPUS" == 0 ]]; then
     ALL_GPUS=$(nvidia-smi -L | grep "UUID: GPU" | cut -d" " -f6 | cut -d')' -f1)
     NB_GPUS=$(nvidia-smi -L | grep "UUID: GPU" | wc -l)
-    MIG_MODE=1
+    MIG_MODE=0
+
+    if [[ "$GPU_RES_TYPE" != "nvidia.com/gpu" ]]; then
+        echo "FATAL: Expected full GPUs, got MIG GPUs ..."
+        exit 1
+    fi
 
     echo "No MIG GPU available, using the full GPUs ($ALL_GPUS)."
 else
-    ALL_GPUS=$(nvidia-smi -L | grep "UUID: MIG-GPU" | cut -d" " -f8 | cut -d')' -f1)
-    MIG_MODE=0
+    ALL_GPUS=$(nvidia-smi -L | grep "UUID: MIG-" | awk '{ printf $6"\n"}' | cut -d')' -f1)
+    MIG_MODE=1
 
-    echo "Found $NB_GPU MIG instances: $ALL_GPUS"
+    if [[ "$GPU_RES_TYPE" == "nvidia.com/gpu" ]]; then
+        echo "FATAL: Expected MIG GPUs, got full GPUs ..."
+        exit 1
+    fi
+
+    echo "Found $NB_GPUS MIG instances: $ALL_GPUS"
+fi
+
+if [[ $NB_GPUS != $GPU_COUNT ]]; then
+    echo "FATAL: Expected $GPU_COUNT GPUs, got $NB_GPUS"
+    exit 1
 fi
 
 SSD_THRESHOLD=${SSD_THRESHOLD:-0.23}
@@ -45,7 +60,7 @@ SSD_THRESHOLD=${SSD_THRESHOLD:-0.23}
 # start timing
 start=$(date +%s)
 start_fmt=$(date +%Y-%m-%d\ %r)
-echo "STARTING TIMING RUN AT $start_fmt"
+echo "STARTING TIMING RUN AT $start_fmt $GPU_MODE"
 
 # run benchmark
 set -x
@@ -110,24 +125,79 @@ ARGS=(train.py
   --data ${DATASET_DIR}
   ${EXTRA_PARAMS})
 
+if [[ "$EXECUTION_MODE" == "dry" ]]; then
+    echo "Running in dry mode"
+    CMD[0]="echo"
+fi
+
 declare -a pids
 
 trap "date; echo failed; exit 1" ERR
 
-for gpu in $(echo "$ALL_GPUS"); do
-    export NVIDIA_VISIBLE_DEVICES=$gpu
-    export CUDA_VISIBLE_DEVICES=$gpu
+if [[ "$OVER_REQUESTING" != "y" ]]; then
+    SYNC_DIR=$DATASET_DIR/sync/
 
-    nvidia-smi -L
-    dest=/tmp/ssd_$(echo $gpu | sed 's|/|_|g').log
+    mkdir -p "$SYNC_DIR"
 
-    # run training
+    for sync_f in "$SYNC_DIR/"*; do
+        if [[ "$sync_f" != "$DATASET_DIR/$SYNC_IDENTIFIER" ]]; then
+            rm -f "$sync_f"
+        fi
+    done
+
+    set +x
+    echo "$(date) Waiting for all the $SYNC_COUNTER Pods to start ..."
+    touch "$DATASET_DIR/sync/$SYNC_IDENTIFIER"
+    if grep $(hostname) "$DATASET_DIR/sync/$SYNC_IDENTIFIER"; then
+        echo "ERROR: $(hostname) already in the sync file ..."
+        cat "$DATASET_DIR/sync/$SYNC_IDENTIFIER"
+        exit 1
+    fi
+
+
+    echo $(hostname) >> "$DATASET_DIR/sync/$SYNC_IDENTIFIER"
+    while true; do
+        cnt=$(cat "$DATASET_DIR/sync/$SYNC_IDENTIFIER" | wc -l)
+        [[ $cnt == "$SYNC_COUNTER" ]] && break
+        echo "Found $cnt Pods, waiting to have $SYNC_COUNTER ..."
+        sleep 5
+    done
+    echo "$(date) All the $SYNC_COUNTER Pods are running, launch the GPU workload."
+    cat "$DATASET_DIR/sync/$SYNC_IDENTIFIER"
+    set -x
+else
+    echo "Over requesting mode enabled, do not wait for $SYNC_COUNTER Pods ..."
+fi
+
+nvidia-smi -L
+
+if [[ $MIG_MODE == 1 ]]; then
+    for gpu in $(echo "$ALL_GPUS"); do
+        export NVIDIA_VISIBLE_DEVICES=$gpu
+        export CUDA_VISIBLE_DEVICES=$gpu
+
+        dest=/tmp/ssd_$(echo $gpu | sed 's|/|_|g').log
+
+        # run training
+        "${CMD[@]}" "${ARGS[@]}" > "$dest" &
+        pids+=($!)
+        echo "Running on $gpu ===> $dest: PID $!"
+    done
+    echo "$(date): waiting for parallel $NB_GPUS executions: ${pids[@]}"
+else
+    dest=/tmp/ssd_all.log
+
     "${CMD[@]}" "${ARGS[@]}" > "$dest" &
     pids+=($!)
-    echo "Running on $gpu ===> $dest: PID $!"
-done
+    echo "Running on all the GPUs ===> $dest: PID $!"
 
-echo "$(date): starting waiting for $NB_GPUS executions: ${pids[@]}"
+    echo "$(date): waiting for 1 execution: ${pids[@]}"
+
+fi
+
+if [[ "$EXECUTION_MODE" == "dry" ]]; then
+    sleep 1s #2m
+fi
 
 for pid in ${pids[@]};
 do
@@ -152,4 +222,4 @@ result=$(($end - $start))
 result_name="SINGLE_STAGE_DETECTOR"
 
 echo "RESULT,$result_name,,$result,nvidia,$start_fmt"
-echo "ALL FINISHED"
+echo "ALL FINISHED $GPU_MODE"
