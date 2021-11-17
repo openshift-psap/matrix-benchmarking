@@ -82,6 +82,8 @@ class Matrix():
                 del settings["extra"]
 
                 for kv in extra.split(", "):
+                    if "=" not in kv:
+                        raise ValueError(f"Invalid 'extra' setting: '{extra}' ('{kv}' has no '=')")
                     k, v = kv.split("=")
                     settings[k] = v
 
@@ -135,7 +137,8 @@ class Matrix():
 
         settings_str = ""
         for k, v in settings.items():
-            settings_str += f" '{k}={v}'"
+            kv = f"{k}={v}"
+            settings_str += f" '{kv}'" if " " in kv else f" {kv}"
 
         script = context.script_tpl.format(**settings)
         script_fullpath = os.path.realpath(os.getcwd()+'/../') + f"/{script}"
@@ -144,7 +147,7 @@ class Matrix():
         if exe.dry:
             exe.log(f"""\n
 Results: {bench_fullpath.replace(common.RESULTS_PATH+'/', '')}
-Command: {script} {settings_str}
+Command: {script}{settings_str}
 ---
 """)
 
