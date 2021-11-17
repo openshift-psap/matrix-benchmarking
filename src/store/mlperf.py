@@ -115,8 +115,8 @@ def mlperf_parse_ssd_results(dirname, import_settings):
                         results.thresholds[gpu_name] = []
 
     except FileNotFoundError as e:
-        print(f"{dirname}: Could not find 'stdout' file ...")
-        raise e
+        print(f"{dirname}: Could not find 'pod.logs' file ...")
+        #raise e
 
     return results
 
