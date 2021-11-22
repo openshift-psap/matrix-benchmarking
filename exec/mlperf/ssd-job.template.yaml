@@ -4,14 +4,14 @@ metadata:
   name: {job_name}
   namespace: {namespace}
   labels:
-    app: {job_name}
+    app: {app_name}
 spec:
   parallelism: {parallelism}
   backoffLimit: 0
   template:
     metadata:
       labels:
-        app: {job_name}
+        app: {app_name}
     spec:
       restartPolicy: Never
       containers:
@@ -35,22 +35,23 @@ spec:
           value: "{settings_threshold}"
         - name: DGXSOCKETCORES
           value: "{settings_cores}"
-        - name: GPU_MODE
-          value: "{settings_gpu}"
+        - name: RUN_DESCR
+          value: "{settings_run_descr}"
         - name: SYNC_IDENTIFIER
           value: "{sync_identifier}"
         - name: SYNC_COUNTER
-          value: "{parallelism}"
-        - name: OVER_REQUESTING
-          value: "{over_requesting}"
+          value: "{sync_counter}"
+        - name: NO_SYNC
+          value: "{no_sync}"
         - name: GPU_COUNT
           value: "{res_count}"
         - name: GPU_RES_TYPE
           value: "{k8s_res_type}"
+        - name: GPU_TYPE
+          value: "{settings_gpu_type}"
         securityContext:
           privileged: true
         resources:
-          # MIG mode: {settings_gpu}
           limits:
             {k8s_res_type}: "{res_count}"
           requests:
