@@ -348,6 +348,7 @@ class TableStats():
 
             legend_names.add(legend_name)
             x[legend_key].append(x_key)
+
             y[legend_key].append(entry.stats[self.name].value)
             y_err[legend_key].append(entry.stats[self.name].stdev)
 
@@ -378,6 +379,7 @@ class TableStats():
             for _y, _y_error in zip(y[legend_key], y_err[legend_key]):
                 # above == below iff len(_y_error) == 1
                 if None in (_y, _y_error): continue
+
                 y_err_above.append(_y+_y_error[0])
                 y_err_below.append(_y-_y_error[-1])
 
