@@ -24,7 +24,9 @@ def register_all():
                 if gathered_stats:
                     register = True
             else:
-                if stat.field not in entry.results.__dict__: continue
+                d = entry.results if isinstance(entry.results, dict) else entry.results.__dict__
+                if stat.field not in d: continue
+
                 register = True
 
             entry.stats[stat.name] = stat.process(entry)
