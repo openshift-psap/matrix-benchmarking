@@ -23,5 +23,8 @@ def register():
     elif store.experiment_filter.get("benchmark", "burn") == "burn":
         TableStats.ValueDev("speed", "Speed", "speed", ".0f", "Gflop/s", higher_better=True)
 
-    #prom_overview.Plot(metric='DCGM_FI_DEV_POWER_USAGE', y_title="Watt")
+    prom_overview.Plot(metric='DCGM_FI_PROF_GR_ENGINE_ACTIVE', y_title="% of the of the graphic engine active")
+    prom_overview.Plot(metric='DCGM_FI_PROF_DRAM_ACTIVE', y_title="% of cycles the memory is active (tx/rx)")
+    prom_overview.Plot(metric='DCGM_FI_DEV_POWER_USAGE', y_title="Watt")
+
     #prom_overview.Plot(metric='cluster:cpu_usage_cores:sum', y_title="# of cores")
