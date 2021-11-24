@@ -44,6 +44,10 @@ MIG_RES_TYPES = {
 
 ###
 
+ENABLE_THANOS = True
+thanos = None
+thanos_start = None
+
 MAX_START_TIME = 5 # minutes before failing the test if some pods are still pending
 MAX_RECONFIGURE_TIME = 5 # minutes before failing the test if the MIG reconfiguration didn't complete
 
@@ -54,7 +58,6 @@ JOB_TEMPLATE = "ssd-job.template.yaml"
 CM_FILES = [
     "my_run_and_time.sh",
 ]
-ENABLE_THANOS = False
 
 ###
 
@@ -139,10 +142,13 @@ def parse_gpu_settings(settings):
 def save_thanos_metrics(thanos, thanos_start, thanos_stop):
     if not sys.stdout.isatty():
         with open(ARTIFACTS_DIR / "thanos.ts", "w") as out_f:
-            print("start: {thanos_start}", file=out_f)
-            print("stop: {thanos_stop}", file=out_f)
+            print(f"start: {thanos_start}", file=out_f)
+            print(f"stop: {thanos_stop}", file=out_f)
 
-    for metrics in ["DCGM_FI_PROF_GR_ENGINE_ACTIVE", "DCGM_FI_PROF_DRAM_ACTIVE", "DCGM_FI_DEV_POWER_USAGE",
+    for metrics in ["DCGM_FI_PROF_GR_ENGINE_ACTIVE",
+                    "DCGM_FI_PROF_DRAM_ACTIVE",
+                    "DCGM_FI_DEV_POWER_USAGE",
+                    "DCGM_FI_DEV_MEM_COPY_UTIL",
                     "cluster:cpu_usage_cores:sum",]:
         dest_fname = ARTIFACTS_DIR / f"prom_{metrics}.json"
         try:
@@ -285,6 +291,7 @@ def await_completion(opts):
 
     if ENABLE_THANOS:
         print("Thanos: Preparing  ...")
+        global thanos, thanos_start
         thanos = query_thanos.prepare_thanos()
         thanos_start = None
 
@@ -421,7 +428,14 @@ def save_artifacts():
     print("-----")
     print("Collecting artifacts ...")
 
-    failed = False
+    if ENABLE_THANOS and is_successful:
+        thanos_stop = query_thanos.query_current_ts(thanos)
+        print(f"Thanos: stop time: {thanos_start}")
+
+        save_thanos_metrics(thanos, thanos_start, thanos_stop)
+        print("-----")
+
+    failed = not is_successful
 
     pods = v1.list_namespaced_pod(namespace=NAMESPACE,
                                   label_selector=f"app={APP_NAME}")
@@ -452,13 +466,6 @@ def save_artifacts():
 
         if not "ALL FINISHED" in logs: failed = True
         if "CUDNN_STATUS_INTERNAL_ERROR" in logs: failed = True
-
-    if ENABLE_THANOS:
-        thanos_stop = query_thanos.query_current_ts(thanos)
-        print(f"Thanos: stop time: {thanos_start}")
-
-        print("-----")
-        save_thanos_metrics(thanos, thanos_start, thanos_stop)
 
     print("-----")
     print(datetime.datetime.now())
