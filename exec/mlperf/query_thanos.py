@@ -60,23 +60,26 @@ def get_thanos_hostname():
                                                                  name="thanos-querier")
     return thanos_querier_route["spec"]["host"]
 
+def get_mig_manager_podname():
+    namespace = "nvidia-gpu-operator"
+    label = "app=nvidia-mig-manager"
+
+    pods = v1.list_namespaced_pod(namespace=namespace,label_selector=label)
+    if not pods.items:
+        raise RuntimeError("Pod {label} not found in {namespace} ...")
+
+    return pods.items[0].metadata.name
+
 def _do_query(thanos, api_cmd, **data):
     url = f"https://{thanos['host']}/api/v1/{api_cmd}"
     encoded_data = urllib.parse.urlencode(data)
     url += "?" + encoded_data
 
     curl_cmd = f"curl --silent -k '{url}' --header 'Authorization: Bearer {thanos['token']}'"
-
-    pod_name = "nvidia-operator-validator-n6sz7"
-    validator_pods = v1.list_namespaced_pod(namespace="nvidia-gpu-operator",
-                                  label_selector=f"app=nvidia-operator-validator")
-    if not validator_pods.items:
-        raise RuntimeError("Validator pod not found in nvidia-gpu-operator ...")
-
-    pod_name = validator_pods.items[0].metadata.name
-    resp = exec_in_pod("nvidia-gpu-operator", pod_name, curl_cmd)
+    resp = exec_in_pod("nvidia-gpu-operator", thanos["pod_name"], curl_cmd)
 
     result = json.loads(resp.replace("'", '"'))
+
     if result["status"] == "success":
         return result["data"]
 
@@ -115,14 +118,15 @@ def prepare_thanos():
 
     return dict(
         token = get_secret_token(),
-        host = get_thanos_hostname()
+        host = get_thanos_hostname(),
+        pod_name = get_mig_manager_podname(),
     )
 
 if __name__ == "__main__":
     thanos = prepare_thanos()
     #metrics = query_metrics(thanos)
-    ts_start = 1615198949.457
-    ts_stop = 1615198979.53
+    ts_start = 1637669864.153
+    ts_stop = 1637669864.153
 
     if ts_start is None:
         ts_start = query_current_ts(thanos)
@@ -134,8 +138,7 @@ if __name__ == "__main__":
     #values = query_values(thanos, "cluster:memory_usage:ratio", ts_start, ts_stop)
     #print(values)
     try:
-        for metrics in ["DCGM_FI_DEV_MEM_COPY_UTIL", "DCGM_FI_DEV_GPU_UTIL", "DCGM_FI_DEV_POWER_USAGE",
-                    "cluster:cpu_usage_cores:sum",]:
+        for metrics in ["DCGM_FI_DEV_POWER_USAGE",]:
             thanos_values = query_values(thanos, metrics, ts_start, ts_stop)
             if not thanos_values:
                 print("No metric values collected for {metrics}")
