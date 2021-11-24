@@ -39,18 +39,22 @@ class Plot():
         gpus = defaultdict(dict)
         for entry in Matrix.all_records(params, param_lists):
             threshold = float(entry.params.threshold)
-            gpu_name = entry.params.gpu
-
+            gpu_name = entry.params.gpu_type
+            gpu_name += " x "+ entry.params.gpu_count + "gpu"
+            gpu_name += " x "+ entry.params.pod_count + "pods"
             exec_times = []
 
             def add_plot(an_entry):
+                if not an_entry.results:
+                    return
                 for log_filename, values in an_entry.results.thresholds.items():
                     sorted_values = sorted(values, key=lambda x:x[0])
                     thr = [xy[0] for xy in values]
                     ts = [xy[1]/1000/60/60 for xy in values]
                     if log_filename.startswith("/tmp"):
-                        # log_filename: /tmp/ssd_MIG-GPU-d9322296-54da-ce5a-6330-3ca7707e0c5d_5_0.log
-                        mig_name = " #"+log_filename.split("_")[2]
+                        # log_filename: /tmp/ssd_MIG-GPU-d9322296-54da-ce5a-6330-3ca7707e0c5d.log
+                        mig_name = " #"+log_filename.split("_")[1]
+
                     else:
                         mig_name = ""
 
