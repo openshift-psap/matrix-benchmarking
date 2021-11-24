@@ -312,11 +312,13 @@ def await_completion(opts):
     wait_start = datetime.datetime.now()
     exec_start = None
     printed_time = None
+    all_finished = True
+    failure_detected = False
 
     while True:
         jobs = batchv1.list_namespaced_job(namespace=NAMESPACE,
                                   label_selector=f"app={APP_NAME}")
-        all_finished = True
+
         for job in jobs.items:
             job = batchv1.read_namespaced_job(namespace=NAMESPACE, name=job.metadata.name)
             active = job.status.active
@@ -341,8 +343,8 @@ def await_completion(opts):
                 print("\n"+job_state)
 
             if failed:
-                print(f"Failure detected in Job {job.metadata.name}, aborting...")
-
+                print(f"ERROR: Failure detected in Job {job.metadata.name}, aborting...")
+                failure_detected = True
                 all_finished = True
                 break
 
@@ -370,8 +372,9 @@ def await_completion(opts):
                 pod_phases[pod.metadata.name] = phase
 
             if phase == "Failed":
-                print(f"Failure detected in Pod {pod.metadata.name}, aborting...")
+                print(f"ERROR: Failure detected in Pod {pod.metadata.name}, aborting...")
                 all_finished = True
+                failure_detected = True
                 break
 
         if not no_sync and exec_start is None:
@@ -384,8 +387,9 @@ def await_completion(opts):
         if wait_start:
             wait_time = (datetime.datetime.now() - wait_start).seconds / 60
             if wait_time >= MAX_START_TIME:
-                print(ERASE_LINE+f"Pods execution didn't properly start after {wait_time:.1f} minutes, aborting...")
+                print(ERASE_LINE+f"ERROR: Pods execution didn't properly start after {wait_time:.1f} minutes, aborting...")
                 all_finished = True
+                failure_detected = True
                 break
 
             if no_sync:
@@ -399,8 +403,13 @@ def await_completion(opts):
 
         else:
             if no_sync and "Running" not in pod_phases.values():
-                print("Restart waiting for Pod execution ...")
-                wait_start = datetime.datetime.now()
+                if "Pending" in pod_phases.values():
+                    print("Restart waiting for Pod execution ...")
+                    wait_start = datetime.datetime.now()
+                else:
+                    if "Failed" in pod_phases.values():
+                        failure_detected = True
+                    all_finished = True
 
         if all_finished:
             break
@@ -424,7 +433,9 @@ def await_completion(opts):
     print("-----")
     print(datetime.datetime.now())
 
-def save_artifacts():
+    return not failure_detected
+
+def save_artifacts(is_successful):
     print("-----")
     print("Collecting artifacts ...")
 
@@ -471,9 +482,7 @@ def save_artifacts():
     print(datetime.datetime.now())
     print(f"Artifacts files saved into {ARTIFACTS_DIR}")
 
-    if failed: return 1
-
-    return 0
+    return 1 if failed else 0
 
 def apply_gpu_label(mig_label):
     print(f"Labeling node/{NODE_NAME} with MIG label '{mig_label}'")
@@ -584,12 +593,12 @@ def main():
 
     # --- #
 
+    cleanup_pod_jobs()
+
     apply_gpu_strategy(gpu_config.mig_strategy)
     apply_gpu_label(gpu_config.mig_label)
 
     prepare_configmap()
-
-    cleanup_pod_jobs()
 
     wait_for_mig_reconfiguration(gpu_config)
 
@@ -599,11 +608,11 @@ def main():
 
     # --- #
 
-    await_completion(opts)
+    is_successful = await_completion(opts)
 
     # --- #
 
-    return save_artifacts()
+    return save_artifacts(is_successful)
 
 if __name__ == "__main__":
     try:
