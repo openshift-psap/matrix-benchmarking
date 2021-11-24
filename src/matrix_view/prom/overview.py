@@ -22,11 +22,20 @@ class Plot():
 
         plot_title = f"Prometheus: {self.metric} (overview)"
         y_max = 0
+
+        x_start = None
+        for entry in Matrix.all_records(params, param_lists):
+            for target, records in entry.results.prom[self.metric].items():
+                if x_start is None:
+                    x_start = records[0][0]
+                else:
+                    x_start = min([x_start, records[0][0]])
+
         for entry in Matrix.all_records(params, param_lists):
             for target, records in entry.results.prom[self.metric].items():
                 name_key = "_".join(f"{k}={params[k]}" for k in ordered_vars)
                 name = f"{name_key} | {target}"
-                x_start = records[0][0]
+
                 x = [rec[0]-x_start for rec in records]
                 y = [rec[1] for rec in records]
                 y_max = max([y_max]+y)
@@ -36,7 +45,7 @@ class Plot():
                                    hoverlabel= {'namelength' :-1},
                                    showlegend=True,
                                    mode='markers+lines')
-            fig.add_trace(trace)
+                fig.add_trace(trace)
 
         fig.update_layout(
             title=plot_title, title_x=0.5,
