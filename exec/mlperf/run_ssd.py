@@ -312,13 +312,14 @@ def await_completion(opts):
     wait_start = datetime.datetime.now()
     exec_start = None
     printed_time = None
-    all_finished = True
+
     failure_detected = False
 
     while True:
         jobs = batchv1.list_namespaced_job(namespace=NAMESPACE,
                                   label_selector=f"app={APP_NAME}")
 
+        all_finished = True
         for job in jobs.items:
             job = batchv1.read_namespaced_job(namespace=NAMESPACE, name=job.metadata.name)
             active = job.status.active
@@ -402,13 +403,17 @@ def await_completion(opts):
                     wait_start = None
 
         else:
-            if no_sync and "Running" not in pod_phases.values():
-                if "Pending" in pod_phases.values():
-                    print("Restart waiting for Pod execution ...")
-                    wait_start = datetime.datetime.now()
-                else:
-                    if "Failed" in pod_phases.values():
-                        failure_detected = True
+            if no_sync:
+                if "Running" not in pod_phases.values():
+                    if "Pending" in pod_phases.values():
+                        print("Restart waiting for Pod execution ...")
+                        wait_start = datetime.datetime.now()
+                    else:
+                        if "Failed" in pod_phases.values():
+                            failure_detected = True
+                            all_finished = True
+            else:
+                if "Running" not in pod_phases.values():
                     all_finished = True
 
         if all_finished:
