@@ -148,7 +148,7 @@ if [[ "$NO_SYNC" != "y" ]]; then
     mkdir -p "$SYNC_DIR"
 
     for sync_f in "$SYNC_DIR/"*; do
-        if [[ "$sync_f" != "$DATASET_DIR/$SYNC_IDENTIFIER" ]]; then
+        if [[ "$sync_f" != "$DATASET_DIR/sync/$SYNC_IDENTIFIER" ]]; then
             rm -f "$sync_f"
         fi
     done
