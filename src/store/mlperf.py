@@ -11,8 +11,11 @@ def mlperf_rewrite_settings(params_dict):
     #del params_dict['run']
     #params_dict['@run'] = run
     params_dict.pop("opts", True)
+
     params_dict.pop("mig_label", True)
-    params_dict.pop("mig_strategy", True)
+    if "mig_strategy" not in params_dict:
+        params_dict["mig_strategy"] = "mixed"
+
     return params_dict
 
 store.custom_rewrite_settings = mlperf_rewrite_settings
@@ -43,25 +46,6 @@ def mlperf_parse_prom_gpu_metrics(dirname, results):
             #print(metric, ":", len(values))
         pass
 
-
-def mlperf_parse_gpu_burn_results(dirname, import_settings):
-    results = types.SimpleNamespace()
-
-    try:
-        with open(f"{dirname}/gpu_burn.log") as f:
-            speed = 0
-            for line in f.readlines():
-                if "proc'd" not in line: continue
-                speed = line.partition("(")[-1].partition(" ")[0]
-            #print()
-            #print(import_settings['gpu'], speed, "Gflop/s")
-            results.speed = int(speed)
-
-    except FileNotFoundError as e:
-        print(f"{dirname}: Could not find 'gpu_burn.log' file ...")
-        raise e
-
-    return results
 
 def _parse_pod_logs(dirname, results, pod_logs_f):
     has_thr020 = {}
@@ -121,7 +105,7 @@ def mlperf_parse_ssd_results(dirname, import_settings):
     results.avg_sample_sec = {}
 
     has_logs = False
-    for log_file in glob.glob(f"{dirname}/run-ssd--*.log"):
+    for log_file in glob.glob(f"{dirname}/run-ssd-*.log"):
         pod_name = log_file.rpartition("/")[-1][:-4]
         results.pod_names.add(pod_name)
         with open(log_file) as log_f:
@@ -140,12 +124,7 @@ def mlperf_parse_ssd_results(dirname, import_settings):
 
 
 def mlperf_parse_results(dirname, import_settings):
-    PARSERS = {
-        "ssd": mlperf_parse_ssd_results,
-        "burn": mlperf_parse_gpu_burn_results
-     }
-
-    results = PARSERS[import_settings['benchmark']](dirname, import_settings)
+    results = mlperf_parse_ssd_results(dirname, import_settings)
     if results is None:
         return [({}, {})]
 
