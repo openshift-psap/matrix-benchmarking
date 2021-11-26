@@ -25,14 +25,20 @@ class Plot():
 
         x_start = None
         for entry in Matrix.all_records(params, param_lists):
-            for target, records in entry.results.prom[self.metric].items():
+            try: prom = entry.results.prom
+            except AttributeError: continue
+
+            for target, records in prom[self.metric].items():
                 if x_start is None:
                     x_start = records[0][0]
                 else:
                     x_start = min([x_start, records[0][0]])
 
         for entry in Matrix.all_records(params, param_lists):
-            for target, records in entry.results.prom[self.metric].items():
+            try: prom = entry.results.prom
+            except AttributeError: continue
+
+            for target, records in prom[self.metric].items():
                 name_key = "_".join(f"{k}={params[k]}" for k in ordered_vars)
                 name = f"{name_key} | {target}"
 
