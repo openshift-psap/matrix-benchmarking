@@ -444,6 +444,32 @@ def save_artifacts(is_successful):
     print("-----")
     print("Collecting artifacts ...")
 
+    def save_node():
+        print(f"Saving {NODE_NAME} definition ...")
+        node = v1.read_node(NODE_NAME)
+        node_dict = node.to_dict()
+
+        del node_dict["metadata"]["managed_fields"]
+        del node_dict["status"]["images"]
+
+        dest_fname = ARTIFACTS_DIR / f"node_{NODE_NAME}.yaml"
+        with open(dest_fname, "w") as node_f:
+            yaml.dump(node_dict, node_f)
+
+    save_node()
+
+    def save_version():
+        print("Saving OpenShift version ...")
+
+        version_dict = customv1.get_cluster_custom_object("config.openshift.io", "v1",
+                                                     "clusterversions", "version")
+        del version_dict["metadata"]["managedFields"]
+
+        dest_fname = ARTIFACTS_DIR /
+        with open(dest_fname, "w") as node_f:
+            yaml.dump(version_dict, node_f)
+    save_version()
+
     if ENABLE_THANOS and is_successful:
         thanos_stop = query_thanos.query_current_ts(thanos)
         print(f"Thanos: stop time: {thanos_start}")
