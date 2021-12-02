@@ -200,11 +200,21 @@ def prepare_configmap():
 
     v1.create_namespaced_config_map(namespace=NAMESPACE, body=body)
 
+    print(f"Saving the ConfigMap in {ARTIFACTS_DIR} ...")
+    cm = v1.read_namespaced_config_map(namespace=NAMESPACE, name=body.metadata.name)
+
+    cm_dict = cm.to_dict()
+
+    del cm_dict["metadata"]["managed_fields"]
+
+    dest_fname = ARTIFACTS_DIR / "entrypoint.cm.yaml"
+    with open(dest_fname, "w") as node_f:
+        yaml.dump(cm_dict, node_f)
 
 def cleanup_pod_jobs():
     print("Deleting the old Job, if any ...")
     jobs = batchv1.list_namespaced_job(namespace=NAMESPACE,
-                                  label_selector=f"app={APP_NAME}")
+                                       label_selector=f"app={APP_NAME}")
 
     for job in jobs.items:
         try:
@@ -241,8 +251,6 @@ def create_job(k8s_res_type, settings, gpu_config, opts):
     if no_sync == "y":
         print("Pod synchronous start disabled (no-sync)")
 
-
-
     with open(THIS_DIR / JOB_TEMPLATE) as f:
         job_template = f.read()
 
@@ -275,7 +283,7 @@ def create_job(k8s_res_type, settings, gpu_config, opts):
     )
 
     print(f"Creating the new '{k8s_res_type}' Job ...")
-    spec_file = ARTIFACTS_DIR / f"{job_name}.job.yaml"
+    spec_file = ARTIFACTS_DIR / f"job_spec.{job_name}.yaml"
     with open(spec_file, "w") as out_f:
         print(job_spec, file=out_f, end="")
 
@@ -456,7 +464,6 @@ def save_artifacts(is_successful):
         with open(dest_fname, "w") as node_f:
             yaml.dump(node_dict, node_f)
 
-    save_node()
 
     def save_version():
         print("Saving OpenShift version ...")
@@ -465,10 +472,39 @@ def save_artifacts(is_successful):
                                                      "clusterversions", "version")
         del version_dict["metadata"]["managedFields"]
 
-        dest_fname = ARTIFACTS_DIR /
+        dest_fname = ARTIFACTS_DIR / "ocp_version.yaml"
         with open(dest_fname, "w") as node_f:
             yaml.dump(version_dict, node_f)
+
+
+    def save_jobs():
+        print("Saving run_ssd Jobs ...")
+
+        jobs = batchv1.list_namespaced_job(namespace=NAMESPACE,
+                                           label_selector=f"app={APP_NAME}")
+
+        dest_fname = ARTIFACTS_DIR / "jobs_status.yaml"
+        with open(dest_fname, "w") as job_f:
+            for job in jobs.items:
+                job_dict = job.to_dict()
+                del job_dict["metadata"]["managedFields"]
+                if len(jobs.items) > 1:
+                    print("---", file=job_f)
+                yaml.dump(job_dict, job_f)
+
+    def save_clusterpolicy():
+        print("Saving the ClusterPolicy ...")
+
+        cluster_policy_dict = customv1.get_cluster_custom_object("nvidia.com", "v1",
+                                                                 "clusterpolicies", "gpu-cluster-policy")
+
+        dest_fname = ARTIFACTS_DIR / "clusterpolicy.yaml"
+        with open(dest_fname, "w") as node_f:
+            yaml.dump(cluster_policy_dict, node_f)
+
+    save_node()
     save_version()
+    save_jobs()
 
     if ENABLE_THANOS and is_successful:
         thanos_stop = query_thanos.query_current_ts(thanos)
