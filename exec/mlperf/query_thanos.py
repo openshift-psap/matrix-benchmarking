@@ -20,9 +20,6 @@ customv1 = kubernetes.client.CustomObjectsApi()
 THANOS_CLUSTER_ROUTE = "thanos-querier-openshift-monitoring.apps.nvidia-test.nvidia-ocp.net"
 
 def has_user_monitoring():
-    if THANOS_CLUSTER_ROUTE:
-        return True
-
     print("Thanos: Checking if user-monitoring is enabled ...")
     try:
         monitoring_cm = v1.read_namespaced_config_map(namespace="openshift-monitoring",
@@ -71,6 +68,9 @@ def get_mig_manager_podname():
     return pods.items[0].metadata.name
 
 def _do_query(thanos, api_cmd, **data):
+    if not thanos['token']:
+        raise RuntimeError("Thanos token not available ...")
+
     url = f"https://{thanos['host']}/api/v1/{api_cmd}"
     encoded_data = urllib.parse.urlencode(data)
     url += "?" + encoded_data
