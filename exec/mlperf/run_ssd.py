@@ -182,7 +182,6 @@ def save_thanos_metrics(thanos, thanos_start, thanos_stop):
     for metric, descr in get_metrics_list().items():
         dest_fname = metrics_dir / f"prom_{metric}.json"
         try:
-            print(f"Thanos: query {metric} ({thanos_start} --> {thanos_stop})")
             if not (thanos_start and thanos_stop):
                 print("... invalid thanos values, skipping.")
                 continue

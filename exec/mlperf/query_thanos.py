@@ -94,7 +94,7 @@ def query_metrics(thanos):
     return _do_query(thanos, "label/__name__/values")
 
 def query_values(thanos, metrics, ts_start, ts_stop):
-    print(f"Get thanos metrics for '{metrics}' between {ts_start} and {ts_stop}.")
+    #print(f"Get thanos metrics for '{metrics}' between {ts_start} and {ts_stop}.")
     return _do_query(thanos, "query_range",
                      query=metrics,
                      start=ts_start,
