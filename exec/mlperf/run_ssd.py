@@ -194,7 +194,7 @@ def save_thanos_metrics(thanos, thanos_start, thanos_stop):
                 continue
 
             thanos_values["__metric_name"] = metric
-            thanos_values["__metric_descr"] = desc
+            thanos_values["__metric_descr"] = descr
 
             print(f"Saving {metric} metrics ...")
             with open(dest_fname, 'w') as out_f:
