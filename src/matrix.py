@@ -1,5 +1,6 @@
 import os, types, itertools, datetime, sys
 import subprocess
+import uuid
 
 import common
 
@@ -58,6 +59,24 @@ class Matrix():
         context.stop_on_error = self.yaml_desc.get('stop_on_error', False)
         context.common_settings = self.yaml_desc['common_settings']
 
+        if context.remote_mode:
+            print(f"""#! /bin/bash
+
+set -x
+
+if ! [[ -d "$1" ]]; then
+  echo "FATAL: \$1 should be a result directory"
+  exit 1
+fi
+RESULTS_DIR="$(realpath "$1")"
+
+if ! [[ -d "$2" ]]; then
+  echo "FATAL: \$2 should be MatrixBenchmark directory "
+  exit 1
+fi
+MATRIX_BENCHMARK_DIR="$(realpath "$2")"
+""", file=sys.stderr)
+
         settings = dict(context.common_settings)
         settings.update(yaml_expe)
 
@@ -108,11 +127,14 @@ class Matrix():
                 continue
 
             bench_common_path = context.path_tpl.format(**settings)
-            bench_uid = datetime.datetime.today().strftime("%Y%m%d_%H%M%S_%f")
-            bench_fullpath = f"{context.expe_dir}/{bench_common_path}{bench_uid}"
+
+            bench_uid = datetime.datetime.today().strftime("%Y%m%d_%H%M") + f".{uuid.uuid4().hex[:4]}"
+
+            context.bench_dir = f"{context.expe}/{bench_common_path}{bench_uid}"
+            context.bench_fullpath = f"{context.expe_dir}/{bench_common_path}{bench_uid}"
 
             if not exe.dry:
-                os.makedirs(bench_fullpath)
+                os.makedirs(context.bench_fullpath)
             exe.log("---"*5)
             exe.log("")
             exe.log("")
@@ -121,7 +143,7 @@ class Matrix():
             for k, v in settings.items():
                 exe.log(f"    {k}: {v}")
             try:
-                ret = self.execute_benchmark(bench_fullpath, settings, context, exe)
+                ret = self.execute_benchmark(settings, context, exe)
             except KeyboardInterrupt:
                 print("Stopping on keyboard interrupt.")
                 return True
@@ -135,9 +157,9 @@ class Matrix():
             exe.expe_cnt.executed += 1
         return False
 
-    def execute_benchmark(self, bench_fullpath, settings, context, exe):
+    def execute_benchmark(self, settings, context, exe):
         if not exe.dry:
-            with open(f"{bench_fullpath}/settings", "w") as f:
+            with open(f"{context.bench_fullpath}/settings", "w") as f:
                 for k, v in settings.items():
                     if k == "expe": continue
 
@@ -150,24 +172,27 @@ class Matrix():
             settings_str += f" '{kv}'" if " " in kv else f" {kv}"
 
         script = context.script_tpl.format(**settings)
-        script_fullpath = os.path.realpath(os.getcwd()+'/../') + f"/{script}"
 
-        cmd = f"{script_fullpath} {settings_str} 1> >(tee stdout) 2> >(tee stderr >&2)"
+        cmd = f"{script} {settings_str} 1> >(tee stdout) 2> >(tee stderr >&2)"
+        cmd_fullpath = os.path.realpath(os.getcwd()+'/../') + cmd
+
         if exe.dry:
             exe.log(f"""\n
-Results: {bench_fullpath.replace(common.RESULTS_PATH+'/', '')}
+Results: {context.bench_fullpath.replace(common.RESULTS_PATH+'/', '')}
 Command: {script}{settings_str}
 ---
 """)
 
             return None
         elif context.remote_mode:
+
             print(f"""
-DIRNAME="{bench_fullpath}"
-mkdir -p "$DIRNAME"
+CURRENT_DIRNAME="${{RESULTS_DIR}}/{context.bench_dir}"
+mkdir -p "$CURRENT_DIRNAME"
 cd "$DIRNAME"
+
 if [[ "$(cat ./exit_code)" != 0 ]]; then
-  {cmd}
+  ${{MATRIX_BENCHMARK_DIR}}/{cmd}
   echo "$?" > ./exit_code
 else
   echo "Already recorded."
@@ -179,10 +204,10 @@ fi
         # we wouldn't reach this step if it did
         # (whereas the remote_mode generated script can be executed multiple times)
 
-        exe.log(f"cd {bench_fullpath}")
-        exe.log(cmd)
+        exe.log(f"cd {context.bench_fullpath}")
+        exe.log(cmd_fullpath)
         try:
-            proc = subprocess.run(cmd, cwd=bench_fullpath, shell=True, executable='/bin/bash')
+            proc = subprocess.run(cmd_fullpath, cwd=context.bench_fullpath, shell=True, executable='/bin/bash')
         except KeyboardInterrupt as e:
             print("")
             exe.log("KeyboardInterrupt registered.")
@@ -190,7 +215,7 @@ fi
 
         exe.log(f"exit code: {proc.returncode}")
         # ^^^ blocks until the process terminates
-        with open(f"{bench_fullpath}/exit_code", "w") as f:
+        with open(f"{context.bench_fullpath}/exit_code", "w") as f:
             print(f"{proc.returncode}", file=f)
 
         return proc.returncode == 0
