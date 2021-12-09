@@ -239,7 +239,8 @@ def prepare_configmap():
 
     cm_dict = cm.to_dict()
 
-    del cm_dict["metadata"]["managed_fields"]
+    try: del cm_dict["metadata"]["managed_fields"]
+    except KeyError: pass # ignore
 
     dest_fname = ARTIFACTS_SRC / "entrypoint.cm.yaml"
     with open(dest_fname, "w") as out_f:
@@ -491,8 +492,12 @@ def save_artifacts(is_successful):
         node = v1.read_node(NODE_NAME)
         node_dict = node.to_dict()
 
-        del node_dict["metadata"]["managed_fields"]
-        del node_dict["status"]["images"]
+
+        try: del node_dict["metadata"]["managed_fields"]
+        except KeyError: pass # ignore
+
+        try: del node_dict["status"]["images"]
+        except KeyError: pass # ignore
 
         dest_fname = ARTIFACTS_DIR / f"node_{NODE_NAME}.yaml"
         with open(dest_fname, "w") as out_f:
@@ -504,7 +509,8 @@ def save_artifacts(is_successful):
 
         version_dict = customv1.get_cluster_custom_object("config.openshift.io", "v1",
                                                      "clusterversions", "version")
-        del version_dict["metadata"]["managedFields"]
+        try: del version_dict["metadata"]["managedFields"]
+        except KeyError: pass # ignore
 
         dest_fname = ARTIFACTS_DIR / "ocp_version.yaml"
         with open(dest_fname, "w") as out_f:
@@ -521,7 +527,10 @@ def save_artifacts(is_successful):
         with open(dest_fname, "w") as out_f:
             for job in jobs.items:
                 job_dict = job.to_dict()
-                del job_dict["metadata"]["managedFields"]
+
+                try: del job_dict["metadata"]["managedFields"]
+                except KeyError: pass # ignore
+
                 if len(jobs.items) > 1:
                     print("---", file=out_f)
                 yaml.dump(job_dict, out_f)
@@ -543,7 +552,8 @@ def save_artifacts(is_successful):
         operator_deploy = appsv1.read_namespaced_deployment(name="gpu-operator", namespace="nvidia-gpu-operator")
         operator_deploy_dict = operator_deploy.to_dict()
 
-        del operator_deploy_dict["metadata"]["managed_fields"]
+        try: del operator_deploy_dict["metadata"]["managed_fields"]
+        except KeyError: pass # ignore
 
         dest_fname = ARTIFACTS_DIR / "deployment_gpu_operator.yaml"
         with open(dest_fname, "w") as out_f:
