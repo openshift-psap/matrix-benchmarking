@@ -11,11 +11,11 @@ from collections import defaultdict
 
 import yaml
 
+import query_thanos
+
 import kubernetes.client
 import kubernetes.config
 import kubernetes.utils
-
-import query_thanos
 
 from kubernetes.client import V1ConfigMap, V1ObjectMeta
 
@@ -30,8 +30,9 @@ k8s_client = kubernetes.client.ApiClient()
 
 THIS_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
 ARTIFACTS_DIR = None # set in set_artifacts_dir
+ARTIFACTS_SRC = None # set in set_artifacts_dir
 
-NODE_NAME = "dgxa100"
+NODE_NAME = None
 
 MIG_RES_TYPES = {
     "1g.5gb",
@@ -79,12 +80,29 @@ def set_artifacts_dir():
 
     print(f"Saving artifacts files into {ARTIFACTS_DIR}")
 
+    global ARTIFACTS_SRC
+    ARTIFACTS_SRC = ARTIFACTS_DIR / "src"
+    ARTIFACTS_SRC.mkdir(exist_ok=True)
+
+    with open(ARTIFACTS_SRC / "namespace", "w") as out_f:
+        print(NAMESPACE, file=out_f)
+
+    with open(ARTIFACTS_SRC / "app_name", "w") as out_f:
+        print(APP_NAME, file=out_f)
 
 def prepare_settings():
+    global NODE_NAME
+
     settings = {}
     for arg in sys.argv[1:]:
         k, _, v = arg.partition("=")
         settings[k] = v
+
+    try: NODE_NAME = settings["node_name"]
+    except KeyError as e:
+        print("FATAL: 'node_name' not provided in the settings")
+        raise e
+
     return settings
 
 
@@ -138,40 +156,56 @@ def parse_gpu_settings(settings):
 
     return ret, opts
 
+metrics = None
+def get_metrics_list():
+    global metrics
+    if metrics_list is not None:
+        return metrics
+
+    metrics = {}
+    with open(THIS_DIR / "metrics.list") as in_f:
+        for line in f.readlines():
+            if not line.startswith("# HELP "): continue
+            # eg: '# HELP DCGM_FI_DEV_FB_USED Framebuffer memory used (in MiB).'
+            _, _, metric, descr = line.strip().split(maxsplit=3)
+            metrics[metric] = descr
+    return metrics
 
 def save_thanos_metrics(thanos, thanos_start, thanos_stop):
     if not sys.stdout.isatty():
         with open(ARTIFACTS_DIR / "thanos.ts", "w") as out_f:
             print(f"start: {thanos_start}", file=out_f)
             print(f"stop: {thanos_stop}", file=out_f)
+    metrics_dir = ARTIFACTS_DIR / "metrics"
+    metrics_dir.mkdir(exist_ok=True)
 
-    for metrics in ["DCGM_FI_PROF_GR_ENGINE_ACTIVE",
-                    "DCGM_FI_PROF_DRAM_ACTIVE",
-                    "DCGM_FI_DEV_POWER_USAGE",
-                    "DCGM_FI_DEV_MEM_COPY_UTIL",
-                    "cluster:cpu_usage_cores:sum",]:
-        dest_fname = ARTIFACTS_DIR / f"prom_{metrics}.json"
+    for metric, descr in get_metrics_list().items():
+        dest_fname = metrics_dir / f"prom_{metric}.json"
         try:
-            print(f"Thanos: query {metrics} ({thanos_start} --> {thanos_stop})")
+            print(f"Thanos: query {metric} ({thanos_start} --> {thanos_stop})")
             if not (thanos_start and thanos_stop):
                 print("... invalid thanos values, skipping.")
                 continue
-            thanos_values = query_thanos.query_values(thanos, metrics, thanos_start, thanos_stop)
+            thanos_values = query_thanos.query_values(thanos, metric, thanos_start, thanos_stop)
 
             if not thanos_values:
-                print("No metric values collected for {metrics}")
+                print("No metric values collected for {metric}")
                 with open(dest_fname, 'w'): pass
                 continue
 
-            print(f"Saving {len(str(thanos_values))} chars for {os.getcwd()}/{dest_fname}")
-            with open(dest_fname, 'w') as f:
-                json.dump(thanos_values, f)
+            thanos_values["__metric_name"] = metric
+            thanos_values["__metric_descr"] = desc
+
+            print(f"Saving {metric} metrics ...")
+            with open(dest_fname, 'w') as out_f:
+                json.dump(thanos_values, out_f)
+
         except Exception as e:
             print(f"WARNING: Failed to save {dest_fname} logs:")
             print(f"WARNING: {e.__class__.__name__}: {e}")
 
-            with open(f'{dest_fname}.failed', 'w') as f:
-                print(f"{e.__class__.__name__}: {e}", file=f)
+            with open(f'{dest_fname}.failed', 'w') as out_f:
+                print(f"{e.__class__.__name__}: {e}", file=out_f)
             pass
 
 def prepare_configmap():
@@ -190,8 +224,8 @@ def prepare_configmap():
         cm_file_fullpath = THIS_DIR / cm_file
 
         print(f"Including {cm_file} ...")
-        with open(cm_file_fullpath) as f:
-            cm_data[cm_file] = "".join(f.readlines())
+        with open(cm_file_fullpath) as in_f:
+            cm_data[cm_file] = "".join(in_f.readlines())
 
     body = V1ConfigMap(
         metadata=V1ObjectMeta(
@@ -207,9 +241,9 @@ def prepare_configmap():
 
     del cm_dict["metadata"]["managed_fields"]
 
-    dest_fname = ARTIFACTS_DIR / "entrypoint.cm.yaml"
-    with open(dest_fname, "w") as node_f:
-        yaml.dump(cm_dict, node_f)
+    dest_fname = ARTIFACTS_SRC / "entrypoint.cm.yaml"
+    with open(dest_fname, "w") as out_f:
+        yaml.dump(cm_dict, out_f)
 
 def cleanup_pod_jobs():
     print("Deleting the old Job, if any ...")
@@ -251,8 +285,8 @@ def create_job(k8s_res_type, settings, gpu_config, opts):
     if no_sync == "y":
         print("Pod synchronous start disabled (no-sync)")
 
-    with open(THIS_DIR / JOB_TEMPLATE) as f:
-        job_template = f.read()
+    with open(THIS_DIR / JOB_TEMPLATE) as in_f:
+        job_template = in_f.read()
 
     run_descr = f"GPU: {settings['gpu_count']} x {settings['gpu_type']} x {settings['pod_count']} Pods"
 
@@ -283,9 +317,9 @@ def create_job(k8s_res_type, settings, gpu_config, opts):
     )
 
     print(f"Creating the new '{k8s_res_type}' Job ...")
-    spec_file = ARTIFACTS_DIR / f"job_spec.{job_name}.yaml"
+    spec_file = ARTIFACTS_SRC / f"job_spec.{job_name}.yaml"
     with open(spec_file, "w") as out_f:
-        print(job_spec, file=out_f, end="")
+        print(job_spec, end="", file=out_f)
 
     kubernetes.utils.create_from_yaml(k8s_client, spec_file)
 
@@ -306,7 +340,7 @@ def await_completion(opts):
         print("-----")
 
     print(datetime.datetime.now())
-    print(f"Waiting for {APP_NAME} to terminate ...")
+    print(f"Waiting for {APP_NAME} to complete its execution ...")
     sys.stdout.flush()
     sys.stderr.flush()
 
@@ -461,8 +495,8 @@ def save_artifacts(is_successful):
         del node_dict["status"]["images"]
 
         dest_fname = ARTIFACTS_DIR / f"node_{NODE_NAME}.yaml"
-        with open(dest_fname, "w") as node_f:
-            yaml.dump(node_dict, node_f)
+        with open(dest_fname, "w") as out_f:
+            yaml.dump(node_dict, out_f)
 
 
     def save_version():
@@ -473,8 +507,8 @@ def save_artifacts(is_successful):
         del version_dict["metadata"]["managedFields"]
 
         dest_fname = ARTIFACTS_DIR / "ocp_version.yaml"
-        with open(dest_fname, "w") as node_f:
-            yaml.dump(version_dict, node_f)
+        with open(dest_fname, "w") as out_f:
+            yaml.dump(version_dict, out_f)
 
 
     def save_jobs():
@@ -484,13 +518,13 @@ def save_artifacts(is_successful):
                                            label_selector=f"app={APP_NAME}")
 
         dest_fname = ARTIFACTS_DIR / "jobs_status.yaml"
-        with open(dest_fname, "w") as job_f:
+        with open(dest_fname, "w") as out_f:
             for job in jobs.items:
                 job_dict = job.to_dict()
                 del job_dict["metadata"]["managedFields"]
                 if len(jobs.items) > 1:
-                    print("---", file=job_f)
-                yaml.dump(job_dict, job_f)
+                    print("---", file=out_f)
+                yaml.dump(job_dict, out_f)
 
     def save_clusterpolicy():
         print("Saving the ClusterPolicy ...")
@@ -499,12 +533,47 @@ def save_artifacts(is_successful):
                                                                  "clusterpolicies", "gpu-cluster-policy")
 
         dest_fname = ARTIFACTS_DIR / "clusterpolicy.yaml"
-        with open(dest_fname, "w") as node_f:
-            yaml.dump(cluster_policy_dict, node_f)
+        with open(dest_fname, "w") as out_f:
+            yaml.dump(cluster_policy_dict, out_f)
+
+
+    def save_gpu_operator_deployment():
+        print("Saving the ClusterPolicy ...")
+
+        operator_deploy = appsv1.read_namespaced_deployment(name="gpu-operator", namespace="nvidia-gpu-operator")
+        operator_deploy_dict = operator_deploy.to_dict()
+
+        del operator_deploy_dict["metadata"]["managed_fields"]
+
+        dest_fname = ARTIFACTS_DIR / "deployment_gpu_operator.yaml"
+        with open(dest_fname, "w") as out_f:
+            yaml.dump(operator_deploy_dict, out_f)
+
+    def save_image_sha():
+        print("Saving the image SHA")
+        pods = v1.list_namespaced_pod(namespace=NAMESPACE,
+                                      label_selector=f"app={APP_NAME}")
+        dest_fname = ARTIFACTS_DIR / "pod_image.yaml"
+        with open(dest_fname, "w") as out_f:
+            for pod in pods.items:
+                try:
+                    container_status = pod.status.container_statuses[0]
+                except Exception:
+                    print(f"Could not get the container status of pod/{pod.metadata.name}")
+                    continue
+                print(f"Found container status in pod/{pod.metadata.name}:")
+                print(f"- {container_status.image}")
+                print(f"- {container_status.image_id}")
+
+                print(f"image: {container_status.image}", file=f)
+                print(f"image_id: {container_status.image_id}", file=f)
+                break
+
 
     save_node()
     save_version()
     save_jobs()
+    save_image_sha()
 
     if ENABLE_THANOS and is_successful:
         thanos_stop = query_thanos.query_current_ts(thanos)
@@ -525,8 +594,8 @@ def save_artifacts(is_successful):
         dest_fname = ARTIFACTS_DIR /  f"{pod.metadata.name}.log"
 
         print(dest_fname)
-        with open(dest_fname, "w") as log_f:
-            print(logs, file=log_f, end="")
+        with open(dest_fname, "w") as out_f:
+            print(logs, end="", file=out_f)
 
         if phase != "Succeeded":
             failed = True
@@ -566,6 +635,10 @@ def apply_gpu_label(mig_label):
 def apply_gpu_strategy(mig_strategy):
     print(f"Apply {mig_strategy} MIG strategy ...")
 
+    dest_fname = ARTIFACTS_DIR / "src" / "mig-strategy.txt"
+    with open(dest_fname, "w") as out_f:
+        print(f"ClusterPolicy.spec.mig.strategy={mig_strategy}", file=out_f)
+
     body = {
         "spec": {
             "mig": {
@@ -578,6 +651,10 @@ def apply_gpu_strategy(mig_strategy):
                                          body)
 
 def apply_gpu_label(mig_label):
+    dest_fname = ARTIFACTS_DIR / "src" / "mig-label.txt"
+    with open(dest_fname, "w") as out_f:
+        print(f"node/{NODE_NAME}.metadata.labels.nvidia.com/mig.config= {mig_label}", file=out_f)
+
 
     node = v1.read_node(NODE_NAME)
     if node.metadata.labels.get("nvidia.com/mig.config") == mig_label:

@@ -17,7 +17,7 @@ kubernetes.config.load_kube_config()
 v1 = kubernetes.client.CoreV1Api()
 customv1 = kubernetes.client.CustomObjectsApi()
 
-THANOS_CLUSTER_ROUTE = "thanos-querier-openshift-monitoring.apps.nvidia-test.nvidia-ocp.net"
+THANOS_CLUSTER_ROUTE = None # "thanos-querier-openshift-monitoring.apps.nvidia-test.nvidia-ocp.net"
 
 def has_user_monitoring():
     print("Thanos: Checking if user-monitoring is enabled ...")
@@ -57,13 +57,13 @@ def get_thanos_hostname():
                                                                  name="thanos-querier")
     return thanos_querier_route["spec"]["host"]
 
-def get_mig_manager_podname():
+def get_dcgm_podname():
     namespace = "nvidia-gpu-operator"
-    label = "app=nvidia-mig-manager"
+    label = "app=nvidia-dcgm-exporter"
 
-    pods = v1.list_namespaced_pod(namespace=namespace,label_selector=label)
+    pods = v1.list_namespaced_pod(namespace=namespace, label_selector=label)
     if not pods.items:
-        raise RuntimeError("Pod {label} not found in {namespace} ...")
+        raise RuntimeError(f"Pod {label} not found in {namespace} ...")
 
     return pods.items[0].metadata.name
 
@@ -119,7 +119,7 @@ def prepare_thanos():
     return dict(
         token = get_secret_token(),
         host = get_thanos_hostname(),
-        pod_name = get_mig_manager_podname(),
+        pod_name = get_dcgm_podname(),
     )
 
 if __name__ == "__main__":
