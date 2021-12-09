@@ -662,7 +662,7 @@ def apply_gpu_strategy(mig_strategy):
 def apply_gpu_label(mig_label):
     dest_fname = ARTIFACTS_DIR / "src" / "mig-label.txt"
     with open(dest_fname, "w") as out_f:
-        print(f"node/{NODE_NAME}.metadata.labels.nvidia.com/mig.config= {mig_label}", file=out_f)
+        print(f"node/{NODE_NAME}: metadata.labels: nvidia.com/mig.config: {mig_label}", file=out_f)
 
 
     node = v1.read_node(NODE_NAME)
