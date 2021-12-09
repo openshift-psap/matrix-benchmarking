@@ -17,7 +17,7 @@ class Matrix():
         exe.expe_cnt.errors = 0
 
         expe_ran = []
-        for expe in self.yaml_desc['run']:
+        for expe in self.yaml_desc['expe_to_run']:
             if not expe or expe.startswith("_"):
                 exe.log(f"Skip disabled expe '{expe}'")
                 continue
@@ -44,13 +44,11 @@ class Matrix():
             exe.log(f"ERROR: Cannot run '{expe}': expe matrix not defined.")
             raise e
 
+        if not isinstance(yaml_expe, dict):
+            raise RuntimeError(f"Expe '{expe}' content should be a mapping ...")
+
         context = types.SimpleNamespace()
         context.params = types.SimpleNamespace()
-
-        all_settings_items = [[(name, value) for value in (values if isinstance(values, list) else str(values).split(", "))]
-                    for name, values in (yaml_expe.get("settings") or {}).items()]
-
-        exe.expe_cnt.total += sum(1 for _ in itertools.product(*all_settings_items))
 
         context.expe = expe
         context.expe_dir = f"{common.RESULTS_PATH}/{self.mode}/{context.expe}"
@@ -58,6 +56,17 @@ class Matrix():
         context.remote_mode = self.yaml_desc.get('remote_mode', False)
         context.script_tpl = self.yaml_desc['script_tpl']
         context.stop_on_error = self.yaml_desc.get('stop_on_error', False)
+        context.common_settings = self.yaml_desc['common_settings']
+
+        settings = dict(context.common_settings)
+        settings.update(yaml_expe)
+
+        all_settings_items = [
+            [(name, value) for value in (values if isinstance(values, list) else str(values).split(", "))]
+            for name, values in settings.items()
+        ]
+
+        exe.expe_cnt.total += sum(1 for _ in itertools.product(*all_settings_items))
 
         # do fail in drymode if we cannot create the directories
         os.makedirs(context.expe_dir, exist_ok=True)
