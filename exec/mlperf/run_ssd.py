@@ -164,7 +164,7 @@ def get_metrics_list():
 
     metrics = {}
     with open(THIS_DIR / "metrics.list") as in_f:
-        for line in f.readlines():
+        for line in in_f.readlines():
             if not line.startswith("# HELP "): continue
             # eg: '# HELP DCGM_FI_DEV_FB_USED Framebuffer memory used (in MiB).'
             _, _, metric, descr = line.strip().split(maxsplit=3)
