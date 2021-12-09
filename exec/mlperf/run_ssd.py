@@ -575,8 +575,8 @@ def save_artifacts(is_successful):
                 print(f"- {container_status.image}")
                 print(f"- {container_status.image_id}")
 
-                print(f"image: {container_status.image}", file=f)
-                print(f"image_id: {container_status.image_id}", file=f)
+                print(f"image: {container_status.image}", file=out_f)
+                print(f"image_id: {container_status.image_id}", file=out_f)
                 break
 
 
