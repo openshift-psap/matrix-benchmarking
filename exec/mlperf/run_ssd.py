@@ -98,10 +98,10 @@ def prepare_settings():
         k, _, v = arg.partition("=")
         settings[k] = v
 
-    try: NODE_NAME = settings["node_name"]
-    except KeyError as e:
+    NODE_NAME = settings.get("node_name")
+    if not NODE_NAME:
         print("FATAL: 'node_name' not provided in the settings")
-        raise e
+        sys.exit(1)
 
     return settings
 
