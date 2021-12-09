@@ -1,4 +1,4 @@
-import os, types, itertools, datetime
+import os, types, itertools, datetime, sys
 import subprocess
 
 import common
@@ -163,14 +163,16 @@ Command: {script}{settings_str}
             return None
         elif context.remote_mode:
             print(f"""
-cd "{bench_fullpath}"
+DIRNAME="{bench_fullpath}"
+mkdir -p "$DIRNAME"
+cd "$DIRNAME"
 if [[ "$(cat ./exit_code)" != 0 ]]; then
   {cmd}
   echo "$?" > ./exit_code
 else
   echo "Already recorded."
 fi
-""")
+""", file=sys.stderr)
             return None
 
         # no need to check here if ./exit_code exists and == 0,
