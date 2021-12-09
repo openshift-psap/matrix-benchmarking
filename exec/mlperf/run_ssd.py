@@ -159,7 +159,7 @@ def parse_gpu_settings(settings):
 metrics = None
 def get_metrics_list():
     global metrics
-    if metrics_list is not None:
+    if metrics is not None:
         return metrics
 
     metrics = {}
