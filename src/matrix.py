@@ -189,9 +189,9 @@ Command: {script}{settings_str}
             print(f"""
 CURRENT_DIRNAME="${{RESULTS_DIR}}/{context.bench_dir}"
 mkdir -p "$CURRENT_DIRNAME"
-cd "$DIRNAME"
 
-if [[ "$(cat ./exit_code)" != 0 ]]; then
+if [[ "$(cat "$CURRENT_DIRNAME/exit_code")" != 0 ]]; then
+  cd "$CURRENT_DIRNAME"
   ${{MATRIX_BENCHMARK_DIR}}/{cmd}
   echo "$?" > ./exit_code
 else
