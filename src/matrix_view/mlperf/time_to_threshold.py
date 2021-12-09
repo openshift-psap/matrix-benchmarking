@@ -80,7 +80,12 @@ class Plot():
 class MigThresholdOverTime():
     def __init__(self, mig_type=None):
         self.mig_type = mig_type
-        if self.mig_type:
+        self.multi_gpu = self.mig_type == "full"
+
+        if self.multi_gpu:
+            self.name = f"Multi-GPU threshold over time"
+            self.mig_type = None
+        elif self.mig_type:
             self.name = f"MIG {self.mig_type} threshold over time"
         else:
             self.name = "MIG threshold over time"
@@ -106,7 +111,7 @@ class MigThresholdOverTime():
         entries = []
         for entry in Matrix.all_records(params, param_lists):
             threshold = float(entry.params.threshold)
-            gpu_name = entry.params.gpu
+            gpu_name = entry.params.gpu_type
             if self.mig_type:
                 if not self.mig_type in gpu_name: continue
             else:
@@ -120,7 +125,7 @@ class MigThresholdOverTime():
         for entry in entries:
             def add_plot(an_entry):
                 nonlocal y_min, y_max
-                gpu_name = gpu_full_name = an_entry.params.gpu
+                gpu_name = gpu_full_name = an_entry.params.gpu_type
                 if self.mig_type:
                     gpu_name = gpu_name.replace("_", " x ")
                 else:
@@ -270,13 +275,19 @@ class MigThresholdOverTime():
 class MigTimeToThreshold():
     def __init__(self, mig_type=None, speed=False):
         self.mig_type = mig_type
+        self.multi_gpu = self.mig_type == "full"
+
         self.speed = speed
         self.name = "MIG"
 
-        if self.mig_type:
+        if self.multi_gpu:
+            self.name = f"Multi-GPU"
+            self.mig_type = None
+        elif self.mig_type:
             self.name += f" {self.mig_type}"
         else:
             self.name += " instances"
+
         if self.speed:
             self.name += " processing speed"
         else:
@@ -293,10 +304,13 @@ class MigTimeToThreshold():
     def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
         fig = go.Figure()
         plot_title = "MIG"
-        if self.mig_type:
+        if self.multi_gpu:
+            plot_title = "Multi-GPU"
+        elif self.mig_type:
             plot_title += f" {self.mig_type} parallel execution"
         else:
             plot_title += " instances"
+
         plot_title += ": "
         if self.speed:
             plot_title += "Processing speed (higher is better)"
@@ -306,7 +320,7 @@ class MigTimeToThreshold():
         # remove unwanted entries from the `all_records` list
         entries = []
         for entry in Matrix.all_records(params, param_lists):
-            gpu_name = entry.params.gpu
+            gpu_name = entry.params.gpu_type
             if self.mig_type:
                 if not self.mig_type in gpu_name: continue
             else:
@@ -318,13 +332,21 @@ class MigTimeToThreshold():
         x_names = {}
         for entry in entries:
             def add_plot(an_entry):
-                gpu_name = gpu_full_name = an_entry.params.gpu
+                gpu_name = gpu_full_name = an_entry.params.gpu_type
                 if self.mig_type:
-                    gpu_name = gpu_name.replace("_", " x ")
+                    gpu_name = f"{an_entry.params.gpu_type} x {an_entry.params.gpu_count}"
                 else:
                     if gpu_name.endswith("_1"): gpu_name = gpu_full_name[:-2]
-                    if gpu_name == "full": gpu_name = "8g.40gb (full)"
-                if self.mig_type:
+
+                    if gpu_name == "full":
+                        if self.multi_gpu:
+                            gpu_name = f"{an_entry.params.gpu_count} GPUs"
+                        else:
+                            gpu_name = "8g.40gb (full)"
+
+                if self.multi_gpu:
+                    x_value = int(an_entry.params.gpu_count)
+                elif self.mig_type:
                     x_value = int(gpu_name.split(" ")[-1])
                 else:
                     x_value = int(gpu_name.split("g")[0])
@@ -339,7 +361,7 @@ class MigTimeToThreshold():
                         ts = [xy[1]/1000/60/60 for xy in values]
                         thr = [xy[0] for xy in values]
                         if not ts: continue
-                        if thr[-1] < 0.22: continue
+                        #if thr[-1] < 0.22: continue
 
                         plot_values[x_value].append(ts[-1])
 
@@ -351,7 +373,7 @@ class MigTimeToThreshold():
 
         y_means = [stats.mean(y_values) for y_values in plot_values.values()]
         if self.mig_type:
-            y_mean_ref = max(y_means) if self.speed else min(y_means)
+            y_mean_ref = y_means[0] #max(y_means) if self.speed else min(y_means)
         else:
             y_mean_ref = min(y_means) if self.speed else max(y_means)
 
@@ -421,6 +443,7 @@ class MigTimeToThreshold():
                                      color='black',
                                      visible=True)
                                  ))
+
 
         if self.mig_type:
             x_title = "Number of parallel executions"

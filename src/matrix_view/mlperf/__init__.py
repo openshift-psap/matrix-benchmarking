@@ -15,7 +15,7 @@ def register():
     time_to_threshold.MigTimeToThreshold()
     time_to_threshold.MigTimeToThreshold(speed=True)
 
-    for mig_type in ("1g.5gb", "2g.10gb", "3g.20gb"):
+    for mig_type in ["full", "7g.40gb"]: # "1g.5gb", "2g.10gb", "3g.20gb",
         time_to_threshold.MigThresholdOverTime(mig_type)
         time_to_threshold.MigTimeToThreshold(mig_type)
         time_to_threshold.MigTimeToThreshold(mig_type, speed=True)

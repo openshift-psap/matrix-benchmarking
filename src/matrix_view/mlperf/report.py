@@ -41,7 +41,8 @@ class OverviewReport():
         header = [html.H1("DGX A100 validation benchmark results")]
 
         exec_time = matrix_view.table_stats.TableStats.stats_by_name['Execution Time']
-
+        multi_gpu_time_to_threshold = matrix_view.table_stats.TableStats.stats_by_name['Multi-GPU time to threshold']
+        mig7g_40gb_time_to_threshold = matrix_view.table_stats.TableStats.stats_by_name['MIG 7g.40gb time to threshold']
         # ---
 
         settings = dict(common_settings) | dict(
@@ -49,10 +50,10 @@ class OverviewReport():
             gpu_type="full",
         )
 
-        exec_time_graph = exec_time.do_plot(*set_vars(settings, *args))[0]
+        graph = multi_gpu_time_to_threshold.do_plot(*set_vars(settings, *args))[0]
 
-        header += [html.H2("Multi-GPU benchmarking: execution time")]
-        header += [dcc.Graph(figure=exec_time_graph)]
+        header += [html.H2("Multi-GPU benchmarking: time to threshold")]
+        header += [dcc.Graph(figure=graph)]
 
         # ---
 
@@ -61,11 +62,11 @@ class OverviewReport():
             pod_count=1,
         )
 
-        exec_time_graph = exec_time.do_plot(*set_vars(settings, *args))[0]
+        graph = mig7g_40gb_time_to_threshold.do_plot(*set_vars(settings, *args))[0]
 
-        header += [html.H2(["Parallel MIG benchmarking: execution time"])]
+        header += [html.H2(["Parallel MIG benchmarking: time to threshold"])]
         header += [html.P(f"{settings}")]
-        header += [dcc.Graph(figure=exec_time_graph)]
+        header += [dcc.Graph(figure=graph)]
 
         # ---
 
@@ -74,11 +75,11 @@ class OverviewReport():
             mig_strategy="single",
         )
 
-        exec_time_graph = exec_time.do_plot(*set_vars(settings, *args))[0]
+        graph = exec_time.do_plot(*set_vars(settings, *args))[0]
 
         header += [html.H2(["Parallel MIG benchmarking, ", html.B("single mode"),": execution time"])]
         header += [html.P(f"{settings}")]
-        header += [dcc.Graph(figure=exec_time_graph)]
+        header += [dcc.Graph(figure=graph)]
 
         # ---
 
@@ -87,11 +88,11 @@ class OverviewReport():
             gpu_type="2g.10gb,3g.20gb",
         )
 
-        exec_time_graph = exec_time.do_plot(*set_vars(settings, *args))[0]
+        graph = exec_time.do_plot(*set_vars(settings, *args))[0]
 
         header += [html.H2(["Parallel MIG benchmarking, ", html.B("multiple MIG types"),": execution time"])]
         header += [html.P(f"{settings}")]
-        header += [dcc.Graph(figure=exec_time_graph)]
+        header += [dcc.Graph(figure=graph)]
 
 
         return None, header
