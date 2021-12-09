@@ -173,7 +173,7 @@ def get_metrics_list():
 
 def save_thanos_metrics(thanos, thanos_start, thanos_stop):
     if not sys.stdout.isatty():
-        with open(ARTIFACTS_DIR / "thanos.ts", "w") as out_f:
+        with open(ARTIFACTS_DIR / "thanos.yaml", "w") as out_f:
             print(f"start: {thanos_start}", file=out_f)
             print(f"stop: {thanos_stop}", file=out_f)
     metrics_dir = ARTIFACTS_DIR / "metrics"
