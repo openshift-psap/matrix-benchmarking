@@ -19,7 +19,9 @@ def register_all():
             if entry.is_gathered:
                 entry.stats[stat.name] = gathered_stats = []
                 for gathered_entry in entry.results:
+                    if not gathered_entry.results: continue
                     if stat.field not in gathered_entry.results.__dict__: continue
+
                     gathered_stats.append(stat.process(gathered_entry))
                 if gathered_stats:
                     register = True

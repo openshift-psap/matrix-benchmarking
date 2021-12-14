@@ -2,6 +2,7 @@ import common
 import copy
 import importlib
 import datetime
+from collections import defaultdict
 
 experiment_filter = {}
 benchmark_mode = False
@@ -111,6 +112,10 @@ def gather_rolling_entries(entry):
             gathered_settings, import_settings
         )
         gathered_entry.is_gathered = True
+        gathered_entry.gathered_keys = defaultdict(set)
+
     gathered_entry.results.append(entry)
+    for gathered_key in gathered_keys:
+        gathered_entry.gathered_keys[gathered_key].add(entry.params.__dict__[gathered_key])
 
 custom_rewrite_settings = lambda x:x # may be overriden
