@@ -45,21 +45,31 @@ MIG_RES_TYPES = {
 
 ###
 
+MAX_START_TIME = 5 # minutes before failing the test if some pods are still pending
+MAX_RECONFIGURE_TIME = 5 # minutes before failing the test if the MIG reconfiguration didn't complete
+
 ENABLE_THANOS = True
 thanos = None
 thanos_start = None
 
-MAX_START_TIME = 5 # minutes before failing the test if some pods are still pending
-MAX_RECONFIGURE_TIME = 5 # minutes before failing the test if the MIG reconfiguration didn't complete
+benchmark = None
 
-APP_NAME = "run-ssd"
+APP_NAME = "run-mlperf"
 NAMESPACE = "default"
 CONFIG_CM_NAME = "custom-config-script"
-JOB_TEMPLATE = "ssd-job.template.yaml"
+JOB_TEMPLATE = "mlperf.job-template.yaml"
 CM_FILES = [
     "my_run_and_time.sh",
 ]
 
+BENCHMARK_IMAGE = {
+    "ssd": "ssd_0.7",
+    "maskrcnn": "maskrcnn_1.1",
+}
+BENCHMARK_WORKDIR = {
+    "ssd": "/workspace/single_stage_detector",
+    "maskrcnn": "/workspace/object_detection",
+}
 ###
 
 class objectview(object):
@@ -73,7 +83,7 @@ def set_artifacts_dir():
         base_dir = Path("/tmp") / ("ci-artifacts_" + datetime.datetime.today().strftime("%Y%m%d"))
         base_dir.mkdir(exist_ok=True)
         current_length = len(list(base_dir.glob("*__*")))
-        ARTIFACTS_DIR = base_dir / f"{current_length:03d}__benchmarking__run_ssd"
+        ARTIFACTS_DIR = base_dir / f"{current_length:03d}__benchmarking__run_{benchmark}"
         ARTIFACTS_DIR.mkdir(exist_ok=True)
     else:
         ARTIFACTS_DIR = Path(os.getcwd())
@@ -101,6 +111,16 @@ def prepare_settings():
     NODE_NAME = settings.get("node_name")
     if not NODE_NAME:
         print("FATAL: 'node_name' not provided in the settings")
+        sys.exit(1)
+
+    global benchmark
+    benchmark = settings.get("benchmark")
+    if not benchmark:
+        print("FATAL: the benchmark name must be provided in the settings")
+        sys.exit(1)
+
+    if benchmark not in ("ssd", "maskrcnn"):
+        print(f"FATAL: the benchmark name must be 'ssd' or 'maskrcnn', not '{benchmark}'")
         sys.exit(1)
 
     return settings
@@ -309,11 +329,15 @@ def create_job(k8s_res_type, settings, gpu_config, opts):
         sync_counter=sync_counter,
         no_sync=no_sync,
 
+        benchmark_image_tag=BENCHMARK_IMAGE[benchmark],
+        workdir=BENCHMARK_WORKDIR[benchmark],
+
         settings_run_descr=run_descr,
+        settings_benchmark=benchmark,
         settings_cores=settings["cores"],
         settings_exec_mode=settings["execution_mode"],
-        settings_threshold=settings["threshold"],
         settings_gpu_type=settings["gpu_type"],
+        settings_threshold=settings.get("threshold"),
     )
 
     print(f"Creating the new '{k8s_res_type}' Job ...")
@@ -517,7 +541,7 @@ def save_artifacts(is_successful):
 
 
     def save_jobs():
-        print("Saving run_ssd Jobs ...")
+        print(f"Saving {APP_NAME} Jobs ...")
 
         jobs = batchv1.list_namespaced_job(namespace=NAMESPACE,
                                            label_selector=f"app={APP_NAME}")
@@ -585,10 +609,14 @@ def save_artifacts(is_successful):
     save_image_sha()
 
     if ENABLE_THANOS and is_successful:
-        thanos_stop = query_thanos.query_current_ts(thanos)
-        print(f"Thanos: stop time: {thanos_start}")
+        if thanos_start:
+            thanos_stop = query_thanos.query_current_ts(thanos)
+            print(f"Thanos: stop time: {thanos_stop}")
 
-        save_thanos_metrics(thanos, thanos_start, thanos_stop)
+            save_thanos_metrics(thanos, thanos_start, thanos_stop)
+
+        else:
+            print("Thanos start time not captured, not recording metrics.")
         print("-----")
 
     failed = not is_successful
@@ -684,15 +712,20 @@ def apply_gpu_label(mig_label):
 
 def wait_for_mig_reconfiguration(gpu_config):
     print("Waiting for MIG reconfiguration of the node ...")
-    wait_start = datetime.datetime.now()
+    wait_start = None
     while True:
+        if wait_start is None:
+            wait_start = datetime.datetime.now()
+        else:
+            time.sleep(5)
+
         wait_time = (datetime.datetime.now() - wait_start).seconds / 60
         if wait_time >= MAX_RECONFIGURE_TIME:
             raise RuntimeError("MIG reconfiguration took too long ...")
 
         sys.stdout.flush()
         sys.stderr.flush()
-        time.sleep(5)
+
         node = v1.read_node(NODE_NAME)
 
         mig_manager_state = node.metadata.labels.get("nvidia.com/mig.config.state")
@@ -738,9 +771,9 @@ def wait_for_mig_reconfiguration(gpu_config):
 def main():
     print(datetime.datetime.now())
 
-    set_artifacts_dir()
-
     settings = prepare_settings()
+
+    set_artifacts_dir()
 
     gpu_config, opts = parse_gpu_settings(settings)
 
@@ -772,3 +805,4 @@ if __name__ == "__main__":
         sys.exit(main())
     except KeyboardInterrupt:
         print("\nInterrupted ...")
+        sys.exit(1)

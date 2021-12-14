@@ -16,7 +16,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: cnt
-        image: "image-registry.openshift-image-registry.svc:5000/default/mlperf:{benchmark_image}"
+        image: "image-registry.openshift-image-registry.svc:5000/default/mlperf:{benchmark_image_tag}"
         command:
         - /bin/bash
         - ./my_run_and_time.sh
@@ -66,7 +66,7 @@ spec:
         - mountPath: /data/coco2017
           name: mlperf-data
         - name: config-volume
-          mountPath: /workspace/{workdir}/my_run_and_time.sh
+          mountPath: {workdir}/my_run_and_time.sh
           readOnly: false
           subPath: my_run_and_time.sh
       volumes:

@@ -1,0 +1,29 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: mlperf
+  name: mlperf-maskrcnn-1.1
+  namespace: default
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: mlperf:maskrcnn_1.1
+      namespace: default
+  resources: {}
+  source:
+    type: Git
+    git:
+      uri: "https://github.com/mlcommons/training_results_v1.1"
+      ref: "main"
+    contextDir: NVIDIA/benchmarks/maskrcnn/implementations/pytorch
+  triggers:
+  - type: "ConfigChange"
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+      from:
+        kind: DockerImage
+        name: nvcr.io/nvidia/pytorch:21.09-py3

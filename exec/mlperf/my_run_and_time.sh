@@ -19,14 +19,81 @@
 # runs benchmark and reports time to convergence
 # to use the script:
 #   run_and_time.sh
-export NCCL_DEBUG=INFO
 
 set -e
-set -x
 set -o pipefail
 set -o nounset
 
+cat <<EOF > /dev/null
+Environments variables expected from the Pod Spec:
+
+- BENCHMARK=${BENCHMARK:-}
+
+  - "ssd"      Run the SSD benchmark
+  - "maskrcnn" Run the MaskRCNN benchmark
+
+- EXECUTION_MODE=${EXECUTION_MODE:-}
+
+  - "fast" Adds target-threshold evaluation points
+  - "dry"  Echo the command that would be executed
+  - "run"  Normal execution
+
+- DGXSOCKETCORES=${DGXSOCKETCORES:-}
+
+  Number of '--ncores_per_socket' passed to 'bind_launch'. Default: 16
+
+- RUN_DESCR=${RUN_DESCR:-}
+
+  Text description of the execution being executed.
+  Example: "GPU: 1 x 1g.5gb x 56 Pods"
+
+- SYNC_IDENTIFIER=${SYNC_IDENTIFIER:-}
+
+  Synchronization unique identifier, shared by all the Job Pods that should start synchronously.
+  Example: "2021-12-09_13-55-56"
+
+- SYNC_COUNTER=${SYNC_COUNTER:-}
+  Number of Pod expected to start synchronously.
+  Example: "56"
+
+- NO_SYNC=${NO_SYNC:-}
+
+  - 'y' if the Pod execution should NOT be synchronized
+  - 'n' if the Pod execution should be synchronized
+
+- GPU_COUNT=${GPU_COUNT:-}
+
+  Number of GPUs that should be received. The execution will fail if the number of GPUs actually received is different.
+  If GPU_COUNT is 0, the execution stops (successfully) after printing the list of available GPUs.
+
+- GPU_RES_TYPE=${GPU_RES_TYPE:-}
+
+  Value of the GPU resource type requested to Kubernetes
+  Example: "nvidia.com/gpus"
+  Example: "nvidia.com/mig-1g.5gb"
+
+- GPU_TYPE=${GPU_TYPE:-}
+
+  Type of the MIG resources being benchmarked
+  Example: "full"
+  Example: "7g.40gb"
+  Example: "2g.10gb,3g.20gb"
+
+
+- SSD_THRESHOLD=${SSD_THRESHOLD:-}
+
+  Value of the '--threshold' parameter passed to SSD.
+
+
+EOF
+
+echo "8<--8<--8<--8<--"
+
 nvidia-smi -L
+
+echo "8<--8<--8<--8<--"
+
+set -x
 
 NB_GPUS=$(nvidia-smi -L | grep "UUID: MIG-" | wc -l || true)
 if [[ "$NB_GPUS" == 0 ]]; then
@@ -54,12 +121,15 @@ else
     echo "Found $NB_GPUS MIG instances: $ALL_GPUS"
 fi
 
-if [[ $NB_GPUS != $GPU_COUNT ]]; then
+if [[ $GPU_COUNT == 0 ]]; then
+    echo "0 GPU requested. Exiting now."
+    echo "ALL FINISHED"
+
+    exit 0
+elif [[ $NB_GPUS != $GPU_COUNT ]]; then
     echo "FATAL: Expected $GPU_COUNT GPUs, got $NB_GPUS"
     exit 1
 fi
-
-SSD_THRESHOLD=${SSD_THRESHOLD:-0.23}
 
 # start timing
 start=$(date +%s)
@@ -68,7 +138,8 @@ echo "STARTING TIMING RUN AT $start_fmt $RUN_DESCR"
 
 # run benchmark
 set -x
-NUMEPOCHS=${NUMEPOCHS:-80}
+
+export NCCL_DEBUG=INFO
 
 echo "running benchmark"
 
@@ -91,9 +162,17 @@ if [ ! -f ${DATASET_DIR}/annotations/bbox_only_instances_train2017.json ]; then
         "${DATASET_DIR}/annotations/bbox_only_instances_train2017.json"
 fi
 
-# prepare the DGXA100-specific configuration (config_DGXA100.sh)
+# setup the training
 
-EXTRA_PARAMS='--batch-size=114 --warmup=650 --lr=3.2e-3 --wd=1.3e-4'
+if [[ "${BENCHMARK:-}" == "maskrcnn" ]]; then
+    echo "Setting up the Mask RCNN benchmark..."
+
+    NEXP=5
+
+    # DGX A100 config
+    source config_DGXA100.sh
+
+fi
 
 DGXNSOCKET=1
 DGXSOCKETCORES=${DGXSOCKETCORES:-16}
@@ -107,35 +186,63 @@ else
     echo "Running in multi-gpu mode."
 fi
 
-# run training
+
 
 declare -a CMD
+CMD=('python' '-u' '-m' 'bind_launch' "--nsockets_per_node=${DGXNSOCKET}" \
+              "--ncores_per_socket=${DGXSOCKETCORES}" "--nproc_per_node=${DGXNGPU}" )
+
+declare -a ARGS
+
 echo "Patching 'bind_launch.py' to err-exit on failure ..."
 sed 's/process.wait()/if process.wait(): sys.exit(1)/' -i bind_launch.py
 
-CMD=('python' '-u' '-m' 'bind_launch' "--nsockets_per_node=${DGXNSOCKET}" \
-               "--ncores_per_socket=${DGXSOCKETCORES}" "--nproc_per_node=${DGXNGPU}" )
+if [[ "${BENCHMARK:-}" == "ssd" ]]; then
+    echo "Setting up the SSD benchmark..."
 
-declare -a ARGS
-ARGS=(train.py
-  --use-fp16
-  --nhwc
-  --pad-input
-  --jit
-  --delay-allreduce
-  --opt-loss
-  --epochs "${NUMEPOCHS}"
-  --warmup-factor 0
-  --no-save
-  --threshold=${SSD_THRESHOLD}
-  --data ${DATASET_DIR}
-  ${EXTRA_PARAMS})
+    # prepare the DGXA100-specific configuration (config_DGXA100.sh)
+    EXTRA_PARAMS='--batch-size=114 --warmup=650 --lr=3.2e-3 --wd=1.3e-4'
 
+    NUMEPOCHS=${NUMEPOCHS:-80}
 
-if [[ "$EXECUTION_MODE" == "fast" ]]; then
-    echo "Running in FAST mode"
-    ARGS+=(--evaluation 5 10 15 20 25 30 35 40 50 55 60 65 70 75 80 85)
-elif [[ "$EXECUTION_MODE" == "dry" ]]; then
+    ARGS=(train.py
+          --use-fp16
+          --nhwc
+          --pad-input
+          --jit
+          --delay-allreduce
+          --opt-loss
+          --epochs "${NUMEPOCHS}"
+          --warmup-factor 0
+          --no-save
+          --threshold=${SSD_THRESHOLD}
+          --data ${DATASET_DIR}
+          ${EXTRA_PARAMS})
+
+    if [[ "$EXECUTION_MODE" == "fast" ]]; then
+        echo "Running in FAST mode"
+        ARGS+=(--evaluation 5 10 15 20 25 30 35 40 50 55 60 65 70 75 80 85)
+    fi
+
+elif [[ "${BENCHMARK:-}" == "maskrcnn" ]]; then
+    echo "Setting up the Mask RCNN benchmark..."
+
+    ARGS=(tools/train_mlperf.py
+          ${EXTRA_PARAMS}
+          --config-file 'configs/e2e_mask_rcnn_R_50_FPN_1x.yaml'
+          DTYPE 'float16'
+          PATHS_CATALOG 'maskrcnn_benchmark/config/paths_catalog_dbcluster.py'
+          MODEL.WEIGHT '/coco/models/R-50.pkl'
+          DISABLE_REDUCED_LOGGING True
+          ${EXTRA_CONFIG}
+         )
+
+else
+    echo "FATAL: unknown benchmark: '${BENCHMARK:-}'"
+    exit 1
+fi
+
+if [[ "$EXECUTION_MODE" == "dry" ]]; then
     echo "Running in DRY mode"
     CMD[0]="echo"
 fi
@@ -177,6 +284,8 @@ fi
 
 nvidia-smi -L
 
+# run the training
+
 if [[ $MIG_MODE == 1 && $NB_GPUS != 1 ]]; then
     declare -a pids
 
@@ -184,7 +293,7 @@ if [[ $MIG_MODE == 1 && $NB_GPUS != 1 ]]; then
         export NVIDIA_VISIBLE_DEVICES=$gpu
         export CUDA_VISIBLE_DEVICES=$gpu
 
-        dest=/tmp/ssd_$(echo $gpu | sed 's|/|_|g').log
+        dest=/tmp/benchmark_$(echo $gpu | sed 's|/|_|g').log
 
         # run training
         "${CMD[@]}" "${ARGS[@]}" >"$dest" 2>"$dest.stderr" &
@@ -197,7 +306,7 @@ if [[ $MIG_MODE == 1 && $NB_GPUS != 1 ]]; then
         wait $pid;
     done
 else
-    dest=/tmp/ssd_all.log
+    dest=/tmp/benchmark_all.log
     if [[ $MIG_MODE == 1 ]]; then
         echo "Running on the MIG GPU"
     else
@@ -208,13 +317,14 @@ else
 fi
 
 if [[ "$EXECUTION_MODE" == "dry" ]]; then
+    echo "Running in DRY mode, sleep 2min"
     sleep 2m
 fi
 
 echo "$(date): done waiting for $NB_GPUS executions"
 
-ls /tmp/ssd*
-grep . /tmp/ssd_*.log
+ls /tmp/benchmark_*
+grep . /tmp/benchmark_*.log
 
 # end timing
 end=$(date +%s)
@@ -226,7 +336,15 @@ nvidia-smi -L
 
 # report result
 result=$(($end - $start))
-result_name="SINGLE_STAGE_DETECTOR"
+if [[ "${BENCHMARK:-}" == "ssd" ]]; then
+    result_name="SINGLE_STAGE_DETECTOR"
+
+elif [[ "${BENCHMARK:-}" == "maskrcnn" ]]; then
+    result_name="OBJECT_DETECTION"
+
+else
+    result_name="(can't be reached)"
+fi
 
 echo "RESULT,$result_name,,$result,nvidia,$start_fmt"
 echo "ALL FINISHED $RUN_DESCR"
