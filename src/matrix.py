@@ -59,7 +59,7 @@ class Matrix():
         context.stop_on_error = self.yaml_desc.get('stop_on_error', False)
         context.common_settings = self.yaml_desc['common_settings']
 
-        if context.remote_mode:
+        if not exe.dry and context.remote_mode:
             print(f"""#! /bin/bash
 
 set -x
@@ -87,8 +87,8 @@ MATRIX_BENCHMARK_DIR="$(realpath "$2")"
 
         exe.expe_cnt.total += sum(1 for _ in itertools.product(*all_settings_items))
 
-        # do fail in drymode if we cannot create the directories
-        os.makedirs(context.expe_dir, exist_ok=True)
+        if not exe.dry and not context.remote_mode:
+            os.makedirs(context.expe_dir, exist_ok=True)
 
         stop = self.do_run_matrix(exe, all_settings_items, context, yaml_expe)
         if stop: return stop
@@ -133,8 +133,9 @@ MATRIX_BENCHMARK_DIR="$(realpath "$2")"
             context.bench_dir = f"{context.expe}/{bench_common_path}{bench_uid}"
             context.bench_fullpath = f"{context.expe_dir}/{bench_common_path}{bench_uid}"
 
-            if not exe.dry:
+            if not exe.dry and not context.remote_mode:
                 os.makedirs(context.bench_fullpath)
+
             exe.log("---"*5)
             exe.log("")
             exe.log("")
@@ -158,7 +159,7 @@ MATRIX_BENCHMARK_DIR="$(realpath "$2")"
         return False
 
     def execute_benchmark(self, settings, context, exe):
-        if not exe.dry:
+        if not exe.dry and not context.remote_mode:
             with open(f"{context.bench_fullpath}/settings", "w") as f:
                 for k, v in settings.items():
                     if k == "expe": continue
@@ -174,7 +175,7 @@ MATRIX_BENCHMARK_DIR="$(realpath "$2")"
         script = context.script_tpl.format(**settings)
 
         cmd = f"{script} {settings_str} 1> >(tee stdout) 2> >(tee stderr >&2)"
-        cmd_fullpath = os.path.realpath(os.getcwd()+'/../') + cmd
+        cmd_fullpath = os.path.realpath(os.getcwd()+'/../') + "/" + cmd
 
         if exe.dry:
             exe.log(f"""\n
@@ -185,17 +186,21 @@ Command: {script}{settings_str}
 
             return None
         elif context.remote_mode:
-
+            settings_str = "\\n".join([f"{k}={v}" for k, v in settings.items()])
             print(f"""
+echo "Expe {exe.expe_cnt.current_idx}/{exe.expe_cnt.total}"
 CURRENT_DIRNAME="${{RESULTS_DIR}}/{context.bench_dir}"
-mkdir -p "$CURRENT_DIRNAME"
 
-if [[ "$(cat "$CURRENT_DIRNAME/exit_code")" != 0 ]]; then
+if [[ "$(cat "$CURRENT_DIRNAME/exit_code" 2>/dev/null)" != 0 ]]; then
+  mkdir -p "$CURRENT_DIRNAME"
   cd "$CURRENT_DIRNAME"
+  [[ "$$CURRENT_DIRNAME" ]] && rm -rf -- "$CURRENT_DIRNAME"/*
+  echo -e "{settings_str}" > ./settings
+  echo "$(date) Running expe {exe.expe_cnt.current_idx}/{exe.expe_cnt.total}"
   ${{MATRIX_BENCHMARK_DIR}}/{cmd}
   echo "$?" > ./exit_code
 else
-  echo "Already recorded."
+  echo "Already recorded in $CURRENT_DIRNAME."
 fi
 """, file=sys.stderr)
             return None
