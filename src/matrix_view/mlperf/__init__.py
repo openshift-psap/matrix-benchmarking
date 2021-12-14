@@ -3,12 +3,13 @@ from matrix_view.hpc import perf
 from matrix_view.prom import overview as prom_overview
 from matrix_view.mlperf import time_to_threshold
 from matrix_view.mlperf import report
+from matrix_view.mlperf import directories
 import store
 
 def register():
     TableStats.ValueDev("speed", "Speed", "avg_sample_sec", ".2f", "avg. samples / sec", higher_better=True)
     TableStats.ValueDev("exec_time", "Execution Time", "exec_time", ".2f", "minutes", divisor=60, higher_better=False)
-    time_to_threshold.Directories()
+    directories.Directories()
     time_to_threshold.Plot()
 
     time_to_threshold.MigThresholdOverTime()
