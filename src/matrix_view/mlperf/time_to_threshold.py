@@ -2,6 +2,7 @@ from collections import defaultdict
 import statistics as stats
 
 import plotly.graph_objs as go
+import dash_html_components as html
 
 import matrix_view.table_stats
 import matrix_view
@@ -45,12 +46,12 @@ class Plot():
             exec_times = []
 
             def add_plot(an_entry):
-                if not an_entry.results:
-                    return
+                if not an_entry.results: return
+
                 for log_filename, values in an_entry.results.thresholds.items():
                     sorted_values = sorted(values, key=lambda x:x[0])
                     thr = [xy[0] for xy in values]
-                    ts = [xy[1]/1000/60/60 for xy in values]
+                    ts = [xy[1]/1000/60 for xy in values]
                     if log_filename.startswith("/tmp"):
                         # log_filename: /tmp/ssd_MIG-GPU-d9322296-54da-ce5a-6330-3ca7707e0c5d.log
                         mig_name = " #"+log_filename.split("_")[1]
@@ -74,7 +75,7 @@ class Plot():
         fig.update_layout(
             title=plot_title, title_x=0.5,
             yaxis=dict(title="Threshold", range=[0, y_max*1.05]),
-            xaxis=dict(title=f"Time (in hr)"))
+            xaxis=dict(title=f"Time (in min)"))
         return fig, ""
 
 class MigThresholdOverTime():
@@ -273,15 +274,17 @@ class MigThresholdOverTime():
         return fig, ""
 
 class MigTimeToThreshold():
-    def __init__(self, mig_type=None, speed=False):
+    def __init__(self, mig_type=None, speed=False, full_gpu_isolation=False):
         self.mig_type = mig_type
+        self.full_gpu_isolation = full_gpu_isolation
         self.multi_gpu = self.mig_type == "full"
 
         self.speed = speed
         self.name = "MIG"
 
         if self.multi_gpu:
-            self.name = f"Multi-GPU"
+            self.name = "GPU Isolation" if self.full_gpu_isolation else "Multi-GPU"
+
             self.mig_type = None
         elif self.mig_type:
             self.name += f" {self.mig_type}"
@@ -304,8 +307,10 @@ class MigTimeToThreshold():
     def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
         fig = go.Figure()
         plot_title = "MIG"
+        threshold = params['threshold']
         if self.multi_gpu:
-            plot_title = "Multi-GPU"
+            plot_title = "GPU Isolation" if self.full_gpu_isolation else "Multi-GPU"
+
         elif self.mig_type:
             plot_title += f" {self.mig_type} parallel execution"
         else:
@@ -313,9 +318,9 @@ class MigTimeToThreshold():
 
         plot_title += ": "
         if self.speed:
-            plot_title += "Processing speed (higher is better)"
+            plot_title += "Processing speed"
         else:
-            plot_title += "Time to 0.23 threshold (lower is better)"
+            plot_title += f"Time to {threshold} threshold"
 
         # remove unwanted entries from the `all_records` list
         entries = []
@@ -340,12 +345,16 @@ class MigTimeToThreshold():
 
                     if gpu_name == "full":
                         if self.multi_gpu:
-                            gpu_name = f"{an_entry.params.gpu_count} GPUs"
+                            gpu_name = f"{an_entry.params.gpu_count} GPU" + ('s' if int(an_entry.params.gpu_count) > 1 else '')
+                            if self.full_gpu_isolation:
+                                gpu_name += f"x {an_entry.params.pod_count} Pods"
                         else:
                             gpu_name = "8g.40gb (full)"
 
                 if self.multi_gpu:
-                    x_value = int(an_entry.params.gpu_count)
+                    x_value = int(an_entry.params.pod_count) if self.full_gpu_isolation \
+                        else int(an_entry.params.gpu_count)
+
                 elif self.mig_type:
                     x_value = int(gpu_name.split(" ")[-1])
                 else:
@@ -353,14 +362,19 @@ class MigTimeToThreshold():
 
                 x_names[x_value] = gpu_name
 
+                if not an_entry.results:
+                    print("no results in", an_entry.location)
+                    return
+
                 if self.speed:
                     for mig_name, speed in an_entry.results.avg_sample_sec.items():
                         plot_values[x_value].append(speed)
                 else:
                     for log_filename, values in an_entry.results.thresholds.items():
-                        ts = [xy[1]/1000/60/60 for xy in values]
+                        ts = [xy[1]/1000/60 for xy in values]
                         thr = [xy[0] for xy in values]
                         if not ts: continue
+                        # should be cfg value ...
                         #if thr[-1] < 0.22: continue
 
                         plot_values[x_value].append(ts[-1])
@@ -372,21 +386,26 @@ class MigTimeToThreshold():
                 add_plot(entry)
 
         y_means = [stats.mean(y_values) for y_values in plot_values.values()]
-        if self.mig_type:
+        if not y_means:
+            return go.Figure(layout=go.Layout(
+        title=go.layout.Title(text="No data to plot ...")
+            )), "No data to plot ..."
+
+        if self.mig_type or self.full_gpu_isolation:
             y_mean_ref = y_means[0] #max(y_means) if self.speed else min(y_means)
         else:
             y_mean_ref = min(y_means) if self.speed else max(y_means)
 
         x = sorted(plot_values.keys())
         y = [stats.mean(plot_values[x_value]) for x_value in x]
-        y_err = [(stats.stdev(plot_values[x_value]) if len(plot_values[x_value]) > 2 else None) for x_value in x]
+        y_err = [(stats.stdev(plot_values[x_value]) if len(plot_values[x_value]) >= 2 else None) for x_value in x]
 
         xy_slowdown = {x_value:y_value/y_mean_ref for x_value, y_value in zip(x,y)}
         if not self.speed:
             xy_slowdown = {x_value:1/y_value for x_value, y_value in xy_slowdown.items()}
 
-        if self.mig_type:
-            x_names = [f"{x_value} instance{'s' if x_value > 1 else ''}: " +
+        if self.mig_type or self.full_gpu_isolation:
+            x_names = [f"{x_value} instance{'s' if int(x_value) > 1 else ''}: " +
                        (f"{xy_slowdown[x_value]:.2f}x "
                         f"{'speed' if self.speed else 'slower'}" if x_value != x[0] else f"reference {'speed' if self.speed else 'time'}")
                         for x_value in x]
@@ -417,7 +436,7 @@ class MigTimeToThreshold():
             baseline_text = [None for _ in x_baseline]
             if self.speed:
                 y_baseline = [y_mean_ref * x_value for x_value in x_baseline]
-                baseline_text[4] = "Perfect scaling"
+                #baseline_text[4] = "Perfect scaling"
                 baseline_textposition = "bottom right"
             else:
                 y_baseline = [y_mean_ref / x_value for x_value in x_baseline]
@@ -453,12 +472,13 @@ class MigTimeToThreshold():
         fig.update_layout(
             showlegend=False,
             yaxis=dict(
-                title='Avg Samples / sec' if self.speed else "Time (in hr)",
+                title='Avg Samples / sec, higher is better' if self.speed else "Time (in min), lower is better",
                 range=[0, y_max*(1.05 if self.speed else 1.1)],
             ),
             xaxis=dict(
-                range=[0.9, max(x)*1.35],
+                range=[0.9, max(x)*1.08],
                 title=x_title,
             ),
             title=plot_title, title_x=0.5)
+
         return fig, ""

@@ -1,5 +1,6 @@
 import types
 
+import store
 import store.simple
 from store.simple import *
 import glob
@@ -7,22 +8,24 @@ import json
 from collections import defaultdict
 
 def mlperf_rewrite_settings(params_dict):
-    #run = params_dict['run']
-    #del params_dict['run']
-    #params_dict['@run'] = run
     params_dict.pop("opts", True)
 
     params_dict.pop("mig_label", True)
     if "mig_strategy" not in params_dict:
         params_dict["mig_strategy"] = "mixed"
 
+    if "run" in params_dict:
+        params_dict["@run"] = params_dict["run"]
+        del params_dict["run"]
+
     return params_dict
 
 store.custom_rewrite_settings = mlperf_rewrite_settings
 
 def mlperf_parse_prom_gpu_metrics(dirname, results):
+    return
     prom = results.prom = defaultdict(lambda: defaultdict(dict))
-    for res_file in glob.glob(f"{dirname}/prom_*.json"):
+    for res_file in glob.glob(f"{dirname}/metrics/prom_*.json"):
         with open(res_file) as f:
             data = json.load(f)
 
@@ -35,7 +38,7 @@ def mlperf_parse_prom_gpu_metrics(dirname, results):
 
             if 'gpu' in result_per_gpu['metric']:
                 gpu = result_per_gpu['metric']['gpu']
-                prom_group = f"gpu #{gpu}"
+                prom_group = f"{exported_pod} | gpu #{gpu} "
             else:
                 prom_group = "container"
 
@@ -128,7 +131,8 @@ def mlperf_parse_results(dirname, import_settings):
     if results is None:
         return [({}, {})]
 
-    mlperf_parse_prom_gpu_metrics(dirname, results)
+    if not store.benchmark_mode:
+        mlperf_parse_prom_gpu_metrics(dirname, results)
 
     return [({}, results)]
 

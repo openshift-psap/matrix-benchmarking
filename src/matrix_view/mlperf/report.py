@@ -31,17 +31,21 @@ class OverviewReport():
 
     def do_plot(self, *args):
         common_settings = dict(
-            threshold="0.1",
-            expe="dgx-quick",
-            flavor="20211122",
-            execution_mode="fast",
+            #threshold="0.1",
+            expe="dgx-benchmark",
+            flavor="20211209",
+            #execution_mode="fast",
             mig_strategy="mixed",
         )
 
-        header = [html.H1("DGX A100 validation benchmark results")]
+        header = []
+
+        #header += [html.H1("DGX A100 validation benchmark results")]
 
         exec_time = matrix_view.table_stats.TableStats.stats_by_name['Execution Time']
         multi_gpu_time_to_threshold = matrix_view.table_stats.TableStats.stats_by_name['Multi-GPU time to threshold']
+        gpu_isolation_time_to_threshold = matrix_view.table_stats.TableStats.stats_by_name['GPU Isolation time to threshold']
+
         mig7g_40gb_time_to_threshold = matrix_view.table_stats.TableStats.stats_by_name['MIG 7g.40gb time to threshold']
         # ---
 
@@ -53,6 +57,19 @@ class OverviewReport():
         graph = multi_gpu_time_to_threshold.do_plot(*set_vars(settings, *args))[0]
 
         header += [html.H2("Multi-GPU benchmarking: time to threshold")]
+        header += [dcc.Graph(figure=graph)]
+
+        # ---
+
+        settings = dict(common_settings) | dict(
+            gpu_type="full",
+            gpu_count=1,
+        )
+
+        graph = gpu_isolation_time_to_threshold.do_plot(*set_vars(settings, *args))[0]
+
+        header += [html.H2(["GPU Isolation benchmarking: time to threshold"])]
+        header += [html.P(f"{settings}")]
         header += [dcc.Graph(figure=graph)]
 
         # ---
@@ -111,7 +128,7 @@ class PrometheusMultiGPUReport():
         common_settings = dict(
             threshold="0.1",
             expe="dgx-quick",
-            flavor="20211122",
+            flavor="20211209",
             execution_mode="fast",
             mig_strategy="mixed",
             pod_count=1,
