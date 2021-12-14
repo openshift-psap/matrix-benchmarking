@@ -4,6 +4,7 @@ import importlib
 import datetime
 
 experiment_filter = {}
+benchmark_mode = False
 
 DEFAULT_MODE = "mlperf"
 def parse_argv(argv):

@@ -14,6 +14,8 @@ class Exec():
         print("INFO:", *msg)
 
 def main():
+    store.benchmark_mode = True
+
     mode = store.parse_argv(sys.argv[1:])
     store_plugin = store.mode_store(mode)
 

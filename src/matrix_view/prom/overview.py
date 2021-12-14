@@ -22,7 +22,6 @@ class Plot():
 
         plot_title = f"Prometheus: {self.metric} (overview)"
         y_max = 0
-
         x_start = None
         for entry in Matrix.all_records(params, param_lists):
             try: prom = entry.results.prom
@@ -57,4 +56,5 @@ class Plot():
             title=plot_title, title_x=0.5,
             yaxis=dict(title=self.y_title, range=[0, y_max*1.05]),
             xaxis=dict(title=f"Time (in s)"))
+
         return fig, ""
