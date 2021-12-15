@@ -48,8 +48,6 @@ spec:
           value: "{k8s_res_type}"
         - name: GPU_TYPE
           value: "{settings_gpu_type}"
-        - name: GPU_TYPE
-          value: "{settings_gpu_type}"
         - name: BENCHMARK
           value: "{settings_benchmark}"
 
