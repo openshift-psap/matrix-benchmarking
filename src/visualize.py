@@ -15,7 +15,7 @@ def main():
         store_plugin = store.mode_store(mode)
     except Exception as e:
         print(f"FATAL: Could not load store_plugin for '{mode}': {e}")
-        sys.exit(1)
+        raise e
 
     print(f"Parsing {mode} data ...")
 
@@ -28,7 +28,7 @@ def main():
         matrix_view.configure(store, mode)
     except Exception as e:
         print(f"FATAL: Failed to configure '{mode}' matrix_view: {e}")
-        return 1
+        raise e
 
     matrix_view.table_stats.register_all()
 
