@@ -1,12 +1,12 @@
 name: Generate test matrices pages
 
 # Controls when the action will run.
-on:
-  push:
-    branches:
-      - master
-  schedule:
-    - cron: '30 4 * * *'
+# on:
+#   push:
+#     branches:
+#       - master
+#   schedule:
+#     - cron: '30 4 * * *'
 jobs:
   generate-matrix:
     runs-on: ubuntu-latest
