@@ -227,12 +227,27 @@ if [[ "${BENCHMARK:-}" == "ssd" ]]; then
 elif [[ "${BENCHMARK:-}" == "maskrcnn" ]]; then
     echo "Setting up the Mask RCNN benchmark..."
 
+    sed 's/torch.set_num_threads(1)$/import time, sys; time.sleep(int(sys.argv[1].split("=")[-1]));torch.set_num_threads(1)/' -i tools/train_mlperf.py
+
+    MODEL='/coco/models/R-50.pkl'
+    if [[ -f "$MODEL" ]]; then
+        sum=$(cat $MODEL | md5sum)
+        if [[ "$sum" != "6652b4a9c782d82bb3d42118be74d79b  -" ]]; then
+            echo "Wrong checksum, deleting the model ..."
+            rm "$MODEL"
+        fi
+    fi
+    if [[ ! -f "$MODEL" ]]; then
+        mkdir -p $(dirname "$MODEL")
+        curl --silent https://dl.fbaipublicfiles.com/detectron2/ImageNetPretrained/MSRA/R-50.pkl > $MODEL
+    fi
+
     ARGS=(tools/train_mlperf.py
           ${EXTRA_PARAMS}
           --config-file 'configs/e2e_mask_rcnn_R_50_FPN_1x.yaml'
           DTYPE 'float16'
           PATHS_CATALOG 'maskrcnn_benchmark/config/paths_catalog_dbcluster.py'
-          MODEL.WEIGHT '/coco/models/R-50.pkl'
+          MODEL.WEIGHT "$MODEL"
           DISABLE_REDUCED_LOGGING True
           ${EXTRA_CONFIG}
          )
