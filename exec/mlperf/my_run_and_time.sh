@@ -195,7 +195,7 @@ CMD=('python' '-u' '-m' 'bind_launch' "--nsockets_per_node=${DGXNSOCKET}" \
 declare -a ARGS
 
 echo "Patching 'bind_launch.py' to err-exit on failure ..."
-sed 's/process.wait()/if process.wait(): sys.exit(1)/' -i bind_launch.py
+sed 's/process.wait()$/if process.wait(): sys.exit(1)/' -i bind_launch.py
 
 if [[ "${BENCHMARK:-}" == "ssd" ]]; then
     echo "Setting up the SSD benchmark..."
