@@ -64,7 +64,7 @@ CM_FILES = [
 
 BENCHMARK_IMAGE = {
     "ssd": "ssd_0.7",
-    "maskrcnn": "maskrcnn_1.1_azure",
+    "maskrcnn": "maskrcnn_1.1_dell",
 }
 BENCHMARK_WORKDIR = {
     "ssd": "/workspace/single_stage_detector",
