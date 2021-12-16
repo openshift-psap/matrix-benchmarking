@@ -167,7 +167,7 @@ fi
 if [[ "${BENCHMARK:-}" == "maskrcnn" ]]; then
     echo "Setting up the Mask RCNN benchmark..."
 
-    NEXP=5
+    NEXP=1
 
     # DGX A100 config
     source config_DGXA100.sh
@@ -227,9 +227,11 @@ if [[ "${BENCHMARK:-}" == "ssd" ]]; then
 elif [[ "${BENCHMARK:-}" == "maskrcnn" ]]; then
     echo "Setting up the Mask RCNN benchmark..."
 
-    sed 's/torch.set_num_threads(1)$/import time, sys; time.sleep(int(sys.argv[1].split("=")[-1]));torch.set_num_threads(1)/' -i tools/train_mlperf.py
+    sed 's/torch.set_num_threads(1)$/import time, sys; time.sleep(int(sys.argv[1].split("=")[-1]));torch.set_num_threads(1);/' -i tools/train_mlperf.py
+    #sed 's/fwd_graph.capture_/pass # cannot call fwd_graph.capture_/' -i function.py
+    #sed 's/bwd_graph.capture_/pass # cannot call bwd_graph.capture_/' -i function.py
 
-    MODEL='/coco/models/R-50.pkl'
+    MODEL="$DATASET_DIR/models/R-50.pkl"
     if [[ -f "$MODEL" ]]; then
         sum=$(cat $MODEL | md5sum)
         if [[ "$sum" != "6652b4a9c782d82bb3d42118be74d79b  -" ]]; then
@@ -241,6 +243,17 @@ elif [[ "${BENCHMARK:-}" == "maskrcnn" ]]; then
         mkdir -p $(dirname "$MODEL")
         curl --silent https://dl.fbaipublicfiles.com/detectron2/ImageNetPretrained/MSRA/R-50.pkl > $MODEL
     fi
+
+    ln -sf $DATASET_DIR /coco
+
+    # COCO_PKL="$DATASET_DIR/instances_train2017.json.pickled"
+    # if [[ ! -f "$COCO_PKL" ]]; then
+    #     python3 pickle_coco_annotations.py \
+    #             --root "$DATASET_DIR" \
+    #             --ann "$DATASET_DIR/annotations/instances_train2017.json" \
+    #             --pickle_output_file "$COCO_PKL"
+    # fi
+    # ln -s /data/coco2017/ /pkl_coco
 
     ARGS=(tools/train_mlperf.py
           ${EXTRA_PARAMS}
