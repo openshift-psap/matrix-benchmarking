@@ -108,7 +108,8 @@ MATRIX_BENCHMARK_DIR="$(realpath "$2")"
             if "extra" in settings:
                 extra = settings["extra"]
                 del settings["extra"]
-
+                if isinstance(extra, dict):
+                    raise ValueError(f"'extra' is a dict, does it contain a ':'? ({extra})")
                 for kv in extra.split(", "):
                     if "=" not in kv:
                         raise ValueError(f"Invalid 'extra' setting: '{extra}' ('{kv}' has no '=')")
