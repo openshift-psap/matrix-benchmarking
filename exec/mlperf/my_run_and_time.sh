@@ -170,7 +170,7 @@ if [[ "${BENCHMARK:-}" == "maskrcnn" ]]; then
     NEXP=1
 
     # DGX A100 config
-    source config_DGXA100.sh
+    source config_DSS8440x8A100-PCIE-40GB.sh
 
 fi
 
