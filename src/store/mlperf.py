@@ -110,7 +110,7 @@ def mlperf_parse_ssd_results(dirname, import_settings):
     results.avg_sample_sec = {}
 
     has_logs = False
-    for log_file in glob.glob(f"{dirname}/run-ssd-*.log"):
+    for log_file in glob.glob(f"{dirname}/run-*.log"):
         pod_name = log_file.rpartition("/")[-1][:-4]
         results.pod_names.add(pod_name)
         with open(log_file) as log_f:
