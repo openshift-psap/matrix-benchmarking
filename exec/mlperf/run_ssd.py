@@ -174,6 +174,9 @@ def parse_gpu_settings(settings):
         ret.k8s_res_types.append(f"nvidia.com/mig-{mig_mode}")
         ret.mig_label = f"all-{mig_mode}"
 
+    try: ret.mig_label = settings["mig_label"]
+    except KeyError: pass # ignore, MIG label not forced
+
     return ret, opts
 
 metrics = None
