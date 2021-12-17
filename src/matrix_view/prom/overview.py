@@ -37,7 +37,7 @@ class Plot():
             try: prom = entry.results.prom
             except AttributeError: continue
 
-            for target, records in prom[self.metric].items():
+            for target, records in sorted(prom[self.metric].items()):
                 name_key = "_".join(f"{k}={params[k]}" for k in ordered_vars)
                 name = f"{name_key} | {target}"
 
