@@ -1,9 +1,27 @@
-path_fmt: "{platform}/network={network}_"
+path_tpl: "{platform}/processes={processes}_x_{nex}nex"
+script_tpl: "echo"
 
-run:
-  - NVa100
+remote_mode: false
+stop_on_error: false
+
+common_settings:
+  relyOnSharedFS: true
+  platform: openshift
+  run: 1
+
+expe_to_run:
+- dgx-try
 
 expe:
+  dgx-try:
+    platform: openshift
+    extra:
+      - mpi-slots=8, processes=8, nex=64, gpu=on
+      - mpi-slots=6, processes=6, nex=64, gpu=on
+      - mpi-slots=4, processes=4, nex=64, gpu=on
+      - mpi-slots=2, processes=2, nex=64, gpu=on
+
+old_expe:
   threading:
     settings:
       relyOnSharedFS: true
@@ -39,7 +57,7 @@ expe:
     settings:
       #gpu: false
       relyOnSharedFS: true
-      platform:  baremetal #podman, podman-no-seccomp, podman-hyperthreads #baremetal,  # openshift,
+      platform:  baremetal, podman, podman-no-seccomp, podman-hyperthreads #baremetal,  # openshift,
       network: default #, multus #, hostnet
       run: scale-1
       extra:
