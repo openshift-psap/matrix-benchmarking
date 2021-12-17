@@ -9,6 +9,8 @@ from collections import defaultdict
 
 def mlperf_rewrite_settings(params_dict):
     params_dict.pop("opts", True)
+    if params_dict["gpu_type"] == "full":
+        params_dict["mig_strategy"] = "none"
 
     params_dict.pop("mig_label", True)
     if "mig_strategy" not in params_dict:

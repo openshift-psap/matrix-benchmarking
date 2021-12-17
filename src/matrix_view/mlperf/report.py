@@ -35,7 +35,6 @@ class OverviewReport():
             expe="dgx-benchmark",
             flavor="20211209",
             #execution_mode="fast",
-            mig_strategy="mixed",
         )
 
         header = []
@@ -52,6 +51,7 @@ class OverviewReport():
         settings = dict(common_settings) | dict(
             pod_count=1,
             gpu_type="full",
+            mig_strategy="none",
         )
 
         graph = multi_gpu_time_to_threshold.do_plot(*set_vars(settings, *args))[0]
@@ -64,6 +64,7 @@ class OverviewReport():
         settings = dict(common_settings) | dict(
             gpu_type="full",
             gpu_count=1,
+            mig_strategy="none",
         )
 
         graph = gpu_isolation_time_to_threshold.do_plot(*set_vars(settings, *args))[0]
@@ -77,6 +78,7 @@ class OverviewReport():
         settings = dict(common_settings) | dict(
             gpu_type="7g.40gb",
             pod_count=1,
+            mig_strategy="mixed",
         )
 
         graph = mig7g_40gb_time_to_threshold.do_plot(*set_vars(settings, *args))[0]
@@ -103,6 +105,7 @@ class OverviewReport():
 
         settings = dict(common_settings) | dict(
             gpu_type="2g.10gb,3g.20gb",
+            mig_strategy="mixed",
         )
 
         graph = exec_time.do_plot(*set_vars(settings, *args))[0]
