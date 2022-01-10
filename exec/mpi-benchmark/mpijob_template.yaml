@@ -1,0 +1,137 @@
+{{ if eq .Bench "sys-fio_local" }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: local-pv
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /var/data/kpouget/
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kpouget.benchmark
+          operator: In
+          values:
+          - {{ .SrcNode }}
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: local-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: local
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: local-storage
+  resources:
+    requests:
+      storage: 2Gi
+---
+{{ end }}
+apiVersion: kubeflow.org/v1alpha2
+kind: MPIJob
+metadata:
+  name: {{ .Name }}
+spec:
+  cleanPodPolicy: Running
+  slotsPerWorker: 1
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+{{ if eq .NetworkType "Multus" }}
+        metadata:
+          annotations:
+            k8s.v1.cni.cncf.io/networks: multus-network
+{{ end }}
+        spec:
+          containers:
+          - name: mpi-launcher
+            command:
+            - mpirun
+            - --allow-run-as-root
+            - -np
+            - "{{ .Nproc }}"
+            - -bind-to
+            - none
+            - -map-by
+            - slot
+            - -mca
+            - pml
+            - ob1
+            - -mca
+            - btl
+            - ^openib
+{{ if eq .NetworkType "Multus" }}
+            - -mca
+            - btl_tcp_if_include
+            - net1
+{{ else if eq .NetworkType "HostNetwork" }}
+            - -mca
+            - btl_tcp_if_include
+            - enp1s0f0
+{{ end }}
+            - bash
+            - -c
+            - {{ .Command }}
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi-bench:base3
+            imagePullPolicy: Always
+    Worker:
+      replicas: {{ .Nproc }}
+      template:
+{{ if eq .NetworkType "Multus" }}
+        metadata:
+          annotations:
+            k8s.v1.cni.cncf.io/networks: multus-network
+{{ end }}
+        spec:
+{{ if eq .NetworkType "HostNetwork" }}
+          hostNetwork: true
+{{ end }}
+          containers:
+          - name: mpi-worker
+            env:
+            image: {{ .Image }}
+{{ if eq .Bench "sys-fio_local" }}
+            volumeMounts:
+            - mountPath: /mnt/storage
+              name: local
+{{ end }}
+{{ if eq .Bench "sys-fio_cephfs" }}
+            volumeMounts:
+            - mountPath: /mnt/storage
+              name: cephfs
+{{ end }}
+            resources:
+              requests:
+                cpu: "4500m"
+{{ if not (eq .SrcNode "") }}
+          nodeSelector:
+            kpouget.benchmark: {{ .SrcNode }}{{ if not (eq .DstNode "") }}-{{ .DstNode }}{{ end }}
+{{ end }}
+{{ if eq .Bench "sys-fio_local" }}
+          volumes:
+            - name: local
+              persistentVolumeClaim:
+                claimName: local
+{{ end }}
+{{ if eq .Bench "sys-fio_cephfs" }}
+          volumes:
+            - name: cephfs
+              persistentVolumeClaim:
+                claimName: cephfs
+{{ end }}
+

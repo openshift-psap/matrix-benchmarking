@@ -1,0 +1,34 @@
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: mpi-base-image
+  namespace: mpi-benchmark
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: mpi-bench:base3
+  source:
+    dockerfile: |2
+      FROM registry.access.redhat.com/ubi8/ubi
+
+      RUN dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm \
+       && dnf -y install sudo pkg-config vim make gdb \
+          curl wget git openssh-clients \
+          gcc-c++ openmpi-devel openmpi \
+          sysbench \
+       && ln -s /usr/lib64/openmpi/bin/orted /usr/bin/orted
+
+      RUN  mkdir /mnt/overlay && chmod 777 /mnt/overlay # for disk benchmarking
+
+      ENV PATH="${PATH}:/usr/lib64/openmpi/bin/"
+    type: Dockerfile
+  strategy:
+    dockerStrategy:
+      from:
+        kind: DockerImage
+        name: registry.access.redhat.com/ubi8/ubi
+    type: Docker
+  triggers:
+  - type: ConfigChange
