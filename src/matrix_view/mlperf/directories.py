@@ -1,5 +1,5 @@
 
-import dash_html_components as html
+from dash import html
 from common import Matrix
 import matrix_view.table_stats
 

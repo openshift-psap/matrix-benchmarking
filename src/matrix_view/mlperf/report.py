@@ -1,7 +1,7 @@
 import copy
 
-import dash_html_components as html
-import dash_core_components as dcc
+from dash import html
+from dash import dcc
 
 from common import Matrix
 import matrix_view.table_stats
