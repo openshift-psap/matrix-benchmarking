@@ -1,9 +1,12 @@
 from matrix_view.table_stats import TableStats
-from matrix_view.hpc import perf
-from matrix_view.prom import overview as prom_overview
-from matrix_view.mlperf import time_to_threshold
-from matrix_view.mlperf import report
-from matrix_view.mlperf import directories
+
+from plugins.hpc.plot import perf
+from plugins.prom.plot import overview as prom_overview
+
+from plugins.mlperf.plot import time_to_threshold
+from plugins.mlperf.plot import report
+from plugins.mlperf.plot import directories
+
 import store
 
 def register():

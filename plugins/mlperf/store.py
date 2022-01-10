@@ -119,7 +119,7 @@ def mlperf_parse_ssd_results(dirname, import_settings):
                 has_logs = True
             except Exception as e:
                 print(f"WARNING: failed to parse {log_file}: {e}")
-                # raise e
+                #raise e
 
     if not has_logs:
         print(f"WARNING: could not find pod log files in '{dirname}', skipping ...")
@@ -129,7 +129,13 @@ def mlperf_parse_ssd_results(dirname, import_settings):
 
 
 def mlperf_parse_results(dirname, import_settings):
-    results = mlperf_parse_ssd_results(dirname, import_settings)
+    benchmark = import_settings.get("benchmark")
+    if benchmark == "ssd":
+        results = mlperf_parse_ssd_results(dirname, import_settings)
+    else:
+        print(f"WARNING: benchmark '{benchmark}' not currently parsed. Skipping {dirname} ...")
+        results = None
+
     if results is None:
         return [({}, {})]
 

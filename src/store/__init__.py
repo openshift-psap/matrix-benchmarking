@@ -29,7 +29,7 @@ def parse_argv(argv):
 
 def mode_store(mode):
     print(f"Loading {mode} storage module ...")
-    store_pkg_name = f"store.{mode}"
+    store_pkg_name = f"plugins.{mode}.store"
     try: store_plugin = importlib.import_module(store_pkg_name)
     except ModuleNotFoundError as e:
         print(f"FATAL: Failed to load module '{mode}': {e}")

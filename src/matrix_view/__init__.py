@@ -51,7 +51,7 @@ def COLORS(idx):
 
 
 def configure(store, mode):
-    plotting_plugin_pkg_name = f"matrix_view.{mode}"
+    plotting_plugin_pkg_name = f"plugins.{mode}.plot"
 
     try: plotting_plugin = importlib.import_module(plotting_plugin_pkg_name)
     except Exception as e:
