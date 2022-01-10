@@ -2,10 +2,12 @@ import common
 import copy
 import importlib
 import datetime
+from collections import defaultdict
 
 experiment_filter = {}
+benchmark_mode = False
 
-DEFAULT_MODE = "nightly"
+DEFAULT_MODE = "mlperf"
 def parse_argv(argv):
     for expe_filter in argv:
         if expe_filter == "run":
@@ -69,8 +71,12 @@ def add_to_matrix(import_settings, location, results):
 
     if processed_key in common.Matrix.processed_map:
         print(f"WARNING: duplicated processed key: {processed_key}")
-        print(f"WARNING:   old: {common.Matrix.processed_map[processed_key].location}")
+        print(f"WARNING: duplicated import key:    {import_key}")
+        entry = common.Matrix.processed_map[processed_key]
+        print(f"WARNING:   old: {entry.location}")
         print(f"WARNING:   new: {location}")
+        common.Matrix.import_map[import_key] = entry
+
         processed_settings["run"] = (str(processed_settings.get("run")) + "_" +
                                      datetime.datetime.now().strftime("%H%M%S.%f"))
         processed_key = common.Matrix.settings_to_key(processed_settings)
@@ -106,6 +112,10 @@ def gather_rolling_entries(entry):
             gathered_settings, import_settings
         )
         gathered_entry.is_gathered = True
+        gathered_entry.gathered_keys = defaultdict(set)
+
     gathered_entry.results.append(entry)
+    for gathered_key in gathered_keys:
+        gathered_entry.gathered_keys[gathered_key].add(entry.params.__dict__[gathered_key])
 
 custom_rewrite_settings = lambda x:x # may be overriden

@@ -1,0 +1,30 @@
+# https://tsai-liming.medium.com/part-2-building-container-images-for-data-science-858954d1c98d
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: mlperf
+  name: mlperf-maskrcnn-1.1-ubi
+  namespace: default
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: mlperf:maskrcnn_1.1
+      namespace: default
+  resources: {}
+  source:
+    type: Git
+    git:
+      uri: "https://github.com/kpouget/training_results_v1.1"
+      ref: "ubi"
+    contextDir: NVIDIA/benchmarks/maskrcnn/implementations/pytorch
+  triggers:
+  - type: "ConfigChange"
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+      from:
+        kind: DockerImage
+        name: docker.io/nvidia/cuda:11.3.0-devel-ubi8

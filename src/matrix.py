@@ -1,5 +1,6 @@
-import os, types, itertools, datetime
+import os, types, itertools, datetime, sys
 import subprocess
+import uuid
 
 import common
 
@@ -17,7 +18,7 @@ class Matrix():
         exe.expe_cnt.errors = 0
 
         expe_ran = []
-        for expe in self.yaml_desc['run']:
+        for expe in self.yaml_desc['expe_to_run']:
             if not expe or expe.startswith("_"):
                 exe.log(f"Skip disabled expe '{expe}'")
                 continue
@@ -44,13 +45,11 @@ class Matrix():
             exe.log(f"ERROR: Cannot run '{expe}': expe matrix not defined.")
             raise e
 
+        if not isinstance(yaml_expe, dict):
+            raise RuntimeError(f"Expe '{expe}' content should be a mapping ...")
+
         context = types.SimpleNamespace()
         context.params = types.SimpleNamespace()
-
-        all_settings_items = [[(name, value) for value in (values if isinstance(values, list) else str(values).split(", "))]
-                    for name, values in (yaml_expe.get("settings") or {}).items()]
-
-        exe.expe_cnt.total += sum(1 for _ in itertools.product(*all_settings_items))
 
         context.expe = expe
         context.expe_dir = f"{common.RESULTS_PATH}/{self.mode}/{context.expe}"
@@ -58,9 +57,38 @@ class Matrix():
         context.remote_mode = self.yaml_desc.get('remote_mode', False)
         context.script_tpl = self.yaml_desc['script_tpl']
         context.stop_on_error = self.yaml_desc.get('stop_on_error', False)
+        context.common_settings = self.yaml_desc['common_settings']
 
-        # do fail in drymode if we cannot create the directories
-        os.makedirs(context.expe_dir, exist_ok=True)
+        if not exe.dry and context.remote_mode:
+            print(f"""#! /bin/bash
+
+set -x
+
+if ! [[ -d "$1" ]]; then
+  echo "FATAL: \$1 should be a result directory"
+  exit 1
+fi
+RESULTS_DIR="$(realpath "$1")"
+
+if ! [[ -d "$2" ]]; then
+  echo "FATAL: \$2 should be MatrixBenchmark directory "
+  exit 1
+fi
+MATRIX_BENCHMARK_DIR="$(realpath "$2")"
+""", file=sys.stderr)
+
+        settings = dict(context.common_settings)
+        settings.update(yaml_expe)
+
+        all_settings_items = [
+            [(name, value) for value in (values if isinstance(values, list) else str(values).split(", "))]
+            for name, values in settings.items()
+        ]
+
+        exe.expe_cnt.total += sum(1 for _ in itertools.product(*all_settings_items))
+
+        if not exe.dry and not context.remote_mode:
+            os.makedirs(context.expe_dir, exist_ok=True)
 
         stop = self.do_run_matrix(exe, all_settings_items, context, yaml_expe)
         if stop: return stop
@@ -80,8 +108,11 @@ class Matrix():
             if "extra" in settings:
                 extra = settings["extra"]
                 del settings["extra"]
-
+                if isinstance(extra, dict):
+                    raise ValueError(f"'extra' is a dict, does it contain a ':'? ({extra})")
                 for kv in extra.split(", "):
+                    if "=" not in kv:
+                        raise ValueError(f"Invalid 'extra' setting: '{extra}' ('{kv}' has no '=')")
                     k, v = kv.split("=")
                     settings[k] = v
 
@@ -97,11 +128,15 @@ class Matrix():
                 continue
 
             bench_common_path = context.path_tpl.format(**settings)
-            bench_uid = datetime.datetime.today().strftime("%Y%m%d_%H%M%S_%f")
-            bench_fullpath = f"{context.expe_dir}/{bench_common_path}{bench_uid}"
 
-            if not exe.dry:
-                os.makedirs(bench_fullpath)
+            bench_uid = datetime.datetime.today().strftime("%Y%m%d_%H%M") + f".{uuid.uuid4().hex[:4]}"
+
+            context.bench_dir = f"{context.expe}/{bench_common_path}{bench_uid}"
+            context.bench_fullpath = f"{context.expe_dir}/{bench_common_path}{bench_uid}"
+
+            if not exe.dry and not context.remote_mode:
+                os.makedirs(context.bench_fullpath)
+
             exe.log("---"*5)
             exe.log("")
             exe.log("")
@@ -110,7 +145,7 @@ class Matrix():
             for k, v in settings.items():
                 exe.log(f"    {k}: {v}")
             try:
-                ret = self.execute_benchmark(bench_fullpath, settings, context, exe)
+                ret = self.execute_benchmark(settings, context, exe)
             except KeyboardInterrupt:
                 print("Stopping on keyboard interrupt.")
                 return True
@@ -124,9 +159,9 @@ class Matrix():
             exe.expe_cnt.executed += 1
         return False
 
-    def execute_benchmark(self, bench_fullpath, settings, context, exe):
-        if not exe.dry:
-            with open(f"{bench_fullpath}/settings", "w") as f:
+    def execute_benchmark(self, settings, context, exe):
+        if not exe.dry and not context.remote_mode:
+            with open(f"{context.bench_fullpath}/settings", "w") as f:
                 for k, v in settings.items():
                     if k == "expe": continue
 
@@ -135,40 +170,50 @@ class Matrix():
 
         settings_str = ""
         for k, v in settings.items():
-            settings_str += f" '{k}={v}'"
+            kv = f"{k}={v}"
+            settings_str += f" '{kv}'" if " " in kv else f" {kv}"
 
         script = context.script_tpl.format(**settings)
-        script_fullpath = os.path.realpath(os.getcwd()+'/../') + f"/{script}"
 
-        cmd = f"{script_fullpath} {settings_str} 1> >(tee stdout) 2> >(tee stderr >&2)"
+        cmd = f"{script} {settings_str} 1> >(tee stdout) 2> >(tee stderr >&2)"
+        cmd_fullpath = os.path.realpath(os.getcwd()+'/../') + "/" + cmd
+
         if exe.dry:
             exe.log(f"""\n
-Results: {bench_fullpath.replace(common.RESULTS_PATH+'/', '')}
-Command: {script} {settings_str}
+Results: {context.bench_fullpath.replace(common.RESULTS_PATH+'/', '')}
+Command: {script}{settings_str}
 ---
 """)
 
             return None
         elif context.remote_mode:
+            settings_str = "\\n".join([f"{k}={v}" for k, v in settings.items()])
             print(f"""
-cd "{bench_fullpath}"
-if [[ "$(cat ./exit_code)" != 0 ]]; then
-  {cmd}
+echo "Expe {exe.expe_cnt.current_idx}/{exe.expe_cnt.total}"
+CURRENT_DIRNAME="${{RESULTS_DIR}}/{context.bench_dir}"
+
+if [[ "$(cat "$CURRENT_DIRNAME/exit_code" 2>/dev/null)" != 0 ]]; then
+  mkdir -p "$CURRENT_DIRNAME"
+  cd "$CURRENT_DIRNAME"
+  [[ "$$CURRENT_DIRNAME" ]] && rm -rf -- "$CURRENT_DIRNAME"/*
+  echo -e "{settings_str}" > ./settings
+  echo "$(date) Running expe {exe.expe_cnt.current_idx}/{exe.expe_cnt.total}"
+  ${{MATRIX_BENCHMARK_DIR}}/{cmd}
   echo "$?" > ./exit_code
 else
-  echo "Already recorded."
+  echo "Already recorded in $CURRENT_DIRNAME."
 fi
-""")
+""", file=sys.stderr)
             return None
 
         # no need to check here if ./exit_code exists and == 0,
         # we wouldn't reach this step if it did
         # (whereas the remote_mode generated script can be executed multiple times)
 
-        exe.log(f"cd {bench_fullpath}")
-        exe.log(cmd)
+        exe.log(f"cd {context.bench_fullpath}")
+        exe.log(cmd_fullpath)
         try:
-            proc = subprocess.run(cmd, cwd=bench_fullpath, shell=True, executable='/bin/bash')
+            proc = subprocess.run(cmd_fullpath, cwd=context.bench_fullpath, shell=True, executable='/bin/bash')
         except KeyboardInterrupt as e:
             print("")
             exe.log("KeyboardInterrupt registered.")
@@ -176,7 +221,7 @@ fi
 
         exe.log(f"exit code: {proc.returncode}")
         # ^^^ blocks until the process terminates
-        with open(f"{bench_fullpath}/exit_code", "w") as f:
+        with open(f"{context.bench_fullpath}/exit_code", "w") as f:
             print(f"{proc.returncode}", file=f)
 
         return proc.returncode == 0

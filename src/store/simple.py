@@ -8,7 +8,6 @@ import store
 def _failed_directory(dirname):
     return _incomplete_directory(dirname)
 
-
 def _incomplete_directory(dirname):
     if not store.experiment_filter.get("__clean__", False):
         return
@@ -23,6 +22,7 @@ def _parse_directory(expe, dirname):
     try:
         with open(f"{dirname}/exit_code") as f:
             exit_code = int(f.read().strip())
+
         if exit_code != 0:
             #print(f"{dirname}: exit_code == {exit_code}, skipping ...")
             _failed_directory(dirname)
@@ -32,6 +32,9 @@ def _parse_directory(expe, dirname):
         if not _incomplete_directory(dirname):
             #print(f"{dirname}: 'exit_code' file not found, skipping ...")
             pass
+        return
+    except Exception as e:
+        print(f"{dirname}: exit_code cannot be read/parsed, skipping ...")
         return
 
     with open(f"{dirname}/settings") as f:

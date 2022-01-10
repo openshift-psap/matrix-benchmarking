@@ -1,0 +1,80 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {job_name}
+  namespace: {namespace}
+  labels:
+    app: {app_name}
+spec:
+  parallelism: {parallelism}
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: {app_name}
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: cnt
+        image: "image-registry.openshift-image-registry.svc:5000/default/mlperf:{benchmark_image_tag}"
+        command:
+        - /bin/bash
+        - ./my_run_and_time.sh
+        env:
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "compute,utility"
+        - name: NVIDIA_REQUIRE_CUDA
+          value: "cuda>=5.0"
+        - name: DGX_SYSTEM
+          value: CUSTOM
+
+        - name: EXECUTION_MODE
+          value: "{settings_exec_mode}"
+        - name: SSD_THRESHOLD
+          value: "{settings_threshold}"
+        - name: DGXSOCKETCORES
+          value: "{settings_cores}"
+        - name: RUN_DESCR
+          value: "{settings_run_descr}"
+        - name: SYNC_IDENTIFIER
+          value: "{sync_identifier}"
+        - name: SYNC_COUNTER
+          value: "{sync_counter}"
+        - name: NO_SYNC
+          value: "{no_sync}"
+        - name: GPU_COUNT
+          value: "{res_count}"
+        - name: GPU_RES_TYPE
+          value: "{k8s_res_type}"
+        - name: GPU_TYPE
+          value: "{settings_gpu_type}"
+        - name: BENCHMARK
+          value: "{settings_benchmark}"
+
+        securityContext:
+          privileged: true
+        resources:
+          limits:
+            {k8s_res_type}: "{res_count}"
+          requests:
+            {k8s_res_type}: "{res_count}"
+        volumeMounts:
+        - mountPath: /dev/shm
+          name: dshm
+        - mountPath: /data/coco2017
+          name: mlperf-data
+        - name: config-volume
+          mountPath: {workdir}/my_run_and_time.sh
+          readOnly: false
+          subPath: my_run_and_time.sh
+      volumes:
+      - name: mlperf-data
+        persistentVolumeClaim:
+          claimName: benchmarking-coco-dataset
+      - name: dshm
+        emptyDir:
+          medium: Memory
+      - name: config-volume
+        configMap:
+          defaultMode: 0777
+          name: custom-config-script

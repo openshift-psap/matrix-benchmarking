@@ -19,12 +19,16 @@ def register_all():
             if entry.is_gathered:
                 entry.stats[stat.name] = gathered_stats = []
                 for gathered_entry in entry.results:
+                    if not gathered_entry.results: continue
                     if stat.field not in gathered_entry.results.__dict__: continue
+
                     gathered_stats.append(stat.process(gathered_entry))
                 if gathered_stats:
                     register = True
             else:
-                if stat.field not in entry.results.__dict__: continue
+                d = entry.results if isinstance(entry.results, dict) else entry.results.__dict__
+                if stat.field not in d: continue
+
                 register = True
 
             entry.stats[stat.name] = stat.process(entry)
@@ -346,6 +350,7 @@ class TableStats():
 
             legend_names.add(legend_name)
             x[legend_key].append(x_key)
+
             y[legend_key].append(entry.stats[self.name].value)
             y_err[legend_key].append(entry.stats[self.name].stdev)
 
@@ -376,6 +381,7 @@ class TableStats():
             for _y, _y_error in zip(y[legend_key], y_err[legend_key]):
                 # above == below iff len(_y_error) == 1
                 if None in (_y, _y_error): continue
+
                 y_err_above.append(_y+_y_error[0])
                 y_err_below.append(_y-_y_error[-1])
 

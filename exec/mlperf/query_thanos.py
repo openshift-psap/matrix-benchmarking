@@ -5,71 +5,83 @@ import urllib.request
 import urllib.parse
 import json
 import ssl
+import base64
 
-CMD_HAS_USER_MONITORING = "oc get cm/cluster-monitoring-config -n openshift-monitoring >/dev/null"
+import kubernetes.client
+import kubernetes.config
+import kubernetes.utils
+from kubernetes.stream import stream as k8s_stream
 
-CMD_GET_SECRET_NAME = "oc get secret -n openshift-user-workload-monitoring \
-                 | grep  prometheus-user-workload-token \
-                 | head -n 1 \
-                 | awk '{ print $1 }'"
+kubernetes.config.load_kube_config()
 
-CMD_GET_TOKEN = "oc get secret {} \
-                -n openshift-user-workload-monitoring \
-                -o jsonpath='{{@.data.token}}' \
-           | base64 -d"
+v1 = kubernetes.client.CoreV1Api()
+customv1 = kubernetes.client.CustomObjectsApi()
 
-CMD_GET_THANOS_HOSTNAME = "oc get route thanos-querier \
-                              -n openshift-monitoring  \
-                              -o jsonpath='{@.spec.host}'"
+THANOS_CLUSTER_ROUTE = None # "thanos-querier-openshift-monitoring.apps.nvidia-test.nvidia-ocp.net"
 
 def has_user_monitoring():
+    print("Thanos: Checking if user-monitoring is enabled ...")
     try:
-        subprocess.check_call(CMD_HAS_USER_MONITORING, shell=True)
-        return True
-    except subprocess.CalledProcessError:
+        monitoring_cm = v1.read_namespaced_config_map(namespace="openshift-monitoring",
+                                                      name="cluster-monitoring-config")
+        cfg = monitoring_cm.data["config.yaml"]
+
+        return "enableUserWorkload: true" in cfg
+    except kubernetes.client.exceptions.ApiException as e:
+        if e.reason != "Not Found":
+            raise e
+        return False
+    except KeyError:
         return False
 
-def get_user_monitoring():
-    return """\
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: cluster-monitoring-config
-  namespace: openshift-monitoring
-data:
-  config.yaml: |
-    enableUserWorkload: true
-"""
 
-def get_secret_name():
-    return subprocess.check_output(CMD_GET_SECRET_NAME, shell=True).decode('utf-8').strip()
+def get_secret_token():
+    print("Thanos: Fetching the monitoring secret token ...")
+    secrets = v1.list_namespaced_secret(namespace="openshift-user-workload-monitoring")
+    for secret in secrets.items:
+        name = secret.metadata.name
+        if not name.startswith("prometheus-user-workload-token"):
+            continue
 
-def get_token(secret_name):
-    return subprocess.check_output(CMD_GET_TOKEN.format(secret_name), shell=True).decode('utf-8')
+        return base64.b64decode(secret.data["token"]).decode("ascii")
 
-THANOS_PROXY_PORT = "9988"
-# ssh -N -L localhost:9988:thanos-querier-openshift-monitoring.apps.test.myocp4.com:443 nva100.ocp
-# + add 127.0.0.1 thanos-querier-openshift-monitoring.apps.test.myocp4.com in /etc/hosts
+    return ""
 
 def get_thanos_hostname():
-    thanos_host = subprocess.check_output(CMD_GET_THANOS_HOSTNAME, shell=True).decode('utf-8')
+    if THANOS_CLUSTER_ROUTE:
+        return THANOS_CLUSTER_ROUTE
 
-    if thanos_host.endswith("test.myocp4.com"):
-        thanos_host += f":{THANOS_PROXY_PORT}"
+    print("Thanos: Fetching the route URL ...")
+    thanos_querier_route = customv1.get_namespaced_custom_object(group="route.openshift.io", version="v1",
+                                                                 namespace="openshift-monitoring", plural="routes",
+                                                                 name="thanos-querier")
+    return thanos_querier_route["spec"]["host"]
 
-    return thanos_host
+def get_dcgm_podname():
+    namespace = "nvidia-gpu-operator"
+    label = "app=nvidia-dcgm-exporter"
+
+    pods = v1.list_namespaced_pod(namespace=namespace, label_selector=label)
+    if not pods.items:
+        raise RuntimeError(f"Pod {label} not found in {namespace} ...")
+
+    return pods.items[0].metadata.name
 
 def _do_query(thanos, api_cmd, **data):
+    if not thanos['token']:
+        raise RuntimeError("Thanos token not available ...")
+
     url = f"https://{thanos['host']}/api/v1/{api_cmd}"
     encoded_data = urllib.parse.urlencode(data)
     url += "?" + encoded_data
 
-    req = urllib.request.Request(url, method='GET',
-                                 headers={f"Authorization": f"Bearer {thanos['token']}"})
-    context = ssl._create_unverified_context()
+    curl_cmd = f"curl --silent -k '{url}' --header 'Authorization: Bearer {thanos['token']}'"
+    resp = exec_in_pod("nvidia-gpu-operator", thanos["pod_name"], curl_cmd)
 
-    content = urllib.request.urlopen(req, context=context).read()
-    return json.loads(content.decode('utf-8'))['data']
+    result = json.loads(resp.replace("'", '"'))
+
+    if result["status"] == "success":
+        return result["data"]
 
 def query_current_ts(thanos):
     try:
@@ -82,7 +94,7 @@ def query_metrics(thanos):
     return _do_query(thanos, "label/__name__/values")
 
 def query_values(thanos, metrics, ts_start, ts_stop):
-    print(f"Get thanos metrics for '{metrics}' between {ts_start} and {ts_stop}.")
+    #print(f"Get thanos metrics for '{metrics}' between {ts_start} and {ts_stop}.")
     return _do_query(thanos, "query_range",
                      query=metrics,
                      start=ts_start,
@@ -90,21 +102,31 @@ def query_values(thanos, metrics, ts_start, ts_stop):
                      step=1)
 
 
+def exec_in_pod(namespace, name, cmd):
+    # Calling exec and waiting for response
+    exec_command = ['/bin/sh', '-c', cmd]
+
+    return k8s_stream(v1.connect_get_namespaced_pod_exec,
+                      name=name, namespace=namespace,
+                      command=exec_command,
+                      stderr=False, stdin=False,
+                      stdout=True, tty=False)
+
 def prepare_thanos():
     if not has_user_monitoring():
         raise Exception("""Thanos monitoring not enabled. See https://docs.openshift.com/container-platform/4.7/monitoring/enabling-monitoring-for-user-defined-projects.html#enabling-monitoring-for-user-defined-projects_enabling-monitoring-for-user-defined-projects""")
 
-    secret_name = get_secret_name()
     return dict(
-        token = get_token(secret_name),
-        host = get_thanos_hostname()
+        token = get_secret_token(),
+        host = get_thanos_hostname(),
+        pod_name = get_dcgm_podname(),
     )
 
 if __name__ == "__main__":
     thanos = prepare_thanos()
     #metrics = query_metrics(thanos)
-    ts_start = 1615198949.457
-    ts_stop = 1615198979.53
+    ts_start = 1637669864.153
+    ts_stop = 1637669864.153
 
     if ts_start is None:
         ts_start = query_current_ts(thanos)
@@ -116,13 +138,16 @@ if __name__ == "__main__":
     #values = query_values(thanos, "cluster:memory_usage:ratio", ts_start, ts_stop)
     #print(values)
     try:
-        for metrics in ["DCGM_FI_DEV_MEM_COPY_UTIL", "DCGM_FI_DEV_GPU_UTIL", "DCGM_FI_DEV_POWER_USAGE",
-                    "cluster:cpu_usage_cores:sum",]:
+        for metrics in ["DCGM_FI_DEV_POWER_USAGE",]:
             thanos_values = query_values(thanos, metrics, ts_start, ts_stop)
             if not thanos_values:
                 print("No metric values collected for {metrics}")
                 continue
 
+            results = thanos_values['result']
+            if not results:
+                print(f"Found no result for {metrics} ...")
+                continue
 
             print(f"Found {len(thanos_values['result'][0]['values'])} values for {metrics}")
             print(thanos_values['result'])
