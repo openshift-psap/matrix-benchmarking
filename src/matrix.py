@@ -18,7 +18,17 @@ class Matrix():
         exe.expe_cnt.errors = 0
 
         expe_ran = []
-        for expe in self.yaml_desc['expe_to_run']:
+        try:
+            expe_to_run = self.yaml_desc['expe_to_run']
+        except KeyError as e:
+            print("ERROR: missing 'expe_to_run' stanza.")
+            raise e
+
+        if not expe_to_run:
+            exe.log(f"No experiment to run ...")
+            return
+
+        for expe in expe_to_run:
             if not expe or expe.startswith("_"):
                 exe.log(f"Skip disabled expe '{expe}'")
                 continue
