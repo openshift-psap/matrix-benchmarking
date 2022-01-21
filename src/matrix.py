@@ -138,11 +138,12 @@ MATRIX_BENCHMARK_DIR="$(realpath "$2")"
             key = common.Matrix.settings_to_key(settings)
 
             if key in common.Matrix.processed_map or key in common.Matrix.import_map:
-                exe.log(f"experiment {exe.expe_cnt.current_idx}/{exe.expe_cnt.total} already recorded, skipping")
+                exe.log(f"experiment {exe.expe_cnt.current_idx}/{exe.expe_cnt.total} already recorded, skipping.")
                 if key in common.Matrix.processed_map:
                     exe.log(">", common.Matrix.processed_map[key].location.replace(common.RESULTS_PATH+f"/{self.mode}/", ''))
                 else:
                     exe.log(">", common.Matrix.import_map[key].location.replace(common.RESULTS_PATH+f"/{self.mode}/", ''))
+                exe.log("")
                 exe.expe_cnt.recorded += 1
                 continue
 
