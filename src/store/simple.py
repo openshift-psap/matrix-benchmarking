@@ -60,6 +60,8 @@ def _parse_directory(expe, dirname):
         raise e
         return
 
+    if extra_settings__results is None: return
+
     for extra_settings, results in extra_settings__results:
         entry_import_settings = dict(import_settings)
         entry_import_settings.update(extra_settings)
