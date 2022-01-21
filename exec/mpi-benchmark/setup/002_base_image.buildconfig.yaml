@@ -8,21 +8,27 @@ spec:
   output:
     to:
       kind: ImageStreamTag
-      name: mpi-bench:base3
+      name: mpi-bench:base
   source:
     dockerfile: |2
       FROM registry.access.redhat.com/ubi8/ubi
 
       RUN dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm \
-       && dnf -y install sudo pkg-config vim make gdb \
-          curl wget git openssh-clients \
+       && dnf -y install --quiet \
+          sudo pkg-config vim make gdb \
+          curl wget git gcc-c++ \
+          openssh-server openssh-clients \
           gcc-c++ openmpi-devel openmpi \
-          sysbench \
-       && ln -s /usr/lib64/openmpi/bin/orted /usr/bin/orted
-
-      RUN  mkdir /mnt/overlay && chmod 777 /mnt/overlay # for disk benchmarking
+       && ln -s /usr/lib64/openmpi/bin/orted /usr/bin/orted \
+       && ssh-keygen -A \
+       && (echo "Host *"; echo "    StrictHostKeyChecking no") >> /etc/ssh/ssh_config.d/no_StrictHostKeyChecking.conf \
+       && echo "StrictModes no" >> /etc/ssh/sshd_config \
+       && touch /var/log/lastlog \
+       && chgrp utmp /var/log/lastlog \
+       && chmod 664 /var/log/lastlog
 
       ENV PATH="${PATH}:/usr/lib64/openmpi/bin/"
+
     type: Dockerfile
   strategy:
     dockerStrategy:

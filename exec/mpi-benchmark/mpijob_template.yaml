@@ -1,47 +1,4 @@
-{{ if eq .Bench "sys-fio_local" }}
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: local-pv
-spec:
-  capacity:
-    storage: 2Gi
-  accessModes:
-  - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
-  local:
-    path: /var/data/kpouget/
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kpouget.benchmark
-          operator: In
-          values:
-          - {{ .SrcNode }}
----
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: local-storage
-provisioner: kubernetes.io/no-provisioner
-volumeBindingMode: WaitForFirstConsumer
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: local
-spec:
-  accessModes:
-  - ReadWriteOnce
-  storageClassName: local-storage
-  resources:
-    requests:
-      storage: 2Gi
----
-{{ end }}
-apiVersion: kubeflow.org/v1alpha2
+apiVersion: kubeflow.org/v2beta1
 kind: MPIJob
 metadata:
   name: {{ .Name }}
@@ -52,12 +9,19 @@ spec:
     Launcher:
       replicas: 1
       template:
-{{ if eq .NetworkType "Multus" }}
-        metadata:
-          annotations:
-            k8s.v1.cni.cncf.io/networks: multus-network
-{{ end }}
         spec:
+          initContainers:
+          - name: wait-hostfilename
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi-bench:base
+            command:
+            - bash
+            - -cx
+            - "[[ $(cat /etc/mpi/hostfile | wc -l) != 0 ]] && (date; echo 'Hostfile is ready'; cat /etc/mpi/hostfile) || (date; echo 'Hostfile not ready ...'; sleep 10; exit 1) && while read host; do while ! ssh $host echo $host ; do date; echo \"Pod $host is not up ...\"; sleep 10; done; date; echo \"Pod $host is ready\"; done <<< \"$(cat /etc/mpi/hostfile)\""
+            volumeMounts:
+            - mountPath: /etc/mpi
+              name: mpi-job-config
+            - mountPath: /root/.ssh
+              name: ssh-auth
           containers:
           - name: mpi-launcher
             command:
@@ -75,63 +39,27 @@ spec:
             - -mca
             - btl
             - ^openib
-{{ if eq .NetworkType "Multus" }}
-            - -mca
-            - btl_tcp_if_include
-            - net1
-{{ else if eq .NetworkType "HostNetwork" }}
-            - -mca
-            - btl_tcp_if_include
-            - enp1s0f0
-{{ end }}
             - bash
             - -c
             - {{ .Command }}
-            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi-bench:base3
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi-bench:base
             imagePullPolicy: Always
     Worker:
       replicas: {{ .Nproc }}
       template:
-{{ if eq .NetworkType "Multus" }}
-        metadata:
-          annotations:
-            k8s.v1.cni.cncf.io/networks: multus-network
-{{ end }}
         spec:
-{{ if eq .NetworkType "HostNetwork" }}
-          hostNetwork: true
-{{ end }}
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: DoesNotExist
           containers:
           - name: mpi-worker
-            env:
             image: {{ .Image }}
-{{ if eq .Bench "sys-fio_local" }}
-            volumeMounts:
-            - mountPath: /mnt/storage
-              name: local
-{{ end }}
-{{ if eq .Bench "sys-fio_cephfs" }}
-            volumeMounts:
-            - mountPath: /mnt/storage
-              name: cephfs
-{{ end }}
-            resources:
-              requests:
-                cpu: "4500m"
-{{ if not (eq .SrcNode "") }}
+            imagePullPolicy: Always
+            securityContext:
+              privileged: true
           nodeSelector:
-            kpouget.benchmark: {{ .SrcNode }}{{ if not (eq .DstNode "") }}-{{ .DstNode }}{{ end }}
-{{ end }}
-{{ if eq .Bench "sys-fio_local" }}
-          volumes:
-            - name: local
-              persistentVolumeClaim:
-                claimName: local
-{{ end }}
-{{ if eq .Bench "sys-fio_cephfs" }}
-          volumes:
-            - name: cephfs
-              persistentVolumeClaim:
-                claimName: cephfs
-{{ end }}
-
+            node.kubernetes.io/instance-type: m5.xlarge

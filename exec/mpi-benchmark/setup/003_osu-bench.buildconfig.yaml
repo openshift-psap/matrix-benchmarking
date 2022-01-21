@@ -10,23 +10,25 @@ spec:
       name: mpi-bench:osu-bench
   source:
     dockerfile: |2
-      FROM mpi-bench:base3
+      FROM mpi-bench:base
 
       RUN cd /root \
-       && wget https://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.3.tar.gz \
-       && tar xvf osu-micro-benchmarks-5.6.3.tar.gz \
-       && cd osu-micro-benchmarks-5.6.3 \
+       && OSU_VERSION=5.8 \
+       && wget --quiet https://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-${OSU_VERSION}.tgz \
+       && tar xvf osu-micro-benchmarks-${OSU_VERSION}.tgz \
+       && cd osu-micro-benchmarks-${OSU_VERSION} \
        && ./configure --prefix=/opt/osu-micro-benchmarks CC=/usr/lib64/openmpi/bin/mpicc LIBS="-L/usr/lib64/openmpi/lib -lmpi -lpthread" \
-       && make && make install \
-       && cd /root && rm -rf /root/osu-micro-benchmarks-5.6.3
-       
+       && make \
+       && make install \
+       && cd /root \
+       && rm -rf /root/osu-micro-benchmarks-${OSU_VERSION} osu-micro-benchmarks-${OSU_VERSION}.tar.gz
+
     type: Dockerfile
   strategy:
     dockerStrategy:
       from:
         kind: ImageStreamTag
-        name: mpi-bench:base3
+        name: mpi-bench:base
     type: Docker
   triggers:
   - type: ConfigChange
-

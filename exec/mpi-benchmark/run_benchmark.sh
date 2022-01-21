@@ -1,73 +1,96 @@
 #! /bin/bash
 
-MODE=...
+set -e
+set -o pipefail
+set -o nounset
 
+exit 1
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-do_net_benchmark() {
-    name="$1"
-    network="$2"
-    dest="$3"
-    if [ "$#" -gt 3 ]; then
-        src_node="$4"
-        dst_node="$5"
+if tty -s; then
+    ARTIFACT_BASE="/tmp/ci-artifacts_$(date +%Y%m%d)"
+    mkdir -p "$ARTIFACT_BASE"
 
-        nodes="-src $src_node -dst $dst_node"
-    else
-        nodes=""
-    fi
-    cmd="-net $network $nodes"
+    ARTIFACT_DIR="$ARTIFACT_BASE/$(printf '%03d' $(ls "${ARTIFACT_BASE}/" | grep __ | wc -l))__benchmark__mpi-benchmark"
 
-    do_benchmark "$name" "$cmd" "$dest"
-}
+    mkdir -p "$ARTIFACT_DIR"
 
-do_benchmark() {
-    name="$1"
-    cmd="$2"
-    dest="$3"
+    echo "Running interactively"
+    echo "Using '$ARTIFACT_DIR' to store the test artifacts."
+else
+    echo "Running non-interactively"
+    echo "Using the current directory to store the test artifacts."
+    ARTIFACT_DIR="$(pwd)"
+fi
 
-    echo "Create -name $name $cmd"
-    echo
+for i in "$@"; do
+    key=$(echo $i | cut -d= -f1)
+    val=$(echo $i | cut -d= -f2)
+    declare $key=$val
+    echo "$key ==> $val"
+done
+echo
 
-    go run apply_template.go -name "$name" $cmd | oc delete -f- 2>/dev/null >/dev/null || echo -n
+common_args=""
+common_args="$common_args -name $operation"
+extra_args=""
+if [[ "$mode" == "collective" || "$mode" == "hello" ]]; then
 
-    create=$(go run apply_template.go -name "$name" $cmd \
-           | oc create -f- | tail -1) # mpijob.kubeflow.org/bandwidth-multus-2procs created
+    extra_args="$extra_args -np $node_count"
+fi
 
-    mpijob_name=$(echo $create | grep mpijob | tail -1 | cut -d' ' -f1 | cut -d"/" -f2) # bandwidth-multus-2procs
+# delete any stalled resource
+mpijobs="$(oc get mpijobs -oname)"
+if [[ "$mpijobs" ]]; then
+    oc delete $mpijobs
+fi
 
-    echo "Waiting for mpijob/$mpijob_name launcher pod to run $dest ..."
+# mpijobs jobs do not have labels ...
+for mpijob_name in $(oc get mpijobs '-ojsonpath={range .items[*]}{.metadata.name}{"\n"}{end}');
+do
+    oc delete job/${mpijob_name}-launcher --ignore-not-found
+done
+oc delete pods -ltraining.kubeflow.org/operator-name=mpi-operator
 
-    prev_status=""
-    cnt=0
-    while true; do
-        launcher_status=$(oc get pods -l mpi_job_name=$mpijob_name,mpi_role_type=launcher --no-headers \
-                            | awk '{ print $1 " " $3 }')
-        launcher_pod_name=$(echo "$launcher_status" | cut -d' ' -f1)
-        pod_status=$(echo "$launcher_status" | cut -d' ' -f2)
-        if [ "$pod_status" != "$prev_status" ]; then
-            echo "$launcher_pod_name is $pod_status ... (${cnt}s)"
-        fi
+echo "Waiting for all the MPI Operator pods to disappear ..."
+while [[ "$(oc get pods -ltraining.kubeflow.org/operator-name=mpi-operator -oname)" ]]; do
+    sleep 5
+done
+echo "Done."
 
-        if [ "$pod_status" == "Completed" ]; then
-            break
-        fi
+cmd="go run apply_template.go $common_args $extra_args"
+echo $cmd
+mpi_yaml=$(cd "$SCRIPT_DIR"; $cmd)
 
-        cnt=$(expr $cnt + 1)
-        if [ "$cnt" -gt 90 ];
-        then
-           echo "Timeout ..."
-           break
-        fi
-        sleep 1
-    done
+echo "$mpi_yaml" > "$ARTIFACT_DIR/001_mpijob.yaml"
 
-    if ! [ "$cnt" -gt 90 ];
-    then
-       oc logs pod/$launcher_pod_name | grep -v '^+' | grep -v '^\[' > $dest
-    else
-        echo TIMEOUT > $dest
-    fi
+mpijob_name=$(echo "$mpi_yaml" | oc create -f- -oname --dry-run=client) # eg: mpijob.kubeflow.org/osu-alltoall-4procs
+name=$(echo "$mpi_yaml" | oc create -f- -ojsonpath={.metadata.name}) # eg: osu-alltoall-4procs
 
-    create=$(go run apply_template.go -name "$name" $cmd \
-           | oc delete -f-)
-}
+echo
+echo "Waiting for $mpijob_name to complete its execution ..."
+while [[ -z "$(oc get "$mpijob_name" -ojsonpath={.status.completionTime})" ]];
+do
+    echo -n "."
+    sleep 5
+done
+echo
+echo "Done, collecting artifacts in $ARTIFACT_DIR ..."
+
+oc get "$mpijob_name" -oyaml > "$ARTIFACT_DIR/mpijob.status.yaml"
+
+# if Pod logs are queried with the label selector, only the last lines are
+launcher_pod_name=$(oc get pod -ltraining.kubeflow.org/job-name=$name,training.kubeflow.org/job-role=launcher -oname)
+oc logs "$launcher_pod_name" > "$ARTIFACT_DIR/mpijob.launcher.log"
+
+oc get pods -ltraining.kubeflow.org/job-name=$name -oyaml > "$ARTIFACT_DIR/mpijob.pods.yaml"
+
+for pod in $(oc get pods -ltraining.kubeflow.org/job-name=$name,training.kubeflow.org/job-role=worker -oname); do
+    oc logs $pod > "$ARTIFACT_DIR/mpijob.$(echo "$pod" | sed "s|pod/${name}-||").log"
+done
+
+echo
+
+cat "$ARTIFACT_DIR/mpijob.launcher.log"
+
+echo "All done."
