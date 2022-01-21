@@ -63,7 +63,7 @@ class Matrix():
 
         context.expe = expe
         context.expe_dir = f"{common.RESULTS_PATH}/{self.mode}/{context.expe}"
-        context.path_tpl = self.yaml_desc['path_tpl']
+        context.path_tpl = self.yaml_desc.get('path_tpl')
         context.remote_mode = self.yaml_desc.get('remote_mode', False)
         context.script_tpl = self.yaml_desc['script_tpl']
         context.stop_on_error = self.yaml_desc.get('stop_on_error', False)
@@ -115,6 +115,15 @@ MATRIX_BENCHMARK_DIR="$(realpath "$2")"
             settings['expe'] = context.expe
             exe.expe_cnt.current_idx += 1
 
+            path_tpl = context.path_tpl
+            expe_path_tpl = settings.get("__path_tpl")
+            if expe_path_tpl:
+                del settings["__path_tpl"]
+                path_tpl = expe_path_tpl
+
+            if path_tpl is None:
+                raise ValueError("<top-level>.path_tpl or <top-level>.expe[<expe>].__path_tpl must be provided.")
+
             if "extra" in settings:
                 extra = settings["extra"]
                 del settings["extra"]
@@ -137,7 +146,7 @@ MATRIX_BENCHMARK_DIR="$(realpath "$2")"
                 exe.expe_cnt.recorded += 1
                 continue
 
-            bench_common_path = context.path_tpl.format(**settings)
+            bench_common_path = path_tpl.format(**settings)
 
             bench_uid = datetime.datetime.today().strftime("%Y%m%d_%H%M") + f".{uuid.uuid4().hex[:4]}"
 
