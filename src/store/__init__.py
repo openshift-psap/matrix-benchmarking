@@ -51,7 +51,7 @@ def add_to_matrix(import_settings, location, results):
         print(f"WARNING:   new: {location}")
         return
 
-    try: processed_settings = custom_rewrite_settings(import_settings)
+    try: processed_settings = custom_rewrite_settings(dict(import_settings))
     except Exception as e:
         print(f"ERROR: failed to rewrite settings for entry at '{location}'")
         raise e
