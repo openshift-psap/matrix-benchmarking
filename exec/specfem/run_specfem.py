@@ -1,13 +1,24 @@
 #! /usr/bin/python3
 
-import os, subprocess
+import os, subprocess, sys
+import datetime
 import yaml
+
+from pathlib import Path
+
 
 import specfem_config
 import common
 
-GO_CLIENT_CWD = "/home/kevin/openshift/specfem/specfem-client"
-GO_CLIENT_CMD = ["go", "run", ".", "-config", "specfem-benchmark"]
+SPECFEM_GO_CLIENT_DIR = "SPECFEM_GO_CLIENT_DIR"
+SPECFEM_GO_CLIENT_DEV_MODE = "SPECFEM_GO_CLIENT_DEV_MODE"
+env = {
+    SPECFEM_GO_CLIENT_DIR: None,
+    SPECFEM_GO_CLIENT_DEV: "false",
+}
+
+
+
 
 NETWORK_MAPPING = {
     "multus": "Multus",
@@ -42,9 +53,15 @@ spec:
       mainNic: enp1s0f1
 """
 
+def str2bool(v, strict=False):
+  if v.lower() in ("yes", "true", "t", "1"): return True
+  if not strict: return False
+  if v.lower() in ("no", "false", "n", "0"): return False
+  raise ValueError(f"Invalid boolean value: {v}")
+
 def _specfem_set_yaml(path_key, value):
     if path_key is not None:
-        with open(GO_CLIENT_CWD+"/config/specfem-benchmark.yaml", 'r') as f:
+        with open(env[SPECFEM_GO_CLIENT_DIR] / "config" / "specfem-benchmark.yaml", 'r') as f:
             yaml_cfg = yaml.safe_load(f)
 
         loc = yaml_cfg
@@ -54,15 +71,17 @@ def _specfem_set_yaml(path_key, value):
     else:
         yaml_cfg = yaml.safe_load(DEFAULT_YAML)
 
-    with open(GO_CLIENT_CWD+"/config/specfem-benchmark.yaml", 'w') as f:
+    with open(env[SPECFEM_GO_CLIENT_DIR] / "config" / "specfem-benchmark.yaml", 'w') as f:
         yaml.dump(yaml_cfg, f)
 
+
 def _specfem_get_yaml():
-    with open(GO_CLIENT_CWD+"/config/specfem-benchmark.yaml", 'r') as f:
+    with open(env[SPECFEM_GO_CLIENT_DIR] / "config" / "specfem-benchmark.yaml", 'r') as f:
         yaml_cfg = yaml.safe_load(f)
         return yaml.dump(yaml_cfg)
 
-def reset():
+
+def reset(): # not used at the moment
     cmd = GO_CLIENT_CMD + ["-delete", "mesher"]
     process = subprocess.Popen(cmd, cwd=GO_CLIENT_CWD, stdout=subprocess.PIPE)
     process.wait()
@@ -77,31 +96,26 @@ def reset():
 
     return errcode
 
-def run_specfem():
-    _specfem_set_yaml(None, None) # reset YAML file
 
-    nex = int(specfemsimpleagent.get_param(params, "nex"))
-    _specfem_set_yaml("spec.specfem.nex", int(nex))
+def run_specfem(settings):
+    _specfem_set_yaml(None, None) # reset the YAML file
 
-    mpi_nproc = int(specfemsimpleagent.get_param(params, "processes"))
-    _specfem_set_yaml("spec.exec.nproc", int(mpi_nproc))
+    _specfem_set_yaml("spec.specfem.nex", int(settings["nex"]))
+    _specfem_set_yaml("spec.exec.nproc", int(settings["processes"]))
+    _specfem_set_yaml("spec.exec.ncore", int(settings["threads"]))
+    _specfem_set_yaml("spec.exec.slotsPerWorker", int(settings["mpi-slots"]))
+    _specfem_set_yaml("spec.resources.networkType", NETWORK_MAPPING[settings["network"]])
+    _specfem_set_yaml("spec.resources.relyOnSharedFS", settings["relyOnSharedFS"])
 
-    num_threads = specfemsimpleagent.get_param(params, "threads")
-    _specfem_set_yaml("spec.exec.ncore", int(num_threads))
-
-    mpi_slots = int(specfemsimpleagent.get_param(params, "mpi-slots"))
-    _specfem_set_yaml("spec.exec.slotsPerWorker", int(mpi_slots))
-
-    network = specfemsimpleagent.get_param(params, "network")
-    _specfem_set_yaml("spec.resources.networkType", NETWORK_MAPPING[network])
+    print(_specfem_get_yaml())
 
 
-    shared_fs = specfemsimpleagent.get_param(params, "relyOnSharedFS")
-    _specfem_set_yaml("spec.resources.relyOnSharedFS", shared_fs)
+    specfem_cmd = ["go", "run", "."] if env[SPECFEM_GO_CLIENT_DEV_MODE] else "./specfem-client"
 
-    agent.feedback("config: "+_specfem_get_yaml())
+    specfem_cmd += ["-config", "specfem-benchmark"]
 
-    process = subprocess.Popen(GO_CLIENT_CMD, cwd=GO_CLIENT_CWD, stderr=subprocess.PIPE)
+    print(f"cd {env[SPECFEM_GO_CLIENT_DIR]}; {' '.join(specfem_cmd)}")
+    process = subprocess.Popen(specfem_cmd, cwd=env[SPECFEM_GO_CLIENT_DIR], stderr=subprocess.PIPE)
 
     log_filename = None
     while process.stderr.readable():
@@ -109,26 +123,72 @@ def run_specfem():
 
         if not line: break
         print("| "+line.rstrip())
-        agent.feedback("| " + line)
 
         if "Saved solver logs into" in line:
             log_filename = line.split("'")[-2]
+
     process.wait()
 
     errcode = process.returncode
 
     if errcode != 0:
-        msg = f"ERROR: Specfem finished with errcode={errcode}"
-        print(msg)
-        agent.feedback(msg)
-        return
-    if log_filename is None:
-        msg = f"ERROR: Specfem finished but the GO client failed to retrieve the solver logfile ..."
-        print(msg)
-        agent.feedback(msg)
-        return
-    print(f"INFO: Specfem finished successfully")
-    specfemsimpleagent.parse_and_save_timing(agent,log_filename)
+        print(f"ERROR: Specfem finished with errcode={errcode}")
+
+    elif log_filename is None:
+        print(f"ERROR: Specfem finished but the GO client failed to retrieve the solver logfile ...")
+
+    else:
+        print(f"INFO: Specfem finished successfully")
+
+
+def prepare_settings():
+    settings = {}
+    for arg in sys.argv[1:]:
+        k, _, v = arg.partition("=")
+        settings[k] = v
+
+    for env_key in env:
+        try:
+            env[env_key] = settings.pop(env_key)
+
+        except KeyError as e:
+            from_settings = os.getenv(env_key)
+
+            if from_settings is not None:
+                env[env_key] = from_settings
+
+            elif env[env_key] is not None:
+                pass # using hardcoded default value
+            else:
+                raise e
+
+        print(f"INFO: {env_key}={env[env_key]}")
+
+    env[SPECFEM_GO_CLIENT_DIR] = Path(env[SPECFEM_GO_CLIENT_DIR])
+
+    env[SPECFEM_GO_CLIENT_DEV_MODE] = str2bool(env[SPECFEM_GO_CLIENT_DEV_MODE], strict=True)
+
+    return settings
+
+
+def set_artifacts_dir():
+    global ARTIFACTS_DIR
+
+    if sys.stdout.isatty():
+        base_dir = Path("/tmp") / ("ci-artifacts_" + datetime.datetime.today().strftime("%Y%m%d"))
+        base_dir.mkdir(exist_ok=True)
+        current_length = len(list(base_dir.glob("*__*")))
+        ARTIFACTS_DIR = base_dir / f"{current_length:03d}__benchmarking__run_specfem"
+        ARTIFACTS_DIR.mkdir(exist_ok=True)
+    else:
+        ARTIFACTS_DIR = Path(os.getcwd())
+
+    print(f"Saving artifacts files into {ARTIFACTS_DIR}")
+
+    global ARTIFACTS_SRC
+    ARTIFACTS_SRC = ARTIFACTS_DIR / "src"
+    ARTIFACTS_SRC.mkdir(exist_ok=True)
+
 
 def main():
     print(datetime.datetime.now())
@@ -137,7 +197,7 @@ def main():
 
     set_artifacts_dir()
 
-    run_specfem()
+    run_specfem(settings)
 
 if __name__ == "__main__":
     sys.exit(main())
