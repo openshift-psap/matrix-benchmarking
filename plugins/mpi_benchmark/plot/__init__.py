@@ -1,49 +1,9 @@
-import matrix_view.mpi_benchmark.osu
 import matrix_view.table_stats
 from common import Matrix
 
+from . import osu
+from . import hello
+
 def register():
-    matrix_view.mpi_benchmark.osu.SimpleNet()
-    matrix_view.table_stats.TableStats.Value(
-        id_name="sysbench-cpu",
-        name="Sysbench CPU",
-        field="cpu_evt_per_sec",
-        fmt="%d evt/seconds",
-        unit="Events per seconds",
-        higher_better=True,
-    )
-
-    matrix_view.table_stats.TableStats.Value(
-        id_name="sysbench-fio",
-        name="Sysbench FIO Write",
-        field="fio_thput_write",
-        fmt="%d MiB/s",
-        unit="MiB per seconds",
-        higher_better=True,
-    )
-    matrix_view.table_stats.TableStats.Value(
-        id_name="sysbench-fio",
-        name="Sysbench FIO Read",
-        field="fio_thput_read",
-        fmt="%d MiB/s",
-        unit="MiB per seconds",
-        higher_better=True,
-    )
-
-    matrix_view.table_stats.TableStats.Value(
-        id_name="osu-bandwidth",
-        name="MPI Bandwidth",
-        field="bandwidth",
-        fmt="%d MiB/s",
-        unit="MiB per seconds",
-        higher_better=True,
-    )
-
-    matrix_view.table_stats.TableStats.Value(
-        id_name="osu-latency",
-        name="MPI Latency",
-        field="latency",
-        fmt="%.2f us",
-        unit="useconds",
-        higher_better=False,
-    )
+    osu.SimpleNet()
+    hello.Hello()
