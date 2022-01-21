@@ -1,4 +1,0 @@
-benchmark=osu.net.bandwidth
-network=SDN
-@run=2
-

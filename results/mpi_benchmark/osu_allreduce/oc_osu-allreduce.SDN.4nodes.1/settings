@@ -1,6 +1,0 @@
-platform=oc
-benchmark=osu.allreduce
-network=SDN
-nodes=4nodes
-@run=1
-

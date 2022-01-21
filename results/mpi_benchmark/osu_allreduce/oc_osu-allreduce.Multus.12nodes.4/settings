@@ -1,6 +1,0 @@
-platform=oc
-benchmark=osu.allreduce
-network=Multus
-nodes=12nodes
-@run=4
-

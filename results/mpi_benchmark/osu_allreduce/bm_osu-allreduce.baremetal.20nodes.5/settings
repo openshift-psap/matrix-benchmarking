@@ -1,6 +1,0 @@
-platform=bm
-benchmark=osu.allreduce
-network=baremetal
-nodes=20nodes
-@run=5
-

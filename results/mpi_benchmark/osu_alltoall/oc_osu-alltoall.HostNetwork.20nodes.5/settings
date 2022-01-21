@@ -1,6 +1,0 @@
-platform=oc
-benchmark=osu.alltoall
-network=HostNetwork
-nodes=20nodes
-@run=5
-

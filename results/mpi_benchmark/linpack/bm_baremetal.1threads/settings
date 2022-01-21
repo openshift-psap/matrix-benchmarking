@@ -1,3 +1,0 @@
-platform=baremetal
-threads=1threads
-benchmark=linpack

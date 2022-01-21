@@ -1,6 +1,0 @@
-platform=bm
-benchmark=sysbench-cpu
-worker=worker07
-threads=4threads
-@run=1
-

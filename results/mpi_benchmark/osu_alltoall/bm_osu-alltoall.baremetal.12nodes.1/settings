@@ -1,6 +1,0 @@
-platform=bm
-benchmark=osu.alltoall
-network=baremetal
-nodes=12nodes
-@run=1
-
