@@ -241,9 +241,11 @@ fi
             exe.log("KeyboardInterrupt registered.")
             raise e
 
-        exe.log(f"exit code: {proc.returncode}")
-        # ^^^ blocks until the process terminates
-        with open(f"{context.bench_fullpath}/exit_code", "w") as f:
-            print(f"{proc.returncode}", file=f)
+        ret = proc.returncode
+        # /!\ ^^^^^^^^^^^^^^^ blocks until the process terminates
 
-        return proc.returncode == 0
+        exe.log(f"exit code: {ret}")
+        with open(f"{context.bench_fullpath}/exit_code", "w") as f:
+            print(f"{ret}", file=f)
+
+        return ret == 0
