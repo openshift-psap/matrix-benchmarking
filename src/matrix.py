@@ -233,7 +233,9 @@ fi
         exe.log(f"cd {context.bench_fullpath}")
         exe.log(cmd_fullpath)
         try:
-            proc = subprocess.run(cmd_fullpath, cwd=context.bench_fullpath, shell=True, executable='/bin/bash')
+            proc = subprocess.run(cmd_fullpath, cwd=context.bench_fullpath, shell=True,
+                                  stdin=subprocess.PIPE,
+                                  executable='/bin/bash')
         except KeyboardInterrupt as e:
             print("")
             exe.log("KeyboardInterrupt registered.")
