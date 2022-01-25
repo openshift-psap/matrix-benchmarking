@@ -47,7 +47,17 @@ spec:
     Worker:
       replicas: {{ .Nproc }}
       template:
+        metadata:
+          labels:
+            app: {{ .Name }}-worker
         spec:
+          topologySpreadConstraints:
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app: {{ .Name }}-worker
           affinity:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
@@ -62,4 +72,4 @@ spec:
             securityContext:
               privileged: true
           nodeSelector:
-            node.kubernetes.io/instance-type: m5.xlarge
+            node.kubernetes.io/instance-type: {{ .Machine }}

@@ -18,8 +18,7 @@ type MpiBenchmarkData struct {
 	Nproc int
 	NetworkType string
 	Command string
-	SrcNode string
-	DstNode string
+	Machine string
 }
 
 type TemplateBase struct {
@@ -29,7 +28,7 @@ type TemplateBase struct {
 var flag_name = flag.String("name", "", "")
 
 var flag_np = flag.String("np", "", "")
-
+var flag_machine = flag.String("machine", "", "")
 
 var OSU_MPI_PATH = "/opt/osu-micro-benchmarks/libexec/osu-micro-benchmarks/mpi/"
 
@@ -40,6 +39,10 @@ func main() {
 	var nproc int
 	if *flag_name == "" {
 		log.Fatal("Please pass a -name value")
+	}
+
+	if *flag_machine == "" {
+		log.Fatal("Please pass a -machine value")
 	}
 
 	if *flag_name == "latency" || *flag_name == "bandwidth" {
@@ -111,6 +114,7 @@ func main() {
 		Image: image,
 		Nproc: nproc,
 		Command: cmd,
+		Machine: *flag_machine,
 	}
 
 	funcMap := template.FuncMap{

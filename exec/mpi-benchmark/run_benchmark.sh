@@ -4,7 +4,6 @@ set -e
 set -o pipefail
 set -o nounset
 
-exit 1
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 if tty -s; then
@@ -15,12 +14,12 @@ if tty -s; then
 
     mkdir -p "$ARTIFACT_DIR"
 
-    echo "Running interactively"
+    echo "Running interactively."
     echo "Using '$ARTIFACT_DIR' to store the test artifacts."
 else
-    echo "Running non-interactively"
-    echo "Using the current directory to store the test artifacts."
+    echo "Running non-interactively."
     ARTIFACT_DIR="$(pwd)"
+    echo "Using the current directory to store the test artifacts ($ARTIFACT_DIR)."
 fi
 
 for i in "$@"; do
@@ -32,11 +31,17 @@ done
 echo
 
 common_args=""
-common_args="$common_args -name $operation"
+common_args="$common_args -name $operation -machine $machine"
 extra_args=""
-if [[ "$mode" == "collective" || "$mode" == "hello" ]]; then
 
+if [[ "${node_count:-}" ]]; then
     extra_args="$extra_args -np $node_count"
+    worker_node_count=$(oc get nodes -oname -l node-role.kubernetes.io/worker | wc -l)
+    if [[ $node_count -gt $worker_node_count ]];
+    then
+        echo "ERROR: requested $node_count nodes, but the cluster only has $worker_node_count worker nodes ..."
+        exit 1
+    fi
 fi
 
 # delete any stalled resource

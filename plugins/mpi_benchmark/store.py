@@ -62,10 +62,12 @@ def __parse_osu(dirname, settings):
                     raise ValueError("Found too many comments ...")
 
                 continue
-
-            size, bw = line.strip().split()
-
-            results.measures[int(size)] = float(bw)
+            try:
+                size, bw = line.strip().split()
+                results.measures[int(size)] = float(bw)
+            except ValueError as e:
+                print(f"ERROR: Failed to parse the Launcher logs in {f.name}: {e}")
+                print(line.strip())
 
     return results
 
