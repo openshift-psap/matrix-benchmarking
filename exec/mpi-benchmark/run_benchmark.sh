@@ -84,15 +84,23 @@ echo "Done, collecting artifacts in $ARTIFACT_DIR ..."
 
 oc get "$mpijob_name" -oyaml > "$ARTIFACT_DIR/mpijob.status.yaml"
 
-# if Pod logs are queried with the label selector, only the last lines are
-launcher_pod_name=$(oc get pod -ltraining.kubeflow.org/job-name=$name,training.kubeflow.org/job-role=launcher -oname)
-oc logs "$launcher_pod_name" > "$ARTIFACT_DIR/mpijob.launcher.log"
-
 oc get pods -ltraining.kubeflow.org/job-name=$name -oyaml > "$ARTIFACT_DIR/mpijob.pods.yaml"
 
 for pod in $(oc get pods -ltraining.kubeflow.org/job-name=$name,training.kubeflow.org/job-role=worker -oname); do
     oc logs $pod > "$ARTIFACT_DIR/mpijob.$(echo "$pod" | sed "s|pod/${name}-||").log"
 done
+
+oc get nodes -oyaml >  "$ARTIFACT_DIR/nodes.yaml"
+
+# if Pod logs are queried with the label selector, only the last lines are
+launcher_pod_name=$(oc get pod -ltraining.kubeflow.org/job-name=$name,training.kubeflow.org/job-role=launcher -oname)
+
+if [[ -z "$launcher_pod_name" ]]; then
+    echo "ERROR: the launcher Pod disappeared ..."
+    exit 1
+fi
+
+oc logs "$launcher_pod_name" > "$ARTIFACT_DIR/mpijob.launcher.log"
 
 echo
 

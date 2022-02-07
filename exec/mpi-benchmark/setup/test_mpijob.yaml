@@ -1,8 +1,11 @@
 apiVersion: kubeflow.org/v2beta1
 kind: MPIJob
 metadata:
-  name: {{ .Name }}
+  label:
+    profile: rootless
+  name: hello-world
 spec:
+  sshAuthMountPath: /home/mpi/.ssh
   cleanPodPolicy: Running
   slotsPerWorker: 1
   mpiReplicaSpecs:
@@ -12,7 +15,7 @@ spec:
         spec:
           initContainers:
           - name: wait-hostfilename
-            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi-bench:base
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmarking/mpi-bench:base
             command:
             - bash
             - -cx
@@ -20,7 +23,7 @@ spec:
             volumeMounts:
             - mountPath: /etc/mpi
               name: mpi-job-config
-            - mountPath: /root/.ssh
+            - mountPath: /home/mpi/.ssh
               name: ssh-auth
           containers:
           - name: mpi-launcher
@@ -28,7 +31,7 @@ spec:
             - mpirun
             - --allow-run-as-root
             - -np
-            - "{{ .Nproc }}"
+            - "2"
             - -bind-to
             - none
             - -map-by
@@ -41,15 +44,15 @@ spec:
             - ^openib
             - bash
             - -c
-            - {{ .Command }}
-            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmark/mpi-bench:base
+            - echo Hello World from $(cat /proc/sys/kernel/hostname)
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmarking/mpi-bench:base
             imagePullPolicy: Always
     Worker:
-      replicas: {{ .Nproc }}
+      replicas: 2
       template:
         metadata:
           labels:
-            app: {{ .Name }}-worker
+            app: mpi-app
         spec:
           topologySpreadConstraints:
           - maxSkew: 1
@@ -57,20 +60,14 @@ spec:
             whenUnsatisfiable: DoNotSchedule
             labelSelector:
               matchLabels:
-                app: {{ .Name }}-worker
-          affinity:
-            nodeAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                nodeSelectorTerms:
-                - matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: DoesNotExist
+                app: mpi-app
           containers:
           - name: mpi-worker
-            image: {{ .Image }}
+            image: image-registry.openshift-image-registry.svc:5000/mpi-benchmarking/mpi-bench:base
             imagePullPolicy: Always
-            securityContext:
-              privileged: true
-          nodeSelector:
-            node.kubernetes.io/instance-type: {{ .Machine }}
+            command:
+            - /usr/sbin/sshd
+            - -De
+            - -f
+            - /home/mpi/custom_ssh/sshd_config
 

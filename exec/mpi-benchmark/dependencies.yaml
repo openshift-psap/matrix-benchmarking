@@ -1,19 +1,14 @@
+---
 name: cluster_is_prepared
 spec:
   requirements:
-  - operator_is_prepared
+  - has_mpi_operator
 
   - in_mpi_namespace
   - has_mpi_base_image
   - has_mpi_osu_image
 ---
-name: operator_is_prepared
-spec:
-  requirements:
-  - has_mpijobs
-  - has_volcano
----
-name: has_mpijobs
+name: has_mpi_operator
 spec:
   tests:
   - name: has_mpi_crd
@@ -50,15 +45,13 @@ spec:
   tests:
   - name: in_mpi_namespace
     type: shell
-    spec: 'test "$(oc project -q)" == mpi-benchmark'
+    spec: 'test "$(oc project -q)" == mpi-benchmarking'
   install:
   - name: goto_mpi_namespace
     type: shell
     spec: |
-      oc new-project mpi-benchmark 2>/dev/null
-      oc project -q mpi-benchmark
-      oc adm policy add-scc-to-user privileged -z default -n mpi-benchmark
-      oc adm policy add-scc-to-user anyuid -z  default
+      oc new-project mpi-benchmarking 2>/dev/null
+      oc project -q mpi-benchmarking
 ---
 name: has_mpi_imagestream
 spec:
