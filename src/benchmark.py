@@ -16,11 +16,11 @@ class Exec():
 def main():
     store.benchmark_mode = True
 
-    mode = store.parse_argv(sys.argv[1:])
-    store_plugin = store.mode_store(mode)
+    benchmark_name = store.parse_argv(sys.argv[1:])
+    workload_store = store.load_store()
 
     benchmark_desc_file = os.path.realpath(common.RESULTS_PATH
-                                           + f"/{mode}/benchmarks.yaml")
+                                           + f"/{benchmark_name}/benchmarks.yaml")
     with open(benchmark_desc_file) as f:
         all_yaml_benchmark_desc = list(yaml.safe_load_all(f))
 
@@ -28,7 +28,7 @@ def main():
     exe = Exec(dry)
 
     exe.log("Loading previous matrix results: ... ")
-    store_plugin.parse_data(mode)
+    workload_store.parse_data(benchmark_name)
     exe.log("Loading previous matrix results: done")
 
     if store.experiment_filter.pop("__parse_only__", False):
@@ -40,7 +40,7 @@ def main():
         exe.log("#")
 
     for yaml_benchmark_desc in all_yaml_benchmark_desc:
-        script_to_run = matrix.Matrix(mode, yaml_benchmark_desc)
+        script_to_run = matrix.Matrix(benchmark_name, yaml_benchmark_desc)
         script_to_run.run(exe)
 
     return 0

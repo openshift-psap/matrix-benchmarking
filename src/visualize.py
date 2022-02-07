@@ -9,30 +9,30 @@ import common
 
 
 def main():
-    mode = store.parse_argv(sys.argv[1:])
+    benchmark_name = store.parse_argv(sys.argv[1:])
 
     try:
-        store_plugin = store.mode_store(mode)
+        workload_store = store.load_store()
     except Exception as e:
-        print(f"FATAL: Could not load store_plugin for '{mode}': {e}")
+        print(f"FATAL: Could not load workload store module: {e}")
         raise e
 
-    print(f"Parsing {mode} data ...")
+    print(f"Parsing results results ...")
 
-    store_plugin.parse_data(mode)
-    print(f"Parsing {mode} data ... done")
+    workload_store.parse_data(benchmark_name)
+    print(f"Parsing {benchmark_name} results ... done")
 
     print(f"Found {len(common.Matrix.processed_map)} results")
 
     try:
-        matrix_view.configure(store, mode)
+        matrix_view.configure(store)
     except Exception as e:
-        print(f"FATAL: Failed to configure '{mode}' matrix_view: {e}")
+        print(f"FATAL: Failed to configure the plotting module: {e}")
         raise e
 
     matrix_view.table_stats.register_all()
 
-    matrix_view.web.run(store_plugin, mode)
+    matrix_view.web.run()
 
     return 0
 

@@ -7,7 +7,7 @@ from collections import defaultdict
 experiment_filter = {}
 benchmark_mode = False
 
-DEFAULT_MODE = "mlperf"
+DEFAULT_MODE = "mpi_benchmark"
 def parse_argv(argv):
     for expe_filter in argv:
         if expe_filter == "run":
@@ -27,16 +27,16 @@ def parse_argv(argv):
 
     return experiment_filter.pop("mode", DEFAULT_MODE)
 
-def mode_store(mode):
-    print(f"Loading {mode} storage module ...")
-    store_pkg_name = f"plugins.{mode}.store"
-    try: store_plugin = importlib.import_module(store_pkg_name)
+def load_store():
+    print("Loading storage module ...")
+    store_pkg_name = f"workload.store"
+    try: store_module = importlib.import_module(store_pkg_name)
     except ModuleNotFoundError as e:
-        print(f"FATAL: Failed to load module '{mode}': {e}")
+        print(f"FATAL: Failed to load the storage module: {e}")
         raise e
 
-    print(f"Loading {mode} storage module ... done")
-    return store_plugin
+    print(f"Loading the storage module ... done")
+    return store_module
 
 def add_to_matrix(import_settings, location, results):
     import_key = common.Matrix.settings_to_key(import_settings)

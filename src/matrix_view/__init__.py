@@ -50,16 +50,16 @@ def COLORS(idx):
     return colors[idx % len(colors)]
 
 
-def configure(store, mode):
-    plotting_plugin_pkg_name = f"plugins.{mode}.plot"
+def configure(store):
+    plotting_pkg_name = f"workload.plot"
 
-    try: plotting_plugin = importlib.import_module(plotting_plugin_pkg_name)
+    try: plotting_module = importlib.import_module(plotting_pkg_name)
     except Exception as e:
-        print(f"ERROR: Cannot load the plotting plugin package ({plotting_plugin_pkg_name}) ...")
+        print(f"ERROR: Cannot load the plotting module ({plotting_pkg_name}) ...")
         raise e
 
-    if hasattr(plotting_plugin, "register"):
-        plotting_plugin.register()
+    if hasattr(plotting_module, "register"):
+        plotting_module.register()
 
 def get_permalink(args, full=False):
     params = dict(zip(Matrix.settings.keys(), args[:len(Matrix.settings)]))

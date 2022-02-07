@@ -54,7 +54,7 @@ def construct_dispatcher():
             return [msg, index]
 
 
-def run(mode_store, mode):
+def run():
     matrix_view.build_callbacks(main_app)
     display_page = construct_dispatcher()
 
