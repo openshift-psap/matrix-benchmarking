@@ -18,7 +18,17 @@ class Matrix():
         exe.expe_cnt.errors = 0
 
         expe_ran = []
-        for expe in self.yaml_desc['expe_to_run']:
+        try:
+            expe_to_run = self.yaml_desc['expe_to_run']
+        except KeyError as e:
+            print("ERROR: missing 'expe_to_run' stanza.")
+            raise e
+
+        if not expe_to_run:
+            exe.log(f"No experiment to run ...")
+            return
+
+        for expe in expe_to_run:
             if not expe or expe.startswith("_"):
                 exe.log(f"Skip disabled expe '{expe}'")
                 continue
@@ -53,7 +63,7 @@ class Matrix():
 
         context.expe = expe
         context.expe_dir = f"{common.RESULTS_PATH}/{self.mode}/{context.expe}"
-        context.path_tpl = self.yaml_desc['path_tpl']
+        context.path_tpl = self.yaml_desc.get('path_tpl')
         context.remote_mode = self.yaml_desc.get('remote_mode', False)
         context.script_tpl = self.yaml_desc['script_tpl']
         context.stop_on_error = self.yaml_desc.get('stop_on_error', False)
@@ -105,6 +115,15 @@ MATRIX_BENCHMARK_DIR="$(realpath "$2")"
             settings['expe'] = context.expe
             exe.expe_cnt.current_idx += 1
 
+            path_tpl = context.path_tpl
+            expe_path_tpl = settings.get("__path_tpl")
+            if expe_path_tpl:
+                del settings["__path_tpl"]
+                path_tpl = expe_path_tpl
+
+            if path_tpl is None:
+                raise ValueError("<top-level>.path_tpl or <top-level>.expe[<expe>].__path_tpl must be provided.")
+
             if "extra" in settings:
                 extra = settings["extra"]
                 del settings["extra"]
@@ -119,15 +138,16 @@ MATRIX_BENCHMARK_DIR="$(realpath "$2")"
             key = common.Matrix.settings_to_key(settings)
 
             if key in common.Matrix.processed_map or key in common.Matrix.import_map:
-                exe.log(f"experiment {exe.expe_cnt.current_idx}/{exe.expe_cnt.total} already recorded, skipping")
+                exe.log(f"experiment {exe.expe_cnt.current_idx}/{exe.expe_cnt.total} already recorded, skipping.")
                 if key in common.Matrix.processed_map:
                     exe.log(">", common.Matrix.processed_map[key].location.replace(common.RESULTS_PATH+f"/{self.mode}/", ''))
                 else:
                     exe.log(">", common.Matrix.import_map[key].location.replace(common.RESULTS_PATH+f"/{self.mode}/", ''))
+                exe.log("")
                 exe.expe_cnt.recorded += 1
                 continue
 
-            bench_common_path = context.path_tpl.format(**settings)
+            bench_common_path = path_tpl.format(**settings)
 
             bench_uid = datetime.datetime.today().strftime("%Y%m%d_%H%M") + f".{uuid.uuid4().hex[:4]}"
 
@@ -213,15 +233,19 @@ fi
         exe.log(f"cd {context.bench_fullpath}")
         exe.log(cmd_fullpath)
         try:
-            proc = subprocess.run(cmd_fullpath, cwd=context.bench_fullpath, shell=True, executable='/bin/bash')
+            proc = subprocess.run(cmd_fullpath, cwd=context.bench_fullpath, shell=True,
+                                  stdin=subprocess.PIPE,
+                                  executable='/bin/bash')
         except KeyboardInterrupt as e:
             print("")
             exe.log("KeyboardInterrupt registered.")
             raise e
 
-        exe.log(f"exit code: {proc.returncode}")
-        # ^^^ blocks until the process terminates
-        with open(f"{context.bench_fullpath}/exit_code", "w") as f:
-            print(f"{proc.returncode}", file=f)
+        ret = proc.returncode
+        # /!\ ^^^^^^^^^^^^^^^ blocks until the process terminates
 
-        return proc.returncode == 0
+        exe.log(f"exit code: {ret}")
+        with open(f"{context.bench_fullpath}/exit_code", "w") as f:
+            print(f"{ret}", file=f)
+
+        return ret == 0

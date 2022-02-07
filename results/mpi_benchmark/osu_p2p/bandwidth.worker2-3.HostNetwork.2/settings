@@ -1,5 +1,0 @@
-benchmark=osu.p2p.bandwidth
-worker=worker2-3
-network=HostNetwork
-@run=2
-

@@ -1,6 +1,0 @@
-platform=oc
-benchmark=sysbench-fio.overlay
-worker=worker02
-threads=1threads
-@run=1
-

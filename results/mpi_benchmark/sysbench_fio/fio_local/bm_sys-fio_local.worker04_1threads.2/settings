@@ -1,6 +1,0 @@
-platform=bm
-benchmark=sysbench-fio.local
-worker=worker04
-threads=1threads
-@run=2
-

@@ -1,4 +1,0 @@
-benchmark=osu.net.latency
-network=SDN
-@run=1
-

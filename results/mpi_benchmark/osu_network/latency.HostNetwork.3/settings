@@ -1,4 +1,0 @@
-benchmark=osu.net.latency
-network=HostNetwork
-@run=3
-

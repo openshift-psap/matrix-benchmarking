@@ -1,5 +1,0 @@
-benchmark=osu.p2p.latency
-worker=worker0-3
-network=HostNetwork
-@run=2
-

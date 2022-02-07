@@ -5,8 +5,8 @@ import datetime
 
 print("Loading dash ...")
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import dcc
+from dash import html
 from dash.dependencies import Output, Input, State, ClientsideFunction
 import plotly.graph_objs as go
 
@@ -51,7 +51,7 @@ def COLORS(idx):
 
 
 def configure(store, mode):
-    plotting_plugin_pkg_name = f"matrix_view.{mode}"
+    plotting_plugin_pkg_name = f"plugins.{mode}.plot"
 
     try: plotting_plugin = importlib.import_module(plotting_plugin_pkg_name)
     except Exception as e:

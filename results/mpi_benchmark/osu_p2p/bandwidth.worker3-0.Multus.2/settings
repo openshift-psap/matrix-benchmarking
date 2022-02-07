@@ -1,5 +1,0 @@
-benchmark=osu.p2p.bandwidth
-worker=worker3-0
-network=Multus
-@run=2
-

@@ -1,3 +1,0 @@
-platform=podman_no-seccomp
-threads=5threads
-benchmark=linpack

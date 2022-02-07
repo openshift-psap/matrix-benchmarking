@@ -1,4 +1,0 @@
-benchmark=osu.net.bandwidth
-network=HostNetwork
-@run=4
-

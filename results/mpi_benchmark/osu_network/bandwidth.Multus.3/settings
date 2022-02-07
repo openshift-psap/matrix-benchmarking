@@ -1,4 +1,0 @@
-benchmark=osu.net.bandwidth
-network=Multus
-@run=3
-

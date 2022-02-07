@@ -29,7 +29,7 @@ def parse_argv(argv):
 
 def mode_store(mode):
     print(f"Loading {mode} storage module ...")
-    store_pkg_name = f"store.{mode}"
+    store_pkg_name = f"plugins.{mode}.store"
     try: store_plugin = importlib.import_module(store_pkg_name)
     except ModuleNotFoundError as e:
         print(f"FATAL: Failed to load module '{mode}': {e}")
@@ -51,7 +51,7 @@ def add_to_matrix(import_settings, location, results):
         print(f"WARNING:   new: {location}")
         return
 
-    try: processed_settings = custom_rewrite_settings(import_settings)
+    try: processed_settings = custom_rewrite_settings(dict(import_settings))
     except Exception as e:
         print(f"ERROR: failed to rewrite settings for entry at '{location}'")
         raise e
