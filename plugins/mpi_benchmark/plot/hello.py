@@ -5,6 +5,7 @@ import plotly.graph_objs as go
 
 import matrix_view.table_stats
 from common import Matrix
+from matrix_view import COLORS
 
 class Hello():
     def __init__(self):
@@ -41,7 +42,7 @@ class Hello():
                 y = stats.mean(y_values)
                 y_err = stats.stdev(y_values) if len(y_values) > 2 else 0
 
-                legend_name += " " + " ".join(entry.gathered_keys.keys())
+                legend_name += " " + " ".join(entry.gathered_keys.keys()) + f" x{len(entry.results)}"
 
                 XYerr_pos[legend_name][int(entry.params.node_count)] = y + y_err
                 XYerr_neg[legend_name][int(entry.params.node_count)] = y - y_err
@@ -52,12 +53,15 @@ class Hello():
 
             XY[legend_name][int(entry.params.node_count)] = y
 
+        y_max = 0
         data = []
         for legend_name in XY:
             x = list(sorted(XY[legend_name].keys()))
             y = list([XY[legend_name][_x] for _x in x])
+            y_max = max(y + [y_max])
 
-            color = None
+            color = COLORS(list(XY.keys()).index(legend_name))
+
             data.append(go.Scatter(name=legend_name,
                                    x=x, y=y,
                                    mode="markers+lines",
@@ -70,6 +74,8 @@ class Hello():
 
             y_err_pos = list([XYerr_pos[legend_name][_x] for _x in x])
             y_err_neg = list([XYerr_neg[legend_name][_x] for _x in x])
+
+            y_max = max(y_err_pos + [y_max])
 
             data.append(go.Scatter(name=legend_name,
                                    x=x, y=y_err_pos,
@@ -87,11 +93,29 @@ class Hello():
                                    legendgroup=legend_name,
                                    ))
 
-        fig = go.Figure(data=data)
 
-        fig.update_layout(title="Pod launch time", title_x=0.5,
+        if legend_name:
+            x = list(sorted(XY[legend_name].keys()))
+            y_linear = [_x for _x in x]
+
+            data.append(go.Scatter(name="linear",
+                                   x=x, y=y_linear,
+                                   mode="lines",
+                                   ))
+
+        fig = go.Figure(data=data)
+        USE_LOG = True
+        if USE_LOG:
+            fig.update_xaxes(type="log")
+            fig.update_yaxes(type="log")
+            import math
+            # https://plotly.com/python/reference/layout/yaxis/#layout-yaxis-range
+            y_max = math.log(y_max, 10)
+
+        fig.update_layout(title="'echo hello' MPI deployment time", title_x=0.5,
                           showlegend=True,
-                           xaxis_title="Number of Pods",
-                           yaxis_title="Time (in seconds)")
+                          yaxis_range=[0, y_max*1.05],
+                          xaxis_title="Number of Pods/Nodes [log scale]",
+                          yaxis_title="Time (in seconds, lower is better) [log scale]")
 
         return fig, ""

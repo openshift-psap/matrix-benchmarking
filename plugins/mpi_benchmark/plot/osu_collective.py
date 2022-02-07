@@ -67,6 +67,7 @@ class SimpleNet():
             print("Nothing to plot ...", params)
             return None, "Nothing to plot ..."
 
+        y_max = 0
         data = []
         for legend_name in XY:
             x = list(sorted(XY[legend_name].keys()))
@@ -86,6 +87,7 @@ class SimpleNet():
                 y = y_collapsed
 
             color = COLORS(list(XY.keys()).index(legend_name))
+            y_max = max(y + [y_max])
 
             data.append(go.Scatter(name=legend_name,
                                    x=x, y=y,
@@ -96,6 +98,8 @@ class SimpleNet():
                                    ))
 
             if not is_gathered: continue
+
+            y_max = max(y_err_pos + [y_max])
 
             data.append(go.Scatter(name=legend_name,
                                    x=x, y=y_err_pos,
@@ -121,11 +125,19 @@ class SimpleNet():
             plot_title = "OSU MPI AllReduce Latency Test (lower is better)"
 
         # Edit the layout
-        fig.update_xaxes(type="log")
-        fig.update_yaxes(type="log")
+
+        USE_LOG = True
+        if USE_LOG:
+            fig.update_xaxes(type="log")
+            fig.update_yaxes(type="log")
+            import math
+            # https://plotly.com/python/reference/layout/yaxis/#layout-yaxis-range
+            y_max = math.log(y_max, 10)
+
         x_title, y_title = plot_legend
         fig.update_layout(title=plot_title, title_x=0.5,
-                           xaxis_title="Number of nodes",
-                           yaxis_title=y_title)
+                          yaxis_range=[0, y_max*1.05],
+                          xaxis_title="Number of nodes",
+                          yaxis_title=y_title)
 
         return fig, ""

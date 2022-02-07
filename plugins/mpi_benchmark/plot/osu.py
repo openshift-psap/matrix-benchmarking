@@ -65,9 +65,11 @@ class SimpleNet():
             return None, "Nothing to plot ..."
 
         data = []
+        y_max = 0
         for legend_name in XY:
             x = list(sorted(XY[legend_name].keys()))
             y = list([XY[legend_name][_x] for _x in x])
+            y_max = max(y + [y_max])
 
             color = COLORS(list(XY.keys()).index(legend_name))
 
@@ -83,6 +85,9 @@ class SimpleNet():
 
             y_err_pos = list([XYerr_pos[legend_name][_x] for _x in x])
             y_err_neg = list([XYerr_neg[legend_name][_x] for _x in x])
+
+            y_max = max(y_err_pos + [y_max])
+
             data.append(go.Scatter(name=legend_name,
                                    x=x, y=y_err_pos,
                                    line=dict(color=color, width=0),
@@ -113,7 +118,8 @@ class SimpleNet():
         # Edit the layout
         x_title, y_title = plot_legend
         fig.update_layout(title=plot_title, title_x=0.5,
-                           xaxis_title="Message "+x_title,
-                           yaxis_title=y_title)
+                          xaxis_title="Message "+x_title,
+                          yaxis_range=[0, y_max],
+                          yaxis_title=y_title)
 
         return fig, ""

@@ -19,6 +19,9 @@ def mpi_benchmark_rewrite_settings(params_dict):
     if mode == "p2p":
         params_dict["node_count"] = "2"
 
+    # remove expe setting
+    expe = params_dict.pop("expe")
+
     return params_dict
 
 store.custom_rewrite_settings = mpi_benchmark_rewrite_settings
