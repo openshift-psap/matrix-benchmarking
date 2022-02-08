@@ -9,7 +9,14 @@ import common
 
 
 def main():
-    benchmark_name = store.parse_argv(sys.argv[1:])
+    store.experiment_flags["--benchmark-mode"] = False
+
+    store.parse_argv(sys.argv[1:])
+
+    results_dirname = store.experiment_flags["--results-dirname"]
+    if not results_dirname:
+        print("ERROR: Please pass a --results-dirname in the CLI")
+        return 1
 
     try:
         workload_store = store.load_store()
@@ -17,10 +24,10 @@ def main():
         print(f"FATAL: Could not load workload store module: {e}")
         raise e
 
-    print(f"Parsing results results ...")
+    print(f"Parsing {results_dirname} results ...")
 
-    workload_store.parse_data(benchmark_name)
-    print(f"Parsing {benchmark_name} results ... done")
+    workload_store.parse_data(results_dirname)
+    print(f"Parsing {results_dirname} results ... done")
 
     print(f"Found {len(common.Matrix.processed_map)} results")
 

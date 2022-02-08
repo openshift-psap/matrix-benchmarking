@@ -3,37 +3,80 @@ import copy
 import importlib
 import datetime
 from collections import defaultdict
+import sys
 
 experiment_filter = {}
-benchmark_mode = False
+experiment_flags = {
+    "--run": False,
+    "--parse-only": False,
+    "--clean": False,
 
-DEFAULT_MODE = "mpi_benchmark"
+    "--results-dirname": None,
+
+    "--generate": False,
+    "--benchmark-mode": None,
+
+    "--remote-mode": False,
+    "--path-tpl": None,
+    "--script-tpl": None,
+    "--stop-on-error": False,
+    "--expe-to-run": [],
+
+}
+
+def load_benchmark_file_flags(benchmark_desc_file):
+    for key in experiment_flags:
+        value = benchmark_desc_file.get(key)
+        if value is None: continue
+
+        experiment_flags[key] = value
+        del benchmark_desc_file[key]
+
+    for key, value in benchmark_desc_file.items():
+        if not key.startswith("--"): continue
+        print(f"WARNING: unexpected flag found in the benchmark file: {key} = '{value}'")
+
+
 def parse_argv(argv):
-    for expe_filter in argv:
-        if expe_filter == "run":
-            key, value = "__run__", True
-        elif expe_filter == "clean":
-            key, value = "__clean__", True
-        elif expe_filter == "parse_only":
-            key, value = "__parse_only__", True
-        elif "=" not in expe_filter:
-            if "expe" in experiment_filter:
-                raise ValueError(f"Unexpected argument '{expe_filter}'")
-            key, value = "expe", expe_filter
+    if "--help" in argv:
+        print(f"{sys.argv[0]}")
+        for k in experiment_flags:
+            print(f"{k}")
+        sys.exit(0)
+
+    for arg in argv:
+        if not arg.startswith("--"):
+            key, found, value = arg.partition("=")
+            if not found:
+                raise ValueError(f"Invalid filter: no '=': {arg}")
+            experiment_filter[key] = value
+            continue
+
+        # it's a flag
+
+        if "=" in arg:
+            key, _, value = arg.partition("=")
         else:
-            key, _, value = expe_filter.partition("=")
+            key, value = arg, True
 
-        experiment_filter[key] = value
+        if key not in experiment_flags:
+            raise ValueError(f"Unexpected flag: {arg}")
 
-    return experiment_filter.pop("mode", DEFAULT_MODE)
+        experiment_flags[key] = value
+
 
 def load_store():
     print("Loading storage module ...")
-    store_pkg_name = f"workload.store"
-    try: store_module = importlib.import_module(store_pkg_name)
+
+    try: importlib.import_module("workload")
     except ModuleNotFoundError as e:
-        print(f"FATAL: Failed to load the storage module: {e}")
-        raise e
+        print(f"FATAL: Failed to load the workload module, is it correctly setup? {e}")
+        sys.exit(1)
+
+    try: store_module = importlib.import_module("workload.store")
+    except ModuleNotFoundError as e:
+        print(f"FATAL: Failed to load the workload.store module, is it correctly setup? {e}")
+        sys.exit(1)
 
     print(f"Loading the storage module ... done")
     return store_module
@@ -63,7 +106,6 @@ def add_to_matrix(import_settings, location, results):
 
     keep = True
     for k, v in experiment_filter.items():
-        if k.startswith("__"): continue
         if str(processed_settings.get(k, None)) != v:
             return None
 

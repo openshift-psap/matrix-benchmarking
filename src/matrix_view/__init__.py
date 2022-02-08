@@ -2,6 +2,7 @@ import types, importlib
 import urllib.parse
 import re
 import datetime
+import sys
 
 print("Loading dash ...")
 import dash
@@ -51,12 +52,10 @@ def COLORS(idx):
 
 
 def configure(store):
-    plotting_pkg_name = f"workload.plot"
-
-    try: plotting_module = importlib.import_module(plotting_pkg_name)
+    try: plotting_module = importlib.import_module("workload.plot")
     except Exception as e:
-        print(f"ERROR: Cannot load the plotting module ({plotting_pkg_name}) ...")
-        raise e
+        print(f"FATAL: Failed to load the workload.plot module, is it correctly setup? {e}")
+        sys.exit(1)
 
     if hasattr(plotting_module, "register"):
         plotting_module.register()
