@@ -54,11 +54,11 @@ def construct_dispatcher():
             return [msg, index]
 
 
-def run(mode_store, mode):
+def run():
     matrix_view.build_callbacks(main_app)
     display_page = construct_dispatcher()
 
-    generate = store.experiment_filter.pop("__generate__", False)
+    generate = store.experiment_flags["--generate"]
     if generate:
         print(f"Generating http://127.0.0.1:8050/matrix?{generate.replace(' ', '%20')} ...")
 

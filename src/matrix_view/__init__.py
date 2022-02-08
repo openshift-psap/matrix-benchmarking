@@ -2,6 +2,7 @@ import types, importlib
 import urllib.parse
 import re
 import datetime
+import sys
 
 print("Loading dash ...")
 import dash
@@ -50,16 +51,14 @@ def COLORS(idx):
     return colors[idx % len(colors)]
 
 
-def configure(store, mode):
-    plotting_plugin_pkg_name = f"plugins.{mode}.plot"
-
-    try: plotting_plugin = importlib.import_module(plotting_plugin_pkg_name)
+def configure(store):
+    try: plotting_module = importlib.import_module("workload.plot")
     except Exception as e:
-        print(f"ERROR: Cannot load the plotting plugin package ({plotting_plugin_pkg_name}) ...")
-        raise e
+        print(f"FATAL: Failed to load the workload.plot module, is it correctly setup? {e}")
+        sys.exit(1)
 
-    if hasattr(plotting_plugin, "register"):
-        plotting_plugin.register()
+    if hasattr(plotting_module, "register"):
+        plotting_module.register()
 
 def get_permalink(args, full=False):
     params = dict(zip(Matrix.settings.keys(), args[:len(Matrix.settings)]))

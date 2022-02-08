@@ -9,8 +9,10 @@ def _failed_directory(dirname):
     return _incomplete_directory(dirname)
 
 def _incomplete_directory(dirname):
-    if not store.experiment_filter.get("__clean__", False):
+    if not store.experiment_flags["--clean"]:
         return
+    if not store.experiment_flags["--run"]:
+        print(f"INFO: {dirname} would have been deleted.")
 
     shutil.rmtree(dirname)
     print(f"{dirname}: removed")
@@ -68,14 +70,16 @@ def _parse_directory(expe, dirname):
         entry = store.add_to_matrix(entry_import_settings, dirname, results)
         if not entry: continue
 
-def parse_data(mode):
-    path = os.walk(f"{common.RESULTS_PATH}/{mode}/")
+def parse_data(results_dirname):
+    results_dir = f"{common.RESULTS_PATH}/{results_dirname}/"
+
+    path = os.walk(results_dir)
 
     for this_dir, directories, files in path:
         if "skip" in files: continue
         if "settings" not in files: continue
 
-        expe = this_dir.replace(common.RESULTS_PATH+f"/{mode}/", "").partition("/")[0]
+        expe = this_dir.replace(results_dir, "").partition("/")[0]
 
         _parse_directory(expe, this_dir)
 

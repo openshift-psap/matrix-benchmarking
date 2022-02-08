@@ -3,11 +3,12 @@ import subprocess
 import uuid
 
 import common
+import store
 
 class Matrix():
-    def __init__(self, mode, yaml_desc):
+    def __init__(self, results_dirname, yaml_desc):
         self.yaml_desc = yaml_desc
-        self.mode = mode
+        self.results_dirname = results_dirname
 
     def run(self, exe):
         exe.expe_cnt = types.SimpleNamespace()
@@ -18,11 +19,14 @@ class Matrix():
         exe.expe_cnt.errors = 0
 
         expe_ran = []
-        try:
-            expe_to_run = self.yaml_desc['expe_to_run']
-        except KeyError as e:
-            print("ERROR: missing 'expe_to_run' stanza.")
-            raise e
+
+        expe_to_run = store.experiment_flags.get("--expe-to-run", "")
+        if isinstance(expe_to_run, str):
+            if not expe_to_run: expe_to_run = None
+            else: expe_to_run = expe_to_run.split(",")
+
+        if expe_to_run is None:
+            print("ERROR: missing flag '--expe-to-run' in the benchmark file or in the CLI.")
 
         if not expe_to_run:
             exe.log(f"No experiment to run ...")
@@ -62,11 +66,13 @@ class Matrix():
         context.params = types.SimpleNamespace()
 
         context.expe = expe
-        context.expe_dir = f"{common.RESULTS_PATH}/{self.mode}/{context.expe}"
-        context.path_tpl = self.yaml_desc.get('path_tpl')
-        context.remote_mode = self.yaml_desc.get('remote_mode', False)
-        context.script_tpl = self.yaml_desc['script_tpl']
-        context.stop_on_error = self.yaml_desc.get('stop_on_error', False)
+        context.expe_dir = f"{common.RESULTS_PATH}/{self.results_dirname}/{context.expe}"
+
+        context.path_tpl = store.experiment_flags["--path-tpl"]
+        context.script_tpl = store.experiment_flags["--script-tpl"]
+        context.remote_mode = store.experiment_flags["--remote-mode"]
+        context.stop_on_error = store.experiment_flags["--stop-on-error"]
+
         context.common_settings = self.yaml_desc['common_settings']
 
         if not exe.dry and context.remote_mode:
@@ -116,13 +122,13 @@ MATRIX_BENCHMARK_DIR="$(realpath "$2")"
             exe.expe_cnt.current_idx += 1
 
             path_tpl = context.path_tpl
-            expe_path_tpl = settings.get("__path_tpl")
+            expe_path_tpl = settings.get("--path-tpl")
             if expe_path_tpl:
-                del settings["__path_tpl"]
+                del settings["--path-tpl"]
                 path_tpl = expe_path_tpl
 
             if path_tpl is None:
-                raise ValueError("<top-level>.path_tpl or <top-level>.expe[<expe>].__path_tpl must be provided.")
+                raise ValueError("<top-level>.--path-tpl or <top-level>.expe[<expe>].--path-tpl must be provided.")
 
             if "extra" in settings:
                 extra = settings["extra"]
@@ -140,9 +146,9 @@ MATRIX_BENCHMARK_DIR="$(realpath "$2")"
             if key in common.Matrix.processed_map or key in common.Matrix.import_map:
                 exe.log(f"experiment {exe.expe_cnt.current_idx}/{exe.expe_cnt.total} already recorded, skipping.")
                 if key in common.Matrix.processed_map:
-                    exe.log(">", common.Matrix.processed_map[key].location.replace(common.RESULTS_PATH+f"/{self.mode}/", ''))
+                    exe.log(">", common.Matrix.processed_map[key].location.replace(common.RESULTS_PATH+f"/{self.results_dirname}/", ''))
                 else:
-                    exe.log(">", common.Matrix.import_map[key].location.replace(common.RESULTS_PATH+f"/{self.mode}/", ''))
+                    exe.log(">", common.Matrix.import_map[key].location.replace(common.RESULTS_PATH+f"/{self.results_dirname}/", ''))
                 exe.log("")
                 exe.expe_cnt.recorded += 1
                 continue
