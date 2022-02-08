@@ -1,0 +1,104 @@
+path_tpl: "{flavor}/gpu={gpu_type}_{gpu_count}gpu_x_{pod_count}pod/run_"
+
+script_tpl: "exec/mlperf/run_ssd.py"
+remote_mode: false
+stop_on_error: false
+
+common_settings:
+  node_name: dgxa100
+  flavor: 20211209
+  benchmark: ssd
+  cores: 8
+
+expe_to_run:
+#- dgx-benchmark
+- dgx-test
+#- dgx-try
+
+expe:
+  dgx-try:
+    run: 2
+    benchmark: maskrcnn
+    execution_mode: run
+    vendor: dell
+    extra:
+    - gpu_type=full, gpu_count=8, pod_count=1
+
+    - gpu_type=full, gpu_count=6, pod_count=1
+
+    - gpu_type=full, gpu_count=4, pod_count=1 # Record in progress error
+
+  dgx-test:
+    execution_mode: fast
+    threshold: 0.1
+    run: 2
+
+    extra:
+    # All the GPUs in one Pod
+    - gpu_type=full, gpu_count=8, pod_count=1
+    # All the GPUs in a dedicated Pod
+    - gpu_type=full, gpu_count=1, pod_count=8
+
+    # Force sequential execution by requesting 5/8 GPUs in 2 Pods
+    - gpu_type=full, gpu_count=5, pod_count=2, opts=no-sync # 5 GPUs x 2 Pods
+
+
+    # Force sequential execution by requesting 5/7 MIGs in 2 Pods
+    - gpu_type=7g.40gb, gpu_count=5, pod_count=2, opts=no-sync # 5 GPUs x 2 Pods
+
+    # Test of the SINGLE strategy nvidia.com/gpus
+    - mig_strategy=single, gpu_type=7g.40gb, gpu_count=1, pod_count=8 # 1 MIGs x 8 Pods (single strategy)
+    - mig_strategy=single, gpu_type=7g.40gb, gpu_count=8, pod_count=1 # 8 MIGs x 1 Pods (single strategy)
+
+    # Force sequential execution by requestion 5/7 MIG GPUs in 2 Pods (single mode)
+    - mig_strategy=single, gpu_type=7g.40gb, gpu_count=5, pod_count=2, opts=no-sync # 5 MIGs x 2 Pods (single strategy)
+
+    # Request different MIG types in different Pods
+    - gpu_type=2g.10gb,3g.20gb, gpu_count=1, pod_count=4, mig_label=all-balanced  # 3 MIG types x 1 MIG x 4 Pods
+
+
+    # Request all the MIGs in one Pod
+    - gpu_type=7g.40gb, gpu_count=8, pod_count=1
+    # Request all the MIGs in a dedicated Pod
+    - gpu_type=7g.40gb, gpu_count=1, pod_count=8
+
+    # Request all the MIGs in one Pod
+    - gpu_type=2g.10gb, gpu_count=24, pod_count=1
+    # Request all the MIGs in a dedicated Pod
+    - gpu_type=2g.10gb, gpu_count=1, pod_count=24
+
+    # Request all the node's GPU, using a MIG/GPU custom config
+    - gpu_type=2g.10gb, gpu_count=0, pod_count=1, mig_label=custom-config # request all the GPUs
+
+  dgx-benchmark:
+    run: 1, 2
+    execution_mode: run
+    threshold: 0.23
+
+    extra:
+        - gpu_type=full, gpu_count=1, pod_count=1
+        - gpu_type=full, gpu_count=2, pod_count=1
+        - gpu_type=full, gpu_count=3, pod_count=1
+        - gpu_type=full, gpu_count=4, pod_count=1
+        - gpu_type=full, gpu_count=5, pod_count=1
+        - gpu_type=full, gpu_count=6, pod_count=1
+        - gpu_type=full, gpu_count=7, pod_count=1
+        - gpu_type=full, gpu_count=8, pod_count=1
+
+        - gpu_type=full, gpu_count=1, pod_count=1
+        - gpu_type=full, gpu_count=1, pod_count=2
+        - gpu_type=full, gpu_count=1, pod_count=3
+        - gpu_type=full, gpu_count=1, pod_count=4
+        - gpu_type=full, gpu_count=1, pod_count=5
+        - gpu_type=full, gpu_count=1, pod_count=6
+        - gpu_type=full, gpu_count=1, pod_count=7
+        - gpu_type=full, gpu_count=1, pod_count=8
+
+        # - gpu_type=7g.40gb, gpu_count=1, pod_count=1
+        # - gpu_type=7g.40gb, gpu_count=2, pod_count=1
+        # - gpu_type=7g.40gb, gpu_count=3, pod_count=1
+        # - gpu_type=7g.40gb, gpu_count=4, pod_count=1
+        # - gpu_type=7g.40gb, gpu_count=5, pod_count=1
+        # - gpu_type=7g.40gb, gpu_count=6, pod_count=1
+        # - gpu_type=7g.40gb, gpu_count=7, pod_count=1
+        # - gpu_type=7g.40gb, gpu_count=8, pod_count=1
