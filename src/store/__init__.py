@@ -77,6 +77,9 @@ def load_store():
     except ModuleNotFoundError as e:
         print(f"FATAL: Failed to load the workload.store module, is it correctly setup? {e}")
         sys.exit(1)
+    except SyntaxError as e:
+        print(f"FATAL: Failed to load the workload.store module: syntax error: {e.filename}:{e.lineno}: {e.text}")
+        sys.exit(1)
 
     print(f"Loading the storage module ... done")
     return store_module
