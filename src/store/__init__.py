@@ -81,17 +81,18 @@ def load_store():
     print(f"Loading the storage module ... done")
     return store_module
 
-def add_to_matrix(import_settings, location, results):
+
+def add_to_matrix(import_settings, location, results, duplicate_handler):
     import_key = common.Matrix.settings_to_key(import_settings)
     if import_key in common.Matrix.import_map:
-        print(f"WARNING: duplicated results key: {import_key}")
+
         try:
             old_location = common.Matrix.import_map[import_key].location
         except AttributeError:
             _, old_location = common.Matrix.import_map[import_key]
 
-        print(f"WARNING:   old: {old_location}")
-        print(f"WARNING:   new: {location}")
+        duplicate_handler(import_key, old_location, location)
+
         return
 
     try: processed_settings = custom_rewrite_settings(dict(import_settings))

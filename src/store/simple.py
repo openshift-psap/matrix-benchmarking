@@ -13,10 +13,25 @@ def _incomplete_directory(dirname):
         return
     if not store.experiment_flags["--run"]:
         print(f"INFO: {dirname} would have been deleted.")
+        return
 
     shutil.rmtree(dirname)
     print(f"{dirname}: removed")
 
+def _duplicated_directory(import_key, old_location, new_location):
+    print(f"WARNING: duplicated results key: {import_key}")
+    print(f"WARNING:   old: {old_location}")
+    print(f"WARNING:   new: {new_location}")
+
+    if not experiment_flags["--clean"]:
+        return
+
+    if not experiment_flags["--run"]:
+        print(f"INFO: {new_location} would have been deleted.")
+        return
+
+    shutil.rmtree(new_location)
+    print(f"{new_location}: removed")
 
 def _parse_directory(expe, dirname):
     import_settings = {"expe": expe}
@@ -67,7 +82,7 @@ def _parse_directory(expe, dirname):
     for extra_settings, results in extra_settings__results:
         entry_import_settings = dict(import_settings)
         entry_import_settings.update(extra_settings)
-        entry = store.add_to_matrix(entry_import_settings, dirname, results)
+        entry = store.add_to_matrix(entry_import_settings, dirname, results, _duplicated_directory)
         if not entry: continue
 
 def parse_data(results_dirname):
