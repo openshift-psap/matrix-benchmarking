@@ -63,8 +63,7 @@ def main():
 
     exe.log(f"Loading previous results from {results_dirname} ... ")
     workload_store.parse_data(results_dirname)
-    exe.log("Loading previous results: done")
-
+    exe.log(f"Loading previous results: done, found {len(common.Matrix.processed_map)} results")
     if store.experiment_flags["--parse-only"]:
         if not store.experiment_flags["--clean"]:
             if not dry:
