@@ -44,6 +44,10 @@ def parse_argv(argv):
             print(f"{k}")
         sys.exit(0)
 
+    if "run" in argv:
+        argv.remove("run")
+        experiment_flags["--run"] = True
+
     for arg in argv:
         if not arg.startswith("--"):
             key, found, value = arg.partition("=")
