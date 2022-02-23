@@ -1,73 +1,84 @@
 import types, datetime
 import yaml
 
+import common
 import store
-import store.simple
-from store.simple import *
 
-def sample_rewrite_settings(params_dict):
-    # add a @ on top of parameter name 'run'
-    # to treat it as multiple identical executions
+import xml.etree.ElementTree as ET
 
-    params_dict["@run"] = params_dict["run"]
-    del params_dict["run"]
+def _parse_generated(elt):
+    for key in "Title", "TestClient", "Description":
+        value = elt.find(key).text
+        print(f"{key}: {value}")
 
-    # if parameter 'run' was missing, set '0' as default value
-    if params_dict["@run"] == "":
-        params_dict["@run"] = "0"
 
-    # overwrite 'operation' parameter
-    mode = params_dict.pop("mode")
-    op = params_dict.pop("operation")
-    params_dict["operation"] = f"{mode}-{op}"
+def _parse_system(elt):
+    for key in "Identifier", "Hardware", "Software":
+        value = elt.find(key).text
+        print(f"{key}: {value}")
 
-    # remove the 'expe' setting
-    params_dict.pop("expe")
+def _duplicated_entry(import_key, old_location, new_location):
+    print(f"WARNING: duplicated results key: {import_key}")
+    print(f"WARNING:   old:")
+    print(ET.tostring(old_location).decode("ascii"))
+    print(f"WARNING:   new: {new_location}")
+    print(ET.tostring(new_location).decode("ascii"))
+    import pdb;pdb.set_trace()
+    pass
 
-    return params_dict
-
-def __parse_date(dirname, settings):
+def _parse_result(elt):
     results = types.SimpleNamespace()
 
-    with open(f"{dirname}/date") as f:
-        results.date_ts = int(f.readlines()[0])
+    for key in "Identifier", "Title", "AppVersion", "Arguments", \
+        "Description", "Scale", "Proportion", "DisplayFormat":
+        if elt.find(key) is None:
+            results.__dict__[key] = "missing"
+        elif not elt.find(key).text:
+            results.__dict__[key] = "N/A"
+        else:
+            results.__dict__[key] = elt.find(key).text
 
-    return results
 
-def __parse_procs(dirname, settings):
-    results = types.SimpleNamespace()
+    for key in "Identifier", "Value", "RawString":
+        results.__dict__[f"Data_{key}"]  = elt.find("Data").find("Entry").find(key).text
 
-    with open(f"{dirname}/procs") as f:
-        results.procs = int(f.readlines()[0])
-
-    return results
-
-def __parse_memfree(dirname, settings):
-    results = types.SimpleNamespace()
-
-    with open(f"{dirname}/memfree") as f:
-        results.memfree = int(f.readlines()[0]) * 1000 # unit if kB
-
-    return results
-
-def sample_parse_results(dirname, settings):
-    mode = settings.get("mode")
-    if not mode:
-        print(f"ERROR: failed to parse '{dirname}', 'mode' setting not defined.")
+    if results.Data_Value is None:
+        print(elt.find("Data").find("Entry").find("JSON").text)
         return
 
-    mode_fct = {
-        "date":  __parse_date,
-        "procs": __parse_procs,
-        "memfree":  __parse_memfree,
+    results.Data_Value = float(results.Data_Value)
+
+    entry_import_settings = {
+        "title": results.Title,
+        "version": results.AppVersion,
+        "argument": results.Arguments,
+        "id": results.Identifier,
+        "repeat": 0,
     }
 
-    fct = mode_fct.get(mode)
-    if not fct:
-        print(f"ERROR: failed to parse '{dirname}', mode={mode} not recognized.")
-        return
+    if not entry_import_settings["version"]: import pdb;pdb.set_trace()
+    for i in range(0, 10):
+        import_key = common.Matrix.settings_to_key(entry_import_settings)
+        if import_key not in common.Matrix.import_map:
+            break
+        entry_import_settings["repeat"] += 1
+    else:
+        raise RuntimeError("Found 10 duplicated results. Is that correct?")
 
-    return [[{}, fct(dirname, settings)]]
+    store.add_to_matrix(entry_import_settings, elt, results, _duplicated_entry)
 
-store.custom_rewrite_settings = sample_rewrite_settings
-store.simple.custom_parse_results = sample_parse_results
+def _parse_unknown(elt):
+    import pdb;pdb.set_trace()
+    pass
+
+PARSERS = {
+    "Generated": _parse_generated,
+    "System": _parse_system,
+    "Result": _parse_result
+}
+
+def parse_data(path):
+    root = ET.parse(path).getroot()
+    for elt in root:
+        PARSERS.get(elt.tag, _parse_unknown)(elt)
+    pass
