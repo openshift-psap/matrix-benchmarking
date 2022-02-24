@@ -81,16 +81,16 @@ class Matrix():
 set -x
 
 if ! [[ -d "$1" ]]; then
-  echo "FATAL: \$1 should be a result directory"
+  echo "FATAL: \$1 should point to the result directory"
   exit 1
 fi
 RESULTS_DIR="$(realpath "$1")"
 
 if ! [[ -d "$2" ]]; then
-  echo "FATAL: \$2 should be MatrixBenchmark directory "
+  echo "FATAL: \$2 should point to 'exec' directory "
   exit 1
 fi
-MATRIX_BENCHMARK_DIR="$(realpath "$2")"
+EXEC_DIR="$(realpath "$2")"
 """, file=sys.stderr)
 
         settings = dict(context.common_settings)
@@ -224,7 +224,7 @@ if [[ "$(cat "$CURRENT_DIRNAME/exit_code" 2>/dev/null)" != 0 ]]; then
   [[ "$$CURRENT_DIRNAME" ]] && rm -rf -- "$CURRENT_DIRNAME"/*
   echo -e "{settings_str}" > ./settings
   echo "$(date) Running expe {exe.expe_cnt.current_idx}/{exe.expe_cnt.total}"
-  ${{MATRIX_BENCHMARK_DIR}}/{cmd}
+  ${{EXEC_DIR}}/{cmd}
   echo "$?" > ./exit_code
 else
   echo "Already recorded in $CURRENT_DIRNAME."
