@@ -75,7 +75,7 @@ class Matrix():
 
         context.common_settings = self.yaml_desc['common_settings']
 
-        if not exe.dry and context.remote_mode:
+        if not exe.dry and context.remote_mode and exe.expe_cnt.current_idx == 0:
             print(f"""#! /bin/bash
 
 set -x
