@@ -29,25 +29,70 @@ class Plot():
         title = "N/A"
         scale = "N/A"
         lower_better = None
-        XY = dict()
+        system_XY = defaultdict(dict)
+        system_highlight = params["system"]
+        single_argument = "argument" not in variables
+
+        if system_highlight:
+            syst_params = []
+
+            for syst in Matrix.settings["system"]:
+                syst_params.append(["system", syst])
+
+            param_lists.append(syst_params)
+
+
         for entry in Matrix.all_records(params, param_lists):
-            XY[entry.results.Arguments] = entry.results.Data_Value
+            key = entry.params.system if single_argument else entry.results.Arguments
+
+            system_XY[entry.params.system][key] = entry.results.Data_Value
             if first:
                 title = entry.results.Description
                 scale = entry.results.Scale
                 lower_better = entry.results.Proportion == "LIB"
-            pass
+                first = False
 
-        data = [go.Bar(x=list(XY.keys()), y=list(XY.values()))]
+        data = []
+        for system, XY in system_XY.items():
+            text = [f"{x:.2f} {scale}" for x in XY.values()]
 
 
+            if system_highlight == system:
+                color = "darkcyan"
+            elif system_highlight == "---":
+                color = None
+            else:
+                color = "darkblue"
+
+            data += [go.Bar(name=system,
+                            y=list(XY.keys()), x=list(XY.values()), text=text,
+                            textfont_size=25,
+                            marker_color=color,
+                            hoverlabel= {'namelength' :-1},
+                            orientation="h")]
+
+        print()
         fig = go.Figure(data=data)
 
+        if single_argument:
+            title += f"\n({params['argument']})"
 
+        xaxis_title = f"⇦ {scale}, fewer is better" if lower_better else f"⇨ {scale}, more is better"
         fig.update_layout(title=title, title_x=0.5,
-                          showlegend=False,
-                          yaxis_title=scale + " " + ("(lower is better)" if lower_better else "(higher is better)"),
+                          showlegend=(system_highlight == "---"),
+                          xaxis_title=xaxis_title,
+                          yaxis_tickfont_size=20,
+                          xaxis_tickfont_size=15,
+                          xaxis_titlefont_size=25,
+                          xaxis_ticksuffix=" "+scale,
+                          title_font_size=25,
+                          paper_bgcolor='rgb(248, 248, 255)',
+                          plot_bgcolor='rgb(248, 248, 255)',
                           )
 
+        fig.update_xaxes(showline=True, linewidth=2, linecolor='gray')
+        fig.update_yaxes(showline=True, linewidth=2, linecolor='gray')
+        fig.update_xaxes(showgrid=True, gridwidth=2, gridcolor='darkgray')
+        fig.update_yaxes(showgrid=False)
 
         return fig, ""

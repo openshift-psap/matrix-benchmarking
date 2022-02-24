@@ -1,18 +1,19 @@
 import types, datetime
 import yaml
+import os, pathlib
 
 import common
 import store
 
 import xml.etree.ElementTree as ET
 
-def _parse_generated(elt):
+def _parse_generated(fname, elt):
     for key in "Title", "TestClient", "Description":
         value = elt.find(key).text
         print(f"{key}: {value}")
 
 
-def _parse_system(elt):
+def _parse_system(fname, elt):
     for key in "Identifier", "Hardware", "Software":
         value = elt.find(key).text
         print(f"{key}: {value}")
@@ -26,7 +27,7 @@ def _duplicated_entry(import_key, old_location, new_location):
     import pdb;pdb.set_trace()
     pass
 
-def _parse_result(elt):
+def _parse_result(fname, elt):
     results = types.SimpleNamespace()
 
     for key in "Identifier", "Title", "AppVersion", "Arguments", \
@@ -49,6 +50,7 @@ def _parse_result(elt):
     results.Data_Value = float(results.Data_Value)
 
     entry_import_settings = {
+        "system": fname.replace(".xml", ""),
         "title": results.Title,
         "version": results.AppVersion,
         "argument": results.Arguments,
@@ -77,8 +79,13 @@ PARSERS = {
     "Result": _parse_result
 }
 
-def parse_data(path):
-    root = ET.parse(path).getroot()
-    for elt in root:
-        PARSERS.get(elt.tag, _parse_unknown)(elt)
-    pass
+def parse_data(results_dir):
+
+    path = os.walk(results_dir)
+
+    for this_dir, directories, files in path:
+        for fname in files:
+            root = ET.parse(pathlib.Path(this_dir) / fname).getroot()
+            for elt in root:
+                PARSERS.get(elt.tag, _parse_unknown)(fname, elt)
+                pass
