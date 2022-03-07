@@ -93,7 +93,7 @@ fi
 EXEC_DIR="$(realpath "$2")"
 """, file=sys.stderr)
 
-        settings = dict(context.common_settings)
+        settings = dict(context.common_settings or {})
         settings.update(yaml_expe)
 
         all_settings_items = [
