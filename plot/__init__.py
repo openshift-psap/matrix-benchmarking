@@ -89,7 +89,7 @@ class Plot():
 
         xaxis_title = f"⇦ {scale}, fewer is better" if lower_better else f"⇨ {scale}, more is better"
         fig.update_layout(title=title, title_x=0.5,
-                          showlegend=(system_highlight == "---"),
+                          showlegend=(not single_argument),
                           xaxis_title=xaxis_title,
                           yaxis_tickfont_size=20,
                           xaxis_tickfont_size=15,
