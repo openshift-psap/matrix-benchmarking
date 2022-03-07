@@ -83,9 +83,9 @@ class Plot():
         fig = go.Figure(data=data)
 
         if single_argument and params['argument'] != "N/A":
-            title += f"\n({params['argument']})"
+            title += f"<br>{params['argument']}"
         if system_highlight != "---" and not single_argument:
-            title += f"\n(system: {system_highlight})"
+            title += f"<br>system: {system_highlight}"
 
         xaxis_title = f"⇦ {scale}, fewer is better" if lower_better else f"⇨ {scale}, more is better"
         fig.update_layout(title=title, title_x=0.5,
