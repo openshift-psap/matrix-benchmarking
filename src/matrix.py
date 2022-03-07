@@ -153,7 +153,12 @@ EXEC_DIR="$(realpath "$2")"
                 exe.expe_cnt.recorded += 1
                 continue
 
-            bench_common_path = path_tpl.format(**settings)
+            try:
+                bench_common_path = path_tpl.format(**settings)
+            except KeyError as e:
+                print(f"ERROR: cannot apply the path template '{path_tpl}': key '{e.args[0]}' missing from {settings}")
+                exe.expe_cnt.errors += 1
+                continue
 
             bench_uid = datetime.datetime.today().strftime("%Y%m%d_%H%M") + f".{uuid.uuid4().hex[:4]}"
 
@@ -199,7 +204,12 @@ EXEC_DIR="$(realpath "$2")"
             kv = f"{k}={v}"
             settings_str += f" '{kv}'" if " " in kv else f" {kv}"
 
-        script = context.script_tpl.format(**settings)
+        try:
+            script = context.script_tpl.format(**settings)
+        except KeyError as e:
+            print(f"ERROR: cannot apply the script template '{context.script_tpl}': key '{e.args[0]}' missing from {settings}")
+            exe.expe_cnt.errors += 1
+            return None
 
         cmd = f"{script} {settings_str} 1> >(tee stdout) 2> >(tee stderr >&2)"
         cmd_fullpath = os.path.realpath(os.getcwd()+'/../') + "/" + cmd
