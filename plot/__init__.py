@@ -91,11 +91,7 @@ class Plot():
         fig.update_layout(title=title, title_x=0.5,
                           showlegend=(not single_argument),
                           xaxis_title=xaxis_title,
-                          yaxis_tickfont_size=20,
-                          xaxis_tickfont_size=15,
-                          xaxis_titlefont_size=25,
                           xaxis_ticksuffix=" "+scale,
-                          title_font_size=25,
                           paper_bgcolor='rgb(248, 248, 255)',
                           plot_bgcolor='rgb(248, 248, 255)',
                           )
