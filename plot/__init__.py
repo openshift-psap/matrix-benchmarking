@@ -1,6 +1,7 @@
 from collections import defaultdict
 import statistics as stats
 import datetime
+from collections import OrderedDict
 
 import plotly.graph_objs as go
 
@@ -33,6 +34,10 @@ class Plot():
         system_highlight = params["system"]
         single_argument = "argument" not in variables
 
+        if params["benchmark"] == "---":
+            return {}, f"Please select only one benchmark"
+
+
         if system_highlight:
             syst_params = []
 
@@ -44,6 +49,7 @@ class Plot():
 
         for entry in Matrix.all_records(params, param_lists):
             key = entry.params.system if single_argument else entry.results.Arguments
+            if key == "N/A": key = ""
 
             system_XY[entry.params.system][key] = entry.results.Data_Value
             if first:
@@ -52,10 +58,13 @@ class Plot():
                 lower_better = entry.results.Proportion == "LIB"
                 first = False
 
+        if system_highlight != "---" and cfg.get("first", "") == "y":
+            val = system_XY.pop(system_highlight)
+            system_XY[system_highlight] = val
+
         data = []
         for system, XY in system_XY.items():
             text = [f"{x:.2f} {scale}" for x in XY.values()]
-
 
             if system_highlight == system:
                 color = "darkcyan"
@@ -71,11 +80,12 @@ class Plot():
                             hoverlabel= {'namelength' :-1},
                             orientation="h")]
 
-        print()
         fig = go.Figure(data=data)
 
-        if single_argument:
+        if single_argument and params['argument'] != "N/A":
             title += f"\n({params['argument']})"
+        if system_highlight != "---" and not single_argument:
+            title += f"\n(system: {system_highlight})"
 
         xaxis_title = f"⇦ {scale}, fewer is better" if lower_better else f"⇨ {scale}, more is better"
         fig.update_layout(title=title, title_x=0.5,
