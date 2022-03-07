@@ -23,10 +23,10 @@ def _duplicated_directory(import_key, old_location, new_location):
     print(f"WARNING:   old: {old_location}")
     print(f"WARNING:   new: {new_location}")
 
-    if not experiment_flags["--clean"]:
+    if not store.experiment_flags["--clean"]:
         return
 
-    if not experiment_flags["--run"]:
+    if not store.experiment_flags["--run"]:
         print(f"INFO: {new_location} would have been deleted.")
         return
 

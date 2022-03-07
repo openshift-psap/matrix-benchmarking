@@ -53,7 +53,9 @@ def parse_argv(argv):
             key, found, value = arg.partition("=")
             if not found:
                 raise ValueError(f"Invalid filter: no '=': {arg}")
-            experiment_filter[key] = value
+
+            experiment_filter[key] = value.split(",")
+
             continue
 
         # it's a flag
@@ -113,8 +115,8 @@ def add_to_matrix(import_settings, location, results, duplicate_handler):
         return
 
     keep = True
-    for k, v in experiment_filter.items():
-        if str(processed_settings.get(k, None)) != v:
+    for filter_name, filter_values in experiment_filter.items():
+        if str(processed_settings.get(filter_name, None)) not in filter_values:
             return None
 
     processed_key = common.Matrix.settings_to_key(processed_settings)

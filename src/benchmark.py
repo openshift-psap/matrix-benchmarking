@@ -27,7 +27,7 @@ def main():
     benchmark_desc_file = pathlib.Path(os.path.realpath(sys.argv[1]))
 
     if not benchmark_desc_file.exists():
-        print("ERROR: please pass the benchmark file in first parameter.")
+        print(f"ERROR: '{benchmark_desc_file}' does not exit.")
         return 1
 
     try:

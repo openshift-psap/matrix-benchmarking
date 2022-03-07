@@ -75,25 +75,25 @@ class Matrix():
 
         context.common_settings = self.yaml_desc['common_settings']
 
-        if not exe.dry and context.remote_mode:
+        if not exe.dry and context.remote_mode and exe.expe_cnt.current_idx == 0:
             print(f"""#! /bin/bash
 
 set -x
 
 if ! [[ -d "$1" ]]; then
-  echo "FATAL: \$1 should be a result directory"
+  echo "FATAL: \$1 should point to the result directory"
   exit 1
 fi
 RESULTS_DIR="$(realpath "$1")"
 
 if ! [[ -d "$2" ]]; then
-  echo "FATAL: \$2 should be MatrixBenchmark directory "
+  echo "FATAL: \$2 should point to 'exec' directory "
   exit 1
 fi
-MATRIX_BENCHMARK_DIR="$(realpath "$2")"
+EXEC_DIR="$(realpath "$2")"
 """, file=sys.stderr)
 
-        settings = dict(context.common_settings)
+        settings = dict(context.common_settings or {})
         settings.update(yaml_expe)
 
         all_settings_items = [
@@ -153,7 +153,12 @@ MATRIX_BENCHMARK_DIR="$(realpath "$2")"
                 exe.expe_cnt.recorded += 1
                 continue
 
-            bench_common_path = path_tpl.format(**settings)
+            try:
+                bench_common_path = path_tpl.format(**settings)
+            except KeyError as e:
+                print(f"ERROR: cannot apply the path template '{path_tpl}': key '{e.args[0]}' missing from {settings}")
+                exe.expe_cnt.errors += 1
+                continue
 
             bench_uid = datetime.datetime.today().strftime("%Y%m%d_%H%M") + f".{uuid.uuid4().hex[:4]}"
 
@@ -199,7 +204,12 @@ MATRIX_BENCHMARK_DIR="$(realpath "$2")"
             kv = f"{k}={v}"
             settings_str += f" '{kv}'" if " " in kv else f" {kv}"
 
-        script = context.script_tpl.format(**settings)
+        try:
+            script = context.script_tpl.format(**settings)
+        except KeyError as e:
+            print(f"ERROR: cannot apply the script template '{context.script_tpl}': key '{e.args[0]}' missing from {settings}")
+            exe.expe_cnt.errors += 1
+            return None
 
         cmd = f"{script} {settings_str} 1> >(tee stdout) 2> >(tee stderr >&2)"
         cmd_fullpath = os.path.realpath(os.getcwd()+'/../') + "/" + cmd
@@ -224,7 +234,7 @@ if [[ "$(cat "$CURRENT_DIRNAME/exit_code" 2>/dev/null)" != 0 ]]; then
   [[ "$$CURRENT_DIRNAME" ]] && rm -rf -- "$CURRENT_DIRNAME"/*
   echo -e "{settings_str}" > ./settings
   echo "$(date) Running expe {exe.expe_cnt.current_idx}/{exe.expe_cnt.total}"
-  ${{MATRIX_BENCHMARK_DIR}}/{cmd}
+  ${{EXEC_DIR}}/{cmd}
   echo "$?" > ./exit_code
 else
   echo "Already recorded in $CURRENT_DIRNAME."
