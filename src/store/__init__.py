@@ -114,7 +114,6 @@ def add_to_matrix(import_settings, location, results, duplicate_handler):
         common.Matrix.import_map[import_key] = True, location
         return
 
-    keep = True
     for filter_name, filter_values in experiment_filter.items():
         if str(processed_settings.get(filter_name, None)) not in filter_values:
             return None
