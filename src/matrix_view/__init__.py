@@ -53,6 +53,8 @@ def COLORS(idx):
 
 def configure(store):
     try: plotting_module = importlib.import_module("workload.plot")
+    except SyntaxError as e:
+        raise e
     except Exception as e:
         print(f"FATAL: Failed to load the workload.plot module, is it correctly setup? {e}")
         sys.exit(1)

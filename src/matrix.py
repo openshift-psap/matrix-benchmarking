@@ -56,8 +56,8 @@ class Matrix():
         try:
             yaml_expe = self.yaml_desc['expe'][expe]
         except KeyError as e:
-            exe.log(f"ERROR: Cannot run '{expe}': expe matrix not defined.")
-            raise e
+            print(f"ERROR: Cannot run experiment '{expe}': experiment matrix not defined.")
+            return True
 
         if not isinstance(yaml_expe, dict):
             raise RuntimeError(f"Expe '{expe}' content should be a mapping ...")
