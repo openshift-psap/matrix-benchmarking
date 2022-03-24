@@ -1,8 +1,9 @@
 import os, types, itertools
 from collections import defaultdict
+import pathlib
 
-RESULTS_PATH = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/../results")
-
+import matrix_benchmarking
+RESULTS_PATH = pathlib.Path(matrix_benchmarking.__path__[0]).parent / "results"
 
 class MatrixEntry(types.SimpleNamespace):
     def __init__(self, location, results,

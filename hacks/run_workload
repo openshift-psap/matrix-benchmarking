@@ -1,0 +1,22 @@
+#! /bin/bash
+
+THIS_DIR=$(realpath "$(dirname ${BASH_SOURCE[0]})")
+
+BASE_DIR=$(dirname "$(dirname "$(realpath "$(readlink ${BASH_SOURCE[0]})")")")
+FILE_NAME=$(basename "${BASH_SOURCE[0]}")
+DIRNAME="$(basename "$(realpath "$(dirname "${BASH_SOURCE[0]}" )")")"
+
+cd "$BASE_DIR"
+
+if [[ "$FILE_NAME" == "run_workload" ]]; then
+    echo "ERROR: this file should be symlinked from a workload directory, with a COMMAND name."
+    ./matbench --help
+    exit 1
+fi
+
+COMMAND=$FILE_NAME
+export MATBENCH_WORK_DIR=$THIS_DIR
+export MATBENCH_WORKLOAD=$DIRNAME
+echo "Running MatrixBenchmarking in '${COMMAND}' mode with workload=${MATBENCH_WORKLOAD}"
+
+exec ./matbench "$COMMAND" "$@"
