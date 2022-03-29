@@ -1,0 +1,2913 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.1-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>2022-02-25-0944</Title>
+    <LastModified>2022-02-25 18:17:35</LastModified>
+    <TestClient>Phoronix Test Suite v10.8.1</TestClient>
+    <Description>container-other testing on CentOS Stream 8 via the Phoronix Test Suite.</Description>
+  </Generated>
+  <System>
+    <Identifier>Intel Core i7-10850H</Identifier>
+    <Hardware>Processor: Intel Core i7-10850H @ 5.10GHz (6 Cores / 12 Threads), Motherboard: LENOVO 20TJS2F45T (N2VET32W 1.17 BIOS), Memory: 32GB, Disk: 512GB Toshiba KXG6AZNV512G, Graphics: i915drmfb, Audio: Realtek ALC285</Hardware>
+    <Software>OS: CentOS Stream 8, Kernel: 5.16.8-200.fc35.x86_64 (x86_64), Compiler: GCC 8.5.0 20210514, File-System: overlayfs, System Layer: container-other</Software>
+    <User></User>
+    <TimeStamp>2022-02-25 09:44:50</TimeStamp>
+    <TestClientVersion>10.8.1</TestClientVersion>
+    <Notes></Notes>
+    <JSON>{"compiler-configuration":"--build=x86_64-redhat-linux --disable-libmpx --disable-libunwind-exceptions --enable-__cxa_atexit --enable-bootstrap --enable-cet --enable-checking=release --enable-gnu-indirect-function --enable-gnu-unique-object --enable-initfini-array --enable-languages=c,c++,fortran,lto --enable-multilib --enable-offload-targets=nvptx-none --enable-plugin --enable-shared --enable-threads=posix --mandir=\/usr\/share\/man --with-arch_32=x86-64 --with-gcc-major-version-only --with-isl --with-linker-hash-style=gnu --with-tune=generic --without-cuda-driver","cpu-microcode":"0x1","kernel-extra-details":"Transparent Huge Pages: always","java":"OpenJDK Runtime Environment (build 1.8.0_322-b06)","python":"Python 3.6.8","security":"itlb_multihit: Not affected + l1tf: Not affected + mds: Mitigation of Clear buffers; SMT Host state unknown + meltdown: Not affected + spec_store_bypass: Mitigation of SSB disabled via prctl and seccomp + spectre_v1: Mitigation of usercopy\/swapgs barriers and __user pointer sanitization + spectre_v2: Mitigation of Enhanced IBRS IBPB: conditional RSB filling + srbds: Not affected + tsx_async_abort: Mitigation of Clear buffers; SMT Host state unknown"}</JSON>
+  </System>
+  <Result>
+    <Identifier>pts/polybench-c-1.2.0</Identifier>
+    <Title>PolyBench-C</Title>
+    <AppVersion>4.2</AppVersion>
+    <Arguments>covariance</Arguments>
+    <Description>Test: Covariance Computation</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"1.60:1.73:1.61","error":"The test run did not produce a result. The test run did not produce a result. The test run did not produce a result."}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polybench-c-1.2.0</Identifier>
+    <Title>PolyBench-C</Title>
+    <AppVersion>4.2</AppVersion>
+    <Arguments>correlation</Arguments>
+    <Description>Test: Correlation Computation</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"1.53:1.62:1.57","error":"The test run did not produce a result. The test run did not produce a result. The test run did not produce a result."}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polybench-c-1.2.0</Identifier>
+    <Title>PolyBench-C</Title>
+    <AppVersion>4.2</AppVersion>
+    <Arguments>3mm</Arguments>
+    <Description>Test: 3 Matrix Multiplications</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>4.006</Value>
+        <RawString>3.813:4.116:3.907:4.474:3.884:3.732:3.813:3.657:3.946:4.524:4.304:3.898</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"3.81:4.12:3.91:4.47:3.88:3.73:3.81:3.66:3.95:4.52:4.30:3.90"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>ac</Arguments>
+    <Description>Benchmark: ac</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>6.72</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"81.43"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>air</Arguments>
+    <Description>Benchmark: air</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>2.6</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"159.87"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>mdbx</Arguments>
+    <Description>Benchmark: mdbx</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>6.03</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"146.19"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>doduc</Arguments>
+    <Description>Benchmark: doduc</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>11.23</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"289.18"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>linpk</Arguments>
+    <Description>Benchmark: linpk</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>3.82</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"230.77"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>aermod</Arguments>
+    <Description>Benchmark: aermod</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>7.43</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"169.26"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>rnflow</Arguments>
+    <Description>Benchmark: rnflow</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>18.86</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"248.82"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>induct2</Arguments>
+    <Description>Benchmark: induct2</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>23.41</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"237.16"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>protein</Arguments>
+    <Description>Benchmark: protein</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>18.99</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"325.20"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>capacita</Arguments>
+    <Description>Benchmark: capacita</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>17.59</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"423.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>channel2</Arguments>
+    <Description>Benchmark: channel2</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>85.87</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"1288.82"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>fatigue2</Arguments>
+    <Description>Benchmark: fatigue2</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>59.26</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"593.96"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>mp_prop_design</Arguments>
+    <Description>Benchmark: mp_prop_design</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>78.77</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"1104.01"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-exz,0</Arguments>
+    <Description>Test: XZ 0 - Process: Compression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>32</Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"42.81:42.92:43.18"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-exz,0</Arguments>
+    <Description>Test: XZ 0 - Process: Decompression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>87</Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"42.81:42.92:43.18"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ezstd,1</Arguments>
+    <Description>Test: Zstd 1 - Process: Compression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>398</Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"25.49:25.34:25.47"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ezstd,1</Arguments>
+    <Description>Test: Zstd 1 - Process: Decompression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1149</Value>
+        <RawString>1146:1156:1146</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"25.49:25.34:25.47"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ezstd,8</Arguments>
+    <Description>Test: Zstd 8 - Process: Compression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>60</Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"28.20:27.49:28.31:28.69:28.20:28.43"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ezstd,8</Arguments>
+    <Description>Test: Zstd 8 - Process: Decompression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1091</Value>
+        <RawString>1099:1090:1090:1086:1088:1090</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"28.20:27.49:28.31:28.69:28.20:28.43"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ecrush,0</Arguments>
+    <Description>Test: Crush 0 - Process: Compression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>70</Value>
+        <RawString>69:70:70</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"27.16:26.90:26.90"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ecrush,0</Arguments>
+    <Description>Test: Crush 0 - Process: Decompression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>373</Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"27.16:26.90:26.90"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ebrotli,0</Arguments>
+    <Description>Test: Brotli 0 - Process: Compression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>347</Value>
+        <RawString>348:345:349</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"24.51:24.57:24.70"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ebrotli,0</Arguments>
+    <Description>Test: Brotli 0 - Process: Decompression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>474</Value>
+        <RawString>476:477:468</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"24.51:24.57:24.70"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ebrotli,2</Arguments>
+    <Description>Test: Brotli 2 - Process: Compression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>132</Value>
+        <RawString>133:133:131</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"26.63:28.68:29.02"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ebrotli,2</Arguments>
+    <Description>Test: Brotli 2 - Process: Decompression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>544</Value>
+        <RawString>547:543:542</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"26.63:28.68:29.02"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-elibdeflate,1</Arguments>
+    <Description>Test: Libdeflate 1 - Process: Compression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>175</Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"24.22:24.08:24.03"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-elibdeflate,1</Arguments>
+    <Description>Test: Libdeflate 1 - Process: Decompression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>863</Value>
+        <RawString>862:864:863</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"24.22:24.08:24.03"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/blake2-1.2.2</Identifier>
+    <Title>BLAKE2</Title>
+    <AppVersion>20170307</AppVersion>
+    <Arguments></Arguments>
+    <Description></Description>
+    <Scale>Cycles Per Byte</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>4.78</Value>
+        <RawString>4.84:4.76:4.73</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native -lcrypto -lz"},"test-run-times":"0.52:0.50:0.50"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/gmpbench-1.3.0</Identifier>
+    <Title>GNU GMP GMPbench</Title>
+    <AppVersion>6.2.1</AppVersion>
+    <Arguments></Arguments>
+    <Description>Total Time</Description>
+    <Scale>GMPbench Score</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>4025.3</Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -fomit-frame-pointer -lm"},"test-run-times":"425.94"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/java-scimark2-1.1.2</Identifier>
+    <Title>Java SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_COMPOSITE</Arguments>
+    <Description>Computational Test: Composite</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1646.36</Value>
+        <RawString>1642.3574171718:1622.9113037915:1661.1207792704:1659.0533968342</RawString>
+        <JSON>{"test-run-times":"32.53:32.46:31.69:32.53"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/java-scimark2-1.1.2</Identifier>
+    <Title>Java SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_MONTE</Arguments>
+    <Description>Computational Test: Monte Carlo</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>809.70</Value>
+        <RawString>812.51742176172:803.99986706589:808.23620458638:814.0574824427</RawString>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/java-scimark2-1.1.2</Identifier>
+    <Title>Java SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_FFT</Arguments>
+    <Description>Computational Test: Fast Fourier Transform</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>946.11</Value>
+        <RawString>945.64418075613:936.25374051183:1012.6215813062:889.91867655729</RawString>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/java-scimark2-1.1.2</Identifier>
+    <Title>Java SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_SPARSE</Arguments>
+    <Description>Computational Test: Sparse Matrix Multiply</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1486.62</Value>
+        <RawString>1486.9200130366:1493.2726067993:1478.5335573491:1487.7638337922</RawString>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/java-scimark2-1.1.2</Identifier>
+    <Title>Java SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_DENSE</Arguments>
+    <Description>Computational Test: Dense LU Matrix Factorization</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>3777.54</Value>
+        <RawString>3754.7841070668:3670.2511030599:3793.9099902907:3891.2244285591</RawString>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/java-scimark2-1.1.2</Identifier>
+    <Title>Java SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_SOR</Arguments>
+    <Description>Computational Test: Jacobi Successive Over-Relaxation</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1211.83</Value>
+        <RawString>1211.9213632376:1210.7792015209:1212.3025628195:1212.3025628195</RawString>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/bork-1.0.1</Identifier>
+    <Title>Bork File Encrypter</Title>
+    <AppVersion>1.4</AppVersion>
+    <Arguments></Arguments>
+    <Description>File Encryption Time</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>8.949</Value>
+        <RawString>9.051:8.885:8.912</RawString>
+        <JSON>{"test-run-times":"9.05:8.89:8.91"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/fhourstones-1.1.2</Identifier>
+    <Title>Fhourstones</Title>
+    <AppVersion>3.1</AppVersion>
+    <Arguments></Arguments>
+    <Description>Complex Connect-4 Solving</Description>
+    <Scale>Kpos / sec</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>10350.9</Value>
+        <RawString>10269.1:10377.3:10406.4</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3"},"test-run-times":"163.37:162.09:161.58"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/byte-1.2.2</Identifier>
+    <Title>BYTE Unix Benchmark</Title>
+    <AppVersion>3.6</AppVersion>
+    <Arguments>TEST_DHRY2</Arguments>
+    <Description>Computational Test: Dhrystone 2</Description>
+    <Scale>LPS</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>31511552.2</Value>
+        <RawString>31497648.2:31414102.2:31622906.2</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":""},"test-run-times":"120.29:120.18:120.17"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cachebench-1.1.2</Identifier>
+    <Title>CacheBench</Title>
+    <AppVersion></AppVersion>
+    <Arguments>-r</Arguments>
+    <Description>Test: Read</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>2817.772680</Value>
+        <RawString>2817.158989:2817.730548:2818.428502</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lrt"},"min-result":2804.28,"max-result":2829.13,"test-run-times":"125.07:125.07:125.07"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cachebench-1.1.2</Identifier>
+    <Title>CacheBench</Title>
+    <AppVersion></AppVersion>
+    <Arguments>-w</Arguments>
+    <Description>Test: Write</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>22847.025889</Value>
+        <RawString>22835.992922:22862.183757:22842.900988</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lrt"},"min-result":19428.18,"max-result":24882.79,"test-run-times":"125.07:125.07:125.07"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cachebench-1.1.2</Identifier>
+    <Title>CacheBench</Title>
+    <AppVersion></AppVersion>
+    <Arguments>-b</Arguments>
+    <Description>Test: Read / Modify / Write</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>34849.544584</Value>
+        <RawString>34862.112077:34842.425071:34844.096604</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lrt"},"min-result":29749.72,"max-result":37073.33,"test-run-times":"125.07:125.07:125.07"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/luajit-1.1.0</Identifier>
+    <Title>LuaJIT</Title>
+    <AppVersion>2.1-git</AppVersion>
+    <Arguments>TEST_COMPOSITE</Arguments>
+    <Description>Test: Composite</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1167.64</Value>
+        <RawString>1164.22:1161.92:1176.79</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm -ldl -O2 -fomit-frame-pointer -U_FORTIFY_SOURCE -fno-stack-protector"},"test-run-times":"30.28:26.51:30.35"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/luajit-1.1.0</Identifier>
+    <Title>LuaJIT</Title>
+    <AppVersion>2.1-git</AppVersion>
+    <Arguments>TEST_MONTE</Arguments>
+    <Description>Test: Monte Carlo</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>398.60</Value>
+        <RawString>397.08:397.9:400.81</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm -ldl -O2 -fomit-frame-pointer -U_FORTIFY_SOURCE -fno-stack-protector"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/luajit-1.1.0</Identifier>
+    <Title>LuaJIT</Title>
+    <AppVersion>2.1-git</AppVersion>
+    <Arguments>TEST_FFT</Arguments>
+    <Description>Test: Fast Fourier Transform</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>366.09</Value>
+        <RawString>370.25:358.72:369.31</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm -ldl -O2 -fomit-frame-pointer -U_FORTIFY_SOURCE -fno-stack-protector"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/luajit-1.1.0</Identifier>
+    <Title>LuaJIT</Title>
+    <AppVersion>2.1-git</AppVersion>
+    <Arguments>TEST_SPARSE</Arguments>
+    <Description>Test: Sparse Matrix Multiply</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1030.84</Value>
+        <RawString>1030.76:996.55:1065.21</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm -ldl -O2 -fomit-frame-pointer -U_FORTIFY_SOURCE -fno-stack-protector"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/luajit-1.1.0</Identifier>
+    <Title>LuaJIT</Title>
+    <AppVersion>2.1-git</AppVersion>
+    <Arguments>TEST_DENSE</Arguments>
+    <Description>Test: Dense LU Matrix Factorization</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>2777.24</Value>
+        <RawString>2756.45:2792.95:2782.33</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm -ldl -O2 -fomit-frame-pointer -U_FORTIFY_SOURCE -fno-stack-protector"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/luajit-1.1.0</Identifier>
+    <Title>LuaJIT</Title>
+    <AppVersion>2.1-git</AppVersion>
+    <Arguments>TEST_SOR</Arguments>
+    <Description>Test: Jacobi Successive Over-Relaxation</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1265.42</Value>
+        <RawString>1266.55:1263.45:1266.27</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm -ldl -O2 -fomit-frame-pointer -U_FORTIFY_SOURCE -fno-stack-protector"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/scimark2-1.3.2</Identifier>
+    <Title>SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_COMPOSITE</Arguments>
+    <Description>Computational Test: Composite</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>508.25</Value>
+        <RawString>506.48:516.68:501.58</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm"},"test-run-times":"29.02:28.94:29.85"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/scimark2-1.3.2</Identifier>
+    <Title>SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_MONTE</Arguments>
+    <Description>Computational Test: Monte Carlo</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>111.92</Value>
+        <RawString>114.28:115.13:106.35</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/scimark2-1.3.2</Identifier>
+    <Title>SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_FFT</Arguments>
+    <Description>Computational Test: Fast Fourier Transform</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>176.91</Value>
+        <RawString>185.77:189.61:155.34</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/scimark2-1.3.2</Identifier>
+    <Title>SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_SPARSE</Arguments>
+    <Description>Computational Test: Sparse Matrix Multiply</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>582.78</Value>
+        <RawString>578.7:593.89:575.75</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/scimark2-1.3.2</Identifier>
+    <Title>SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_DENSE</Arguments>
+    <Description>Computational Test: Dense LU Matrix Factorization</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>735.80</Value>
+        <RawString>730.78:744.3:732.32</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/scimark2-1.3.2</Identifier>
+    <Title>SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_SOR</Arguments>
+    <Description>Computational Test: Jacobi Successive Over-Relaxation</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>933.83</Value>
+        <RawString>922.9:940.46:938.12</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>KASUMI</Arguments>
+    <Description>Test: KASUMI</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>74.630</Value>
+        <RawString>74.542:74.724:74.624</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.10:30.08:30.08"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>KASUMI</Arguments>
+    <Description>Test: KASUMI - Decrypt</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>72.230</Value>
+        <RawString>72.152:72.291:72.248</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.10:30.08:30.08"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>AES-256</Arguments>
+    <Description>Test: AES-256</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>3140.424</Value>
+        <RawString>3136.433:3140.183:3144.656</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"33.09:33.10:33.09"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>AES-256</Arguments>
+    <Description>Test: AES-256 - Decrypt</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>3137.388</Value>
+        <RawString>3138.898:3136.763:3136.504</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"33.09:33.10:33.09"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>Twofish</Arguments>
+    <Description>Test: Twofish</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>281.056</Value>
+        <RawString>277.75:282.209:283.208</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.29:30.29:30.29"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>Twofish</Arguments>
+    <Description>Test: Twofish - Decrypt</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>283.980</Value>
+        <RawString>283.559:284.563:283.817</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.29:30.29:30.29"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>Blowfish</Arguments>
+    <Description>Test: Blowfish</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>353.521</Value>
+        <RawString>353.536:352.942:354.086</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.36:30.36:30.36"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>Blowfish</Arguments>
+    <Description>Test: Blowfish - Decrypt</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>351.826</Value>
+        <RawString>351.376:352.172:351.929</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.36:30.36:30.36"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>CAST-256</Arguments>
+    <Description>Test: CAST-256</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>113.078</Value>
+        <RawString>113.12:113.199:112.914</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.12:30.12:30.12"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>CAST-256</Arguments>
+    <Description>Test: CAST-256 - Decrypt</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>112.743</Value>
+        <RawString>113.182:112.793:112.254</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.12:30.12:30.12"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>ChaCha20Poly1305</Arguments>
+    <Description>Test: ChaCha20Poly1305</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>613.627</Value>
+        <RawString>612.183:616.274:612.425</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.43:30.46:30.47"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>ChaCha20Poly1305</Arguments>
+    <Description>Test: ChaCha20Poly1305 - Decrypt</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>608.737</Value>
+        <RawString>606.153:611.813:608.245</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.43:30.46:30.47"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/swet-1.0.0</Identifier>
+    <Title>Swet</Title>
+    <AppVersion>1.5.16</AppVersion>
+    <Arguments></Arguments>
+    <Description>Average</Description>
+    <Scale>Operations Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>609534327</Value>
+        <RawString>603151432:618785814:606665734</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm -lpthread -lncurses -lrt"},"test-run-times":"17.92:17.99:17.98"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/node-octane-1.0.1</Identifier>
+    <Title>Node.js Octane Benchmark</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description></Description>
+    <Scale>Score</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>26811</Value>
+        <RawString>26946:26973:26514</RawString>
+        <JSON>{"install-footnote":"Nodejs","test-run-times":"35.03:35.01:35.06"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/numpy-1.2.1</Identifier>
+    <Title>Numpy Benchmark</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description></Description>
+    <Scale>Score</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>248.78</Value>
+        <RawString>248.73:249.01:248.59</RawString>
+        <JSON>{"test-run-times":"302.36:309.91:304.13"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/compress-gzip-1.2.0</Identifier>
+    <Title>Gzip Compression</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description>Linux Source Tree Archiving To .tar.gz</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>48.659</Value>
+        <RawString>48.706:48.639:48.633</RawString>
+        <JSON>{"test-run-times":"48.71:48.64:48.63"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/dcraw-1.1.1</Identifier>
+    <Title>dcraw</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description>RAW To PPM Image Conversion</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>51.340</Value>
+        <RawString>51.214:51.109:51.697</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm"},"test-run-times":"51.21:51.11:51.70"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/deepspeech-1.0.0</Identifier>
+    <Title>DeepSpeech</Title>
+    <AppVersion>0.6</AppVersion>
+    <Arguments>CPU</Arguments>
+    <Description>Acceleration: CPU</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>125.47632</Value>
+        <RawString>125.82514:125.39368:125.21014</RawString>
+        <JSON>{"test-run-times":"123.42:120.29:119.97"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/encode-flac-1.7.0</Identifier>
+    <Title>FLAC Audio Encoding</Title>
+    <AppVersion>1.3.3</AppVersion>
+    <Arguments></Arguments>
+    <Description>WAV To FLAC</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>26.883</Value>
+        <RawString>26.884:26.915:26.922:26.88:26.816</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fvisibility=hidden -logg -lm"},"test-run-times":"26.88:26.91:26.92:26.88:26.82"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/encode-mp3-1.7.4</Identifier>
+    <Title>LAME MP3 Encoding</Title>
+    <AppVersion>3.100</AppVersion>
+    <Arguments></Arguments>
+    <Description>WAV To MP3</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>12.865</Value>
+        <RawString>12.879:12.834:12.881</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -ffast-math -funroll-loops -fschedule-insns2 -fbranch-count-reg -fforce-addr -pipe -lncurses -lm"},"test-run-times":"12.88:12.83:12.88"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/espeak-1.6.1</Identifier>
+    <Title>eSpeak-NG Speech Engine</Title>
+    <AppVersion>20200907</AppVersion>
+    <Arguments></Arguments>
+    <Description>Text-To-Speech Synthesis</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>42.497</Value>
+        <RawString>42.38:42.488:42.599:42.52</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -std=c99 -lpthread -lm"},"test-run-times":"42.38:42.49:42.60:42.52"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/minion-1.5.2</Identifier>
+    <Title>Minion</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>benchmarks/graceful/k6p2_table.minion</Arguments>
+    <Description>Benchmark: Graceful</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>64.965161</Value>
+        <RawString>65.084208:64.890091:64.921184</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=gnu++11 -O3 -fomit-frame-pointer -rdynamic"},"test-run-times":"65.09:64.90:64.93"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/minion-1.5.2</Identifier>
+    <Title>Minion</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>benchmarks/solitaire/solitaire_benchmark_8.minion</Arguments>
+    <Description>Benchmark: Solitaire</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>89.080947</Value>
+        <RawString>88.961169:89.155297:89.126376</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=gnu++11 -O3 -fomit-frame-pointer -rdynamic"},"test-run-times":"88.98:89.18:89.15"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/minion-1.5.2</Identifier>
+    <Title>Minion</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>benchmarks/Quasigroup/qg-watchelement-7-10.minion</Arguments>
+    <Description>Benchmark: Quasigroup</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>136.907524</Value>
+        <RawString>136.542589:136.958484:137.221498</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=gnu++11 -O3 -fomit-frame-pointer -rdynamic"},"test-run-times":"136.55:136.97:137.23"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/opencv-bench-1.0.0</Identifier>
+    <Title>OpenCV Benchmark</Title>
+    <AppVersion>3.3.0</AppVersion>
+    <Arguments></Arguments>
+    <Description></Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++11 -rdynamic"},"test-run-times":"0.01:0.00:0.00","error":"The test quit with a non-zero exit status. The test quit with a non-zero exit status. The test quit with a non-zero exit status. E: opencv-bench: .\/main.py: \/usr\/bin\/python: bad interpreter: No such file or directory"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/perl-benchmark-1.0.1</Identifier>
+    <Title>Perl Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>benchmarks/app/podhtml.b</Arguments>
+    <Description>Test: Pod2html</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>0.14889948</Value>
+        <RawString>0.14951655357143:0.14771438169643:0.14946749776786</RawString>
+        <JSON>{"test-run-times":"77.06:76.95:77.27"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/perl-benchmark-1.0.1</Identifier>
+    <Title>Perl Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>benchmarks/startup/noprog.b</Arguments>
+    <Description>Test: Interpreter</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>0.00168428</Value>
+        <RawString>0.00168897114184:0.0016918477705688:0.0016720336864407</RawString>
+        <JSON>{"test-run-times":"58.66:54.92:56.64"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/radiance-1.0.0</Identifier>
+    <Title>Radiance Benchmark</Title>
+    <AppVersion>5.0</AppVersion>
+    <Arguments>make all</Arguments>
+    <Description>Test: Serial</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1008.514</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"1008.51"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/rbenchmark-1.0.3</Identifier>
+    <Title>R Benchmark</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description></Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>0.3065</Value>
+        <RawString>0.30909191418725:0.30452666449644:0.30600431155833</RawString>
+        <JSON>{"install-footnote":"R scripting front-end version 4.1.2 (2021-11-01)","test-run-times":"37.12:36.76:36.77"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/sudokut-1.0.1</Identifier>
+    <Title>Sudokut</Title>
+    <AppVersion>0.4</AppVersion>
+    <Arguments></Arguments>
+    <Description>Total Time</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>14.173</Value>
+        <RawString>14.221:14.153:14.145</RawString>
+        <JSON>{"test-run-times":"14.22:14.15:14.14"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>1M.xml</Arguments>
+    <Description>Filesize: 1 MB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>541</Value>
+        <RawString>551:531:540</RawString>
+        <JSON>{"test-run-times":"0.56:0.54:0.55"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>2M.xml</Arguments>
+    <Description>Filesize: 2 MB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1724</Value>
+        <RawString>1726:1714:1733</RawString>
+        <JSON>{"test-run-times":"1.73:1.72:1.74"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>3M.xml</Arguments>
+    <Description>Filesize: 3 MB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>2583</Value>
+        <RawString>2597:2582:2571</RawString>
+        <JSON>{"test-run-times":"2.60:2.59:2.58"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>5K.xml</Arguments>
+    <Description>Filesize: 5 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>4</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"0.01:0.01:0.01"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>50K.xml</Arguments>
+    <Description>Filesize: 50 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>24</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"0.03:0.03:0.03"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>100K.xml</Arguments>
+    <Description>Filesize: 100 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>92</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"0.10:0.10:0.10"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>112M.xml</Arguments>
+    <Description>Filesize: 112 MB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>78548</Value>
+        <RawString>78599:78372:78674</RawString>
+        <JSON>{"test-run-times":"78.60:78.38:78.68"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>150K.xml</Arguments>
+    <Description>Filesize: 150 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>75</Value>
+        <RawString>78:74:75:74:74</RawString>
+        <JSON>{"test-run-times":"0.08:0.08:0.08:0.08:0.08"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>200K.xml</Arguments>
+    <Description>Filesize: 200 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>110</Value>
+        <RawString>108:108:115:109:109:108:111</RawString>
+        <JSON>{"test-run-times":"0.11:0.11:0.12:0.12:0.12:0.11:0.12"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>250K.xml</Arguments>
+    <Description>Filesize: 250 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>127</Value>
+        <RawString>126:129:126</RawString>
+        <JSON>{"test-run-times":"0.13:0.14:0.13"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>300K.xml</Arguments>
+    <Description>Filesize: 300 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>165</Value>
+        <RawString>192:161:162:163:170:165:162:161:161:165:163:164:162</RawString>
+        <JSON>{"test-run-times":"0.20:0.17:0.17:0.17:0.18:0.17:0.17:0.17:0.17:0.17:0.17:0.17:0.17"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>350K.xml</Arguments>
+    <Description>Filesize: 350 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>184</Value>
+        <RawString>181:189:179:186</RawString>
+        <JSON>{"test-run-times":"0.19:0.20:0.19:0.19"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>400K.xml</Arguments>
+    <Description>Filesize: 400 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>339</Value>
+        <RawString>335:339:342</RawString>
+        <JSON>{"test-run-times":"0.34:0.35:0.35"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>450K.xml</Arguments>
+    <Description>Filesize: 450 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>241</Value>
+        <RawString>237:244:255:244:240:234:237:241:240:235:241</RawString>
+        <JSON>{"test-run-times":"0.24:0.25:0.26:0.25:0.25:0.24:0.24:0.25:0.25:0.24:0.25"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>500K.xml</Arguments>
+    <Description>Filesize: 500 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>424</Value>
+        <RawString>436:416:420</RawString>
+        <JSON>{"test-run-times":"0.44:0.42:0.43"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>550K.xml</Arguments>
+    <Description>Filesize: 550 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>283</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"0.29:0.29:0.29"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>600K.xml</Arguments>
+    <Description>Filesize: 600 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>497</Value>
+        <RawString>501:495:495</RawString>
+        <JSON>{"test-run-times":"0.51:0.50:0.50"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>650K.xml</Arguments>
+    <Description>Filesize: 650 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>347</Value>
+        <RawString>340:359:357:338:342:334:339:344:357:342:357:351:348</RawString>
+        <JSON>{"test-run-times":"0.35:0.37:0.36:0.34:0.35:0.34:0.34:0.35:0.36:0.35:0.36:0.36:0.36"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>700K.xml</Arguments>
+    <Description>Filesize: 700 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>356</Value>
+        <RawString>354:359:356</RawString>
+        <JSON>{"test-run-times":"0.36:0.36:0.36"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>750K.xml</Arguments>
+    <Description>Filesize: 750 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>396</Value>
+        <RawString>391:395:401</RawString>
+        <JSON>{"test-run-times":"0.40:0.40:0.41"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>800K.xml</Arguments>
+    <Description>Filesize: 800 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>421</Value>
+        <RawString>415:419:430</RawString>
+        <JSON>{"test-run-times":"0.42:0.43:0.44"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>850K.xml</Arguments>
+    <Description>Filesize: 850 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>716</Value>
+        <RawString>701:735:697:762:702:702:709:715:724:719:703:709:768:693:706</RawString>
+        <JSON>{"test-run-times":"0.71:0.74:0.70:0.77:0.71:0.71:0.72:0.72:0.73:0.72:0.71:0.71:0.77:0.70:0.71"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>900K.xml</Arguments>
+    <Description>Filesize: 900 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>479</Value>
+        <RawString>478:476:484</RawString>
+        <JSON>{"test-run-times":"0.48:0.48:0.49"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>950K.xml</Arguments>
+    <Description>Filesize: 950 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>491</Value>
+        <RawString>490:493:490</RawString>
+        <JSON>{"test-run-times":"0.50:0.50:0.50"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-cos</Arguments>
+    <Description>Benchmark: cos</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>65.8457</Value>
+        <RawString>65.963:65.724:65.8502</RawString>
+        <JSON>{"test-run-times":"20.35:20.39:20.36"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-exp</Arguments>
+    <Description>Benchmark: exp</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>9.28097</Value>
+        <RawString>9.32571:9.2623:9.25491</RawString>
+        <JSON>{"test-run-times":"30.32:30.32:30.33"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-ffs</Arguments>
+    <Description>Benchmark: ffs</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>2.25481</Value>
+        <RawString>2.26109:2.25117:2.25216</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-sin</Arguments>
+    <Description>Benchmark: sin</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>64.1818</Value>
+        <RawString>64.2837:64.1747:64.0869</RawString>
+        <JSON>{"test-run-times":"20.36:20.36:20.39"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-log2</Arguments>
+    <Description>Benchmark: log2</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>11.4613</Value>
+        <RawString>11.4523:11.4711:11.4605</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-modf</Arguments>
+    <Description>Benchmark: modf</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>2.88240</Value>
+        <RawString>2.89511:2.86982:2.88226</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-sinh</Arguments>
+    <Description>Benchmark: sinh</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>14.4830</Value>
+        <RawString>15.5508:14.4397:14.3466:14.302:14.4517:14.4103:14.1992:14.996:14.2762:14.494:14.3503:14.316:14.3602:14.3564:14.3952</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-sqrt</Arguments>
+    <Description>Benchmark: sqrt</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>2.58462</Value>
+        <RawString>2.5808:2.58085:2.59222</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-tanh</Arguments>
+    <Description>Benchmark: tanh</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>16.5430</Value>
+        <RawString>16.5176:16.5657:16.5458</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-asinh</Arguments>
+    <Description>Benchmark: asinh</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>19.3660</Value>
+        <RawString>19.3923:19.3384:19.3673</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-atanh</Arguments>
+    <Description>Benchmark: atanh</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>15.3965</Value>
+        <RawString>15.3125:15.4269:15.45</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-ffsll</Arguments>
+    <Description>Benchmark: ffsll</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>2.54491</Value>
+        <RawString>2.54266:2.55752:2.53455</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-sincos</Arguments>
+    <Description>Benchmark: sincos</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>19.2056</Value>
+        <RawString>19.0795:19.2618:19.2756</RawString>
+        <JSON>{"test-run-times":"20.51:20.45:20.49"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-pthread_once</Arguments>
+    <Description>Benchmark: pthread_once</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>2.25777</Value>
+        <RawString>2.26754:2.25577:2.24999</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/multichase-1.0.2</Identifier>
+    <Title>Multichase Pointer Chaser</Title>
+    <AppVersion></AppVersion>
+    <Arguments>multichase -m 4m -s 64</Arguments>
+    <Description>Test: 4MB Array, 64 Byte Stride</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -static -pthread -lrt"},"test-run-times":"0.01:0.01:0.00","error":"The test quit with a non-zero exit status. The test quit with a non-zero exit status. The test quit with a non-zero exit status. E: multichase: line 3: .\/multichase: No such file or directory"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/multichase-1.0.2</Identifier>
+    <Title>Multichase Pointer Chaser</Title>
+    <AppVersion></AppVersion>
+    <Arguments>multichase -m 1g</Arguments>
+    <Description>Test: 1GB Array, 256 Byte Stride</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -static -pthread -lrt"},"test-run-times":"0.00:0.01:0.00","error":"The test quit with a non-zero exit status. The test quit with a non-zero exit status. The test quit with a non-zero exit status. E: multichase: line 3: .\/multichase: No such file or directory"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/multichase-1.0.2</Identifier>
+    <Title>Multichase Pointer Chaser</Title>
+    <AppVersion></AppVersion>
+    <Arguments>multichase</Arguments>
+    <Description>Test: 256MB Array, 256 Byte Stride</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -static -pthread -lrt"},"test-run-times":"0.01:0.00:0.00","error":"The test quit with a non-zero exit status. The test quit with a non-zero exit status. The test quit with a non-zero exit status. E: multichase: line 3: .\/multichase: No such file or directory"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/multichase-1.0.2</Identifier>
+    <Title>Multichase Pointer Chaser</Title>
+    <AppVersion></AppVersion>
+    <Arguments>multichase -m 1g -t 2</Arguments>
+    <Description>Test: 1GB Array, 256 Byte Stride, 2 Threads</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -static -pthread -lrt"},"test-run-times":"0.00:0.01:0.00","error":"The test quit with a non-zero exit status. The test quit with a non-zero exit status. The test quit with a non-zero exit status. E: multichase: line 3: .\/multichase: No such file or directory"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/multichase-1.0.2</Identifier>
+    <Title>Multichase Pointer Chaser</Title>
+    <AppVersion></AppVersion>
+    <Arguments>multichase -m 1g -t 4</Arguments>
+    <Description>Test: 1GB Array, 256 Byte Stride, 4 Threads</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -static -pthread -lrt"},"test-run-times":"0.00:0.01:0.00","error":"The test quit with a non-zero exit status. The test quit with a non-zero exit status. The test quit with a non-zero exit status. E: multichase: line 3: .\/multichase: No such file or directory"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/tjbench-1.2.0</Identifier>
+    <Title>libjpeg-turbo tjbench</Title>
+    <AppVersion>2.1.0</AppVersion>
+    <Arguments>decompression-throughput</Arguments>
+    <Description>Test: Decompression Throughput</Description>
+    <Scale>Megapixels/sec</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>151.302771</Value>
+        <RawString>152.303012:149.290956:152.314345</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -rdynamic"},"test-run-times":"25.11:25.19:25.15"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cpp-perf-bench-1.0.0</Identifier>
+    <Title>CppPerformanceBenchmarks</Title>
+    <AppVersion>9</AppVersion>
+    <Arguments>atol</Arguments>
+    <Description>Test: Atol</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>80.612</Value>
+        <RawString>80.545:80.689:80.603</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++11 -O3"},"test-run-times":"80.55:80.69:80.60"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cpp-perf-bench-1.0.0</Identifier>
+    <Title>CppPerformanceBenchmarks</Title>
+    <AppVersion>9</AppVersion>
+    <Arguments>ctype</Arguments>
+    <Description>Test: Ctype</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>38.288</Value>
+        <RawString>38.315:38.263:38.286</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++11 -O3"},"test-run-times":"38.31:38.26:38.29"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cpp-perf-bench-1.0.0</Identifier>
+    <Title>CppPerformanceBenchmarks</Title>
+    <AppVersion>9</AppVersion>
+    <Arguments>stepanov_vector</Arguments>
+    <Description>Test: Stepanov Vector</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>113.451</Value>
+        <RawString>113.553:113.418:113.383</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++11 -O3"},"test-run-times":"113.55:113.42:113.38"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cpp-perf-bench-1.0.0</Identifier>
+    <Title>CppPerformanceBenchmarks</Title>
+    <AppVersion>9</AppVersion>
+    <Arguments>functionobjects</Arguments>
+    <Description>Test: Function Objects</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>19.172</Value>
+        <RawString>19.198:19.136:19.181</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++11 -O3"},"test-run-times":"19.20:19.14:19.18"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cpp-perf-bench-1.0.0</Identifier>
+    <Title>CppPerformanceBenchmarks</Title>
+    <AppVersion>9</AppVersion>
+    <Arguments>stepanov_abstraction</Arguments>
+    <Description>Test: Stepanov Abstraction</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>44.100</Value>
+        <RawString>44.113:44.105:44.081</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++11 -O3"},"test-run-times":"44.11:44.11:44.08"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>system/inkscape-1.0.0</Identifier>
+    <Title>Inkscape</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description>Operation: SVG Files To PNG</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>32.780</Value>
+        <RawString>33.251:32.537:32.553</RawString>
+        <JSON>{"install-footnote":"Inkscape 0.92.3 (2405546, 2018-03-11)","test-run-times":"33.25:32.54:32.55"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_shared_mutex_lock_shared</Arguments>
+    <Description>Benchmark: Shared Mutex Lock Shared</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>27.1</Value>
+        <RawString>27.1:27.1:27.1</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"30.11:30.10:30.14"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.std::mutex.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock std::mutex</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>25.9</Value>
+        <RawString>25.8:25.9:25.9</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"28.65:28.73:28.72"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.std::shared_mutex.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock std::mutex</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>32.0</Value>
+        <RawString>32:32.1:32</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"35.57:35.61:35.55"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_semaphore_release_and_acquire</Arguments>
+    <Description>Benchmark: Semaphore Release And Acquire</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>20.1</Value>
+        <RawString>20.3:20.3:19.4:20.3</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"22.59:22.56:21.59:22.61"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.spinlock_amd.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock spinlock_amd</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>54.0</Value>
+        <RawString>53.9:54:54</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"59.99:60.04:59.98"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.pthread_mutex.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock pthread_mutex</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>21.8</Value>
+        <RawString>21.6:22.1:21.6</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"72.01:72.93:72.09"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.ticket_spinlock.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock ticket_spinlock</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>38.7</Value>
+        <RawString>38.8:38.6:38.6</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"43.10:42.90:42.91"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t lpop</Arguments>
+    <Description>Test: LPOP</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1386792.46</Value>
+        <RawString>1380643.38:1401153.38:1378580.62</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"17.33:17.23:17.33"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t sadd</Arguments>
+    <Description>Test: SADD</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1206334.71</Value>
+        <RawString>1204246.62:1204674.25:1210083.25</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"18.33:18.33:18.33"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t lpush</Arguments>
+    <Description>Test: LPUSH</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>990677.36</Value>
+        <RawString>1002217.69:976962.88:992851.5</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"20.07:20.35:20.23"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t get</Arguments>
+    <Description>Test: GET</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1339120.63</Value>
+        <RawString>1346641.5:1309594.5:1361125.88</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"17.66:17.85:17.56"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t set</Arguments>
+    <Description>Test: SET</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1086674.5</Value>
+        <RawString>1083444.5:1079238.5:1097340.5</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"19.46:19.45:19.26"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/optcarrot-1.0.1</Identifier>
+    <Title>Optcarrot</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description>Optimized Benchmark</Description>
+    <Scale>FPS</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>87.65</Value>
+        <RawString>88.108461122057:87.250926587194:82.665486530427:88.014432256784:84.959928112078:88.013634357279:90.482722622822:91.368525072554:90.246929134796:88.487136318531:91.020731950626:85.189575530446:79.321867835886:90.797561222474:88.350550892893:83.823431875947:88.956540655916:89.164650274327:86.467823969029:90.355313241263</RawString>
+        <JSON>{"install-footnote":"ruby 2.5.9p229 (2021-04-05 revision 67939) [x86_64-linux]","test-run-times":"3.08:3.06:3.08:3.06:3.08:3.01:3.00:3.00:2.98:3.03:3.09:3.03:3.06:2.98:3.15:3.15:3.04:3.02:3.08:3.09"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/pybench-1.1.3</Identifier>
+    <Title>PyBench</Title>
+    <AppVersion>2018-02-16</AppVersion>
+    <Arguments></Arguments>
+    <Description>Total For Average Test Times</Description>
+    <Scale>Milliseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1517</Value>
+        <RawString>1516:1518:1518</RawString>
+        <JSON>{"test-run-times":"36.53:36.50:35.84"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/hint-1.0.3</Identifier>
+    <Title>Hierarchical INTegration</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>FLOAT</Arguments>
+    <Description>Test: FLOAT</Description>
+    <Scale>QUIPs</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>326840204.44248</Value>
+        <RawString>325364808.5978:327500899.25256:327654905.47708</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native -lm"},"test-run-times":"400.81:394.01:398.08"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 1</Arguments>
+    <Description>Concurrent Requests: 1</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>45132.68</Value>
+        <RawString>45003.87:45169.27:45224.9</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.01:90.19:90.11"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 20</Arguments>
+    <Description>Concurrent Requests: 20</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>54905.87</Value>
+        <RawString>54901.92:54879.85:54935.83</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.08:90.09:90.08"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 100</Arguments>
+    <Description>Concurrent Requests: 100</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>53571.54</Value>
+        <RawString>53471.18:53635.07:53608.36</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.08:90.08:90.08"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 200</Arguments>
+    <Description>Concurrent Requests: 200</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>51891.88</Value>
+        <RawString>51079.22:51971.6:52624.81</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.08:90.09:90.10"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 500</Arguments>
+    <Description>Concurrent Requests: 500</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>48078.30</Value>
+        <RawString>48791.81:47325.03:48118.07</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.06:90.21:90.16"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 1000</Arguments>
+    <Description>Concurrent Requests: 1000</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>46702.43</Value>
+        <RawString>46975.3:46334.57:46797.43</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.11:90.14:90.19"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/phpbench-1.1.6</Identifier>
+    <Title>PHPBench</Title>
+    <AppVersion>0.8.1</AppVersion>
+    <Arguments></Arguments>
+    <Description>PHP Benchmark Suite</Description>
+    <Scale>Score</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>493556</Value>
+        <RawString>492875:493528:494264</RawString>
+        <JSON>{"test-run-times":"40.66:40.55:40.49"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/git-1.1.0</Identifier>
+    <Title>Git</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description>Time To Complete Common Git Commands</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>79.540</Value>
+        <RawString>78.732:80.112:79.776</RawString>
+        <JSON>{"install-footnote":"git version 2.31.1","test-run-times":"78.73:80.11:79.78"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/gnupg-2.5.0</Identifier>
+    <Title>GnuPG</Title>
+    <AppVersion>2.2.27</AppVersion>
+    <Arguments></Arguments>
+    <Description>2.7GB Sample File Encryption</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>74.685</Value>
+        <RawString>75.513:74.538:74.005</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2"},"test-run-times":"75.51:74.54:74.00"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>system/tesseract-ocr-1.0.1</Identifier>
+    <Title>Tesseract OCR</Title>
+    <AppVersion>4.1.1</AppVersion>
+    <Arguments></Arguments>
+    <Description>Time To OCR 7 Images</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>72.741</Value>
+        <RawString>72.815:72.601:72.807</RawString>
+        <JSON>{"test-run-times":"72.81:72.60:72.81"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+</PhoronixTestSuite>

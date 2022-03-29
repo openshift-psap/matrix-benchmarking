@@ -1,0 +1,542 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.1-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>2022-02-21-1318</Title>
+    <LastModified>2022-02-21 17:34:56</LastModified>
+    <TestClient>Phoronix Test Suite v10.8.1</TestClient>
+    <Description>container-other testing on CentOS Stream 8 via the Phoronix Test Suite.</Description>
+  </Generated>
+  <System>
+    <Identifier>AMD EPYC 7571</Identifier>
+    <Hardware>Processor: AMD EPYC 7571 (2 Cores / 4 Threads), Motherboard: Amazon EC2 m5a.xlarge (1.0 BIOS), Memory: 1 x 16 GB DDR4-2667MT/s, Disk: 129GB Amazon Elastic Block Store</Hardware>
+    <Software>OS: CentOS Stream 8, Kernel: 4.18.0-305.34.2.el8_4.x86_64 (x86_64), Compiler: GCC 8.5.0 20210514, File-System: overlayfs, System Layer: container-other</Software>
+    <User></User>
+    <TimeStamp>2022-02-21 13:18:13</TimeStamp>
+    <TestClientVersion>10.8.1</TestClientVersion>
+    <Notes></Notes>
+    <JSON>{"compiler-configuration":"--build=x86_64-redhat-linux --disable-libmpx --disable-libunwind-exceptions --enable-__cxa_atexit --enable-bootstrap --enable-cet --enable-checking=release --enable-gnu-indirect-function --enable-gnu-unique-object --enable-initfini-array --enable-languages=c,c++,fortran,lto --enable-multilib --enable-offload-targets=nvptx-none --enable-plugin --enable-shared --enable-threads=posix --mandir=\/usr\/share\/man --with-arch_32=x86-64 --with-gcc-major-version-only --with-isl --with-linker-hash-style=gnu --with-tune=generic --without-cuda-driver","cpu-microcode":"0x800126c","kernel-extra-details":"Transparent Huge Pages: always","java":"OpenJDK Runtime Environment (build 1.8.0_322-b06)","security":"itlb_multihit: Not affected + l1tf: Not affected + mds: Not affected + meltdown: Not affected + spec_store_bypass: Vulnerable + spectre_v1: Mitigation of usercopy\/swapgs barriers and __user pointer sanitization + spectre_v2: Mitigation of Full AMD retpoline STIBP: disabled RSB filling + srbds: Not affected + tsx_async_abort: Not affected"}</JSON>
+  </System>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>doduc</Arguments>
+    <Description>Benchmark: doduc</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>15.98</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"324.29"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>capacita</Arguments>
+    <Description>Benchmark: capacita</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>24.82</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"1493.47"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/java-scimark2-1.1.2</Identifier>
+    <Title>Java SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_DENSE</Arguments>
+    <Description>Computational Test: Dense LU Matrix Factorization</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>3901.39</Value>
+        <RawString>3873.2861437009:3841.9510783738:3990.7441404228:3899.5598483575</RawString>
+        <JSON>{"test-run-times":"30.79:30.49:30.56:30.74"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/deepspeech-1.0.0</Identifier>
+    <Title>DeepSpeech</Title>
+    <AppVersion>0.6</AppVersion>
+    <Arguments>CPU</Arguments>
+    <Description>Acceleration: CPU</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>92.39646</Value>
+        <RawString>87.6376:90.34525:93.81514:93.99103:93.96382:97.11277:95.45047:93.12839:91.75162:92.08248:91.53171:89.8086:90.86482:91.49698:92.96622</RawString>
+        <JSON>{"test-run-times":"88.66:91.31:94.82:94.85:94.83:98.02:96.46:94.05:92.75:93.12:92.39:90.97:91.86:92.39:93.81"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/perl-benchmark-1.0.1</Identifier>
+    <Title>Perl Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>benchmarks/startup/noprog.b</Arguments>
+    <Description>Test: Interpreter</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>0.00226594</Value>
+        <RawString>0.0023378699719891:0.0024198494326339:0.0022145061936937:0.0022412589638622:0.0024144757709251:0.0021888923861915:0.0023286194708411:0.0021705240564566:0.0022571602170433:0.0022223835709848:0.0022060589080015:0.0023128117474885:0.0021297887804845:0.0022054962862532:0.0023393382630585</RawString>
+        <JSON>{"test-run-times":"59.44:63.93:57.98:63.85:60.61:62.30:65.99:58.88:62.18:56.86:57.60:65.63:52.72:57.20:61.54"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/radiance-1.0.0</Identifier>
+    <Title>Radiance Benchmark</Title>
+    <AppVersion>5.0</AppVersion>
+    <Arguments>make all</Arguments>
+    <Description>Test: Serial</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>1449.53</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"1449.53"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-exp</Arguments>
+    <Description>Benchmark: exp</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>16.0446</Value>
+        <RawString>15.8897:16.1819:16.0623</RawString>
+        <JSON>{"test-run-times":"30.49:30.49:30.49"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-sinh</Arguments>
+    <Description>Benchmark: sinh</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>22.9284</Value>
+        <RawString>22.9794:22.5349:23.2708</RawString>
+        <JSON>{"test-run-times":"10.49:10.49:10.49"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-asinh</Arguments>
+    <Description>Benchmark: asinh</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>27.8391</Value>
+        <RawString>27.7138:28.1577:27.6457</RawString>
+        <JSON>{"test-run-times":"10.49:10.49:10.49"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-ffsll</Arguments>
+    <Description>Benchmark: ffsll</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>3.69898</Value>
+        <RawString>3.65014:3.82994:3.67476:3.64109</RawString>
+        <JSON>{"test-run-times":"10.49:10.49:10.49:10.49"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cpp-perf-bench-1.0.0</Identifier>
+    <Title>CppPerformanceBenchmarks</Title>
+    <AppVersion>9</AppVersion>
+    <Arguments>mathlib</Arguments>
+    <Description>Test: Math Library</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>629.596</Value>
+        <RawString>630.58:630.036:628.173</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++11 -O3"},"test-run-times":"630.58:630.04:628.17"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_shared_mutex_lock_shared</Arguments>
+    <Description>Benchmark: Shared Mutex Lock Shared</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>30.6</Value>
+        <RawString>30.5:30.7:30.7</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"34.14:34.14:34.14"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.std::mutex.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock std::mutex</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>27.0</Value>
+        <RawString>27.2:26.8:27.1</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"30.13:29.86:30.10"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.spinlock_amd.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock spinlock_amd</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>90.8</Value>
+        <RawString>90.4:90.7:91.2</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"100.55:100.78:101.45"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.pthread_mutex.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock pthread_mutex</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>23.4</Value>
+        <RawString>23.3:23.5:23.4</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"75.50:75.75:75.64"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.ticket_spinlock.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock ticket_spinlock</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>65.0</Value>
+        <RawString>65:64.9:65</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"72.22:72.04:72.28"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t lpop</Arguments>
+    <Description>Test: LPOP</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>828981.48</Value>
+        <RawString>821492.81:818482.88:846968.75</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"22.24:22.34:21.86"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t sadd</Arguments>
+    <Description>Test: SADD</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>673047.17</Value>
+        <RawString>674683.62:661153.5:683304.38</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"24.85:25.17:24.67"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t lpush</Arguments>
+    <Description>Test: LPUSH</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>529141.93</Value>
+        <RawString>532454.69:533377.12:521593.97</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"28.85:28.89:29.39"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t get</Arguments>
+    <Description>Test: GET</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>799708.21</Value>
+        <RawString>813547.69:790026.88:795550.06</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"22.44:22.86:22.77"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t set</Arguments>
+    <Description>Test: SET</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>615114.92</Value>
+        <RawString>614817.12:621465.44:609062.19</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"26.49:26.25:26.56"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/optcarrot-1.0.1</Identifier>
+    <Title>Optcarrot</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description>Optimized Benchmark</Description>
+    <Scale>FPS</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>44.87</Value>
+        <RawString>42.814051533398:44.605558399699:45.093975845815:46.249033067647:45.263477571294:45.789779134102:43.892731665084:45.219673556531</RawString>
+        <JSON>{"install-footnote":"ruby 2.5.9p229 (2021-04-05 revision 67939) [x86_64-linux]","test-run-times":"5.58:5.72:5.52:5.52:5.58:5.80:5.56:5.55"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 1</Arguments>
+    <Description>Concurrent Requests: 1</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>23997.79</Value>
+        <RawString>24100.18:24037.14:23856.06</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.08:90.21:90.02"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 20</Arguments>
+    <Description>Concurrent Requests: 20</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>46541.75</Value>
+        <RawString>48402.17:45425.25:44259.61:49373.11:44831.52:42693.97:49220.59:46535.86:50179.32:42217.6:50243.47:50173.17:44287.93:47366.44:42916.21</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.03:90.10:90.10:90.09:90.20:90.11:90.20:90.17:90.21:90.18:90.10:90.03:90.19:90.19:90.10"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 100</Arguments>
+    <Description>Concurrent Requests: 100</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>45520.58</Value>
+        <RawString>38364.39:49010.92:46737.74:42580.42:47824.71:46693.72:41830.98:46504.7:44859.42:47943.12:48265.81:41367.79:43295.74:48423.01:49106.23</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.18:90.19:90.21:90.20:90.08:90.11:90.21:90.19:90.18:90.22:90.09:90.17:90.21:90.12:90.07"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 200</Arguments>
+    <Description>Concurrent Requests: 200</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>43613.76</Value>
+        <RawString>42178.33:44287.2:44586.82:43402.68</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.17:90.10:90.09:90.20"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 500</Arguments>
+    <Description>Concurrent Requests: 500</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>45829.67</Value>
+        <RawString>45200.49:45519.05:46769.46</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.19:90.20:90.19"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 1000</Arguments>
+    <Description>Concurrent Requests: 1000</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>42906.38</Value>
+        <RawString>46985.6:40749.4:45364.73:41034.67:43970.5:41644.78:46088.77:46453.97:40201.67:38963.42:44281.28:40499.29:42032.88:42395.51:42929.2</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.07:90.30:90.12:90.17:90.21:90.21:90.08:90.11:90.10:90.09:90.20:90.21:90.20:90.20:90.08"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/phpbench-1.1.6</Identifier>
+    <Title>PHPBench</Title>
+    <AppVersion>0.8.1</AppVersion>
+    <Arguments></Arguments>
+    <Description>PHP Benchmark Suite</Description>
+    <Scale>Score</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>AMD EPYC 7571</Identifier>
+        <Value>294686</Value>
+        <RawString>295140:296268:292651</RawString>
+        <JSON>{"test-run-times":"67.80:67.54:68.37"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+</PhoronixTestSuite>
