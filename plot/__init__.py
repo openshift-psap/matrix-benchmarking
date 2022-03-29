@@ -5,9 +5,9 @@ from collections import OrderedDict
 
 import plotly.graph_objs as go
 
-import matrix_view.table_stats
-from common import Matrix
-from matrix_view import COLORS
+import matrix_benchmarking.plotting.table_stats as table_stats
+from matrix_benchmarking.common import Matrix
+from matrix_benchmarking.plotting.ui import COLORS
 
 def register():
     Plot("Plot")
@@ -17,7 +17,7 @@ class Plot():
         self.name = name
         self.id_name = name
 
-        matrix_view.table_stats.TableStats._register_stat(self)
+        table_stats.TableStats._register_stat(self)
         Matrix.settings["stats"].add(self.name)
 
     def do_hover(self, meta_value, variables, figure, data, click_info):

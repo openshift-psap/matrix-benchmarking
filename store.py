@@ -2,8 +2,9 @@ import types, datetime
 import yaml
 import os, pathlib
 
-import common
-import store
+import matrix_benchmarking.store as store
+import matrix_benchmarking.common as common
+
 
 import xml.etree.ElementTree as ET
 
@@ -82,6 +83,7 @@ PARSERS = {
 }
 
 def parse_data(results_dir):
+    store.register_custom_rewrite_settings(lambda x : x)
 
     path = os.walk(results_dir)
 
