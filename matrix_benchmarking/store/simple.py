@@ -79,7 +79,7 @@ def _parse_directory(expe, dirname):
             entry_import_settings = import_settings
 
         store.add_to_matrix(entry_import_settings,
-                            dirname,
+                            pathlib.Path(dirname),
                             results,
                             _duplicated_directory)
 

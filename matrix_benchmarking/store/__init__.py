@@ -36,9 +36,8 @@ def load_workload_store(kwargs):
     return store_module
 
 
-def add_to_matrix(import_settings, _location, results, duplicate_handler):
+def add_to_matrix(import_settings, location, results, duplicate_handler):
     import_key = Matrix.settings_to_key(import_settings)
-    location = pathlib.Path(_location)
 
     if import_key in Matrix.import_map:
         try:
