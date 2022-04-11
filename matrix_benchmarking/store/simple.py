@@ -8,14 +8,15 @@ import matrix_benchmarking.common as common
 import matrix_benchmarking.store as store
 import matrix_benchmarking.cli_args as cli_args
 
-def _failed_directory(dirname):
-    return _incomplete_directory(dirname)
-
-def _incomplete_directory(dirname):
+def invalid_directory(dirname, settings, reason):
     if not cli_args.kwargs.get("clean"):
+        # silently skip
         return
+
     if not cli_args.kwargs["run"]:
-        logging.info(f"{dirname} would have been deleted.")
+        logging.info("%s", dirname)
+        logging.info("%s", settings)
+        logging.info("\t\tis invalid: %s", reason)
         return
 
     shutil.rmtree(dirname)
@@ -39,24 +40,6 @@ def _duplicated_directory(import_key, old_location, new_location):
 def _parse_directory(expe, dirname):
     import_settings = {"expe": expe}
 
-    try:
-        with open(dirname / "exit_code") as f:
-            exit_code = int(f.read().strip())
-
-        if exit_code != 0:
-            logging.debug(f"{dirname}: exit_code == {exit_code}, skipping ...")
-            _failed_directory(dirname)
-            return
-
-    except FileNotFoundError as e:
-        if not _incomplete_directory(dirname):
-            logging.debug(f"{dirname}: 'exit_code' file not found, skipping ...")
-            pass
-        return
-    except Exception as e:
-        logging.info(f"{dirname}: exit_code cannot be read/parsed, skipping ...")
-        return
-
     with open(dirname / "settings") as f:
         for line in f.readlines():
             if not line.strip(): continue
@@ -70,6 +53,22 @@ def _parse_directory(expe, dirname):
             try:
                 if store.experiment_filter[key] != value: return
             except KeyError: pass
+
+    try:
+        with open(dirname / "exit_code") as f:
+            exit_code = int(f.read().strip())
+    except FileNotFoundError as e:
+        invalid_directory(dirname, import_settings, "exit_code not found")
+        return
+
+    except Exception as e:
+        logging.info(f"{dirname}: exit_code cannot be read/parsed, skipping ...")
+        return
+
+    if exit_code != 0:
+        logging.debug(f"{dirname}: exit_code == {exit_code}, skipping ...")
+        invalid_directory(dirname, import_settings, "exit code != 0")
+        return
 
     def add_to_matrix(results, extra_settings=None):
         if extra_settings:
@@ -98,7 +97,6 @@ custom_parse_results = None
 def _parse_results(add_to_matrix, dirname, import_settings):
     if custom_parse_results is None:
         raise RuntimeError("simple store: No data parser registered :/")
-
 
     return custom_parse_results(add_to_matrix, dirname, import_settings)
 
