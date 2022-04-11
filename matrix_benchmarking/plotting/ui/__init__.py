@@ -55,10 +55,10 @@ def configure(kwargs):
     workload = kwargs["workload"]
 
     module = f"matrix_benchmarking.workloads.{workload}.plot"
-    logging.info(f"Loading '{module}' module ...")
+    logging.info(f"Loading {module} module ...")
 
     plotting_module = importlib.import_module(module)
-    logging.info(f"Loading '{module}' module ... done.")
+    logging.info(f"Loading {module} module ... done.")
 
     if hasattr(plotting_module, "register"):
         plotting_module.register()

@@ -27,11 +27,11 @@ def parse_argv(argv):
 def load_workload_store(kwargs):
     workload = kwargs["workload"]
     module = f"matrix_benchmarking.workloads.{workload}.store"
-    logging.info(f"Loading '{module}' module ...")
+    logging.info(f"Loading {module} module ...")
 
     store_module = importlib.import_module(module)
 
-    logging.info(f"Loading '{module}' module ... done.")
+    logging.info(f"Loading {module} module ... done.")
 
     return store_module
 
