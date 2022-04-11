@@ -60,12 +60,7 @@ Args:
 """
     kwargs = dict(locals()) # capture the function arguments
 
-
-    # overriding order: env file <- env var <- benchmark file <- cli
-
-    cli_args.goto_work_directory(kwargs)
-    cli_args.update_env_with_env_files()
-    cli_args.update_kwargs_with_env(kwargs)
+    cli_args.setup_env_and_kwargs(kwargs)
 
     benchmark_file = kwargs["benchmark_file"]
     try: benchmark_yaml_file = cli_args.get_benchmark_yaml_file(benchmark_file)
@@ -103,6 +98,10 @@ Args:
 
 def parse(workload: str = "",
           results_dirname: str = "",
+          work_dir: str = "",
+          filters: list[str] = [],
+          clean: bool = False,
+          run: bool = False,
           ):
     """
 Run MatrixBenchmarking results parsing.
@@ -113,6 +112,9 @@ Env:
     MATBENCH_WORKLOAD
     MATBENCH_RESULTS_DIRNAME
     MATBENCH_WORK_DIR
+    MATBENCH_FILTERS
+    MATBENCH_CLEAN
+    MATBENCH_RUN
 
 See the `FLAGS` section for the descriptions.
 
@@ -120,52 +122,19 @@ Args:
     workload_dir: Name of the workload to execute. (Mandatory.)
     results_dirname: Name of the directory where the results will be stored. Can be set in the benchmark file. (Mandatory.)
     work_dir: Absolute path indicating where files should read/written.
-
+    clean: If 'True', run in cleanup mode.
+    run: In cleanup mode: if 'False', list the results that would be cleanup. If 'True', execute the cleanup.
 """
 
     kwargs = dict(locals()) # capture the function arguments
-    kwargs["clean_mode"] = False
-    _do_parse_clean(kwargs)
 
-def clean(workload: str = "",
-          run: bool = False,
-          results_dirname: str = "",
-          ):
-    """
-Run MatrixBenchmarking results clean-up
+    cli_args.setup_env_and_kwargs(kwargs)
 
-Run MatrixBenchmarking results clean-up
-
-Env:
-    MATBENCH_WORKLOAD
-    MATBENCH_RESULTS_DIRNAME
-    MATBENCH_WORK_DIR
-
-See the `FLAGS` section for the descriptions.
-
-Args:
-    workload: Name of the workload module. (Mandatory.)
-    results_dirname: Name of the directory where the results will be stored. Can be set in the benchmark file. (Mandatory.)
-    run: If 'False', list the results that would be cleanup. If 'True', execute the cleanup.
-    work_dir: Absolute path indicating where files should read/written.
-
-"""
-    kwargs = dict(locals()) # capture the function arguments
-    kwargs["clean_mode"] = True
-
-    if run:
-        logging.info("Running the result directory cleaner...")
-    else:
-        logging.info("Running the result directory cleaner in dry mode. Pass --run to perform the deletion.")
-
-    _do_parse_clean(kwargs)
-
-def _do_parse_clean(kwargs):
-    cli_args.update_env_with_env_files()
-    cli_args.goto_work_directory(kwargs)
-    cli_args.update_kwargs_with_env(kwargs)
     cli_args.check_mandatory_kwargs(kwargs, ("workload", "results_dirname",))
     cli_args.store_kwargs(kwargs, execution_mode="parse_clean")
+
+    if kwargs["clean"]:
+        logging.info("Running the result directory cleaner...")
 
     workload_store = store.load_workload_store(kwargs)
 
@@ -174,3 +143,7 @@ def _do_parse_clean(kwargs):
     logging.info(f"Loading results from {results_dirname} ... ")
     workload_store.parse_data(results_dirname)
     logging.info(f"Loading results: done, found {len(common.Matrix.processed_map)} results")
+
+    if kwargs["clean"]:
+        if not kwargs["run"]:
+            logging.info("Cleaner ran in dry mode. Pass --run to perform the deletion.")

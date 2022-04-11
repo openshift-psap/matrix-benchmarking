@@ -99,3 +99,9 @@ def goto_work_directory(kwargs):
         return
 
     os.chdir(work_dir)
+
+def setup_env_and_kwargs(kwargs):
+    # overriding order: env file <- env var <- benchmark file <- cli
+    goto_work_directory(kwargs)
+    update_env_with_env_files()
+    update_kwargs_with_env(kwargs)

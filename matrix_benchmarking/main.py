@@ -24,7 +24,6 @@ class MatrixBenchmarking:
         self.benchmark = matrix_benchmarking.benchmark.main
         self.visualize = matrix_benchmarking.visualize.main
         self.parse = matrix_benchmarking.benchmark.parse
-        self.clean = matrix_benchmarking.benchmark.clean
 
 
 def main():
