@@ -156,6 +156,8 @@ EXEC_DIR="$(realpath "$2")"
             except KeyError as e:
                 logging.error(f"cannot apply the path template '{path_tpl}': key '{e.args[0]}' missing from {settings}")
                 tracker.expe_cnt.errors += 1
+                if context.stop_on_error:
+                    return True
                 continue
 
             bench_uid = datetime.datetime.today().strftime("%Y%m%d_%H%M") + f".{uuid.uuid4().hex[:4]}"
@@ -182,7 +184,7 @@ EXEC_DIR="$(realpath "$2")"
             if ret != None and not ret:
                 tracker.expe_cnt.errors += 1
                 if context.stop_on_error:
-                    logger.warning("Stopping on error.")
+                    logging.warning("Stopping on error.")
                     return True
 
             tracker.expe_cnt.executed += 1
@@ -207,6 +209,9 @@ EXEC_DIR="$(realpath "$2")"
         except KeyError as e:
             logging.error(f"cannot apply the script template '{context.script_tpl}': key '{e.args[0]}' missing from {settings}")
             tracker.expe_cnt.errors += 1
+            if context.stop_on_error:
+                return False
+
             return None
 
         args = f"{settings_str} 1> >(tee stdout) 2> >(tee stderr >&2)"
