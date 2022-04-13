@@ -22,6 +22,7 @@ def invalid_directory(dirname, settings, reason):
     shutil.rmtree(dirname)
     logging.info(f"{dirname}: removed")
 
+
 def _duplicated_directory(import_key, old_location, new_location):
     logging.warning(f"duplicated results key: {import_key}")
     logging.warning(f"  old: {old_location}")
@@ -37,6 +38,7 @@ def _duplicated_directory(import_key, old_location, new_location):
     shutil.rmtree(new_location)
     logging.info(f"{new_location}: removed")
 
+
 def _parse_directory(expe, dirname):
     import_settings = {"expe": expe}
 
@@ -49,14 +51,16 @@ def _parse_directory(expe, dirname):
                 logging.error(f"invalid line in {dirname}/settings:")
                 logging.error(f"{line.strip()}")
                 continue
+
             import_settings[key] = value
-            try:
-                if store.experiment_filter[key] != value: return
-            except KeyError: pass
+
+    if store.should_be_filtered_out(import_settings):
+        return
 
     try:
         with open(dirname / "exit_code") as f:
             exit_code = int(f.read().strip())
+
     except FileNotFoundError as e:
         invalid_directory(dirname, import_settings, "exit_code not found")
         return

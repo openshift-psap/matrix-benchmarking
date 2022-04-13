@@ -6,22 +6,7 @@ import sys, logging
 import pathlib
 
 import matrix_benchmarking.common as common
-from matrix_benchmarking.common import Matrix
-
-experiment_filter = {}
-
-def parse_argv(argv):
-    # it's a flag
-
-    if "=" in arg:
-        key, _, value = arg.partition("=")
-    else:
-        key, value = arg, True
-
-    if key not in experiment_flags:
-        raise ValueError(f"Unexpected flag: {arg}")
-
-    experiment_flags[key] = value
+import matrix_benchmarking.cli_args as cli_args
 
 
 def load_workload_store(kwargs):
@@ -36,14 +21,35 @@ def load_workload_store(kwargs):
     return store_module
 
 
-def add_to_matrix(import_settings, location, results, duplicate_handler):
-    import_key = Matrix.settings_to_key(import_settings)
+def should_be_filtered_out(settings):
+    for key, value in settings.items():
+        if key not in cli_args.experiment_filters:
+            # Keep it
+            continue
 
-    if import_key in Matrix.import_map:
+        filter_value = cli_args.experiment_filters[key]
+
+        if str(filter_value) == str(value):
+            # Keep it
+            continue
+
+        # Skip it
+        return True
+
+    return False
+
+
+def add_to_matrix(import_settings, location, results, duplicate_handler):
+    if should_be_filtered_out(import_settings):
+        return
+
+    import_key = common.Matrix.settings_to_key(import_settings)
+
+    if import_key in common.Matrix.import_map:
         try:
-            old_location = Matrix.import_map[import_key].location
+            old_location = common.Matrix.import_map[import_key].location
         except AttributeError:
-            _, old_location = Matrix.import_map[import_key]
+            _, old_location = common.Matrix.import_map[import_key]
 
         duplicate_handler(import_key, old_location, location)
 
@@ -56,14 +62,13 @@ def add_to_matrix(import_settings, location, results, duplicate_handler):
 
     if not processed_settings:
         #logging.info(f"entry '{import_key}' skipped by rewrite_settings()")
-        Matrix.import_map[import_key] = True, location
+        common.Matrix.import_map[import_key] = True, location
         return
 
-    for filter_name, filter_values in experiment_filter.items():
-        if str(processed_settings.get(filter_name, None)) not in filter_values:
-            return None
+    if should_be_filtered_out(processed_settings):
+        return
 
-    processed_key = Matrix.settings_to_key(processed_settings)
+    processed_key = common.Matrix.settings_to_key(processed_settings)
 
     if processed_key in common.Matrix.processed_map:
         logging.warning(f"duplicated processed key: {processed_key}")

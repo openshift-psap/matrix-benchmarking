@@ -1,14 +1,16 @@
 import yaml
-import os
+import os, sys
 import pathlib
 import logging
 
 kwargs = None
+experiment_filters = {}
 
 def store_kwargs(_kwargs, *, execution_mode):
     global kwargs
     kwargs = _kwargs
     kwargs["execution_mode"] = execution_mode
+
 
 def get_benchmark_yaml_file(benchmark_file):
     if not benchmark_file:
@@ -79,6 +81,7 @@ def update_kwargs_with_benchmark_file(kwargs, benchmark_desc_file):
 
         logging.warning(f"unexpected flag found in the benchmark file: {key} = '{value}'")
 
+
 def check_mandatory_kwargs(kwargs, mandatory_flags):
     err = False
     for flag in mandatory_flags:
@@ -91,6 +94,7 @@ def check_mandatory_kwargs(kwargs, mandatory_flags):
         print(kwargs)
         raise SystemExit(1)
 
+
 def goto_work_directory(kwargs):
     work_dir = kwargs["work_dir"]
     if not work_dir:
@@ -100,8 +104,45 @@ def goto_work_directory(kwargs):
 
     os.chdir(work_dir)
 
+
 def setup_env_and_kwargs(kwargs):
     # overriding order: env file <- env var <- benchmark file <- cli
     goto_work_directory(kwargs)
     update_env_with_env_files()
     update_kwargs_with_env(kwargs)
+
+    filters = kwargs.get("filters")
+    if isinstance(filters, bool):
+        filters = str(filters)
+
+    if filters:
+        parse_filters(filters)
+
+def parse_filters(filters):
+    for kv in filters.split(","):
+        key, found, value = kv.partition("=")
+        if not found:
+            logging.error(f"Unexpected filter value: {kv}")
+            sys.exit(1)
+
+        experiment_filters[key] = value
+
+class TaskRunner:
+    """
+    TaskRunner
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    If you're seeing this text, put the --help flag earlier in your list
+    of command-line arguments, this is a limitation of the CLI parsing library
+    used by the MatrixBenchmarking.
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    """
+    def __init__(self, run):
+        self.run = run
+
+    def __str__(self): return "---"

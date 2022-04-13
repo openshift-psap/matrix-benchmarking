@@ -11,6 +11,7 @@ except ModuleNotFoundError:
 
 import matrix_benchmarking.visualize
 import matrix_benchmarking.benchmark
+import matrix_benchmarking.parse
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"),
                     format="%(levelname)s | %(message)s",)
@@ -23,8 +24,7 @@ class MatrixBenchmarking:
     def __init__(self):
         self.benchmark = matrix_benchmarking.benchmark.main
         self.visualize = matrix_benchmarking.visualize.main
-        self.parse = matrix_benchmarking.benchmark.parse
-
+        self.parse = matrix_benchmarking.parse.main
 
 def main():
     # Print help rather than opening a pager
@@ -35,8 +35,8 @@ def main():
     runnable = fire.Fire(MatrixBenchmarking())
 
     # Run the actual workload
-    if hasattr(runnable, "_run"):
-        runnable._run()
+    if hasattr(runnable, "run"):
+        runnable.run()
     else:
         # CLI didn't resolve completely - either by lack of arguments
         # or use of `--help`. This is okay.
