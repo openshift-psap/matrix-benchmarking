@@ -58,7 +58,7 @@ def run():
     matrix_view.build_callbacks(main_app)
     display_page = construct_dispatcher()
 
-    generate = store.experiment_flags["--generate"]
+    generate = cli_args.kwargs["--generate"]
     if generate:
         print(f"Generating http://127.0.0.1:8050/matrix?{generate.replace(' ', '%20')} ...")
 
