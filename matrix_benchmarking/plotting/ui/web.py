@@ -64,7 +64,7 @@ def run():
     if generate:
         logging.info(f"Generating http://127.0.0.1:8050/matrix?{generate.replace(' ', '%20')} ...")
 
-        page = matrix_view.build_layout(generate, serializing=True)
+        page = ui.build_layout(generate, serializing=True)
 
 
         for param in page.children[0].children:
