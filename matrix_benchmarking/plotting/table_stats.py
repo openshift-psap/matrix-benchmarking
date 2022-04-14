@@ -280,8 +280,6 @@ class TableStats():
 
 
     def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
-        from matrix_view import natural_keys
-        from matrix_view import COLORS
         cfg_plot_mode = cfg.get('stats.var_length', "")
 
         if cfg_plot_mode:
@@ -311,8 +309,8 @@ class TableStats():
             subplots_var = second_vars[-1]
 
             showticks = len(second_vars) == 2
-
-            for i, subplots_key in enumerate(sorted(variables[subplots_var], key=natural_keys)):
+            import matrix_benchmarking.plotting.ui as ui
+            for i, subplots_key in enumerate(sorted(variables[subplots_var], key=ui.natural_keys)):
                 subplots[subplots_key] = f"x{i+1}"
                 ax = f"xaxis{i+1}"
                 layout[ax] = dict(title=f"{subplots_var}={subplots_key}",
@@ -437,9 +435,9 @@ class TableStats():
             return max([yval for yval in [y_max]+y_err_data if yval is not None])
 
         y_max = 0
-        from matrix_view import natural_keys
-        legend_keys = sorted(list(legend_keys), key=natural_keys)
-        legend_names = sorted(list(legend_names), key=natural_keys)
+        import matrix_benchmarking.plotting.ui as ui
+        legend_keys = sorted(list(legend_keys), key=ui.natural_keys)
+        legend_names = sorted(list(legend_names), key=ui.natural_keys)
 
         DO_LOCAL_SORT = True
         for legend_key in legend_keys:
@@ -447,7 +445,7 @@ class TableStats():
             ax = subplots[subplots_key]
             has_err = any(y_err[legend_key])
 
-            color = COLORS(list(legend_names).index(legend_name))
+            color = ui.COLORS(list(legend_names).index(legend_name))
             plot_args = dict()
 
             if var_length <= 2:
