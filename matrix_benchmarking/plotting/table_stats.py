@@ -9,13 +9,13 @@ import plotly.subplots
 from dash import html
 from dash import dcc
 
-from matrix_benchmarking.common import Matrix
+import matrix_benchmarking.common as common
 
 def register_all():
     for stat in TableStats.all_stats:
         register = False
         if not isinstance(stat, TableStats): continue
-        for entry in Matrix.processed_map.values():
+        for entry in common.Matrix.processed_map.values():
             if entry.is_gathered:
                 entry.stats[stat.name] = gathered_stats = []
                 for gathered_entry in entry.results:
@@ -35,7 +35,7 @@ def register_all():
 
         if not register: continue
 
-        Matrix.settings["stats"].add(stat.name)
+        common.Matrix.settings["stats"].add(stat.name)
 
 class TableStats():
     all_stats = []
@@ -269,7 +269,7 @@ class TableStats():
             except ValueError: continue # not enough values to unpack (expected 2, got 1)
             variables[k] = v
 
-        entry = Matrix.get_record(variables)
+        entry = common.Matrix.get_record(variables)
         if not entry:
             return None, f"Error: record not found in matrix ..."
 
@@ -328,7 +328,7 @@ class TableStats():
         legends_visible = []
         subplots_used = set()
 
-        for entry in Matrix.all_records(params, param_lists):
+        for entry in common.Matrix.all_records(params, param_lists):
             if self.name not in entry.stats:
                 logging.info(f"Stat '{self.name}' not found for entry '{entry.location}'")
                 continue
