@@ -1,0 +1,42 @@
+--results-dirname: mpi-benchmarking
+#--branch: mpi-benchmarking # not verified yet.
+
+--remote-mode: false
+--stop-on-error: true
+
+--script-tpl: "workload/exec/run_benchmark.sh"
+
+--expe-to-run:
+- p2p
+- collective
+- hello
+
+env:
+
+common_settings:
+  run: 1, 2, 3, 4, 5
+  cloud: aws
+  machine: c4.xlarge
+  network: SDN
+  env: prod
+
+expe:
+  p2p:
+    --path-tpl: "{cloud}-{machine}/{operation}/run_{run}"
+
+    mode: p2p
+    operation: bandwidth, latency
+
+  collective:
+    --path-tpl: "{cloud}-{machine}/{operation}_{node_count}x/run_{run}"
+
+    mode: collective
+    operation: osu-allreduce, osu-alltoall
+    node_count: 2, 4, 8, 16, 24, 32, 48, 56, 64, 80, 96, 128, 160, 192
+
+  hello:
+    --path-tpl: "{cloud}-{machine}/{operation}_{node_count}x/run_{run}"
+
+    mode: hello
+    operation: hello
+    node_count: 2, 4, 8, 16, 24, 32, 48, 56, 64, 80, 96, 128, 160, 192
