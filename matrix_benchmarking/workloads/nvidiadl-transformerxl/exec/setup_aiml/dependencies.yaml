@@ -1,0 +1,174 @@
+name: has_everything
+spec:
+  requirements:
+  - has_matrix-benchmarking-ns
+  - has_ssd_image
+  - has_aws_efs
+  - has_transformer-xl_pvc_populated
+  - has_privileged_project
+
+---
+name: has_gpu_nodes
+spec:
+  tests:
+  - name: has_gpu_nodes
+    type: shell
+    spec: oc get nodes -lnvidia.com/gpu.present=true -oname | grep .
+  install:
+  - name: deploy_gpu_nodes
+    type: shell
+    spec: |
+      echo "Please deploy GPU nodes first ..."
+      false
+---
+name: has_matrix-benchmarking-ns
+spec:
+  tests:
+  - name: has_matrix-benchmarking-ns
+    type: shell
+    spec: oc get ns/matrix-benchmarking
+  install:
+  - name: create_matrix-benchmarking-ns
+    type: shell
+    spec: |
+      oc create ns matrix-benchmarking
+      oc label namespace matrix-benchmarking openshift.io/cluster-monitoring=true
+---
+name: has_aiml_imagestream
+spec:
+  requirements:
+  - has_matrix-benchmarking-ns
+  tests:
+  - name: has_aiml_imagestream
+    type: shell
+    spec: oc get is/aiml -n matrix-benchmarking
+  install:
+  - name: create_imagestream
+    type: shell
+    spec: oc apply -f ./imagestream.yaml -n matrix-benchmarking
+---
+name: has_ssd_image
+spec:
+  requirements:
+  - has_aiml_imagestream
+  tests:
+  - name: has_transformer-xl_image
+    type: shell
+    spec: oc get istag/aiml:transformer-xl -oname -n matrix-benchmarking
+  install:
+  - name: build_transformer-xl_image
+    type: ansible
+    spec:
+    - name: Set local imagebuild name
+      set_fact:
+        buildconfig_file: transformer-xl/buildconfig-transformer-xl.yaml
+        buildconfig_name: aiml-transformer-xl
+        namespace: matrix-benchmarking
+
+    - name: Delete the image helper builder manifest, if any
+      command: oc delete -f "{{ buildconfig_file }}" --ignore-not-found=true  -n "{{ namespace }}"
+
+    - name: Apply the image helper builder manifest
+      command: oc apply -f "{{ buildconfig_file }}" -n "{{ namespace }}"
+
+    - name: Wait for the helper image to be built
+      command:
+        oc get builds
+           -lopenshift.io/build-config.name={{ buildconfig_name }}
+           -ocustom-columns=phase:status.phase
+           --no-headers
+            -n "{{ namespace }}"
+      register: wait_buildconfig
+      until: "'Complete' in wait_buildconfig.stdout or 'Failed' in wait_buildconfig.stdout"
+      retries: 40
+      delay: 30
+
+    - name: Fail if the buildconfig failed to be built
+      when: "'Failed' in wait_buildconfig.stdout or 'Error' in wait_buildconfig.stdout"
+      fail: msg="The buildconfig {{ buildconfig_file }} failed to build"
+---
+name: has_aws_efs
+spec:
+  tests:
+  - name: has_aws_efs_sc
+    type: shell
+    spec: oc get sc/efs-csi-sc -oname
+  install:
+  - name: install AWS EFS
+    type: shell
+    spec: |
+      cd ~/openshift/ci-artifacts
+      ./run_toolbox.py cluster deploy_aws_efs
+---
+name: has_transformer-xl_pvc
+spec:
+  requirements:
+  - has_aws_efs
+  tests:
+  - name: has_transformer-xl_pvc
+    type: shell
+    spec: oc get -f pvc-transformer-xl-dataset.yaml
+  install:
+  - name: create_transformer-xl_pvc
+    type: shell
+    spec: oc apply -f pvc-transformer-xl-dataset.yaml
+---
+name: has_transformer-xl_pvc_populated
+spec:
+  requirements:
+  - has_transformer-xl_pvc
+  tests:
+  - name: has_transformer-xl_pvc_populated_label
+    type: shell
+    spec: oc get pvc -l prepared -n matrix-benchmarking | grep benchmarking-transformer-xl-dataset
+  install:
+  - name: run_transformer-xl_getdata_pod
+    type: ansible
+    spec:
+    - name: Set local imagebuild name
+      set_fact:
+        pod_file: pod-get-transformer-xl-data.yaml
+    - name: delete the preparation pod, if it exists
+      command: oc delete -f {{ pod_file }} --ignore-not-found
+
+    - name: create the preparation pod
+      command: oc create -f {{ pod_file }} -oname
+      register: pod_name_cmd
+
+    - name: Wait for the preparation pod to complete
+      command:
+        oc get {{ pod_name_cmd.stdout }}
+           -ocustom-columns=phase:status.phase
+           --no-headers
+            -n matrix-benchmarking
+      register: wait_pod
+      until: "'Succeeded' in wait_pod.stdout or 'Failed' in wait_pod.stdout"
+      retries: 160
+      delay: 30
+
+    - name: Fail if the prepa pod failed
+      when: "'Failed' in wait_pod.stdout or 'Error' in wait_pod.stdout"
+      fail: msg="The COCO preparation Pod {{ pod_name_cmd.stdout }} failed ..."
+  - name: label_transform-xl_pvc
+    type: shell
+    spec:
+      oc label pvc/benchmarking-transformer-xl-dataset prepared=true -n matrix-benchmarking
+---
+name: has_training_operator
+spec:
+  tests:
+  - name: has_training_operator_crd
+    type: shell
+    spec: oc get crd/tfjobs.kubeflow.org
+  install:
+  - name: install_training_operator
+    type: shell
+    spec: |
+      kubectl apply -k "github.com/kubeflow/training-operator/manifests/overlays/standalone?ref=v1.3.0"
+---
+name: has_privileged_project
+spec:
+  install:
+  - name: set_project_as_privileged
+    type: shell
+    spec: oc adm policy add-scc-to-user privileged -z  default -n matrix-benchmarking

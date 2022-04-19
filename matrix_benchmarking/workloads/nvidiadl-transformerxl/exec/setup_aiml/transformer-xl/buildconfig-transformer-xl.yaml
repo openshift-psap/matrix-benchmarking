@@ -1,0 +1,26 @@
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: matrix-benchmarking
+  name: aiml-transformer-xl
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: aiml:transformer-xl
+  resources: {}
+  source:
+    type: Git
+    git:
+      uri: https://github.com/openshift-psap/DeepLearningExamples
+      ref: fix/build-error
+    contextDir: PyTorch/LanguageModeling/Transformer-XL
+  triggers:
+    - type: ConfigChange
+  strategy:
+    dockerStrategy:
+      from:
+        kind: DockerImage
+        name: nvcr.io/nvidia/pytorch:20.06-py3
