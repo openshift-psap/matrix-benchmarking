@@ -9,13 +9,13 @@ import plotly.subplots
 from dash import html
 from dash import dcc
 
-from matrix_benchmarking.common import Matrix
+import matrix_benchmarking.common as common
 
 def register_all():
     for stat in TableStats.all_stats:
         register = False
         if not isinstance(stat, TableStats): continue
-        for entry in Matrix.processed_map.values():
+        for entry in common.Matrix.processed_map.values():
             if entry.is_gathered:
                 entry.stats[stat.name] = gathered_stats = []
                 for gathered_entry in entry.results:
@@ -35,7 +35,7 @@ def register_all():
 
         if not register: continue
 
-        Matrix.settings["stats"].add(stat.name)
+        common.Matrix.settings["stats"].add(stat.name)
 
 class TableStats():
     all_stats = []
@@ -269,7 +269,7 @@ class TableStats():
             except ValueError: continue # not enough values to unpack (expected 2, got 1)
             variables[k] = v
 
-        entry = Matrix.get_record(variables)
+        entry = common.Matrix.get_record(variables)
         if not entry:
             return None, f"Error: record not found in matrix ..."
 
@@ -280,8 +280,6 @@ class TableStats():
 
 
     def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
-        from matrix_view import natural_keys
-        from matrix_view import COLORS
         cfg_plot_mode = cfg.get('stats.var_length', "")
 
         if cfg_plot_mode:
@@ -311,8 +309,8 @@ class TableStats():
             subplots_var = second_vars[-1]
 
             showticks = len(second_vars) == 2
-
-            for i, subplots_key in enumerate(sorted(variables[subplots_var], key=natural_keys)):
+            import matrix_benchmarking.plotting.ui as ui
+            for i, subplots_key in enumerate(sorted(variables[subplots_var], key=ui.natural_keys)):
                 subplots[subplots_key] = f"x{i+1}"
                 ax = f"xaxis{i+1}"
                 layout[ax] = dict(title=f"{subplots_var}={subplots_key}",
@@ -328,7 +326,7 @@ class TableStats():
         legends_visible = []
         subplots_used = set()
 
-        for entry in Matrix.all_records(params, param_lists):
+        for entry in common.Matrix.all_records(params, param_lists):
             if self.name not in entry.stats:
                 logging.info(f"Stat '{self.name}' not found for entry '{entry.location}'")
                 continue
@@ -437,9 +435,9 @@ class TableStats():
             return max([yval for yval in [y_max]+y_err_data if yval is not None])
 
         y_max = 0
-        from matrix_view import natural_keys
-        legend_keys = sorted(list(legend_keys), key=natural_keys)
-        legend_names = sorted(list(legend_names), key=natural_keys)
+        import matrix_benchmarking.plotting.ui as ui
+        legend_keys = sorted(list(legend_keys), key=ui.natural_keys)
+        legend_names = sorted(list(legend_names), key=ui.natural_keys)
 
         DO_LOCAL_SORT = True
         for legend_key in legend_keys:
@@ -447,7 +445,7 @@ class TableStats():
             ax = subplots[subplots_key]
             has_err = any(y_err[legend_key])
 
-            color = COLORS(list(legend_names).index(legend_name))
+            color = ui.COLORS(list(legend_names).index(legend_name))
             plot_args = dict()
 
             if var_length <= 2:

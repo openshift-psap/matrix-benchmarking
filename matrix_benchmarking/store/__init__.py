@@ -124,12 +124,12 @@ def gather_rolling_entries(entry):
 
 custom_rewrite_settings = None
 
-def _rewrite_settings(dirname):
+def _rewrite_settings(import_settings):
     if custom_rewrite_settings is None:
         logging.warning("No rewrite_setting function registered.")
-        return
+        return import_settings
 
-    return custom_rewrite_settings(dirname)
+    return custom_rewrite_settings(import_settings)
 
 def register_custom_rewrite_settings(fn):
     global custom_rewrite_settings
