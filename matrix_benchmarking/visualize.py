@@ -28,7 +28,8 @@ Args:
     results_dirname: Name of the directory where the results will be stored.  (Mandatory.)
     generate: If 'True', generates image files instead of running the Web UI.
     work_dir: Absolute path indicating where files should read/written.
-    filters: If provided, parse only the experiment matching the filters. Eg: expe=expe1,expe2.
+    filters: If provided, parse only the experiment matching the filters. Eg: expe=expe1:expe2,something=true.
+
 """
     kwargs = dict(locals()) # capture the function arguments
 

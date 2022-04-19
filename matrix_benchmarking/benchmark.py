@@ -54,7 +54,7 @@ Args:
     script_tpl: Path template for the script to execute the benchmark. Can be set in the benchmark file.
     stop_on_error: If 'True', stop the matrix benchmarking execution on the first error. If 'False', ignore the error and continue. Can be set in the benchmark file.
     expe_to_run: Experiments to run.  Can be set in the benchmark file.
-    filters: If provided, parse only the experiment matching the filters. Eg: expe=expe1,expe2.
+    filters: If provided, parse only the experiment matching the filters. Eg: expe=expe1:expe2,something=true.
     work_dir: Absolute path indicating where files should read/written.
 
 """
