@@ -1,0 +1,45 @@
+--results-dirname: sample
+
+--remote-mode: false
+--stop-on-error: true
+
+--script-tpl: "workload/exec/run_{type}.sh"
+
+--expe-to-run:
+- procs
+- memfree
+- date
+
+common_settings:
+  # repeat the experiment 5 times
+  run: 1, 2, 3, 4, 5
+
+  machine: c4.xlarge
+  type: benchmark
+
+  # store fixed parameters describing the environment
+  cloud: aws
+  network: SDN
+  env: prod
+
+expe:
+  procs:
+    --path-tpl: "{cloud}-{machine}/{operation}/run_{run}"
+
+    mode: procs
+    operation: bandwidth, latency
+    node_count: 2, 4, 8, 16
+
+  memfree:
+    --path-tpl: "{cloud}-{machine}/{operation}_{node_count}x/run_{run}"
+
+    mode: memfree
+    operation: osu-allreduce, osu-alltoall
+    node_count: 2, 4, 8, 16
+
+  date:
+    --path-tpl: "{cloud}-{machine}/{operation}_{node_count}x/run_{run}"
+
+    mode: date
+    operation: date
+    node_count: 2, 4, 8, 16
