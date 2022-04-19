@@ -1,0 +1,115 @@
+apiVersion: kubeflow.org/v1
+kind: PyTorchJob
+metadata:
+  name: run-transformer-xl-2nodes
+spec:
+  pytorchReplicaSpecs:
+    Master:
+      replicas: 1
+      restartPolicy: Never
+      template:
+        metadata:
+          labels:
+            app: tf-app
+        spec:
+          topologySpreadConstraints:
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app: tf-app
+          containers:
+          - name: pytorch
+            image: image-registry.openshift-image-registry.svc:5000/matrix-benchmarking/aiml:transformer-xl
+            ports:
+            - containerPort: 23456
+              name: pytorchjob-port
+            securityContext:
+              privileged: true
+            command: [ "bash", "-ceuxo", "pipefail"]
+            args:
+            - |
+              set -x
+              python ./train.py \
+                   --config_file ${CONFIG_FILE} \
+                   --config ${CONFIG} \
+                   --batch_size ${BATCH_SIZE} \
+                   --seed ${SEED} \
+                   --fp${FP} \
+                   --no_eval
+            env:
+            - name: CONFIG_FILE
+              value: "wt103_base.yaml"
+            - name: CONFIG
+              value: "trainbench"
+            - name: BATCH_SIZE
+              value: "16"
+            - name: SEED
+              value: "123456"
+            - name: FP
+              value: "16"
+            volumeMounts:
+            - mountPath: /workspace/transformer-xl/data
+              name: storage-volume
+          nodeSelector:
+            nvidia.com/gpu.present: "true"
+          volumes:
+          - name: storage-volume
+            persistentVolumeClaim:
+              claimName: benchmarking-transformer-xl-dataset
+    Worker:
+      replicas: 1
+      restartPolicy: Never
+      template:
+        metadata:
+          labels:
+            app: tf-app
+        spec:
+          topologySpreadConstraints:
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app: tf-app
+          containers:
+          - name: pytorch
+            ports:
+            - containerPort: 23456
+              name: pytorchjob-port
+            securityContext:
+              privileged: true
+            image: image-registry.openshift-image-registry.svc:5000/matrix-benchmarking/aiml:transformer-xl
+            command: [ "bash", "-ceuxo", "pipefail"]
+            args:
+            - |
+              set -x
+              python ./train.py \
+                   --config_file ${CONFIG_FILE} \
+                   --config ${CONFIG} \
+                   --batch_size ${BATCH_SIZE} \
+                   --seed ${SEED} \
+                   --fp${FP} \
+                   --no_eval
+
+            env:
+            - name: CONFIG_FILE
+              value: "wt103_base.yaml"
+            - name: CONFIG
+              value: "trainbench"
+            - name: BATCH_SIZE
+              value: "16"
+            - name: SEED
+              value: "123456"
+            - name: FP
+              value: "16"
+            volumeMounts:
+            - mountPath: /workspace/transformer-xl/data
+              name: storage-volume
+          nodeSelector:
+            nvidia.com/gpu.present: "true"
+          volumes:
+          - name: storage-volume
+            persistentVolumeClaim:
+              claimName: benchmarking-transformer-xl-dataset

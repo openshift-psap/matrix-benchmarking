@@ -1,0 +1,146 @@
+name: file_configuration
+config_values:
+  namespace: matrix-benchmarking
+---
+name: has_everything
+spec:
+  requirements:
+  - has_namespace
+  - has_dlrm_image
+  - has_aws_efs
+  - has_dlrm_pvc_populated
+  - has_privileged_project
+
+---
+name: has_gpu_nodes
+spec:
+  test:
+  - name: has_gpu_nodes
+    type: shell
+    spec: oc get nodes -lnvidia.com/gpu.present=true -oname | grep .
+  install:
+  - name: deploy_gpu_nodes
+    type: shell
+    spec: |
+      echo "Please deploy GPU nodes first ..."
+      false
+---
+name: has_namespace
+spec:
+  configuration:
+  - namespace
+  test:
+  - name: has_namespace
+    type: shell
+    spec: oc get ns/$namespace
+  install:
+  - name: create_namespace
+    type: shell
+    spec: |
+      oc create ns $namespace
+      oc label namespace $namespace openshift.io/cluster-monitoring=true
+---
+name: has_aiml_imagestream
+spec:
+  configuration:
+  - namespace
+  requirements:
+  - has_namespace
+  test:
+  - name: has_aiml_imagestream
+    type: shell
+    spec: oc get is/aiml -n $namespace
+  install:
+  - name: create_imagestream
+    type: shell
+    spec: oc apply -f ./imagestream.yaml -n $namespace
+---
+name: has_dlrm_image
+spec:
+  configuration:
+  - namespace
+  requirements:
+  - has_aiml_imagestream
+  test:
+  - name: has_dlrm_image
+    type: shell
+    spec: oc get istag/aiml:dlrm -oname -n $namespace
+  install:
+  - name: build_dlrm_image
+    type: predefined
+    spec:
+      name: run_build_config_to_completion
+      args:
+        buildconfig_file: dlrm/buildconfig-dlrm.yaml
+        buildconfig_name: aiml-dlrm
+        namespace: matrix-benchmarking
+---
+name: has_aws_efs
+spec:
+  test:
+  - name: has_aws_efs_sc
+    type: shell
+    spec: oc get sc/efs-csi-sc -oname
+  install:
+  - name: install AWS EFS
+    type: toolbox
+    spec:
+      group: cluster
+      command: deploy_aws_efs
+---
+name: has_dlrm_pvc
+spec:
+  requirements:
+  - has_aws_efs
+  test:
+  - name: has_dlrm_pvc
+    type: shell
+    spec: oc get -f pvc-dlrm-dataset.yaml
+  install:
+  - name: create_dlrm_pvc
+    type: shell
+    spec: oc apply -f pvc-dlrm-dataset.yaml
+---
+name: has_dlrm_pvc_populated
+spec:
+  configuration:
+  - namespace
+  requirements:
+  - has_dlrm_pvc
+  test:
+  - name: has_dlrm_pvc_populated_label
+    type: shell
+    spec: oc get pvc -l prepared -n $namespace | grep benchmarking-dlrm-dataset
+  install:
+  - name: run_dlrm_getdata_pod
+    type: predefined
+    spec:
+      name: run_pod_file_to_completion
+      args:
+        pod_file: pod-get-dlrm-data.yaml
+
+  - name: label_bert_pvc
+    type: shell
+    spec:
+      oc label pvc/benchmarking-dlrm-dataset prepared=true -n $namespace
+---
+name: has_training_operator
+spec:
+  test:
+  - name: has_training_operator_crd
+    type: shell
+    spec: oc get crd/tfjobs.kubeflow.org
+  install:
+  - name: install_training_operator
+    type: shell
+    spec: |
+      kubectl apply -k "github.com/kubeflow/training-operator/manifests/overlays/standalone?ref=v1.3.0"
+---
+name: has_privileged_project
+spec:
+  configuration:
+  - namespace
+  install:
+  - name: set_project_as_privileged
+    type: shell
+    spec: oc adm policy add-scc-to-user privileged -z  default -n $namespace

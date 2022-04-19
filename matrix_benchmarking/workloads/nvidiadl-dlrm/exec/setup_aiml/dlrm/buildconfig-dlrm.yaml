@@ -1,0 +1,26 @@
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: matrix-benchmarking
+  name: aiml-dlrm
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: aiml:dlrm
+  resources: {}
+  source:
+    type: Git
+    git:
+      uri: https://github.com/openshift-psap/DeepLearningExamples
+      ref: dlrm
+    contextDir: TensorFlow2/Recommendation/DLRM
+  triggers:
+    - type: ConfigChange
+  strategy:
+    dockerStrategy: {}
+      #from:
+      #  kind: DockerImage
+      #  name: nvcr.io/nvidia/pytorch:21.11-tf2-py3

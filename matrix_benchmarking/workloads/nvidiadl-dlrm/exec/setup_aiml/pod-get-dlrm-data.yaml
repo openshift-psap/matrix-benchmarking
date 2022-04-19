@@ -1,0 +1,42 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+ name: dlrm-download-data
+ namespace: matrix-benchmarking
+spec:
+  containers:
+  - name: cnt
+    image: registry.access.redhat.com/ubi8/ubi
+    command: [ "bash", "-ceuxo", "pipefail"]
+    env:
+    - name: STORAGE
+      value: /data/dlrm/criteo/
+    args:
+    - |
+        if [ "$(ls "$STORAGE")" ]; then
+          echo "Data directory '$STORAGE' not empty, skipping."
+          ls "$STORAGE"
+          exit 0
+        fi
+        cd "$STORAGE"
+
+        wget https://aka.ms/downloadazcopy-v10-linux -O- | tar xvfz - --strip 1 -C /tmp
+
+        # http://labs.criteo.com/2013/12/download-terabyte-click-logs/
+        STORAGE_ACCOUNT_NAME=azuremlsampleexperiments
+        CONTAINER_NAME=criteo
+        SRC_URL=http://$STORAGE_ACCOUNT_NAME.blob.core.windows.net/$CONTAINER_NAME/
+
+        # FILES="$(for i in $(seq 0 23); do echo day_${i}.gz; done)"
+
+        /tmp/azcopy copy $SRC_URL/ "$STORAGE" --recursive=true
+
+    volumeMounts:
+    - mountPath: /data/dlrm/criteo/
+      name: storage-volume
+  volumes:
+  - name: storage-volume
+    persistentVolumeClaim:
+      claimName: benchmarking-dlrm-dataset
+  restartPolicy: Never

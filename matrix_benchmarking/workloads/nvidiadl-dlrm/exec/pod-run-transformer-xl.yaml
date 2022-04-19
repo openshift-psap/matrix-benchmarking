@@ -1,0 +1,24 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+ name: run-transformer-xl
+ namespace: matrix-benchmarking
+spec:
+  containers:
+  - name: cnt
+    image: image-registry.openshift-image-registry.svc:5000/matrix-benchmarking/aiml:transformer-xl
+    command: [ "bash", "-ceuxo", "pipefail"]
+    args:
+    - |
+      sleep +inf
+    volumeMounts:
+    - mountPath: /workspace/transformer-xl/pytorch/data
+      name: storage-volume
+  volumes:
+  - name: storage-volume
+    persistentVolumeClaim:
+      claimName: benchmarking-transformer-xl-dataset
+  restartPolicy: Never
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
