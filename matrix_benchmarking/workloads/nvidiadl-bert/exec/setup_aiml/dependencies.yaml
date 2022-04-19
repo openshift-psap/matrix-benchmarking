@@ -1,0 +1,192 @@
+name: file_configuration
+config_values:
+  namespace: matrix-benchmarking
+---
+name: has_everything
+spec:
+  requirements:
+  - library.gpu-operator.has_gpu_operator
+  - has_namespace
+  - has_bert_image
+  - has_privileged_project
+  - has_bert_entrypoint
+  - has_extended_max_pids
+  - has_bert_pvc_populated_from_s3
+
+---
+name: has_namespace
+spec:
+  configuration:
+  - namespace
+  test:
+  - name: has_namespace
+    type: shell
+    spec: oc get ns/$namespace
+  install:
+  - name: create_namespace
+    type: shell
+    spec: |
+      oc create ns $namespace
+      oc label namespace $namespace openshift.io/cluster-monitoring=true
+---
+name: has_aiml_imagestream
+spec:
+  configuration:
+  - namespace
+  requirements:
+  - has_namespace
+  test:
+  - name: has_aiml_imagestream
+    type: shell
+    spec: oc get is/aiml -n $namespace
+  install:
+  - name: create_imagestream
+    type: shell
+    spec: oc apply -f ./imagestream.yaml -n $namespace
+---
+name: has_bert_image
+spec:
+  configuration:
+  - namespace
+  requirements:
+  - has_aiml_imagestream
+  test:
+  - name: has_bert_image
+    type: shell
+    spec: oc get istag/aiml:bert -oname -n $namespace
+  install:
+  - name: build_bert_image
+    type: predefined
+    spec:
+      name: run_build_config_to_completion
+      args:
+        buildconfig_file: bert/buildconfig-bert.yaml
+---
+name: has_s3-creds_secret
+spec:
+  configuration:
+  - namespace
+  test:
+  - name: has_s3-creds_secret
+    type: shell
+    spec:
+      oc get secret s3-creds -n $namespace
+  install:
+  - name: create_s3-creds
+    type: shell
+    spec:
+      oc create secret generic s3-creds --from-file ~/.aws/credentials -n $namespace
+---
+name: has_bert_pvc_populated_from_s3
+spec:
+  configuration:
+  - namespace
+  requirements:
+  - has_bert_pvc
+  - has_s3-creds_secret
+  test:
+  - name: has_bert_pvc_populated_label
+    type: shell
+    spec: oc get pvc -l populated -n $namespace | grep benchmarking-bert-dataset
+  install:
+  - name: run_bert_download_from_s3_pod
+    type: predefined
+    configuration:
+    - namespace
+    spec:
+      name: run_pod_file_to_completion
+      args:
+        pod_file: pod-download-bert-data-from-s3.yaml
+  - name: run_bert_generate_tfrecords
+    type: predefined
+    configuration:
+    - namespace
+    spec:
+      name: run_pod_file_to_completion
+      args:
+        pod_file: pod-generate-bert-tfrecord.yaml
+  - name: label_bert_pvc
+    type: shell
+    spec:
+      oc label pvc/benchmarking-bert-dataset populated=true -n $namespace
+---
+name: has_bert_pvc_populated
+spec:
+  configuration:
+  - namespace
+  requirements:
+  - has_bert_pvc
+  test:
+  - name: has_bert_pvc_populated_label
+    type: shell
+    spec: oc get pvc -l populated -n $namespace | grep benchmarking-bert-dataset
+  install:
+  - name: run_bert_getdata_pod
+    type: predefined
+    configuration:
+    - namespace
+    spec:
+      name: run_pod_file_to_completion
+      args:
+        pod_file: pod-get-bert-data.yaml
+  - name: label_bert_pvc
+    type: shell
+    spec:
+      oc label pvc/benchmarking-bert-dataset populated=true -n $namespace
+---
+name: has_privileged_project
+spec:
+  configuration:
+  - namespace
+  install:
+  - name: set_project_as_privileged
+    type: shell
+    spec: oc adm policy add-scc-to-user privileged -z  default -n $namespace
+---
+name: has_bert_pvc
+config_values:
+  pvc_file: pvc-bert-dataset.yaml
+spec:
+  configuration:
+  - namespace
+  test:
+  - name: has_bert_pvc
+    type: shell
+    spec: cat "${pvc_file}" | envsubst | oc get -f-
+---
+name: has_bert_entrypoint
+config_values:
+  bert_entrypoint: ../run-bert-multinode_squad.sh
+spec:
+  configuration:
+  - namespace
+  test:
+  - name: has_bert_entrypoint
+    type: shell
+    spec: oc get cm/bert-entrypoint -n $namespace -oname
+  install:
+  - name: create_bert_entrypoint
+    type: shell
+    spec:
+      oc create cm bert-entrypoint --from-file=${bert_entrypoint} -oyaml --dry-run=client -n ${namespace} | oc apply -f-
+---
+name: has_extended_max_pids
+config_values:
+  max_pid_file: max-pids.yaml
+  max_pid_label: custom-kubelet=set-max-pods
+spec:
+  test:
+  - name: has_extended_max_pids
+    type: shell
+    spec: oc get -f ${max_pid_file} -oname
+  - name: has_max_pid_mcp_label
+    type: shell
+    spec: oc get machineconfigpool -l${max_pid_file} -oname | grep .
+  install:
+  - name: create_extended_max_pids_resources
+    type: shell
+    spec: oc apply -f ${max_pid_file}
+  - name: set_max_pids_mcp_label
+    type: shell
+    spec:
+      oc label machineconfigpool master worker ${max_pid_label} --overwrite

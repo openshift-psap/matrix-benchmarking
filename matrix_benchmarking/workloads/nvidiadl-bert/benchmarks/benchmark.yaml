@@ -1,0 +1,48 @@
+--remote-mode: false
+--stop-on-error: true
+
+--script-tpl: "nvidiadl-bert/exec/run_benchmark.py"
+--path-tpl: "{mpi_mode}/{precision}_bs{batch_size}_gpu{num_gpu}"
+
+--expe-to-run:
+#- run-parallel
+#- test-mpi
+- a100
+
+common_settings:
+  # repeat the experiment 5 times
+  run: 1 #, 2, 3, 4, 5
+  mpi_mode: one_per_pod, all_in_one_pod
+
+expe:
+  run-parallel:
+    num_gpu: 1, 4, 8, 16
+
+    # # https://github.com/NVIDIA/DeepLearningExamples/tree/master/TensorFlow2/LanguageModeling/BERT#fine-tuning-training-performance-for-squad-v11-on-nvidia-dgx-1-v100-8x-v100-16gb
+    extra:
+    - precision=fp16, batch_size=6
+    - precision=fp32, batch_size=3
+
+  test-mpi:
+
+    mpi_mode: test-gpu-per-pod
+    precision: fp16
+    batch_size: 6
+    num_gpu: 16
+    extra:
+    - num_pods=16, num_gpu_per_per_pod=1
+    - num_pods=8, num_gpu_per_per_pod=2
+    - num_pods=4, num_gpu_per_per_pod=4
+    - num_pods=2, num_gpu_per_per_pod=8
+    - num_pods=1, num_gpu_per_per_pod=16
+
+  a100:
+    mpi_mode: test-gpu-per-pod
+    precision: fp16
+    batch_size: 76
+    extra:
+    - num_pods=1, num_gpu_per_per_pod=4, num_gpu=4
+    - num_pods=1, num_gpu_per_per_pod=8, num_gpu=8
+    #- num_pods=2, num_gpu_per_per_pod=2, num_gpu=4
+    #- num_pods=2, num_gpu_per_per_pod=4, num_gpu=8
+    #- num_pods=2, num_gpu_per_per_pod=8, num_gpu=16

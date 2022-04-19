@@ -1,0 +1,23 @@
+# oc label machineconfigpool master custom-kubelet=set-max-pids
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: KubeletConfig
+metadata:
+  name: worker-kubeconfig-fix
+spec:
+  machineConfigPoolSelector:
+    matchLabels:
+      custom-kubelet: set-max-pids
+  kubeletConfig:
+      podPidsLimit: 4096
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: ContainerRuntimeConfig
+metadata:
+ name: set-pids-limit
+spec:
+ machineConfigPoolSelector:
+   matchLabels:
+     custom-kubelet: set-max-pids
+ containerRuntimeConfig:
+   pidsLimit: 4096

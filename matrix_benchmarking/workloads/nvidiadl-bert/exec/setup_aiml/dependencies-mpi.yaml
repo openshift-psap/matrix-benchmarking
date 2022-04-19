@@ -1,0 +1,21 @@
+---
+name: has_mpi_operator
+config_values:
+  mpi_version: 0.3.0
+spec:
+  test:
+  - name: has_mpi_crd
+    type: shell
+    spec: oc get -oname crd/mpijobs.kubeflow.org
+  install:
+  - name: install_mpi_operator
+    type: shell
+    spec: |
+      oc apply -f \
+         https://raw.githubusercontent.com/kubeflow/mpi-operator/v${mpi_version}/deploy/v2beta1/mpi-operator.yaml
+  - name: Fix MPI-Operator image
+    type: shell
+    spec: |
+      oc set image deployment.apps/mpi-operator \
+                   mpi-operator=docker.io/mpioperator/mpi-operator:${mpi_version} \
+                   -n mpi-operator

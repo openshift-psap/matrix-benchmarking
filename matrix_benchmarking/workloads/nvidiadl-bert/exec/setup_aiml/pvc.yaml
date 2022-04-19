@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    populated: "true"
+  name: benchmarking-bert-dataset
+  namespace: matrix-benchmarking
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 80Gi
+  storageClassName: efs-csi-sc
+  volumeMode: Filesystem
+  volumeName: pvc-740a3b2b-c82e-4b08-9b69-333b13dd68b8

@@ -1,0 +1,40 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+ name: bert-generate-tfrecord
+spec:
+  containers:
+  - name: cnt
+    image: image-registry.openshift-image-registry.svc:5000/matrix-benchmarking/aiml:bert
+    imagePullPolicy: Always
+    command: [ "bash", "-ceuxo", "pipefail"]
+    env:
+    - name: STORAGE
+      value: /workspace/bert_tf2/data/download
+    args:
+    - |
+        mkdir -p "$STORAGE/tfrecord/"
+        if [ "$(ls "$STORAGE/tfrecord/" 2>/dev/null)" ]; then
+          echo "tfrecord directory not empty, exiting ..."
+          exit 1
+        fi
+
+        export BERT_PREP_WORKING_DIR=/workspace/bert_tf2/data
+        DATASET="wikicorpus_en"
+        python3 ${BERT_PREP_WORKING_DIR}/bertPrep.py --action create_tfrecord_files --dataset ${DATASET} --max_seq_length 128 \
+        --max_predictions_per_seq 20 --vocab_file ${BERT_PREP_WORKING_DIR}/download/google_pretrained_weights/uncased_L-24_H-1024_A-16/vocab.txt
+
+
+        # Create TFRecord files Phase 2
+        python3 ${BERT_PREP_WORKING_DIR}/bertPrep.py --action create_tfrecord_files --dataset ${DATASET} --max_seq_length 512 \
+        --max_predictions_per_seq 80 --vocab_file ${BERT_PREP_WORKING_DIR}/download/google_pretrained_weights/uncased_L-24_H-1024_A-16/vocab.txt
+
+    volumeMounts:
+    - mountPath: /workspace/bert_tf2/data/download
+      name: storage-volume
+  volumes:
+  - name: storage-volume
+    persistentVolumeClaim:
+      claimName: benchmarking-bert-dataset
+  restartPolicy: Never

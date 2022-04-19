@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+ name: run-bert
+ namespace: matrix-benchmarking
+ annotations:
+   alpha.image.policy.openshift.io/resolve-names: '*'
+spec:
+  containers:
+  - name: cnt
+    image: aiml:bert
+    command: [ "bash", "-ceuxo", "pipefail"]
+    args:
+    - |
+      sleep +inf
+    volumeMounts:
+    - mountPath: /workspace/bert_tf2/data/download
+      name: storage-volume
+  volumes:
+  - name: storage-volume
+    persistentVolumeClaim:
+      claimName: benchmarking-bert-dataset
+  restartPolicy: Never
+  nodeSelector:
+    nvidia.com/gpu.present: "true"

@@ -1,0 +1,121 @@
+{#- Define constants #}
+{%- set BERT_IMAGE = "image-registry.openshift-image-registry.svc:5000/matrix-benchmarking/aiml:bert" %}
+
+{#- Compute the number of workers/gpus/slots based on the MPI mode #}
+
+{%- if mpi_mode == 'one_per_pod' %}
+{%- set num_worker_replicas = num_gpu %}
+{%- set num_gpu_per_worker = 1 %}
+{%- set num_slots_per_worker = 1 %}
+
+{%- elif mpi_mode == 'all_in_one_pod' %}
+{%- set num_worker_replicas = 1 %}
+{%- set num_gpu_per_worker = num_gpu %}
+{%- set num_slots_per_worker = num_gpu %}
+
+{%- elif mpi_mode == 'test-gpu-per-pod' %}
+{%- set num_worker_replicas = num_pods %}
+{%- set num_gpu_per_worker = num_gpu_per_per_pod %}
+{%- set num_slots_per_worker = num_gpu_per_per_pod %}
+{%- endif %}
+
+{#- ### -#}
+
+apiVersion: kubeflow.org/v2beta1
+kind: MPIJob
+metadata:
+  name: run-bert-squad-{{ num_gpu }}gpus
+spec:
+  cleanPodPolicy: Running
+  slotsPerWorker: {{ num_slots_per_worker }}
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      restartPolicy: OnFailure
+      template:
+        spec:
+          initContainers:
+          - name: wait-hostfilename
+            image: {{ BERT_IMAGE }}
+            command:
+            - bash
+            - -cx
+            - "[[ $(cat /etc/mpi/hostfile | wc -l) != 0 ]] && (date; echo 'Hostfile is ready'; cat /etc/mpi/hostfile) || (date; echo 'Hostfile not ready ...'; sleep 10; exit 1) && while read host; do while ! ssh $host echo $host ; do date; echo \"Pod $host is not up ...\"; sleep 10; done; date; echo \"Pod $host is ready\"; done <<< \"$(cat /etc/mpi/hostfile)\""
+            volumeMounts:
+            - mountPath: /etc/mpi
+              name: mpi-job-config
+            - mountPath: /root/.ssh
+              name: ssh-auth
+          containers:
+          - name: worker
+            image: {{ BERT_IMAGE }}
+            imagePullPolicy: Always
+            env:
+            - name: MATBENCH_BATCH_SIZE
+              value: "{{ batch_size }}"
+            - name: MATBENCH_PRECISION
+              value: "{{ precision }}"
+            - name: MATBENCH_EXTRA_VARS
+              value: # not used at the moment
+            command: [
+            mpirun, --allow-run-as-root,
+            -bind-to, none,
+            -map-by, slot,
+            -mca, pml, ob1,
+            -mca, btl, ^openib,
+            -x, NVIDIA_BUILD_ID,
+            -x, MATBENCH_BATCH_SIZE,
+            -x, MATBENCH_PRECISION,
+            -x, MATBENCH_EXTRA_VARS,
+            bash, -x, /mnt/entrypoint/run-bert-multinode_squad.sh
+            ]
+            securityContext:
+              privileged: true
+            volumeMounts:
+            - mountPath: /workspace/bert_tf2/data/download
+              name: storage-volume
+            - name: entrypoint
+              mountPath: /mnt/entrypoint
+          volumes:
+          - name: storage-volume
+            persistentVolumeClaim:
+              claimName: benchmarking-bert-dataset
+          - name: entrypoint
+            configMap:
+              name: bert-entrypoint
+    Worker:
+      replicas: {{ num_worker_replicas }}
+      restartPolicy: OnFailure
+      template:
+        metadata:
+          labels:
+            app: mpi-app
+        spec:
+          topologySpreadConstraints:
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app: mpi-app
+          containers:
+          - name: worker
+            image: {{ BERT_IMAGE }}
+            imagePullPolicy: Always
+            resources:
+              limits:
+                nvidia.com/gpu: {{ num_gpu_per_worker }}
+            securityContext:
+              privileged: true
+            volumeMounts:
+            - mountPath: /workspace/bert_tf2/data/download
+              name: storage-volume
+            - name: entrypoint
+              mountPath: /mnt/entrypoint
+          volumes:
+          - name: storage-volume
+            persistentVolumeClaim:
+              claimName: benchmarking-bert-dataset
+          - name: entrypoint
+            configMap:
+              name: bert-entrypoint

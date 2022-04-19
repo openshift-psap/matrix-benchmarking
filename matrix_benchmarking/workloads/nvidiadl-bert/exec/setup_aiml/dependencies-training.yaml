@@ -1,0 +1,28 @@
+name: has_everything
+spec:
+  requirements:
+  - has_training_operator
+  - has_training-operator_clusterrole_fixed
+---
+name: has_training_operator
+spec:
+  test:
+  - name: has_training_operator_crd
+    type: shell
+    spec: oc get crd/tfjobs.kubeflow.org
+  install:
+  - name: install_training_operator
+    type: shell
+    spec: |
+      kubectl apply -k "github.com/kubeflow/training-operator/manifests/overlays/standalone?ref=v1.3.0"
+---
+name: has_training-operator_clusterrole_fixed
+spec:
+  test:
+  - name: training-operator_has_finalizers
+    type: shell
+    spec: oc get clusterroles/training-operator -oyaml | grep tfjobs/finalizers
+  install:
+  - name: fix_training-operator_clusterrole
+    type: shell
+    spec: bash ./fix_training-operator_cluster-role.sh

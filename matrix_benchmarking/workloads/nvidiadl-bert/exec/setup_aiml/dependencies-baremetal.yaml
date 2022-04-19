@@ -1,0 +1,79 @@
+---
+name: has_everything
+spec:
+  requirements:
+  - has_localstorage_operator
+  - has_localstorage_volume
+  - has_bert_pvc
+---
+name: has_localstorage_operator
+spec:
+  test:
+  - name: has_localstorage_operator
+    type: shell
+    spec: oc get pods -lname=local-storage-operator -n openshift-local-storage
+  install:
+  - name: install_localstorage_operator
+    type: toolbox
+    spec:
+      group: cluster
+      command: deploy_operator
+      args:
+        - redhat-operators
+        - local-storage-operator
+        - openshift-local-storage
+---
+name: has_localstorage_volume
+spec:
+  requirements:
+  - has_localstorage_operator
+  test:
+  - name: has_localstorage_volume
+    type: shell
+    spec: oc get LocalVolume local-disk -n openshift-local-storage
+  install:
+  - name: create_localstorage_volume
+    type: shell
+    spec: |
+      DISK_DEV=/dev/nvme0n1
+      STORAGE_CLASS_NAME=local-sc-dgx
+      NODE_NAME=perfdgx2.perf.lab.eng.bos.redhat.com
+
+      cat <<EOF | oc apply -f-
+      apiVersion: local.storage.openshift.io/v1
+      kind: LocalVolume
+      metadata:
+        name: local-disk
+        namespace: openshift-local-storage
+      spec:
+        nodeSelector:
+          nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - $NODE_NAME
+        storageClassDevices:
+          - storageClassName: $STORAGE_CLASS_NAME
+            volumeMode: Filesystem
+            fsType: xfs
+            devicePaths:
+              - $DISK_DEV
+      EOF
+---
+name: has_bert_pvc
+config_values:
+  pvc_file: pvc-bert-dataset.yaml
+  storage_class_name: local-sc-dgx
+  access_mode: ReadWriteOnce
+spec:
+  requirements:
+  - has_localstorage_volume
+  test:
+  - name: has_bert_pvc
+    type: shell
+    spec: oc get -f ${pvc_file}
+  install:
+  - name: create_bert_pvc
+    type: shell
+    spec: envsubst ${pvc_file} | oc apply -f

@@ -1,0 +1,23 @@
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: matrix-benchmarking
+  name: aiml-bert
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: aiml:bert
+  resources: {}
+  source:
+    type: Git
+    git:
+      uri: https://github.com/openshift-psap/DeepLearningExamples
+      ref: bert
+    contextDir: TensorFlow2/LanguageModeling/BERT
+  triggers:
+    - type: ConfigChange
+  strategy:
+    dockerStrategy: {}

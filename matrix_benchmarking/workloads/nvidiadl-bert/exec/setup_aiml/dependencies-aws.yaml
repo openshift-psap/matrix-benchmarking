@@ -1,0 +1,43 @@
+name: file_configuration
+config_values:
+  namespace: matrix-benchmarking
+---
+name: has_everything_for_aws
+spec:
+  requirements:
+  - has_bert_pvc
+---
+name: has_aws_efs
+spec:
+  test:
+  - name: has_aws_efs_sc
+    type: shell
+    spec: oc get sc/efs-csi-sc -oname
+  install:
+  - name: install_aws_efs
+    type: toolbox
+    spec:
+      group: cluster
+      command: deploy_aws_efs
+---
+#
+# we should be able to import dependencies.yaml::has_namespace here
+#
+name: has_bert_pvc
+config_values:
+  pvc_file: pvc-bert-dataset.yaml
+  storage_class_name: efs-csi-sc
+  access_mode: ReadWriteMany
+spec:
+  configuration:
+  - namespace
+  requirements:
+  - has_aws_efs
+  test:
+  - name: has_bert_pvc
+    type: shell
+    spec: cat "${pvc_file}" | envsubst | oc get -f-
+  install:
+  - name: create_bert_pvc
+    type: shell
+    spec: cat "${pvc_file}" | envsubst | oc apply -f-
