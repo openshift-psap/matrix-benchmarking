@@ -1,0 +1,2931 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.1-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>2022-02-26-0718</Title>
+    <LastModified>2022-02-26 15:30:14</LastModified>
+    <TestClient>Phoronix Test Suite v10.8.1</TestClient>
+    <Description>container-other testing on CentOS Stream 8 via the Phoronix Test Suite.</Description>
+  </Generated>
+  <System>
+    <Identifier>Intel Xeon</Identifier>
+    <Hardware>Processor: Intel Xeon (2 Cores / 4 Threads), Motherboard: Google Compute Engine, Memory: 1 x 16 GB RAM, Disk: 137GB PersistentDisk</Hardware>
+    <Software>OS: CentOS Stream 8, Kernel: 4.18.0-305.34.2.el8_4.x86_64 (x86_64), Compiler: GCC 8.5.0 20210514, File-System: overlayfs, System Layer: container-other</Software>
+    <User></User>
+    <TimeStamp>2022-02-26 07:18:02</TimeStamp>
+    <TestClientVersion>10.8.1</TestClientVersion>
+    <Notes></Notes>
+    <JSON>{"compiler-configuration":"--build=x86_64-redhat-linux --disable-libmpx --disable-libunwind-exceptions --enable-__cxa_atexit --enable-bootstrap --enable-cet --enable-checking=release --enable-gnu-indirect-function --enable-gnu-unique-object --enable-initfini-array --enable-languages=c,c++,fortran,lto --enable-multilib --enable-offload-targets=nvptx-none --enable-plugin --enable-shared --enable-threads=posix --mandir=\/usr\/share\/man --with-arch_32=x86-64 --with-gcc-major-version-only --with-isl --with-linker-hash-style=gnu --with-tune=generic --without-cuda-driver","cpu-microcode":"0x1","kernel-extra-details":"Transparent Huge Pages: always","java":"OpenJDK Runtime Environment (build 1.8.0_322-b06)","python":"Python 3.6.8","security":"itlb_multihit: Not affected + l1tf: Not affected + mds: Mitigation of Clear buffers; SMT Host state unknown + meltdown: Not affected + spec_store_bypass: Mitigation of SSB disabled via prctl and seccomp + spectre_v1: Mitigation of usercopy\/swapgs barriers and __user pointer sanitization + spectre_v2: Mitigation of Enhanced IBRS IBPB: conditional RSB filling + srbds: Not affected + tsx_async_abort: Mitigation of Clear buffers; SMT Host state unknown"}</JSON>
+  </System>
+  <Result>
+    <Identifier>pts/polybench-c-1.2.0</Identifier>
+    <Title>PolyBench-C</Title>
+    <AppVersion>4.2</AppVersion>
+    <Arguments>covariance</Arguments>
+    <Description>Test: Covariance Computation</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"1.57:1.54:1.58","error":"The test run did not produce a result. The test run did not produce a result. The test run did not produce a result."}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polybench-c-1.2.0</Identifier>
+    <Title>PolyBench-C</Title>
+    <AppVersion>4.2</AppVersion>
+    <Arguments>correlation</Arguments>
+    <Description>Test: Correlation Computation</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"1.60:1.52:1.56","error":"The test run did not produce a result. The test run did not produce a result. The test run did not produce a result."}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polybench-c-1.2.0</Identifier>
+    <Title>PolyBench-C</Title>
+    <AppVersion>4.2</AppVersion>
+    <Arguments>3mm</Arguments>
+    <Description>Test: 3 Matrix Multiplications</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>3.611</Value>
+        <RawString>3.505:3.72:3.676:3.568:3.588</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"3.50:3.72:3.68:3.57:3.59"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>ac</Arguments>
+    <Description>Benchmark: ac</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>6.77</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"82.12"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>air</Arguments>
+    <Description>Benchmark: air</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>2.63</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"161.45"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>mdbx</Arguments>
+    <Description>Benchmark: mdbx</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>6.12</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"99.37"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>doduc</Arguments>
+    <Description>Benchmark: doduc</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>11.44</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"383.74"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>linpk</Arguments>
+    <Description>Benchmark: linpk</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>3.64</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"219.09"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>aermod</Arguments>
+    <Description>Benchmark: aermod</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>7.57</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"263.03"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>rnflow</Arguments>
+    <Description>Benchmark: rnflow</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>19.19</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"234.24"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>induct2</Arguments>
+    <Description>Benchmark: induct2</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>23.77</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"240.79"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>protein</Arguments>
+    <Description>Benchmark: protein</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>19.36</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"312.05"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>capacita</Arguments>
+    <Description>Benchmark: capacita</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>17.79</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"285.91"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>channel2</Arguments>
+    <Description>Benchmark: channel2</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>84.51</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"1014.90"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>fatigue2</Arguments>
+    <Description>Benchmark: fatigue2</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>60.22</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"603.51"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>test_fpu2</Arguments>
+    <Description>Benchmark: test_fpu2</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>43.83</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"1230.69"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>mp_prop_design</Arguments>
+    <Description>Benchmark: mp_prop_design</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>80.24</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"803.05"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-exz,0</Arguments>
+    <Description>Test: XZ 0 - Process: Compression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>31</Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"46.50:43.02:42.52"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-exz,0</Arguments>
+    <Description>Test: XZ 0 - Process: Decompression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>86</Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"46.50:43.02:42.52"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ezstd,1</Arguments>
+    <Description>Test: Zstd 1 - Process: Compression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>396</Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"24.77:24.90:25.05"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ezstd,1</Arguments>
+    <Description>Test: Zstd 1 - Process: Decompression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1146</Value>
+        <RawString>1144:1151:1142</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"24.77:24.90:25.05"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ezstd,8</Arguments>
+    <Description>Test: Zstd 8 - Process: Compression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>63</Value>
+        <RawString>64:62:63</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"26.64:26.93:26.67"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ezstd,8</Arguments>
+    <Description>Test: Zstd 8 - Process: Decompression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1108</Value>
+        <RawString>1100:1113:1110</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"26.64:26.93:26.67"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ecrush,0</Arguments>
+    <Description>Test: Crush 0 - Process: Compression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>79</Value>
+        <RawString>78:79:81</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"24.77:24.66:24.50"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ecrush,0</Arguments>
+    <Description>Test: Crush 0 - Process: Decompression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>372</Value>
+        <RawString>373:373:370</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"24.77:24.66:24.50"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ebrotli,0</Arguments>
+    <Description>Test: Brotli 0 - Process: Compression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>351</Value>
+        <RawString>350:352:350</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"23.83:23.89:24.03"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ebrotli,0</Arguments>
+    <Description>Test: Brotli 0 - Process: Decompression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>474</Value>
+        <RawString>472:473:477</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"23.83:23.89:24.03"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ebrotli,2</Arguments>
+    <Description>Test: Brotli 2 - Process: Compression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>134</Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"27.73:27.81:26.04"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-ebrotli,2</Arguments>
+    <Description>Test: Brotli 2 - Process: Decompression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>547</Value>
+        <RawString>546:548:547</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"27.73:27.81:26.04"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-elibdeflate,1</Arguments>
+    <Description>Test: Libdeflate 1 - Process: Compression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>172</Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"23.65:23.56:23.49"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/lzbench-1.1.1</Identifier>
+    <Title>lzbench</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>-elibdeflate,1</Arguments>
+    <Description>Test: Libdeflate 1 - Process: Decompression</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>865</Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-pthread -fomit-frame-pointer -fstrict-aliasing -ffast-math -O3"},"test-run-times":"23.65:23.56:23.49"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/blake2-1.2.2</Identifier>
+    <Title>BLAKE2</Title>
+    <AppVersion>20170307</AppVersion>
+    <Arguments></Arguments>
+    <Description></Description>
+    <Scale>Cycles Per Byte</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>4.72</Value>
+        <RawString>4.71:4.76:4.68</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native -lcrypto -lz"},"test-run-times":"0.51:0.50:0.51"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/gmpbench-1.3.0</Identifier>
+    <Title>GNU GMP GMPbench</Title>
+    <AppVersion>6.2.1</AppVersion>
+    <Arguments></Arguments>
+    <Description>Total Time</Description>
+    <Scale>GMPbench Score</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>3940.7</Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -fomit-frame-pointer -lm"},"test-run-times":"423.16"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/java-scimark2-1.1.2</Identifier>
+    <Title>Java SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_COMPOSITE</Arguments>
+    <Description>Computational Test: Composite</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1612.13</Value>
+        <RawString>1599.1835345531:1594.6435042731:1631.0454921257:1623.6548776237</RawString>
+        <JSON>{"test-run-times":"32.92:33.01:32.63:32.88"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/java-scimark2-1.1.2</Identifier>
+    <Title>Java SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_MONTE</Arguments>
+    <Description>Computational Test: Monte Carlo</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>796.48</Value>
+        <RawString>795.65903745504:799.80763615507:797.72790780012:792.721875343</RawString>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/java-scimark2-1.1.2</Identifier>
+    <Title>Java SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_FFT</Arguments>
+    <Description>Computational Test: Fast Fourier Transform</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>910.91</Value>
+        <RawString>930.50985180266:916.09275200205:899.5567976087:897.47393997453</RawString>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/java-scimark2-1.1.2</Identifier>
+    <Title>Java SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_SPARSE</Arguments>
+    <Description>Computational Test: Sparse Matrix Multiply</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1449.94</Value>
+        <RawString>1457.9755461513:1443.1269332886:1431.6985485126:1466.950146538</RawString>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/java-scimark2-1.1.2</Identifier>
+    <Title>Java SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_DENSE</Arguments>
+    <Description>Computational Test: Dense LU Matrix Factorization</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>3703.36</Value>
+        <RawString>3603.6509969583:3623.9770696273:3827.1433877867:3758.6603739256</RawString>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/java-scimark2-1.1.2</Identifier>
+    <Title>Java SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_SOR</Arguments>
+    <Description>Computational Test: Jacobi Successive Over-Relaxation</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1199.98</Value>
+        <RawString>1208.1222403983:1190.2131302924:1199.1008189203:1202.4680523373</RawString>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/bork-1.0.1</Identifier>
+    <Title>Bork File Encrypter</Title>
+    <AppVersion>1.4</AppVersion>
+    <Arguments></Arguments>
+    <Description>File Encryption Time</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>8.819</Value>
+        <RawString>8.935:8.884:8.638</RawString>
+        <JSON>{"test-run-times":"8.93:8.88:8.64"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/fhourstones-1.1.2</Identifier>
+    <Title>Fhourstones</Title>
+    <AppVersion>3.1</AppVersion>
+    <Arguments></Arguments>
+    <Description>Complex Connect-4 Solving</Description>
+    <Scale>Kpos / sec</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>10310.6</Value>
+        <RawString>10314.9:10328.5:10288.3</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3"},"test-run-times":"162.71:162.49:163.17"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/byte-1.2.2</Identifier>
+    <Title>BYTE Unix Benchmark</Title>
+    <AppVersion>3.6</AppVersion>
+    <Arguments>TEST_DHRY2</Arguments>
+    <Description>Computational Test: Dhrystone 2</Description>
+    <Scale>LPS</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>30776557.2</Value>
+        <RawString>30831578.1:30567320.6:30930772.8</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":""},"test-run-times":"120.26:120.16:120.16"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cachebench-1.1.2</Identifier>
+    <Title>CacheBench</Title>
+    <AppVersion></AppVersion>
+    <Arguments>-r</Arguments>
+    <Description>Test: Read</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>2801.721262</Value>
+        <RawString>2800.907236:2801.723434:2802.533115</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lrt"},"min-result":2774.16,"max-result":2817.13,"test-run-times":"125.07:125.07:125.07"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cachebench-1.1.2</Identifier>
+    <Title>CacheBench</Title>
+    <AppVersion></AppVersion>
+    <Arguments>-w</Arguments>
+    <Description>Test: Write</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>22459.227297</Value>
+        <RawString>22444.367104:22459.337437:22473.977349</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lrt"},"min-result":19154.78,"max-result":24574.91,"test-run-times":"125.06:125.07:125.06"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cachebench-1.1.2</Identifier>
+    <Title>CacheBench</Title>
+    <AppVersion></AppVersion>
+    <Arguments>-b</Arguments>
+    <Description>Test: Read / Modify / Write</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>34141.995613</Value>
+        <RawString>34167.59091:34100.292962:34158.102966</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lrt"},"min-result":29250.1,"max-result":36433.41,"test-run-times":"125.07:125.07:125.07"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/luajit-1.1.0</Identifier>
+    <Title>LuaJIT</Title>
+    <AppVersion>2.1-git</AppVersion>
+    <Arguments>TEST_COMPOSITE</Arguments>
+    <Description>Test: Composite</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1157.84</Value>
+        <RawString>1165.76:1155.91:1151.86</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm -ldl -O2 -fomit-frame-pointer -U_FORTIFY_SOURCE -fno-stack-protector"},"test-run-times":"30.52:26.62:26.80"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/luajit-1.1.0</Identifier>
+    <Title>LuaJIT</Title>
+    <AppVersion>2.1-git</AppVersion>
+    <Arguments>TEST_MONTE</Arguments>
+    <Description>Test: Monte Carlo</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>393.38</Value>
+        <RawString>390.24:394.78:395.12</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm -ldl -O2 -fomit-frame-pointer -U_FORTIFY_SOURCE -fno-stack-protector"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/luajit-1.1.0</Identifier>
+    <Title>LuaJIT</Title>
+    <AppVersion>2.1-git</AppVersion>
+    <Arguments>TEST_FFT</Arguments>
+    <Description>Test: Fast Fourier Transform</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>354.11</Value>
+        <RawString>364.64:343.43:354.25</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm -ldl -O2 -fomit-frame-pointer -U_FORTIFY_SOURCE -fno-stack-protector"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/luajit-1.1.0</Identifier>
+    <Title>LuaJIT</Title>
+    <AppVersion>2.1-git</AppVersion>
+    <Arguments>TEST_SPARSE</Arguments>
+    <Description>Test: Sparse Matrix Multiply</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1010.92</Value>
+        <RawString>1033.11:992.33:1007.32</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm -ldl -O2 -fomit-frame-pointer -U_FORTIFY_SOURCE -fno-stack-protector"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/luajit-1.1.0</Identifier>
+    <Title>LuaJIT</Title>
+    <AppVersion>2.1-git</AppVersion>
+    <Arguments>TEST_DENSE</Arguments>
+    <Description>Test: Dense LU Matrix Factorization</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>2769.20</Value>
+        <RawString>2779.42:2786.88:2741.29</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm -ldl -O2 -fomit-frame-pointer -U_FORTIFY_SOURCE -fno-stack-protector"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/luajit-1.1.0</Identifier>
+    <Title>LuaJIT</Title>
+    <AppVersion>2.1-git</AppVersion>
+    <Arguments>TEST_SOR</Arguments>
+    <Description>Test: Jacobi Successive Over-Relaxation</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1261.59</Value>
+        <RawString>1261.38:1262.11:1261.29</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm -ldl -O2 -fomit-frame-pointer -U_FORTIFY_SOURCE -fno-stack-protector"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/scimark2-1.3.2</Identifier>
+    <Title>SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_COMPOSITE</Arguments>
+    <Description>Computational Test: Composite</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>499.78</Value>
+        <RawString>500.76:505.31:493.26</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm"},"test-run-times":"29.42:28.81:30.25"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/scimark2-1.3.2</Identifier>
+    <Title>SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_MONTE</Arguments>
+    <Description>Computational Test: Monte Carlo</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>113.76</Value>
+        <RawString>113.8:114.24:113.23</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/scimark2-1.3.2</Identifier>
+    <Title>SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_FFT</Arguments>
+    <Description>Computational Test: Fast Fourier Transform</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>174.12</Value>
+        <RawString>169.04:205.61:147.7</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/scimark2-1.3.2</Identifier>
+    <Title>SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_SPARSE</Arguments>
+    <Description>Computational Test: Sparse Matrix Multiply</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>572.11</Value>
+        <RawString>575.13:567.21:573.98</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/scimark2-1.3.2</Identifier>
+    <Title>SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_DENSE</Arguments>
+    <Description>Computational Test: Dense LU Matrix Factorization</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>721.31</Value>
+        <RawString>738.02:707.11:718.8</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/scimark2-1.3.2</Identifier>
+    <Title>SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_SOR</Arguments>
+    <Description>Computational Test: Jacobi Successive Over-Relaxation</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>917.60</Value>
+        <RawString>907.84:932.39:912.57</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm"}}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>KASUMI</Arguments>
+    <Description>Test: KASUMI</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>73.817</Value>
+        <RawString>73.539:73.823:74.089</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.11:30.08:30.08"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>KASUMI</Arguments>
+    <Description>Test: KASUMI - Decrypt</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>71.601</Value>
+        <RawString>71.789:71.804:71.21</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.11:30.08:30.08"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>AES-256</Arguments>
+    <Description>Test: AES-256</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>3116.387</Value>
+        <RawString>3103.691:3120.943:3124.528</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"33.09:33.11:33.11"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>AES-256</Arguments>
+    <Description>Test: AES-256 - Decrypt</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>3108.814</Value>
+        <RawString>3092.857:3114.067:3119.519</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"33.09:33.11:33.11"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>Twofish</Arguments>
+    <Description>Test: Twofish</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>275.579</Value>
+        <RawString>278.414:273.654:274.669</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.28:30.28:30.28"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>Twofish</Arguments>
+    <Description>Test: Twofish - Decrypt</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>276.314</Value>
+        <RawString>276.383:272.86:279.698</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.28:30.28:30.28"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>Blowfish</Arguments>
+    <Description>Test: Blowfish</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>347.819</Value>
+        <RawString>344.679:348.901:349.876</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.35:30.35:30.35"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>Blowfish</Arguments>
+    <Description>Test: Blowfish - Decrypt</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>343.825</Value>
+        <RawString>347.365:342.744:341.367</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.35:30.35:30.35"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>CAST-256</Arguments>
+    <Description>Test: CAST-256</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>111.786</Value>
+        <RawString>112.106:111.721:111.53</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.12:30.12:30.12"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>CAST-256</Arguments>
+    <Description>Test: CAST-256 - Decrypt</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>112.098</Value>
+        <RawString>112.298:111.844:112.152</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.12:30.12:30.12"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>ChaCha20Poly1305</Arguments>
+    <Description>Test: ChaCha20Poly1305</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>606.581</Value>
+        <RawString>607.104:603.788:608.851</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.46:30.44:30.36"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/botan-1.6.0</Identifier>
+    <Title>Botan</Title>
+    <AppVersion>2.17.3</AppVersion>
+    <Arguments>ChaCha20Poly1305</Arguments>
+    <Description>Test: ChaCha20Poly1305 - Decrypt</Description>
+    <Scale>MiB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>600.636</Value>
+        <RawString>602.751:598.685:600.471</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fstack-protector -m64 -pthread -lbotan-2 -ldl -lrt"},"test-run-times":"30.46:30.44:30.36"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/swet-1.0.0</Identifier>
+    <Title>Swet</Title>
+    <AppVersion>1.5.16</AppVersion>
+    <Arguments></Arguments>
+    <Description>Average</Description>
+    <Scale>Operations Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>600115649</Value>
+        <RawString>545272898:610568114:601330101:609692853:608756126:602767913:586975193:601344365:610238154:614264597:601204479:613434745:595470819:600298726</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm -lpthread -lncurses -lrt"},"test-run-times":"18.09:18.08:18.02:18.08:18.01:18.14:18.00:18.08:18.03:18.14:18.08:18.01:18.10:18.04"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/node-octane-1.0.1</Identifier>
+    <Title>Node.js Octane Benchmark</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description></Description>
+    <Scale>Score</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>27685</Value>
+        <RawString>27727:27815:27513</RawString>
+        <JSON>{"install-footnote":"Nodejs","test-run-times":"33.98:33.95:34.14"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/numpy-1.2.1</Identifier>
+    <Title>Numpy Benchmark</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description></Description>
+    <Scale>Score</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>247.41</Value>
+        <RawString>243.45:248.77:250.02</RawString>
+        <JSON>{"test-run-times":"308.70:308.18:308.12"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/compress-gzip-1.2.0</Identifier>
+    <Title>Gzip Compression</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description>Linux Source Tree Archiving To .tar.gz</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>48.861</Value>
+        <RawString>48.898:48.882:48.804</RawString>
+        <JSON>{"test-run-times":"48.90:48.88:48.80"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/dcraw-1.1.1</Identifier>
+    <Title>dcraw</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description>RAW To PPM Image Conversion</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>52.467</Value>
+        <RawString>52.742:52.285:52.374</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-lm"},"test-run-times":"52.74:52.28:52.37"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/deepspeech-1.0.0</Identifier>
+    <Title>DeepSpeech</Title>
+    <AppVersion>0.6</AppVersion>
+    <Arguments>CPU</Arguments>
+    <Description>Acceleration: CPU</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>122.11239</Value>
+        <RawString>122.09096:121.78998:122.45624</RawString>
+        <JSON>{"test-run-times":"116.56:113.54:114.30"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/encode-flac-1.7.0</Identifier>
+    <Title>FLAC Audio Encoding</Title>
+    <AppVersion>1.3.3</AppVersion>
+    <Arguments></Arguments>
+    <Description>WAV To FLAC</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>27.371</Value>
+        <RawString>27.34:27.457:27.642:27.224:27.192</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fvisibility=hidden -logg -lm"},"test-run-times":"27.34:27.46:27.64:27.22:27.19"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/encode-mp3-1.7.4</Identifier>
+    <Title>LAME MP3 Encoding</Title>
+    <AppVersion>3.100</AppVersion>
+    <Arguments></Arguments>
+    <Description>WAV To MP3</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>13.040</Value>
+        <RawString>13.043:13.026:13.05</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -ffast-math -funroll-loops -fschedule-insns2 -fbranch-count-reg -fforce-addr -pipe -lncurses -lm"},"test-run-times":"13.04:13.03:13.05"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/espeak-1.6.1</Identifier>
+    <Title>eSpeak-NG Speech Engine</Title>
+    <AppVersion>20200907</AppVersion>
+    <Arguments></Arguments>
+    <Description>Text-To-Speech Synthesis</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>43.425</Value>
+        <RawString>43.441:43.373:43.353:43.534</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -std=c99 -lpthread -lm"},"test-run-times":"43.44:43.37:43.35:43.53"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/minion-1.5.2</Identifier>
+    <Title>Minion</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>benchmarks/graceful/k6p2_table.minion</Arguments>
+    <Description>Benchmark: Graceful</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>65.716111</Value>
+        <RawString>65.759133:65.471416:65.917783</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=gnu++11 -O3 -fomit-frame-pointer -rdynamic"},"test-run-times":"65.77:65.48:65.92"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/minion-1.5.2</Identifier>
+    <Title>Minion</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>benchmarks/solitaire/solitaire_benchmark_8.minion</Arguments>
+    <Description>Benchmark: Solitaire</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>90.098549</Value>
+        <RawString>90.530767:90.035138:89.729742</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=gnu++11 -O3 -fomit-frame-pointer -rdynamic"},"test-run-times":"90.55:90.06:89.75"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/minion-1.5.2</Identifier>
+    <Title>Minion</Title>
+    <AppVersion>1.8</AppVersion>
+    <Arguments>benchmarks/Quasigroup/qg-watchelement-7-10.minion</Arguments>
+    <Description>Benchmark: Quasigroup</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>138.634795</Value>
+        <RawString>138.794689:138.543055:138.566641</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=gnu++11 -O3 -fomit-frame-pointer -rdynamic"},"test-run-times":"138.80:138.55:138.57"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/opencv-bench-1.0.0</Identifier>
+    <Title>OpenCV Benchmark</Title>
+    <AppVersion>3.3.0</AppVersion>
+    <Arguments></Arguments>
+    <Description></Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++11 -rdynamic"},"test-run-times":"0.01:0.00:0.00","error":"The test quit with a non-zero exit status. The test quit with a non-zero exit status. The test quit with a non-zero exit status. E: opencv-bench: .\/main.py: \/usr\/bin\/python: bad interpreter: No such file or directory"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/perl-benchmark-1.0.1</Identifier>
+    <Title>Perl Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>benchmarks/app/podhtml.b</Arguments>
+    <Description>Test: Pod2html</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>0.15235346</Value>
+        <RawString>0.1508524375:0.15461854910714:0.15158939955357</RawString>
+        <JSON>{"test-run-times":"78.60:78.74:78.74"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/perl-benchmark-1.0.1</Identifier>
+    <Title>Perl Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>benchmarks/startup/noprog.b</Arguments>
+    <Description>Test: Interpreter</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>0.00164994</Value>
+        <RawString>0.001651599506022:0.0016663813903488:0.0016318490802676</RawString>
+        <JSON>{"test-run-times":"57.07:56.41:56.39"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/radiance-1.0.0</Identifier>
+    <Title>Radiance Benchmark</Title>
+    <AppVersion>5.0</AppVersion>
+    <Arguments>make all</Arguments>
+    <Description>Test: Serial</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1036.683</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"1036.68"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/rbenchmark-1.0.3</Identifier>
+    <Title>R Benchmark</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description></Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>0.3148</Value>
+        <RawString>0.31871445310437:0.31505980302076:0.31050752406986</RawString>
+        <JSON>{"install-footnote":"R scripting front-end version 4.1.2 (2021-11-01)","test-run-times":"37.00:37.09:36.88"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/sudokut-1.0.1</Identifier>
+    <Title>Sudokut</Title>
+    <AppVersion>0.4</AppVersion>
+    <Arguments></Arguments>
+    <Description>Total Time</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>14.462</Value>
+        <RawString>14.362:14.366:14.658</RawString>
+        <JSON>{"test-run-times":"14.36:14.37:14.66"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>1M.xml</Arguments>
+    <Description>Filesize: 1 MB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>542</Value>
+        <RawString>534:547:546</RawString>
+        <JSON>{"test-run-times":"0.54:0.55:0.55"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>2M.xml</Arguments>
+    <Description>Filesize: 2 MB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1762</Value>
+        <RawString>1759:1782:1744</RawString>
+        <JSON>{"test-run-times":"1.76:1.79:1.75"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>3M.xml</Arguments>
+    <Description>Filesize: 3 MB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>2645</Value>
+        <RawString>2681:2616:2637</RawString>
+        <JSON>{"test-run-times":"2.69:2.62:2.64"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>5K.xml</Arguments>
+    <Description>Filesize: 5 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>4</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"0.01:0.01:0.01:0.01:0.01:0.01:0.01:0.01:0.01:0.01:0.01:0.01"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>50K.xml</Arguments>
+    <Description>Filesize: 50 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>27</Value>
+        <RawString>25:25:27:23:26:37:25:23:24:29:31:24</RawString>
+        <JSON>{"test-run-times":"0.03:0.03:0.03:0.03:0.03:0.04:0.03:0.03:0.03:0.03:0.04:0.03"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>100K.xml</Arguments>
+    <Description>Filesize: 100 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>100</Value>
+        <RawString>96:101:132:98:95:94:108:96:92:96:98:95:94:108:94</RawString>
+        <JSON>{"test-run-times":"0.10:0.11:0.14:0.10:0.10:0.10:0.12:0.10:0.10:0.10:0.10:0.10:0.10:0.11:0.10"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>112M.xml</Arguments>
+    <Description>Filesize: 112 MB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>80232</Value>
+        <RawString>80299:80184:80214</RawString>
+        <JSON>{"test-run-times":"80.31:80.19:80.22"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>150K.xml</Arguments>
+    <Description>Filesize: 150 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>77</Value>
+        <RawString>81:75:75:75:75:76:76:76:79:77:79:76:79:77</RawString>
+        <JSON>{"test-run-times":"0.09:0.08:0.08:0.08:0.08:0.08:0.08:0.08:0.08:0.08:0.08:0.08:0.09:0.08"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>200K.xml</Arguments>
+    <Description>Filesize: 200 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>110</Value>
+        <RawString>112:109:109</RawString>
+        <JSON>{"test-run-times":"0.12:0.11:0.11"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>250K.xml</Arguments>
+    <Description>Filesize: 250 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>128</Value>
+        <RawString>129:128:128</RawString>
+        <JSON>{"test-run-times":"0.14:0.13:0.13"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>300K.xml</Arguments>
+    <Description>Filesize: 300 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>170</Value>
+        <RawString>175:163:166:179:165:165:168:168:164:169:186:166:183:176:164</RawString>
+        <JSON>{"test-run-times":"0.18:0.17:0.17:0.18:0.17:0.17:0.17:0.17:0.17:0.18:0.19:0.17:0.19:0.18:0.17"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>350K.xml</Arguments>
+    <Description>Filesize: 350 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>186</Value>
+        <RawString>185:183:189</RawString>
+        <JSON>{"test-run-times":"0.19:0.19:0.20"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>400K.xml</Arguments>
+    <Description>Filesize: 400 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>351</Value>
+        <RawString>345:365:346:341:350:356</RawString>
+        <JSON>{"test-run-times":"0.35:0.37:0.35:0.35:0.36:0.36"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>450K.xml</Arguments>
+    <Description>Filesize: 450 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>246</Value>
+        <RawString>251:247:240</RawString>
+        <JSON>{"test-run-times":"0.26:0.25:0.25"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>500K.xml</Arguments>
+    <Description>Filesize: 500 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>434</Value>
+        <RawString>433:445:423:468:430:421:434:431:429:420:430:444:448:426:421</RawString>
+        <JSON>{"test-run-times":"0.44:0.45:0.43:0.47:0.44:0.43:0.44:0.44:0.43:0.43:0.43:0.45:0.45:0.43:0.43"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>550K.xml</Arguments>
+    <Description>Filesize: 550 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>293</Value>
+        <RawString>288:293:303:286:296</RawString>
+        <JSON>{"test-run-times":"0.29:0.30:0.31:0.29:0.30"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>600K.xml</Arguments>
+    <Description>Filesize: 600 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>503</Value>
+        <RawString>510:502:498</RawString>
+        <JSON>{"test-run-times":"0.52:0.51:0.50"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>650K.xml</Arguments>
+    <Description>Filesize: 650 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>350</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"0.35:0.35:0.36"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>700K.xml</Arguments>
+    <Description>Filesize: 700 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>371</Value>
+        <RawString>384:359:366:383:374:373:359:364:407:359:371:375:362:367:361</RawString>
+        <JSON>{"test-run-times":"0.39:0.36:0.37:0.39:0.38:0.38:0.36:0.37:0.41:0.36:0.38:0.38:0.37:0.37:0.37"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>750K.xml</Arguments>
+    <Description>Filesize: 750 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>413</Value>
+        <RawString>478:419:405:434:400:400:411:409:425:398:400:396:431:393:395</RawString>
+        <JSON>{"test-run-times":"0.48:0.43:0.41:0.44:0.41:0.40:0.42:0.41:0.43:0.40:0.41:0.40:0.44:0.40:0.40"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>800K.xml</Arguments>
+    <Description>Filesize: 800 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>433</Value>
+        <RawString>431:436:431</RawString>
+        <JSON>{"test-run-times":"0.44:0.44:0.44"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>850K.xml</Arguments>
+    <Description>Filesize: 850 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>743</Value>
+        <RawString>712:755:733:713:869:713:796:719:713:721:714:763</RawString>
+        <JSON>{"test-run-times":"0.72:0.76:0.74:0.72:0.87:0.72:0.80:0.72:0.72:0.73:0.72:0.77"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>900K.xml</Arguments>
+    <Description>Filesize: 900 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>501</Value>
+        <RawString>506:504:492</RawString>
+        <JSON>{"test-run-times":"0.51:0.51:0.50"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/system-libxml2-1.0.3</Identifier>
+    <Title>System Libxml2 Parsing</Title>
+    <AppVersion></AppVersion>
+    <Arguments>950K.xml</Arguments>
+    <Description>Filesize: 950 KB</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>511</Value>
+        <RawString>522:509:502</RawString>
+        <JSON>{"test-run-times":"0.53:0.51:0.51"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-cos</Arguments>
+    <Description>Benchmark: cos</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>66.8587</Value>
+        <RawString>66.4266:67.1986:66.9509</RawString>
+        <JSON>{"test-run-times":"20.34:20.36:20.35"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-exp</Arguments>
+    <Description>Benchmark: exp</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>9.43210</Value>
+        <RawString>9.48652:9.44242:9.36737</RawString>
+        <JSON>{"test-run-times":"30.32:30.32:30.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-ffs</Arguments>
+    <Description>Benchmark: ffs</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>2.32373</Value>
+        <RawString>2.33541:2.32328:2.31249</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.33"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-sin</Arguments>
+    <Description>Benchmark: sin</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>65.8328</Value>
+        <RawString>66.4198:66.0171:65.0614</RawString>
+        <JSON>{"test-run-times":"20.38:20.38:20.40"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-log2</Arguments>
+    <Description>Benchmark: log2</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>11.8631</Value>
+        <RawString>11.7823:11.7617:12.0454</RawString>
+        <JSON>{"test-run-times":"10.33:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-modf</Arguments>
+    <Description>Benchmark: modf</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>2.96484</Value>
+        <RawString>2.96123:2.94557:2.98773</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-sinh</Arguments>
+    <Description>Benchmark: sinh</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>14.7659</Value>
+        <RawString>14.6186:15.0468:14.6323</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-sqrt</Arguments>
+    <Description>Benchmark: sqrt</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>2.65678</Value>
+        <RawString>2.65169:2.67118:2.64746</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-tanh</Arguments>
+    <Description>Benchmark: tanh</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>16.9880</Value>
+        <RawString>17.1539:16.739:17.0711</RawString>
+        <JSON>{"test-run-times":"10.32:10.33:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-asinh</Arguments>
+    <Description>Benchmark: asinh</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>19.7212</Value>
+        <RawString>19.6777:19.859:19.6268</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-atanh</Arguments>
+    <Description>Benchmark: atanh</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>15.6587</Value>
+        <RawString>15.6027:15.6334:15.7401</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-ffsll</Arguments>
+    <Description>Benchmark: ffsll</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>2.59114</Value>
+        <RawString>2.58863:2.59737:2.58742</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-sincos</Arguments>
+    <Description>Benchmark: sincos</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>19.6420</Value>
+        <RawString>19.7946:19.6376:19.4939</RawString>
+        <JSON>{"test-run-times":"20.37:20.49:20.52"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-pthread_once</Arguments>
+    <Description>Benchmark: pthread_once</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>2.31178</Value>
+        <RawString>2.33625:2.2969:2.3022</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/multichase-1.0.2</Identifier>
+    <Title>Multichase Pointer Chaser</Title>
+    <AppVersion></AppVersion>
+    <Arguments>multichase -m 4m -s 64</Arguments>
+    <Description>Test: 4MB Array, 64 Byte Stride</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -static -pthread -lrt"},"test-run-times":"0.01:0.00:0.00","error":"The test quit with a non-zero exit status. The test quit with a non-zero exit status. The test quit with a non-zero exit status. E: multichase: line 3: .\/multichase: No such file or directory"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/multichase-1.0.2</Identifier>
+    <Title>Multichase Pointer Chaser</Title>
+    <AppVersion></AppVersion>
+    <Arguments>multichase -m 1g</Arguments>
+    <Description>Test: 1GB Array, 256 Byte Stride</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -static -pthread -lrt"},"test-run-times":"0.00:0.01:0.00","error":"The test quit with a non-zero exit status. The test quit with a non-zero exit status. The test quit with a non-zero exit status. E: multichase: line 3: .\/multichase: No such file or directory"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/multichase-1.0.2</Identifier>
+    <Title>Multichase Pointer Chaser</Title>
+    <AppVersion></AppVersion>
+    <Arguments>multichase</Arguments>
+    <Description>Test: 256MB Array, 256 Byte Stride</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -static -pthread -lrt"},"test-run-times":"0.00:0.00:0.00","error":"The test quit with a non-zero exit status. The test quit with a non-zero exit status. The test quit with a non-zero exit status. E: multichase: line 3: .\/multichase: No such file or directory"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/multichase-1.0.2</Identifier>
+    <Title>Multichase Pointer Chaser</Title>
+    <AppVersion></AppVersion>
+    <Arguments>multichase -m 1g -t 2</Arguments>
+    <Description>Test: 1GB Array, 256 Byte Stride, 2 Threads</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -static -pthread -lrt"},"test-run-times":"0.00:0.00:0.00","error":"The test quit with a non-zero exit status. The test quit with a non-zero exit status. The test quit with a non-zero exit status. E: multichase: line 3: .\/multichase: No such file or directory"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/multichase-1.0.2</Identifier>
+    <Title>Multichase Pointer Chaser</Title>
+    <AppVersion></AppVersion>
+    <Arguments>multichase -m 1g -t 4</Arguments>
+    <Description>Test: 1GB Array, 256 Byte Stride, 4 Threads</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value></Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -static -pthread -lrt"},"test-run-times":"0.00:0.00:0.01","error":"The test quit with a non-zero exit status. The test quit with a non-zero exit status. The test quit with a non-zero exit status. E: multichase: line 3: .\/multichase: No such file or directory"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/tjbench-1.2.0</Identifier>
+    <Title>libjpeg-turbo tjbench</Title>
+    <AppVersion>2.1.0</AppVersion>
+    <Arguments>decompression-throughput</Arguments>
+    <Description>Test: Decompression Throughput</Description>
+    <Scale>Megapixels/sec</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>149.599252</Value>
+        <RawString>149.808864:149.453207:149.535686</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -rdynamic"},"test-run-times":"25.28:25.30:25.16"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cpp-perf-bench-1.0.0</Identifier>
+    <Title>CppPerformanceBenchmarks</Title>
+    <AppVersion>9</AppVersion>
+    <Arguments>atol</Arguments>
+    <Description>Test: Atol</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>82.613</Value>
+        <RawString>82.461:82.831:82.547</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++11 -O3"},"test-run-times":"82.46:82.83:82.55"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cpp-perf-bench-1.0.0</Identifier>
+    <Title>CppPerformanceBenchmarks</Title>
+    <AppVersion>9</AppVersion>
+    <Arguments>ctype</Arguments>
+    <Description>Test: Ctype</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>39.005</Value>
+        <RawString>38.984:39.101:38.931</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++11 -O3"},"test-run-times":"38.98:39.10:38.93"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cpp-perf-bench-1.0.0</Identifier>
+    <Title>CppPerformanceBenchmarks</Title>
+    <AppVersion>9</AppVersion>
+    <Arguments>stepanov_vector</Arguments>
+    <Description>Test: Stepanov Vector</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>114.550</Value>
+        <RawString>114.643:114.502:114.506</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++11 -O3"},"test-run-times":"114.64:114.50:114.51"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cpp-perf-bench-1.0.0</Identifier>
+    <Title>CppPerformanceBenchmarks</Title>
+    <AppVersion>9</AppVersion>
+    <Arguments>functionobjects</Arguments>
+    <Description>Test: Function Objects</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>19.386</Value>
+        <RawString>19.356:19.42:19.381</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++11 -O3"},"test-run-times":"19.36:19.42:19.38"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cpp-perf-bench-1.0.0</Identifier>
+    <Title>CppPerformanceBenchmarks</Title>
+    <AppVersion>9</AppVersion>
+    <Arguments>stepanov_abstraction</Arguments>
+    <Description>Test: Stepanov Abstraction</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>44.399</Value>
+        <RawString>44.456:44.34:44.4</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++11 -O3"},"test-run-times":"44.46:44.34:44.40"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>system/inkscape-1.0.0</Identifier>
+    <Title>Inkscape</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description>Operation: SVG Files To PNG</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>33.146</Value>
+        <RawString>33.547:33.03:32.861</RawString>
+        <JSON>{"install-footnote":"Inkscape 0.92.3 (2405546, 2018-03-11)","test-run-times":"33.55:33.03:32.86"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_shared_mutex_lock_shared</Arguments>
+    <Description>Benchmark: Shared Mutex Lock Shared</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>27.5</Value>
+        <RawString>27.4:27.5:27.6</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"30.48:30.56:30.62"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.std::mutex.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock std::mutex</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>26.3</Value>
+        <RawString>26.4:26.3:26.3</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"29.32:29.18:29.26"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.std::shared_mutex.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock std::mutex</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>32.3</Value>
+        <RawString>32.3:32.3:32.3</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"35.86:35.97:35.88"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_semaphore_release_and_acquire</Arguments>
+    <Description>Benchmark: Semaphore Release And Acquire</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>20.3</Value>
+        <RawString>19.4:19.5:20.6:20.5:20.6:20.5:20.5:20.5</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"21.60:21.60:22.88:22.78:22.87:22.76:22.87:22.83"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.spinlock_amd.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock spinlock_amd</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>54.7</Value>
+        <RawString>54.7:54.7:54.7</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"60.77:60.72:60.77"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.pthread_mutex.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock pthread_mutex</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>22.1</Value>
+        <RawString>22:22.3:22.1</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"73.33:73.64:73.38"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.ticket_spinlock.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock ticket_spinlock</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>38.9</Value>
+        <RawString>38.9:38.9:38.8</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"43.26:43.20:43.14"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t lpop</Arguments>
+    <Description>Test: LPOP</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1720382.63</Value>
+        <RawString>1665566.88:1784161.25:1751620.25:1672810.88:1735274:1717628.25:1689216.25:1776864.38:1684357.88:1726326.25</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"16.04:15.63:15.73:16.03:15.83:15.93:16.03:15.73:16.03:15.83"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t sadd</Arguments>
+    <Description>Test: SADD</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1417023.88</Value>
+        <RawString>1364832.5:1438044.25:1421491.38:1444288.88:1416462.38</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"17.43:17.03:17.13:17.03:17.13"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t lpush</Arguments>
+    <Description>Test: LPUSH</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1127528.83</Value>
+        <RawString>1149697:1127777.25:1105112.25</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"18.77:19.04:19.22"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t get</Arguments>
+    <Description>Test: GET</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1597673.46</Value>
+        <RawString>1603077.88:1584032.88:1605909.62</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"16.44:16.55:16.46"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t set</Arguments>
+    <Description>Test: SET</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1290804.24</Value>
+        <RawString>1330002.38:1215509.88:1325038.25:1276006.62:1332462.12:1257703.38:1336592.38:1325561:1251102.75:1294670.12:1307364.62:1306506.38:1252987.88:1266508.62:1284047.25</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"17.75:18.45:17.75:18.05:17.65:18.15:17.67:17.75:18.16:17.97:17.84:17.85:18.16:18.06:17.96"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/optcarrot-1.0.1</Identifier>
+    <Title>Optcarrot</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description>Optimized Benchmark</Description>
+    <Scale>FPS</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>88.08</Value>
+        <RawString>88.821365349638:85.350816416656:85.38521273071:89.564974855315:91.05303471983:88.925705448678:87.464155243959</RawString>
+        <JSON>{"install-footnote":"ruby 2.5.9p229 (2021-04-05 revision 67939) [x86_64-linux]","test-run-times":"3.14:3.06:3.07:3.07:3.07:3.14:3.04"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/pybench-1.1.3</Identifier>
+    <Title>PyBench</Title>
+    <AppVersion>2018-02-16</AppVersion>
+    <Arguments></Arguments>
+    <Description>Total For Average Test Times</Description>
+    <Scale>Milliseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>1521</Value>
+        <RawString>1523:1516:1525</RawString>
+        <JSON>{"test-run-times":"37.14:36.80:37.25"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/hint-1.0.3</Identifier>
+    <Title>Hierarchical INTegration</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>FLOAT</Arguments>
+    <Description>Test: FLOAT</Description>
+    <Scale>QUIPs</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>324576284.70408</Value>
+        <RawString>324798529.84151:324429570.14467:324500754.12606</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native -lm"},"test-run-times":"398.35:400.12:401.41"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 1</Arguments>
+    <Description>Concurrent Requests: 1</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>44563.10</Value>
+        <RawString>44765.31:44527.11:44396.87</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.18:90.19:90.05"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 20</Arguments>
+    <Description>Concurrent Requests: 20</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>76542.23</Value>
+        <RawString>74667.87:77419.82:77539</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.19:90.04:90.16"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 100</Arguments>
+    <Description>Concurrent Requests: 100</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>73316.28</Value>
+        <RawString>72804.57:73693.43:73450.83</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.11:90.06:90.03"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 200</Arguments>
+    <Description>Concurrent Requests: 200</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>73971.69</Value>
+        <RawString>73062.16:75214.3:73638.61</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.08:90.19:90.19"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 500</Arguments>
+    <Description>Concurrent Requests: 500</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>72718.94</Value>
+        <RawString>72961.81:72575.7:72619.31</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.15:90.04:90.10"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 1000</Arguments>
+    <Description>Concurrent Requests: 1000</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>67041.26</Value>
+        <RawString>66717.92:66686.33:67719.54</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.22:90.22:90.20"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/phpbench-1.1.6</Identifier>
+    <Title>PHPBench</Title>
+    <AppVersion>0.8.1</AppVersion>
+    <Arguments></Arguments>
+    <Description>PHP Benchmark Suite</Description>
+    <Scale>Score</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>480850</Value>
+        <RawString>480706:480911:480932</RawString>
+        <JSON>{"test-run-times":"41.65:41.62:41.62"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/git-1.1.0</Identifier>
+    <Title>Git</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description>Time To Complete Common Git Commands</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>77.949</Value>
+        <RawString>77.741:77.839:78.266</RawString>
+        <JSON>{"install-footnote":"git version 2.31.1","test-run-times":"77.74:77.84:78.27"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/gnupg-2.5.0</Identifier>
+    <Title>GnuPG</Title>
+    <AppVersion>2.2.27</AppVersion>
+    <Arguments></Arguments>
+    <Description>2.7GB Sample File Encryption</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>76.285</Value>
+        <RawString>77.002:76.114:75.74</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2"},"test-run-times":"77.00:76.11:75.74"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>system/tesseract-ocr-1.0.1</Identifier>
+    <Title>Tesseract OCR</Title>
+    <AppVersion>4.1.1</AppVersion>
+    <Arguments></Arguments>
+    <Description>Time To OCR 7 Images</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon</Identifier>
+        <Value>67.760</Value>
+        <RawString>67.618:68.304:67.359</RawString>
+        <JSON>{"test-run-times":"67.62:68.30:67.36"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+</PhoronixTestSuite>

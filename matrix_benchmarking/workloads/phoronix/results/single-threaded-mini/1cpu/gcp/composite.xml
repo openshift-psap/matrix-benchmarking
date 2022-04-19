@@ -1,0 +1,542 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.1-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>2022-02-21-0805</Title>
+    <LastModified>2022-02-21 10:47:43</LastModified>
+    <TestClient>Phoronix Test Suite v10.8.1</TestClient>
+    <Description>container-other testing on CentOS Stream 8 via the Phoronix Test Suite.</Description>
+  </Generated>
+  <System>
+    <Identifier>Intel Core i7-10850H</Identifier>
+    <Hardware>Processor: Intel Core i7-10850H @ 5.10GHz (6 Cores / 12 Threads), Motherboard: LENOVO 20TJS2F45T (N2VET32W 1.17 BIOS), Memory: 32GB, Disk: 512GB Toshiba KXG6AZNV512G, Graphics: i915drmfb, Audio: Realtek ALC285</Hardware>
+    <Software>OS: CentOS Stream 8, Kernel: 5.16.8-200.fc35.x86_64 (x86_64), Compiler: GCC 8.5.0 20210514, File-System: overlayfs, System Layer: container-other</Software>
+    <User></User>
+    <TimeStamp>2022-02-21 08:05:15</TimeStamp>
+    <TestClientVersion>10.8.1</TestClientVersion>
+    <Notes></Notes>
+    <JSON>{"compiler-configuration":"--build=x86_64-redhat-linux --disable-libmpx --disable-libunwind-exceptions --enable-__cxa_atexit --enable-bootstrap --enable-cet --enable-checking=release --enable-gnu-indirect-function --enable-gnu-unique-object --enable-initfini-array --enable-languages=c,c++,fortran,lto --enable-multilib --enable-offload-targets=nvptx-none --enable-plugin --enable-shared --enable-threads=posix --mandir=\/usr\/share\/man --with-arch_32=x86-64 --with-gcc-major-version-only --with-isl --with-linker-hash-style=gnu --with-tune=generic --without-cuda-driver","cpu-microcode":"0x1","kernel-extra-details":"Transparent Huge Pages: always","java":"OpenJDK Runtime Environment (build 1.8.0_322-b06)","security":"itlb_multihit: Not affected + l1tf: Not affected + mds: Mitigation of Clear buffers; SMT Host state unknown + meltdown: Not affected + spec_store_bypass: Mitigation of SSB disabled via prctl and seccomp + spectre_v1: Mitigation of usercopy\/swapgs barriers and __user pointer sanitization + spectre_v2: Mitigation of Enhanced IBRS IBPB: conditional RSB filling + srbds: Not affected + tsx_async_abort: Mitigation of Clear buffers; SMT Host state unknown"}</JSON>
+  </System>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>doduc</Arguments>
+    <Description>Benchmark: doduc</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>11.5</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"699.48"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>capacita</Arguments>
+    <Description>Benchmark: capacita</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>17.72</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"1064.78"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/java-scimark2-1.1.2</Identifier>
+    <Title>Java SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_DENSE</Arguments>
+    <Description>Computational Test: Dense LU Matrix Factorization</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>3706.60</Value>
+        <RawString>3754.7837993287:3685.1102280257:3643.3175912398:3743.2031291717</RawString>
+        <JSON>{"test-run-times":"29.69:29.73:29.62:29.68"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/deepspeech-1.0.0</Identifier>
+    <Title>DeepSpeech</Title>
+    <AppVersion>0.6</AppVersion>
+    <Arguments>CPU</Arguments>
+    <Description>Acceleration: CPU</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>112.17742</Value>
+        <RawString>112.0524:112.9406:111.53925</RawString>
+        <JSON>{"test-run-times":"113.65:114.56:113.13"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/perl-benchmark-1.0.1</Identifier>
+    <Title>Perl Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>benchmarks/startup/noprog.b</Arguments>
+    <Description>Test: Interpreter</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>0.00169295</Value>
+        <RawString>0.0016762117144402:0.0017066123331686:0.0016960140432829</RawString>
+        <JSON>{"test-run-times":"59.93:56.96:58.64"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/radiance-1.0.0</Identifier>
+    <Title>Radiance Benchmark</Title>
+    <AppVersion>5.0</AppVersion>
+    <Arguments>make all</Arguments>
+    <Description>Test: Serial</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1037.498</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"1037.50"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-exp</Arguments>
+    <Description>Benchmark: exp</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>9.52855</Value>
+        <RawString>9.8007:9.38486:9.4001</RawString>
+        <JSON>{"test-run-times":"30.32:30.32:30.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-sinh</Arguments>
+    <Description>Benchmark: sinh</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>14.9023</Value>
+        <RawString>15.3585:14.5891:15.9541:14.5718:15.3213:14.5567:15.1778:14.5022:15.4257:14.5335:15.2284:14.5771:14.6444:14.5642:14.5302</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-asinh</Arguments>
+    <Description>Benchmark: asinh</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>19.6880</Value>
+        <RawString>19.53:19.9528:19.5811</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-ffsll</Arguments>
+    <Description>Benchmark: ffsll</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>2.61775</Value>
+        <RawString>2.62191:2.56819:2.66315</RawString>
+        <JSON>{"test-run-times":"10.32:10.32:10.32"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cpp-perf-bench-1.0.0</Identifier>
+    <Title>CppPerformanceBenchmarks</Title>
+    <AppVersion>9</AppVersion>
+    <Arguments>mathlib</Arguments>
+    <Description>Test: Math Library</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>449.995</Value>
+        <RawString>451.216:448.793:449.975</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++11 -O3"},"test-run-times":"451.22:448.79:449.98"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_shared_mutex_lock_shared</Arguments>
+    <Description>Benchmark: Shared Mutex Lock Shared</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>27.4</Value>
+        <RawString>27.4:27.5:27.4</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"30.45:30.48:30.48"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.std::mutex.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock std::mutex</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>26.5</Value>
+        <RawString>26.3:26.5:26.7</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"29.28:29.43:29.57"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.spinlock_amd.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock spinlock_amd</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>54.7</Value>
+        <RawString>54.8:54.6:54.6</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"60.87:60.71:60.83"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.pthread_mutex.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock pthread_mutex</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>22.8</Value>
+        <RawString>26.2:22.4:22.5:21.9:22.3:22.2:22.3:22.3:26.2:22:22.3:22:22.4:22.3:22.1</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"85.99:73.48:74.14:73.25:73.44:73.75:73.64:73.62:85.69:73.30:73.68:73.45:73.92:73.91:73.37"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.ticket_spinlock.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock ticket_spinlock</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>39.3</Value>
+        <RawString>38.9:40.2:38.9</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"43.27:44.65:43.25"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t lpop</Arguments>
+    <Description>Test: LPOP</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1212750.09</Value>
+        <RawString>1215416.62:1242209:1179317:1214057.75</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"18.26:18.15:18.56:18.26"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t sadd</Arguments>
+    <Description>Test: SADD</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1060853.13</Value>
+        <RawString>1058791.75:1053307.25:1070460.38</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"19.47:19.58:19.37"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t lpush</Arguments>
+    <Description>Test: LPUSH</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>875439.11</Value>
+        <RawString>891152.88:861904.19:873260.25</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"21.36:21.72:21.71"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t get</Arguments>
+    <Description>Test: GET</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1191279.17</Value>
+        <RawString>1165127.38:1208752.25:1199957.88</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"18.78:18.48:18.58"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t set</Arguments>
+    <Description>Test: SET</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>968226.71</Value>
+        <RawString>966285.56:977755.19:960639.38</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"20.51:20.41:20.62"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/optcarrot-1.0.1</Identifier>
+    <Title>Optcarrot</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description>Optimized Benchmark</Description>
+    <Scale>FPS</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>85.30</Value>
+        <RawString>85.126680551219:48.31416420817:85.499724577312:85.008200281003:90.250494750652:89.123480361975:91.938139690774:90.223774857367:90.33976969324:82.131045823827:92.772822879367:88.108064330067:80.466297541048:89.444053358434:84.27911509541:90.44600281771:86.622853001198</RawString>
+        <JSON>{"install-footnote":"ruby 2.5.9p229 (2021-04-05 revision 67939) [x86_64-linux]","test-run-times":"3.11:3.18:3.09:3.13:3.03:3.10:3.04:3.06:3.04:3.14:3.05:3.23:3.03:3.11:3.41:3.04:3.15"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 1</Arguments>
+    <Description>Concurrent Requests: 1</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>43435.25</Value>
+        <RawString>43425.6:43508.54:43371.6</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.06:90.06:90.05"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 20</Arguments>
+    <Description>Concurrent Requests: 20</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>43747.31</Value>
+        <RawString>43494.21:43804.24:43943.49</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.06:90.06:90.06"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 100</Arguments>
+    <Description>Concurrent Requests: 100</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>43483.84</Value>
+        <RawString>43361.58:43751.21:43338.72</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.07:90.07:90.07"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 200</Arguments>
+    <Description>Concurrent Requests: 200</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>42324.46</Value>
+        <RawString>41584.77:42634.44:42754.17</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.08:90.09:90.08"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 500</Arguments>
+    <Description>Concurrent Requests: 500</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>38579.80</Value>
+        <RawString>39008.54:37879.31:38851.56</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.15:90.13:90.13"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 1000</Arguments>
+    <Description>Concurrent Requests: 1000</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>35559.95</Value>
+        <RawString>35045.04:36019.35:35615.47</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.14:90.13:90.13"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/phpbench-1.1.6</Identifier>
+    <Title>PHPBench</Title>
+    <AppVersion>0.8.1</AppVersion>
+    <Arguments></Arguments>
+    <Description>PHP Benchmark Suite</Description>
+    <Scale>Score</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>481048</Value>
+        <RawString>480810:480390:481943</RawString>
+        <JSON>{"test-run-times":"41.63:41.66:41.53"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+</PhoronixTestSuite>

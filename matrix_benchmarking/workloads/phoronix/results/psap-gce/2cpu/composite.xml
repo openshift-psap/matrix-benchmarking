@@ -1,0 +1,596 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.1-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>2022-02-18-1951</Title>
+    <LastModified>2022-02-18 22:52:34</LastModified>
+    <TestClient>Phoronix Test Suite v10.8.1</TestClient>
+    <Description>container-other testing on CentOS Stream 8 via the Phoronix Test Suite.</Description>
+  </Generated>
+  <System>
+    <Identifier>Intel Core i7-10850H</Identifier>
+    <Hardware>Processor: Intel Core i7-10850H @ 5.10GHz (6 Cores / 12 Threads), Motherboard: LENOVO 20TJS2F45T (N2VET32W 1.17 BIOS), Memory: 32GB, Disk: 512GB Toshiba KXG6AZNV512G, Graphics: i915drmfb, Audio: Realtek ALC285</Hardware>
+    <Software>OS: CentOS Stream 8, Kernel: 5.16.8-200.fc35.x86_64 (x86_64), Compiler: GCC 8.5.0 20210514, File-System: overlayfs, System Layer: container-other</Software>
+    <User></User>
+    <TimeStamp>2022-02-18 19:51:01</TimeStamp>
+    <TestClientVersion>10.8.1</TestClientVersion>
+    <Notes></Notes>
+    <JSON>{"compiler-configuration":"--build=x86_64-redhat-linux --disable-libmpx --disable-libunwind-exceptions --enable-__cxa_atexit --enable-bootstrap --enable-cet --enable-checking=release --enable-gnu-indirect-function --enable-gnu-unique-object --enable-initfini-array --enable-languages=c,c++,fortran,lto --enable-multilib --enable-offload-targets=nvptx-none --enable-plugin --enable-shared --enable-threads=posix --mandir=\/usr\/share\/man --with-arch_32=x86-64 --with-gcc-major-version-only --with-isl --with-linker-hash-style=gnu --with-tune=generic --without-cuda-driver","cpu-microcode":"0x1","kernel-extra-details":"Transparent Huge Pages: always","security":"itlb_multihit: Not affected + l1tf: Not affected + mds: Mitigation of Clear buffers; SMT Host state unknown + meltdown: Not affected + spec_store_bypass: Mitigation of SSB disabled via prctl and seccomp + spectre_v1: Mitigation of usercopy\/swapgs barriers and __user pointer sanitization + spectre_v2: Mitigation of Enhanced IBRS IBPB: conditional RSB filling + srbds: Not affected + tsx_async_abort: Mitigation of Clear buffers; SMT Host state unknown"}</JSON>
+  </System>
+  <Result>
+    <Identifier>pts/hmmer-1.3.0</Identifier>
+    <Title>Timed HMMer Search</Title>
+    <AppVersion>3.3.2</AppVersion>
+    <Arguments></Arguments>
+    <Description>Pfam Database Search</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>195.894</Value>
+        <RawString>196.131:195.92:195.631</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -pthread -lhmmer -leasel -lm -lmpi"},"test-run-times":"196.13:195.92:195.63"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/gmpbench-1.3.0</Identifier>
+    <Title>GNU GMP GMPbench</Title>
+    <AppVersion>6.2.1</AppVersion>
+    <Arguments></Arguments>
+    <Description>Total Time</Description>
+    <Scale>GMPbench Score</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>4027.1</Value>
+        <RawString></RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -fomit-frame-pointer -lm"},"test-run-times":"426.62"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/compress-7zip-1.8.0</Identifier>
+    <Title>7-Zip Compression</Title>
+    <AppVersion>21.06</AppVersion>
+    <Arguments></Arguments>
+    <Description>Test: Compression Rating</Description>
+    <Scale>MIPS</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>7771</Value>
+        <RawString>7753:7808:7752</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-lpthread -ldl -O2 -fPIC"},"test-run-times":"38.09:38.06:38.17"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/compress-7zip-1.8.0</Identifier>
+    <Title>7-Zip Compression</Title>
+    <AppVersion>21.06</AppVersion>
+    <Arguments></Arguments>
+    <Description>Test: Decompression Rating</Description>
+    <Scale>MIPS</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>4965</Value>
+        <RawString>4978:4963:4954</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-lpthread -ldl -O2 -fPIC"},"test-run-times":"38.09:38.06:38.17"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/build-linux-kernel-1.13.0</Identifier>
+    <Title>Timed Linux Kernel Compilation</Title>
+    <AppVersion>5.16</AppVersion>
+    <Arguments>defconfig</Arguments>
+    <Description>Build: defconfig</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>899.471</Value>
+        <RawString>898.983:899.304:900.126</RawString>
+        <JSON>{"test-run-times":"898.98:899.30:900.13"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/compress-pbzip2-1.6.0</Identifier>
+    <Title>Parallel BZIP2 Compression</Title>
+    <AppVersion>1.1.13</AppVersion>
+    <Arguments></Arguments>
+    <Description>FreeBSD-13.0-RELEASE-amd64-memstick.img Compression</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>97.572</Value>
+        <RawString>97.568:97.429:97.718</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-O2 -pthread -lbz2 -lpthread"},"test-run-times":"97.57:97.43:97.72"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/encode-flac-1.7.0</Identifier>
+    <Title>FLAC Audio Encoding</Title>
+    <AppVersion>1.3.3</AppVersion>
+    <Arguments></Arguments>
+    <Description>WAV To FLAC</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>26.987</Value>
+        <RawString>26.79:27.049:27.008:27.096:26.993</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-fvisibility=hidden -logg -lm"},"test-run-times":"26.79:27.05:27.01:27.10:26.99"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/gcrypt-1.1.3</Identifier>
+    <Title>Gcrypt Library</Title>
+    <AppVersion>1.9</AppVersion>
+    <Arguments></Arguments>
+    <Description></Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>272.066</Value>
+        <RawString>272.134:272.077:271.988</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -fvisibility=hidden"},"test-run-times":"272.13:272.08:271.99"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/openssl-3.0.1</Identifier>
+    <Title>OpenSSL</Title>
+    <AppVersion>3.0</AppVersion>
+    <Arguments>sha256</Arguments>
+    <Description>Algorithm: SHA256</Description>
+    <Scale>byte/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>292971877</Value>
+        <RawString>293006130:292907780:293001720</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-pthread -m64 -O3 -lssl -lcrypto -ldl"},"test-run-times":"180.05:180.04:180.03"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/openssl-3.0.1</Identifier>
+    <Title>OpenSSL</Title>
+    <AppVersion>3.0</AppVersion>
+    <Arguments>rsa4096</Arguments>
+    <Description>Algorithm: RSA4096</Description>
+    <Scale>sign/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>255.9</Value>
+        <RawString>254.9:255:257.8</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-pthread -m64 -O3 -lssl -lcrypto -ldl"},"test-run-times":"60.07:60.07:60.06"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/openssl-3.0.1</Identifier>
+    <Title>OpenSSL</Title>
+    <AppVersion>3.0</AppVersion>
+    <Arguments>rsa4096</Arguments>
+    <Description>Algorithm: RSA4096</Description>
+    <Scale>verify/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>16957.2</Value>
+        <RawString>16970.8:16962:16938.8</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-pthread -m64 -O3 -lssl -lcrypto -ldl"},"test-run-times":"60.07:60.07:60.06"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/tjbench-1.2.0</Identifier>
+    <Title>libjpeg-turbo tjbench</Title>
+    <AppVersion>2.1.0</AppVersion>
+    <Arguments>decompression-throughput</Arguments>
+    <Description>Test: Decompression Throughput</Description>
+    <Scale>Megapixels/sec</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>151.206932</Value>
+        <RawString>150.743266:151.909311:150.968218</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -rdynamic"},"test-run-times":"25.20:25.18:25.17"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/pgbench-1.11.1</Identifier>
+    <Title>PostgreSQL pgbench</Title>
+    <AppVersion>14.0</AppVersion>
+    <Arguments>-s 1 -c 1 -S</Arguments>
+    <Description>Scaling Factor: 1 - Clients: 1 - Mode: Read Only</Description>
+    <Scale>TPS</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>14611</Value>
+        <RawString>14812.561263:14588.416693:14431.492314</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-fno-strict-aliasing -fwrapv -O2 -lpgcommon -lpgport -lpq -lpthread -lrt -ldl -lm"},"test-run-times":"131.01:130.90:130.93"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/pgbench-1.11.1</Identifier>
+    <Title>PostgreSQL pgbench</Title>
+    <AppVersion>14.0</AppVersion>
+    <Arguments>-s 1 -c 1 -S</Arguments>
+    <Description>Scaling Factor: 1 - Clients: 1 - Mode: Read Only - Average Latency</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>0.069</Value>
+        <RawString>0.068:0.069:0.069</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-fno-strict-aliasing -fwrapv -O2 -lpgcommon -lpgport -lpq -lpthread -lrt -ldl -lm"},"test-run-times":"131.01:130.90:130.93"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/pgbench-1.11.1</Identifier>
+    <Title>PostgreSQL pgbench</Title>
+    <AppVersion>14.0</AppVersion>
+    <Arguments>-s 1 -c 1</Arguments>
+    <Description>Scaling Factor: 1 - Clients: 1 - Mode: Read Write</Description>
+    <Scale>TPS</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>1016</Value>
+        <RawString>1027.515413:1007.106194:1014.791942</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-fno-strict-aliasing -fwrapv -O2 -lpgcommon -lpgport -lpq -lpthread -lrt -ldl -lm"},"test-run-times":"130.91:130.91:130.93"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/pgbench-1.11.1</Identifier>
+    <Title>PostgreSQL pgbench</Title>
+    <AppVersion>14.0</AppVersion>
+    <Arguments>-s 1 -c 1</Arguments>
+    <Description>Scaling Factor: 1 - Clients: 1 - Mode: Read Write - Average Latency</Description>
+    <Scale>ms</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>0.984</Value>
+        <RawString>0.973:0.993:0.985</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-fno-strict-aliasing -fwrapv -O2 -lpgcommon -lpgport -lpq -lpthread -lrt -ldl -lm"},"test-run-times":"130.91:130.91:130.93"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>system/gimp-1.1.3</Identifier>
+    <Title>GIMP</Title>
+    <AppVersion>2.8.22</AppVersion>
+    <Arguments>resize</Arguments>
+    <Description>Test: resize</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>12.173</Value>
+        <RawString>12.155:12.224:12.141</RawString>
+        <JSON>{"test-run-times":"12.15:12.22:12.14"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>system/gimp-1.1.3</Identifier>
+    <Title>GIMP</Title>
+    <AppVersion>2.8.22</AppVersion>
+    <Arguments>rotate</Arguments>
+    <Description>Test: rotate</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>24.357</Value>
+        <RawString>24.338:24.332:24.401</RawString>
+        <JSON>{"test-run-times":"24.34:24.33:24.40"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>system/gimp-1.1.3</Identifier>
+    <Title>GIMP</Title>
+    <AppVersion>2.8.22</AppVersion>
+    <Arguments>auto-levels</Arguments>
+    <Description>Test: auto-levels</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>25.334</Value>
+        <RawString>25.35:25.248:25.404</RawString>
+        <JSON>{"test-run-times":"25.35:25.25:25.40"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>system/gimp-1.1.3</Identifier>
+    <Title>GIMP</Title>
+    <AppVersion>2.8.22</AppVersion>
+    <Arguments>unsharp-mask</Arguments>
+    <Description>Test: unsharp-mask</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>52.143</Value>
+        <RawString>52.137:52.244:52.048</RawString>
+        <JSON>{"test-run-times":"52.14:52.24:52.05"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 1</Arguments>
+    <Description>Concurrent Requests: 1</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>41491.51</Value>
+        <RawString>41452.28:41622.28:41399.96</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.11:90.14:90.01"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 20</Arguments>
+    <Description>Concurrent Requests: 20</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>48655.00</Value>
+        <RawString>48935.31:48722.93:48306.76</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.15:90.13:90.13"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 100</Arguments>
+    <Description>Concurrent Requests: 100</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>49544.67</Value>
+        <RawString>49496.08:49338.73:49799.19</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.18:90.15:90.17"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 200</Arguments>
+    <Description>Concurrent Requests: 200</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>49784.19</Value>
+        <RawString>49889.98:49394.67:50067.93</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.13:90.18:90.20"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 500</Arguments>
+    <Description>Concurrent Requests: 500</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>49582.51</Value>
+        <RawString>49839.24:49186.21:49722.08</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.18:90.19:90.21"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 1000</Arguments>
+    <Description>Concurrent Requests: 1000</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>46862.79</Value>
+        <RawString>46818.17:47166.83:46603.38</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.18:90.15:90.03"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/apache-2.0.0</Identifier>
+    <Title>Apache HTTP Server</Title>
+    <AppVersion>2.4.48</AppVersion>
+    <Arguments>-c 1</Arguments>
+    <Description>Concurrent Requests: 1</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>7505.83</Value>
+        <RawString>7483.91:7507.63:7525.94</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-shared -fPIC -O2 -pthread"},"test-run-times":"90.09:90.07:90.08"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/apache-2.0.0</Identifier>
+    <Title>Apache HTTP Server</Title>
+    <AppVersion>2.4.48</AppVersion>
+    <Arguments>-c 20</Arguments>
+    <Description>Concurrent Requests: 20</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>10568.71</Value>
+        <RawString>10571.63:10598.37:10536.14</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-shared -fPIC -O2 -pthread"},"test-run-times":"90.08:90.07:90.09"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/apache-2.0.0</Identifier>
+    <Title>Apache HTTP Server</Title>
+    <AppVersion>2.4.48</AppVersion>
+    <Arguments>-c 100</Arguments>
+    <Description>Concurrent Requests: 100</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>10612.58</Value>
+        <RawString>10586.18:10638.87:10612.69</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-shared -fPIC -O2 -pthread"},"test-run-times":"90.04:90.16:90.22"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/apache-2.0.0</Identifier>
+    <Title>Apache HTTP Server</Title>
+    <AppVersion>2.4.48</AppVersion>
+    <Arguments>-c 200</Arguments>
+    <Description>Concurrent Requests: 200</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>10487.01</Value>
+        <RawString>10363.89:10604.14:10493</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-shared -fPIC -O2 -pthread"},"test-run-times":"90.10:90.24:90.24"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/apache-2.0.0</Identifier>
+    <Title>Apache HTTP Server</Title>
+    <AppVersion>2.4.48</AppVersion>
+    <Arguments>-c 500</Arguments>
+    <Description>Concurrent Requests: 500</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>7483.98</Value>
+        <RawString>7359.4:7621.7:7470.84</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-shared -fPIC -O2 -pthread"},"test-run-times":"90.18:90.75:90.46"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/apache-2.0.0</Identifier>
+    <Title>Apache HTTP Server</Title>
+    <AppVersion>2.4.48</AppVersion>
+    <Arguments>-c 1000</Arguments>
+    <Description>Concurrent Requests: 1000</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Core i7-10850H</Identifier>
+        <Value>5051.25</Value>
+        <RawString>5060.13:5066.4:5027.21</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-shared -fPIC -O2 -pthread"},"test-run-times":"91.16:90.65:91.15"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+</PhoronixTestSuite>

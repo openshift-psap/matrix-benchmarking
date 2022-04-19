@@ -1,0 +1,542 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.1-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>2022-02-21-0853</Title>
+    <LastModified>2022-02-21 12:21:51</LastModified>
+    <TestClient>Phoronix Test Suite v10.8.1</TestClient>
+    <Description>container-other testing on CentOS Stream 8 via the Phoronix Test Suite.</Description>
+  </Generated>
+  <System>
+    <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+    <Hardware>Processor: Intel Xeon Platinum 8259CL (2 Cores / 4 Threads), Motherboard: Amazon EC2 m5.xlarge (1.0 BIOS), Memory: 1 x 16 GB DDR4-2666MT/s, Disk: 129GB Amazon Elastic Block Store</Hardware>
+    <Software>OS: CentOS Stream 8, Kernel: 4.18.0-305.34.2.el8_4.x86_64 (x86_64), Compiler: GCC 8.5.0 20210514, File-System: overlayfs, System Layer: container-other</Software>
+    <User></User>
+    <TimeStamp>2022-02-21 08:53:50</TimeStamp>
+    <TestClientVersion>10.8.1</TestClientVersion>
+    <Notes></Notes>
+    <JSON>{"compiler-configuration":"--build=x86_64-redhat-linux --disable-libmpx --disable-libunwind-exceptions --enable-__cxa_atexit --enable-bootstrap --enable-cet --enable-checking=release --enable-gnu-indirect-function --enable-gnu-unique-object --enable-initfini-array --enable-languages=c,c++,fortran,lto --enable-multilib --enable-offload-targets=nvptx-none --enable-plugin --enable-shared --enable-threads=posix --mandir=\/usr\/share\/man --with-arch_32=x86-64 --with-gcc-major-version-only --with-isl --with-linker-hash-style=gnu --with-tune=generic --without-cuda-driver","cpu-microcode":"0x500320a","kernel-extra-details":"Transparent Huge Pages: always","java":"OpenJDK Runtime Environment (build 1.8.0_322-b06)","security":"itlb_multihit: KVM: Vulnerable + l1tf: Mitigation of PTE Inversion + mds: Vulnerable: Clear buffers attempted no microcode; SMT Host state unknown + meltdown: Mitigation of PTI + spec_store_bypass: Vulnerable + spectre_v1: Mitigation of usercopy\/swapgs barriers and __user pointer sanitization + spectre_v2: Mitigation of Full generic retpoline STIBP: disabled RSB filling + srbds: Not affected + tsx_async_abort: Not affected"}</JSON>
+  </System>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>doduc</Arguments>
+    <Description>Benchmark: doduc</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>12.23</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"494.56"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/polyhedron-1.0.1</Identifier>
+    <Title>Polyhedron Fortran Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>capacita</Arguments>
+    <Description>Benchmark: capacita</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>18.83</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"227.08"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/java-scimark2-1.1.2</Identifier>
+    <Title>Java SciMark</Title>
+    <AppVersion>2.0</AppVersion>
+    <Arguments>TEST_DENSE</Arguments>
+    <Description>Computational Test: Dense LU Matrix Factorization</Description>
+    <Scale>Mflops</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>3644.94</Value>
+        <RawString>3583.5519416265:3651.8444990046:3655.5107436103:3688.8439018281</RawString>
+        <JSON>{"test-run-times":"31.08:31.26:30.91:35.09"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/deepspeech-1.0.0</Identifier>
+    <Title>DeepSpeech</Title>
+    <AppVersion>0.6</AppVersion>
+    <Arguments>CPU</Arguments>
+    <Description>Acceleration: CPU</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>121.49322</Value>
+        <RawString>119.53303:121.41597:123.53067</RawString>
+        <JSON>{"test-run-times":"120.32:122.23:124.33"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/perl-benchmark-1.0.1</Identifier>
+    <Title>Perl Benchmarks</Title>
+    <AppVersion></AppVersion>
+    <Arguments>benchmarks/startup/noprog.b</Arguments>
+    <Description>Test: Interpreter</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>0.00168710</Value>
+        <RawString>0.0016792153338684:0.001693308020683:0.0016887660836595</RawString>
+        <JSON>{"test-run-times":"57.64:57.57:56.66"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/radiance-1.0.0</Identifier>
+    <Title>Radiance Benchmark</Title>
+    <AppVersion>5.0</AppVersion>
+    <Arguments>make all</Arguments>
+    <Description>Test: Serial</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>1103.254</Value>
+        <RawString></RawString>
+        <JSON>{"test-run-times":"1103.25"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-exp</Arguments>
+    <Description>Benchmark: exp</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>10.4505</Value>
+        <RawString>10.4831:10.3947:10.4737</RawString>
+        <JSON>{"test-run-times":"30.35:30.35:30.35"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-sinh</Arguments>
+    <Description>Benchmark: sinh</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>16.1499</Value>
+        <RawString>16.0506:16.7992:15.9666:15.9519:15.9812</RawString>
+        <JSON>{"test-run-times":"10.35:10.35:10.35:10.35:10.35"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-asinh</Arguments>
+    <Description>Benchmark: asinh</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>21.7555</Value>
+        <RawString>21.8633:21.671:21.7322</RawString>
+        <JSON>{"test-run-times":"10.35:10.35:10.35"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/glibc-bench-1.6.1</Identifier>
+    <Title>glibc bench</Title>
+    <AppVersion>1.0</AppVersion>
+    <Arguments>bench-ffsll</Arguments>
+    <Description>Benchmark: ffsll</Description>
+    <Scale>nanoseconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>3.03043</Value>
+        <RawString>3.02509:3.05217:3.01404</RawString>
+        <JSON>{"test-run-times":"10.35:10.34:10.35"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cpp-perf-bench-1.0.0</Identifier>
+    <Title>CppPerformanceBenchmarks</Title>
+    <AppVersion>9</AppVersion>
+    <Arguments>mathlib</Arguments>
+    <Description>Test: Math Library</Description>
+    <Scale>Seconds</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>485.384</Value>
+        <RawString>484.437:485.068:486.647</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++11 -O3"},"test-run-times":"484.44:485.07:486.65"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_shared_mutex_lock_shared</Arguments>
+    <Description>Benchmark: Shared Mutex Lock Shared</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>29.9</Value>
+        <RawString>29.9:29.9:30</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"33.23:33.35:33.34"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.std::mutex.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock std::mutex</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>28.6</Value>
+        <RawString>28.5:28.7:28.7</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"31.64:31.96:31.83"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.spinlock_amd.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock spinlock_amd</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>59.7</Value>
+        <RawString>59.7:59.9:59.6</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"66.41:66.53:66.23"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.pthread_mutex.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock pthread_mutex</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>24.0</Value>
+        <RawString>24:24.1:23.9</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"79.68:79.81:79.65"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/mutex-1.0.0</Identifier>
+    <Title>BenchmarkMutex</Title>
+    <AppVersion></AppVersion>
+    <Arguments>--benchmark_filter=benchmark_mutex_lock_unlock.ticket_spinlock.</Arguments>
+    <Description>Benchmark: Mutex Lock Unlock ticket_spinlock</Description>
+    <Scale>ns</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>42.7</Value>
+        <RawString>42.6:42.8:42.6</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-std=c++17 -lbenchmark -pthread"},"test-run-times":"47.38:47.53:47.40"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t lpop</Arguments>
+    <Description>Test: LPOP</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>917569.98</Value>
+        <RawString>928677.56:913676.75:910355.62</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"20.85:21.03:21.03"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t sadd</Arguments>
+    <Description>Test: SADD</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>869683.35</Value>
+        <RawString>878517.06:869338.44:861194.56</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"21.43:21.53:21.67"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t lpush</Arguments>
+    <Description>Test: LPUSH</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>738427.35</Value>
+        <RawString>728133.94:733163.62:753984.5</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"23.87:23.76:23.43"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t get</Arguments>
+    <Description>Test: GET</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>910520.52</Value>
+        <RawString>873823.12:922708.94:933902.12:916599.12:919458.56:896631.25</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"21.66:21.08:20.90:21.10:21.10:21.39"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/redis-1.3.1</Identifier>
+    <Title>Redis</Title>
+    <AppVersion>6.0.9</AppVersion>
+    <Arguments>-t set</Arguments>
+    <Description>Test: SET</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>789191.54</Value>
+        <RawString>801287.19:796629.94:769657.5</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"-MM -MT -g3 -fvisibility=hidden -O3"},"test-run-times":"22.71:22.78:23.20"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/optcarrot-1.0.1</Identifier>
+    <Title>Optcarrot</Title>
+    <AppVersion></AppVersion>
+    <Arguments></Arguments>
+    <Description>Optimized Benchmark</Description>
+    <Scale>FPS</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>81.44</Value>
+        <RawString>82.737116647199:78.342634068761:82.653111237602:82.183272038627:81.295372020074</RawString>
+        <JSON>{"install-footnote":"ruby 2.5.9p229 (2021-04-05 revision 67939) [x86_64-linux]","test-run-times":"3.31:3.31:3.31:3.39:3.33"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 1</Arguments>
+    <Description>Concurrent Requests: 1</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>39754.56</Value>
+        <RawString>39823.24:39701.3:39739.15</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.12:90.08:90.07"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 20</Arguments>
+    <Description>Concurrent Requests: 20</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>61411.36</Value>
+        <RawString>58863.67:62311.64:62418.7:61721.87:61740.93</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.11:90.20:90.20:90.20:90.09"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 100</Arguments>
+    <Description>Concurrent Requests: 100</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>56760.49</Value>
+        <RawString>60047.09:58408.12:55668.81:59757.46:54099.63:57966.03:58897.02:56733.29:59818.18:56457.54:54338.88:52609.22:56865.07:55699.19:54041.86</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.18:90.12:90.18:90.19:90.29:90.21:90.19:90.20:90.22:90.09:90.11:90.09:90.09:90.10:90.10"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 200</Arguments>
+    <Description>Concurrent Requests: 200</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>55517.61</Value>
+        <RawString>58656.02:58788.12:52684.42:59132.35:57550.44:55199.4:50632.3:58698.18:49310.3:51196.91:55866.04:59298.26:49726.99:58940.39:57084.07</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.17:90.21:90.19:90.10:90.21:90.09:90.19:90.19:90.20:90.10:90.11:90.11:90.10:90.29:90.19"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 500</Arguments>
+    <Description>Concurrent Requests: 500</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>54969.87</Value>
+        <RawString>56887.05:53899.58:59075.25:57255.11:55129.34:58229.31:47881.11:54858.86:57945.53:57411.63:48587.91:57752.05:49695.55</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.18:90.21:90.18:90.23:90.19:90.08:90.10:90.19:90.21:90.21:90.09:90.12:90.18"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/nginx-2.0.0</Identifier>
+    <Title>nginx</Title>
+    <AppVersion>1.21.1</AppVersion>
+    <Arguments>-c 1000</Arguments>
+    <Description>Concurrent Requests: 1000</Description>
+    <Scale>Requests Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>50849.94</Value>
+        <RawString>52891.22:47686.43:50774.85:47839.75:49779.7:53987.25:46890.5:54305.78:45780.76:54645.25:48641.26:55445.9:56212.39:49728.75:48139.28</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-ldl -lpthread -lcrypt -lz -O3 -march=native"},"test-run-times":"90.17:90.31:90.09:90.21:90.10:90.11:90.08:90.21:90.09:90.09:90.12:90.18:90.10:90.30:90.11"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/phpbench-1.1.6</Identifier>
+    <Title>PHPBench</Title>
+    <AppVersion>0.8.1</AppVersion>
+    <Arguments></Arguments>
+    <Description>PHP Benchmark Suite</Description>
+    <Scale>Score</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon Platinum 8259CL</Identifier>
+        <Value>446530</Value>
+        <RawString>445967:446652:446971</RawString>
+        <JSON>{"test-run-times":"44.88:44.81:44.77"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+</PhoronixTestSuite>
