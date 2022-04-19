@@ -1,0 +1,46 @@
+path_tpl: "{benchmark}/gpu={gpu}/run{run}_"
+
+script_tpl: "exec/mlperf/run_{benchmark}.py"
+remote_mode: false
+stop_on_error: false
+
+run:
+  - nva100
+  #- validation
+
+expe:
+  nva100:
+    settings:
+      run: 0, 1, 2
+      benchmark: ssd
+      threshold: 0.23
+      cores: 8
+      gpu:
+        - 7g.40gb_1 # out of 1
+        - 3g.20gb_1 # out of 2
+        - 3g.20gb_2 # out of 2
+
+        - 2g.10gb_1 # out of 3
+        - 2g.10gb_2 # out of 3
+        - 2g.10gb_3 # out of 3
+
+        - 1g.5gb_1 # out of 7
+        - 1g.5gb_4 # out of 7
+        - 1g.5gb_7 # out of 7
+
+        - full # full GPU
+
+  validation:
+    settings:
+      benchmark: burn
+      duration: 120 #, 300 #, 600
+      cores: 8
+      gpu:
+        - full
+        - 7g.40gb_1 # out of 1
+        #- 4g.20gb_1 # out of 1
+        - 3g.20gb_1 # out of 2
+        - 2g.10gb_1 # out of 3
+        - 1g.5gb_1 # out of 7
+      run: 1, 2, 3, 4, 5
+      part: p4d-check-1

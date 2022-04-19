@@ -1,0 +1,29 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: mlperf
+  name: mlperf0.7
+  namespace: default
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: mlperf:ssd_0.7
+      namespace: default
+  resources: {}
+  source:
+    type: Git
+    git:
+      uri: "https://github.com/kpouget/training_results_v0.7.git"
+      ref: "master"
+    contextDir: NVIDIA/benchmarks/ssd/implementations/pytorch
+  triggers:
+  - type: "ConfigChange"
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+      from:
+        kind: DockerImage
+        name: nvcr.io/nvidia/pytorch:20.06-py3
