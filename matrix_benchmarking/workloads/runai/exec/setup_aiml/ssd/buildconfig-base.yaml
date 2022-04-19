@@ -1,0 +1,24 @@
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: tensorflow-base
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: aiml:tensorflow-20.06-tf1-py3
+  source:
+    dockerfile: |2
+      FROM nvcr.io/nvidia/tensorflow:20.06-tf1-py3
+      # RUN echo hello
+    type: Dockerfile
+  strategy:
+    dockerStrategy:
+      imageOptimizationPolicy: SkipLayers
+      from:
+        kind: DockerImage
+        name: nvcr.io/nvidia/tensorflow:20.06-tf1-py3
+    type: Docker
+  triggers:
+  - type: ConfigChange

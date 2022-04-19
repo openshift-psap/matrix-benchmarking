@@ -1,0 +1,316 @@
+apiVersion: v1
+data:
+  LICENSE: |
+    BSD 2-Clause License
+
+    Copyright (c) 2017, Ville Timonen
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice, this
+      list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  Makefile: "CUDAPATH=/usr/local/cuda\n\n# Have this point to an old enough gcc (for
+    nvcc)\nGCCPATH=/usr\n\nNVCC=nvcc\nCCPATH=${GCCPATH}/bin\n\nCFLAGS ?= -Wno-deprecated-declarations\n\ndrv:\n\tPATH=${PATH}:.:${CCPATH}:${PATH}
+    ${NVCC} -I${CUDAPATH}/include -arch=compute_60 -ptx compare.cu -o compare.ptx\n\tg++
+    ${CFLAGS} -O3 -Wno-unused-result -I${CUDAPATH}/include -c gpu_burn-drv.cpp\n\tg++
+    ${CFLAGS} -o gpu_burn gpu_burn-drv.o -O3 -lcuda -L${CUDAPATH}/lib64 -L${CUDAPATH}/lib
+    -Wl,-rpath=${CUDAPATH}/lib64 -Wl,-rpath=${CUDAPATH}/lib -lcublas -lcudart -o gpu_burn\n"
+  README.md: |
+    # gpu-burn
+    Multi-GPU CUDA stress test
+    http://wili.cc/blog/gpu-burn.html
+  compare.cu: "/* \n * Copyright (c) 2016, Ville Timonen\n * All rights reserved.\n
+    * \n * Redistribution and use in source and binary forms, with or without\n *
+    modification, are permitted provided that the following conditions are met:\n
+    * \n * 1. Redistributions of source code must retain the above copyright notice,
+    this\n *    list of conditions and the following disclaimer.\n * 2. Redistributions
+    in binary form must reproduce the above copyright notice,\n *    this list of
+    conditions and the following disclaimer in the documentation\n *    and/or other
+    materials provided with the distribution.\n * \n * THIS SOFTWARE IS PROVIDED BY
+    THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\n * ANY EXPRESS OR IMPLIED
+    WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\n * WARRANTIES OF MERCHANTABILITY
+    AND FITNESS FOR A PARTICULAR PURPOSE ARE\n * DISCLAIMED. IN NO EVENT SHALL THE
+    COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR\n * ANY DIRECT, INDIRECT, INCIDENTAL,
+    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n * (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\n * LOSS OF USE, DATA, OR PROFITS;
+    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\n * ON ANY THEORY OF LIABILITY, WHETHER
+    IN CONTRACT, STRICT LIABILITY, OR TORT\n * (INCLUDING NEGLIGENCE OR OTHERWISE)
+    ARISING IN ANY WAY OUT OF THE USE OF THIS\n * SOFTWARE, EVEN IF ADVISED OF THE
+    POSSIBILITY OF SUCH DAMAGE.\n * \n * The views and conclusions contained in the
+    software and documentation are those\n * of the authors and should not be interpreted
+    as representing official policies,\n * either expressed or implied, of the FreeBSD
+    Project.\n */\n\n// Actually, there are no rounding errors due to results being
+    accumulated in an arbitrary order..\n// Therefore EPSILON = 0.0f is OK\n#define
+    EPSILON 0.001f\n#define EPSILOND 0.0000001\n\nextern \"C\" __global__ void compare(float
+    *C, int *faultyElems, size_t iters) {\n\tsize_t iterStep = blockDim.x*blockDim.y*gridDim.x*gridDim.y;\n\tsize_t
+    myIndex = (blockIdx.y*blockDim.y + threadIdx.y)* // Y\n\t\tgridDim.x*blockDim.x
+    + // W\n\t\tblockIdx.x*blockDim.x + threadIdx.x; // X\n\n\tint myFaulty = 0;\n\tfor
+    (size_t i = 1; i < iters; ++i)\n\t\tif (fabsf(C[myIndex] - C[myIndex + i*iterStep])
+    > EPSILON)\n\t\t\tmyFaulty++;\n\n\tatomicAdd(faultyElems, myFaulty);\n}\n\nextern
+    \"C\" __global__ void compareD(double *C, int *faultyElems, size_t iters) {\n\tsize_t
+    iterStep = blockDim.x*blockDim.y*gridDim.x*gridDim.y;\n\tsize_t myIndex = (blockIdx.y*blockDim.y
+    + threadIdx.y)* // Y\n\t\tgridDim.x*blockDim.x + // W\n\t\tblockIdx.x*blockDim.x
+    + threadIdx.x; // X\n\n\tint myFaulty = 0;\n\tfor (size_t i = 1; i < iters; ++i)\n\t\tif
+    (fabs(C[myIndex] - C[myIndex + i*iterStep]) > EPSILOND)\n\t\t\tmyFaulty++;\n\n\tatomicAdd(faultyElems,
+    myFaulty);\n}\n"
+  gpu_burn-drv.cpp: "/* \n * Copyright (c) 2016, Ville Timonen\n * All rights reserved.\n
+    * \n * Redistribution and use in source and binary forms, with or without\n *
+    modification, are permitted provided that the following conditions are met:\n
+    * \n * 1. Redistributions of source code must retain the above copyright notice,
+    this\n *    list of conditions and the following disclaimer.\n * 2. Redistributions
+    in binary form must reproduce the above copyright notice,\n *    this list of
+    conditions and the following disclaimer in the documentation\n *    and/or other
+    materials provided with the distribution.\n * \n * THIS SOFTWARE IS PROVIDED BY
+    THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\n * ANY EXPRESS OR IMPLIED
+    WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\n * WARRANTIES OF MERCHANTABILITY
+    AND FITNESS FOR A PARTICULAR PURPOSE ARE\n * DISCLAIMED. IN NO EVENT SHALL THE
+    COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR\n * ANY DIRECT, INDIRECT, INCIDENTAL,
+    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n * (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\n * LOSS OF USE, DATA, OR PROFITS;
+    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\n * ON ANY THEORY OF LIABILITY, WHETHER
+    IN CONTRACT, STRICT LIABILITY, OR TORT\n * (INCLUDING NEGLIGENCE OR OTHERWISE)
+    ARISING IN ANY WAY OUT OF THE USE OF THIS\n * SOFTWARE, EVEN IF ADVISED OF THE
+    POSSIBILITY OF SUCH DAMAGE.\n * \n * The views and conclusions contained in the
+    software and documentation are those\n * of the authors and should not be interpreted
+    as representing official policies,\n * either expressed or implied, of the FreeBSD
+    Project.\n */\n\n#define SIZE 2048ul // Matrices are SIZE*SIZE..  2048^2 should
+    be efficiently implemented in CUBLAS\n#define USEMEM 0.9 // Try to allocate 90%
+    of memory\n\n// Used to report op/s, measured through Visual Profiler, CUBLAS
+    from CUDA 7.5\n// (Seems that they indeed take the naive dim^3 approach)\n#define
+    OPS_PER_MUL 17188257792ul\n\n#include <cstdio>\n#include <string>\n#include <map>\n#include
+    <vector>\n#include <sys/types.h>\n#include <signal.h>\n#include <sys/wait.h>\n#include
+    <string.h>\n#include <unistd.h>\n#include <time.h>\n#include <fstream>\n\n#include
+    <cuda.h>\n#include \"cublas_v2.h\"\n\nvoid checkError(int rCode, std::string desc
+    = \"\") {\n\tstatic std::map<int, std::string> g_errorStrings;\n\tif (!g_errorStrings.size())
+    {\n\t\tg_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_INVALID_VALUE,
+    \"CUDA_ERROR_INVALID_VALUE\"));\n\t\tg_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_OUT_OF_MEMORY,
+    \"CUDA_ERROR_OUT_OF_MEMORY\"));\n\t\tg_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_NOT_INITIALIZED,
+    \"CUDA_ERROR_NOT_INITIALIZED\"));\n\t\tg_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_DEINITIALIZED,
+    \"CUDA_ERROR_DEINITIALIZED\"));\n\t\tg_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_NO_DEVICE,
+    \"CUDA_ERROR_NO_DEVICE\"));\n\t\tg_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_INVALID_DEVICE,
+    \"CUDA_ERROR_INVALID_DEVICE\"));\n\t\tg_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_INVALID_IMAGE,
+    \"CUDA_ERROR_INVALID_IMAGE\"));\n\t\tg_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_INVALID_CONTEXT,
+    \"CUDA_ERROR_INVALID_CONTEXT\"));\n\t\tg_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_MAP_FAILED,
+    \"CUDA_ERROR_MAP_FAILED\"));\n\t\tg_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_UNMAP_FAILED,
+    \"CUDA_ERROR_UNMAP_FAILED\"));\n\t\tg_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_ARRAY_IS_MAPPED,
+    \"CUDA_ERROR_ARRAY_IS_MAPPED\"));\n\t\tg_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_ALREADY_MAPPED,
+    \"CUDA_ERROR_ALREADY_MAPPED\"));\n\t\tg_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_NO_BINARY_FOR_GPU,
+    \"CUDA_ERROR_NO_BINARY_FOR_GPU\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_ALREADY_ACQUIRED, \"CUDA_ERROR_ALREADY_ACQUIRED\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_NOT_MAPPED, \"CUDA_ERROR_NOT_MAPPED\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_NOT_MAPPED_AS_ARRAY, \"CUDA_ERROR_NOT_MAPPED_AS_ARRAY\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_NOT_MAPPED_AS_POINTER, \"CUDA_ERROR_NOT_MAPPED_AS_POINTER\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_UNSUPPORTED_LIMIT, \"CUDA_ERROR_UNSUPPORTED_LIMIT\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_CONTEXT_ALREADY_IN_USE, \"CUDA_ERROR_CONTEXT_ALREADY_IN_USE\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_INVALID_SOURCE, \"CUDA_ERROR_INVALID_SOURCE\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_FILE_NOT_FOUND, \"CUDA_ERROR_FILE_NOT_FOUND\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND, \"CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_SHARED_OBJECT_INIT_FAILED, \"CUDA_ERROR_SHARED_OBJECT_INIT_FAILED\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_OPERATING_SYSTEM, \"CUDA_ERROR_OPERATING_SYSTEM\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_INVALID_HANDLE, \"CUDA_ERROR_INVALID_HANDLE\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_NOT_FOUND, \"CUDA_ERROR_NOT_FOUND\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_NOT_READY, \"CUDA_ERROR_NOT_READY\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_LAUNCH_FAILED, \"CUDA_ERROR_LAUNCH_FAILED\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES, \"CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_LAUNCH_TIMEOUT, \"CUDA_ERROR_LAUNCH_TIMEOUT\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING, \"CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE, \"CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_CONTEXT_IS_DESTROYED, \"CUDA_ERROR_CONTEXT_IS_DESTROYED\"));\n\t\tg_errorStrings.insert(std::pair<int,
+    std::string>(CUDA_ERROR_UNKNOWN, \"CUDA_ERROR_UNKNOWN\"));\n\t}\n\n\tif (rCode
+    != CUDA_SUCCESS)\n\t\tthrow ((desc == \"\") ? \n\t\t\t\tstd::string(\"Error: \")
+    : \n\t\t\t\t(std::string(\"Error in \\\"\") + desc + std::string(\"\\\": \")))
+    + \n\t\t\tg_errorStrings[rCode];\n}\n\nvoid checkError(cublasStatus_t rCode, std::string
+    desc = \"\") {\n\tstatic std::map<cublasStatus_t, std::string> g_errorStrings;\n\tif
+    (!g_errorStrings.size()) {\n\t\tg_errorStrings.insert(std::pair<cublasStatus_t,
+    std::string>(CUBLAS_STATUS_NOT_INITIALIZED, \"CUBLAS_STATUS_NOT_INITIALIZED\"));\n\t\tg_errorStrings.insert(std::pair<cublasStatus_t,
+    std::string>(CUBLAS_STATUS_ALLOC_FAILED, \"CUBLAS_STATUS_ALLOC_FAILED\"));\n\t\tg_errorStrings.insert(std::pair<cublasStatus_t,
+    std::string>(CUBLAS_STATUS_INVALID_VALUE, \"CUBLAS_STATUS_INVALID_VALUE\"));\n\t\tg_errorStrings.insert(std::pair<cublasStatus_t,
+    std::string>(CUBLAS_STATUS_ARCH_MISMATCH, \"CUBLAS_STATUS_ARCH_MISMATCH\"));\n\t\tg_errorStrings.insert(std::pair<cublasStatus_t,
+    std::string>(CUBLAS_STATUS_MAPPING_ERROR, \"CUBLAS_STATUS_MAPPING_ERROR\"));\n\t\tg_errorStrings.insert(std::pair<cublasStatus_t,
+    std::string>(CUBLAS_STATUS_EXECUTION_FAILED, \"CUBLAS_STATUS_EXECUTION_FAILED\"));\n\t\tg_errorStrings.insert(std::pair<cublasStatus_t,
+    std::string>(CUBLAS_STATUS_INTERNAL_ERROR, \"CUBLAS_STATUS_INTERNAL_ERROR\"));\n\t}\n\n\tif
+    (rCode != CUBLAS_STATUS_SUCCESS)\n\t\tthrow ((desc == \"\") ? \n\t\t\t\tstd::string(\"Error:
+    \") : \n\t\t\t\t(std::string(\"Error in \\\"\") + desc + std::string(\"\\\": \")))
+    + \n\t\t\tg_errorStrings[rCode];\n}\n\ntemplate <class T> class GPU_Test {\n\tpublic:\n\tGPU_Test(int
+    dev, bool doubles) : d_devNumber(dev), d_doubles(doubles) {\n\t\tcheckError(cuDeviceGet(&d_dev,
+    d_devNumber));\n\t\tcheckError(cuCtxCreate(&d_ctx, 0, d_dev));\n\n\t\tbind();\n\n\t\t//checkError(cublasInit());\n\t\tcheckError(cublasCreate(&d_cublas),
+    \"init\");\n\n\t\td_error = 0;\n\t}\n\t~GPU_Test() {\n\t\tbind();\n\t\tcheckError(cuMemFree(d_Cdata),
+    \"Free A\");\n\t\tcheckError(cuMemFree(d_Adata), \"Free B\");\n\t\tcheckError(cuMemFree(d_Bdata),
+    \"Free C\");\n\t\tprintf(\"Freed memory for dev %d\\n\", d_devNumber);\n\n\t\tcublasDestroy(d_cublas);\n\t\tprintf(\"Uninitted
+    cublas\\n\");\n\t}\n\n\tunsigned long long int getErrors() {\n\t\tunsigned long
+    long int tempErrs = d_error;\n\t\td_error = 0;\n\t\treturn tempErrs;\n\t}\n\n\tsize_t
+    getIters() {\n\t\treturn d_iters;\n\t}\n\n\tvoid bind() {\n\t\tcheckError(cuCtxSetCurrent(d_ctx),
+    \"Bind CTX\");\n\t}\n\n\tsize_t totalMemory() {\n\t\tbind();\n\t\tsize_t freeMem,
+    totalMem;\n\t\tcheckError(cuMemGetInfo(&freeMem, &totalMem));\n\t\treturn totalMem;\n\t}\n\n\tsize_t
+    availMemory() {\n\t\tbind();\n\t\tsize_t freeMem, totalMem;\n\t\tcheckError(cuMemGetInfo(&freeMem,
+    &totalMem));\n\t\treturn freeMem;\n\t}\n\n\tvoid initBuffers(T *A, T *B) {\n\t\tbind();\n\n\t\tsize_t
+    useBytes = (size_t)((double)availMemory()*USEMEM);\n\t\tprintf(\"Initialized device
+    %d with %lu MB of memory (%lu MB available, using %lu MB of it), %s\\n\",\n\t\t\t\td_devNumber,
+    totalMemory()/1024ul/1024ul, availMemory()/1024ul/1024ul, useBytes/1024ul/1024ul,\n\t\t\t\td_doubles
+    ? \"using DOUBLES\" : \"using FLOATS\");\n\t\tsize_t d_resultSize = sizeof(T)*SIZE*SIZE;\n\t\td_iters
+    = (useBytes - 2*d_resultSize)/d_resultSize; // We remove A and B sizes\n\t\t//printf(\"Results
+    are %d bytes each, thus performing %d iterations\\n\", d_resultSize, d_iters);\n\t\tcheckError(cuMemAlloc(&d_Cdata,
+    d_iters*d_resultSize), \"C alloc\");\n\t\tcheckError(cuMemAlloc(&d_Adata, d_resultSize),
+    \"A alloc\");\n\t\tcheckError(cuMemAlloc(&d_Bdata, d_resultSize), \"B alloc\");\n\n\t\tcheckError(cuMemAlloc(&d_faultyElemData,
+    sizeof(int)), \"faulty data\");\n\n\t\t// Populating matrices A and B\n\t\tcheckError(cuMemcpyHtoD(d_Adata,
+    A, d_resultSize), \"A -> device\");\n\t\tcheckError(cuMemcpyHtoD(d_Bdata, B, d_resultSize),
+    \"A -> device\");\n\n\t\tinitCompareKernel();\n\t}\n\n\tvoid compute() {\n\t\tbind();\n\t\tstatic
+    const float alpha = 1.0f;\n\t\tstatic const float beta = 0.0f;\n\t\tstatic const
+    double alphaD = 1.0;\n\t\tstatic const double betaD = 0.0;\n\n\t\tfor (size_t
+    i = 0; i < d_iters; ++i) {\n\t\t\tif (d_doubles)\n\t\t\t\tcheckError(cublasDgemm(d_cublas,
+    CUBLAS_OP_N, CUBLAS_OP_N,\n\t\t\t\t\t\t\tSIZE, SIZE, SIZE, &alphaD,\n\t\t\t\t\t\t\t(const
+    double*)d_Adata, SIZE,\n\t\t\t\t\t\t\t(const double*)d_Bdata, SIZE,\n\t\t\t\t\t\t\t&betaD,
+    \n\t\t\t\t\t\t\t(double*)d_Cdata + i*SIZE*SIZE, SIZE), \"DGEMM\");\n\t\t\telse\n\t\t\t\tcheckError(cublasSgemm(d_cublas,
+    CUBLAS_OP_N, CUBLAS_OP_N,\n\t\t\t\t\t\t\tSIZE, SIZE, SIZE, &alpha,\n\t\t\t\t\t\t\t(const
+    float*)d_Adata, SIZE,\n\t\t\t\t\t\t\t(const float*)d_Bdata, SIZE,\n\t\t\t\t\t\t\t&beta,
+    \n\t\t\t\t\t\t\t(float*)d_Cdata + i*SIZE*SIZE, SIZE), \"SGEMM\");\n\t\t}\n\t}\n\n\tvoid
+    initCompareKernel() {\n\t\tconst char *kernelFile = \"compare.ptx\";\n\t\t{\n\t\t\tstd::ifstream
+    f(kernelFile);\n\t\t\tcheckError(f.good() ? CUDA_SUCCESS : CUDA_ERROR_NOT_FOUND,
+    std::string(\"couldn't find file \\\"\") + kernelFile + \"\\\" from working directory\");\n\t\t}\n\t\tcheckError(cuModuleLoad(&d_module,
+    kernelFile), \"load module\");\n\t\tcheckError(cuModuleGetFunction(&d_function,
+    d_module, \n\t\t\t\t\td_doubles ? \"compareD\" : \"compare\"), \"get func\");\n\n\t\tcheckError(cuFuncSetCacheConfig(d_function,
+    CU_FUNC_CACHE_PREFER_L1), \"L1 config\");\n\t\tcheckError(cuParamSetSize(d_function,
+    __alignof(T*) + __alignof(int*) + __alignof(size_t)), \"set param size\");\n\t\tcheckError(cuParamSetv(d_function,
+    0, &d_Cdata, sizeof(T*)), \"set param\");\n\t\tcheckError(cuParamSetv(d_function,
+    __alignof(T*), &d_faultyElemData, sizeof(T*)), \"set param\");\n\t\tcheckError(cuParamSetv(d_function,
+    __alignof(T*) + __alignof(int*), &d_iters, sizeof(size_t)), \"set param\");\n\n\t\tcheckError(cuFuncSetBlockShape(d_function,
+    g_blockSize, g_blockSize, 1), \"set block size\");\n\t}\n\n\tvoid compare() {\n\t\tint
+    faultyElems;\n\t\tcheckError(cuMemsetD32(d_faultyElemData, 0, 1), \"memset\");\n\t\tcheckError(cuLaunchGrid(d_function,
+    SIZE/g_blockSize, SIZE/g_blockSize), \"Launch grid\");\n\t\tcheckError(cuMemcpyDtoH(&faultyElems,
+    d_faultyElemData, sizeof(int)), \"Read faultyelemdata\");\n\t\tif (faultyElems)
+    {\n\t\t\td_error += (long long int)faultyElems;\n\t\t\t//printf(\"WE FOUND %d
+    FAULTY ELEMENTS from GPU %d\\n\", faultyElems, d_devNumber);\n\t\t}\n\t}\n\n\tprivate:\n\tbool
+    d_doubles;\n\tint d_devNumber;\n\tsize_t d_iters;\n\tsize_t d_resultSize;\n\n\tlong
+    long int d_error;\n\n\tstatic const int g_blockSize = 16;\n\n\tCUdevice d_dev;\n\tCUcontext
+    d_ctx;\n\tCUmodule d_module;\n\tCUfunction d_function;\n\n\tCUdeviceptr d_Cdata;\n\tCUdeviceptr
+    d_Adata;\n\tCUdeviceptr d_Bdata;\n\tCUdeviceptr d_faultyElemData;\n\n\tcublasHandle_t
+    d_cublas;\n};\n\n// Returns the number of devices\nint initCuda() {\n\tcheckError(cuInit(0));\n\tint
+    deviceCount = 0;\n\tcheckError(cuDeviceGetCount(&deviceCount));\n\n\tif (!deviceCount)\n\t\tthrow
+    std::string(\"No CUDA devices\");\n\n\t#ifdef USEDEV\n\tif (USEDEV >= deviceCount)\n\t\tthrow
+    std::string(\"Not enough devices for USEDEV\");\n\t#endif\n\n\treturn deviceCount;\n}\n\ntemplate<class
+    T> void startBurn(int index, int writeFd, T *A, T *B, bool doubles) {\n\tGPU_Test<T>
+    *our;\n\ttry {\n\t\tour = new GPU_Test<T>(index, doubles);\n\t\tour->initBuffers(A,
+    B);\n\t} catch (std::string e) {\n\t\tfprintf(stderr, \"Couldn't init a GPU test:
+    %s\\n\", e.c_str());\n\t\texit(124);\n\t}\n\n\t// The actual work\n\t/*int iters
+    = 0;\n\tunsigned long long int errors = 0;*/\n\ttry {\n\t\twhile (true) {\n\t\t\tour->compute();\n\t\t\tour->compare();\n\t\t\t/*errors
+    += our->getErrors();\n\t\t\titers++;*/\n\t\t\tint ops = our->getIters();\n\t\t\twrite(writeFd,
+    &ops, sizeof(int));\n\t\t\tops = our->getErrors();\n\t\t\twrite(writeFd, &ops,
+    sizeof(int));\n\t\t}\n\t} catch (std::string e) {\n\t\tfprintf(stderr, \"Failure
+    during compute: %s\\n\", e.c_str());\n\t\tint ops = -1;\n\t\t// Signalling that
+    we failed\n\t\twrite(writeFd, &ops, sizeof(int));\n\t\twrite(writeFd, &ops, sizeof(int));\n\t\texit(111);\n\t}\n}\n\nint
+    pollTemp(pid_t *p) {\n\tint tempPipe[2];\n\tpipe(tempPipe);\n\t\n\tpid_t myPid
+    = fork();\n\n\tif (!myPid) {\n\t\tclose(tempPipe[0]);\n\t\tdup2(tempPipe[1], STDOUT_FILENO);
+    // Stdout\n\t\texeclp(\"nvidia-smi\", \"nvidia-smi\", \"-l\", \"5\", \"-q\", \"-d\",
+    \"TEMPERATURE\", NULL);\n\t\tfprintf(stderr, \"Could not invoke nvidia-smi, no
+    temps available\\n\");\n\t\t\n\t\texit(0);\n\t}\n\n\t*p = myPid;\n\tclose(tempPipe[1]);\n\n\treturn
+    tempPipe[0];\n}\n\nvoid updateTemps(int handle, std::vector<int> *temps) {\n\tconst
+    int readSize = 10240;\n\tstatic int gpuIter = 0;\n\tchar data[readSize+1];\n\n\tint
+    curPos = 0;\n\tdo {\n\t\tread(handle, data+curPos, sizeof(char));\n\t} while (data[curPos++]
+    != '\\n');\n\n\tdata[curPos-1] = 0;\n\n\tint tempValue;\n\t// FIXME: The syntax
+    of this print might change in the future..\n\tif (sscanf(data, \"        GPU Current
+    Temp            : %d C\", &tempValue) == 1) {\n\t\t//printf(\"read temp val %d\\n\",
+    tempValue);\n\t\ttemps->at(gpuIter) = tempValue;\n\t\tgpuIter = (gpuIter+1)%(temps->size());\n\t}
+    else if (!strcmp(data, \"        Gpu                     : N/A\"))\n\t\tgpuIter
+    = (gpuIter+1)%(temps->size()); // We rotate the iterator for N/A values as well\n}\n\nvoid
+    listenClients(std::vector<int> clientFd, std::vector<pid_t> clientPid, int runTime)
+    {\n\tfd_set waitHandles;\n\t\n\tpid_t tempPid;\n\tint tempHandle = pollTemp(&tempPid);\n\tint
+    maxHandle = tempHandle;\n\n\tFD_ZERO(&waitHandles);\n\tFD_SET(tempHandle, &waitHandles);\n\n\tfor
+    (size_t i = 0; i < clientFd.size(); ++i) {\n\t\tif (clientFd.at(i) > maxHandle)\n\t\t\tmaxHandle
+    = clientFd.at(i);\n\t\tFD_SET(clientFd.at(i), &waitHandles);\n\t}\n\n\tstd::vector<int>
+    clientTemp;\n\tstd::vector<int> clientErrors;\n\tstd::vector<int> clientCalcs;\n\tstd::vector<struct
+    timespec> clientUpdateTime;\n\tstd::vector<float> clientGflops;\n\tstd::vector<bool>
+    clientFaulty;\n\n\ttime_t startTime = time(0);\n\n\tfor (size_t i = 0; i < clientFd.size();
+    ++i) {\n\t\tclientTemp.push_back(0);\n\t\tclientErrors.push_back(0);\n\t\tclientCalcs.push_back(0);\n\t\tstruct
+    timespec thisTime;\n\t\tclock_gettime(CLOCK_REALTIME, &thisTime);\n\t\tclientUpdateTime.push_back(thisTime);\n\t\tclientGflops.push_back(0.0f);\n\t\tclientFaulty.push_back(false);\n\t}\n\t\n\tint
+    changeCount;\n\tfloat nextReport = 10.0f;\n\tbool childReport = false;\n\twhile
+    ((changeCount = select(maxHandle+1, &waitHandles, NULL, NULL, NULL))) {\n\t\tsize_t
+    thisTime = time(0);\n\t\tstruct timespec thisTimeSpec;\n\t\tclock_gettime(CLOCK_REALTIME,
+    &thisTimeSpec);\n\n\t\t//printf(\"got new data! %d\\n\", changeCount);\n\t\t//
+    Going through all descriptors\n\t\tfor (size_t i = 0; i < clientFd.size(); ++i)\n\t\t\tif
+    (FD_ISSET(clientFd.at(i), &waitHandles)) {\n\t\t\t\t// First, reading processed\n\t\t\t\tint
+    processed, errors;\n\t\t\t\tread(clientFd.at(i), &processed, sizeof(int));\n\t\t\t\t//
+    Then errors\n\t\t\t\tread(clientFd.at(i), &errors, sizeof(int));\n\n\t\t\t\tclientErrors.at(i)
+    += errors;\n\t\t\t\tif (processed == -1)\n\t\t\t\t\tclientCalcs.at(i) = -1;\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tdouble
+    flops = (double)processed * (double)OPS_PER_MUL;\n\t\t\t\t\tstruct timespec clientPrevTime
+    = clientUpdateTime.at(i);\n\t\t\t\t\tdouble clientTimeDelta = (double)thisTimeSpec.tv_sec
+    + (double)thisTimeSpec.tv_nsec / 1000000000.0 - ((double)clientPrevTime.tv_sec
+    + (double)clientPrevTime.tv_nsec / 1000000000.0);\n\t\t\t\t\tclientUpdateTime.at(i)
+    = thisTimeSpec;\n\n\t\t\t\t\tclientGflops.at(i) = (double)((unsigned long long
+    int)processed * OPS_PER_MUL) / clientTimeDelta / 1000.0 / 1000.0 / 1000.0;\n\t\t\t\t\tclientCalcs.at(i)
+    += processed;\n\t\t\t\t}\n\n\t\t\t\tchildReport = true;\n\t\t\t}\n\n\t\tif (FD_ISSET(tempHandle,
+    &waitHandles))\n\t\t\tupdateTemps(tempHandle, &clientTemp);\n\t\t\n\t\t// Resetting
+    the listeners\n\t\tFD_ZERO(&waitHandles);\n\t\tFD_SET(tempHandle, &waitHandles);\n\t\tfor
+    (size_t i = 0; i < clientFd.size(); ++i)\n\t\t\tFD_SET(clientFd.at(i), &waitHandles);\n\n\t\t//
+    Printing progress (if a child has initted already)\n\t\tstatic int pct = 0;\n\t\tfloat
+    elapsed = fminf((float)(thisTime-startTime)/(float)runTime*100.0f, 100.0f);\n\t\tint
+    elapsed_int = (int) elapsed;\n\t\t\n\t\tif (childReport && elapsed_int > pct)
+    {\n\t\t\tpct = elapsed_int;\n\t\t\t\n\t\t\tprintf(\"\\r%.1f%%  \", elapsed);\n\t\t\tprintf(\"proc'd:
+    \");\n\t\t\tfor (size_t i = 0; i < clientCalcs.size(); ++i) {\n\t\t\t\tprintf(\"%d
+    (%.0f Gflop/s) \", clientCalcs.at(i), clientGflops.at(i));\n\t\t\t\tif (i != clientCalcs.size()
+    - 1)\n\t\t\t\t\tprintf(\"- \");\n\t\t\t}\n\t\t\tprintf(\"  errors: \");\n\t\t\tfor
+    (size_t i = 0; i < clientErrors.size(); ++i) {\n\t\t\t\tstd::string note = \"%d
+    \";\n\t\t\t\tif (clientCalcs.at(i) == -1)\n\t\t\t\t\tnote += \" (DIED!)\";\n\t\t\t\telse
+    if (clientErrors.at(i))\n\t\t\t\t\tnote += \" (WARNING!)\";\n\n\t\t\t\tprintf(note.c_str(),
+    clientErrors.at(i));\n\t\t\t\tif (i != clientCalcs.size() - 1)\n\t\t\t\t\tprintf(\"-
+    \");\n\t\t\t}\n\t\t\tprintf(\"  temps: \");\n\t\t\tfor (size_t i = 0; i < clientTemp.size();
+    ++i) {\n\t\t\t\tprintf(clientTemp.at(i) != 0 ? \"%d C \" : \"-- \", clientTemp.at(i));\n\t\t\t\tif
+    (i != clientCalcs.size() - 1)\n\t\t\t\t\tprintf(\"- \");\n\t\t\t}\n\t\t\t\n\t\t\tfflush(stdout);\n\n\t\t\tif
+    (nextReport < elapsed) {\n\t\t\t\tnextReport = elapsed + 10.0f;\n\t\t\t\tprintf(\"\\n\\tSummary
+    at:   \");\n\t\t\t\tfflush(stdout);\n\t\t\t\tsystem(\"date\"); // Printing a date\n\t\t\t\tfflush(stdout);\n\t\t\t\tprintf(\"\\n\");\n\t\t\t\t//printf(\"\\t(checkpoint)\\n\");\n\t\t\t\tfor
+    (size_t i = 0; i < clientErrors.size(); ++i) {\n\t\t\t\t\tif (clientErrors.at(i))\n\t\t\t\t\t\tclientFaulty.at(i)
+    = true;\n\t\t\t\t\tclientErrors.at(i) = 0;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\t//
+    Checking whether all clients are dead\n\t\tbool oneAlive = false;\n\t\tfor (size_t
+    i = 0; i < clientCalcs.size(); ++i)\n\t\t\tif (clientCalcs.at(i) != -1)\n\t\t\t\toneAlive
+    = true;\n\t\tif (!oneAlive) {\n\t\t\tfprintf(stderr, \"\\n\\nNo clients are alive!
+    \ Aborting\\n\");\n\t\t\texit(123);\n\t\t}\n\n\t\tif (startTime + runTime < thisTime)\n\t\t\tbreak;\n\t}\n\n\tprintf(\"\\nKilling
+    processes.. \");\n\tfflush(stdout);\n\tfor (size_t i = 0; i < clientPid.size();
+    ++i)\n\t\tkill(clientPid.at(i), 15);\n\t\n\tkill(tempPid, 15);\n\tclose(tempHandle);\n\n\twhile
+    (wait(NULL) != -1);\n\tprintf(\"done\\n\");\n\n\tprintf(\"\\nTested %d GPUs:\\n\",
+    (int)clientPid.size());\n\tfor (size_t i = 0; i < clientPid.size(); ++i)\n\t\tprintf(\"\\tGPU
+    %d: %s\\n\", (int)i, clientFaulty.at(i) ? \"FAULTY\" : \"OK\");\n}\n\ntemplate<class
+    T> void launch(int runLength, bool useDoubles) {\n\tsystem(\"nvidia-smi -L\");\n\n\t//
+    Initting A and B with random data\n\tT *A = (T*) malloc(sizeof(T)*SIZE*SIZE);\n\tT
+    *B = (T*) malloc(sizeof(T)*SIZE*SIZE);\n\tsrand(10);\n\tfor (size_t i = 0; i <
+    SIZE*SIZE; ++i) {\n\t\tA[i] = (T)((double)(rand()%1000000)/100000.0);\n\t\tB[i]
+    = (T)((double)(rand()%1000000)/100000.0);\n\t}\n\n\t// Forking a process..  This
+    one checks the number of devices to use,\n\t// returns the value, and continues
+    to use the first one.\n\tint mainPipe[2];\n\tpipe(mainPipe);\n\tint readMain =
+    mainPipe[0];\n\tstd::vector<int> clientPipes;\n\tstd::vector<pid_t> clientPids;\n\tclientPipes.push_back(readMain);\n\n\tpid_t
+    myPid = fork();\n\tif (!myPid) {\n\t\t// Child\n\t\tclose(mainPipe[0]);\n\t\tint
+    writeFd = mainPipe[1];\n\t\tint devCount = initCuda();\n\t\twrite(writeFd, &devCount,
+    sizeof(int));\n\n\t\tstartBurn<T>(0, writeFd, A, B, useDoubles);\n\n\t\tclose(writeFd);\n\t\treturn;\n\t}
+    else {\n\t\tclientPids.push_back(myPid);\n\n\t\tclose(mainPipe[1]);\n\t\tint devCount;\n\t
+    \   read(readMain, &devCount, sizeof(int));\n\n\t\tif (!devCount) {\n\t\t\tfprintf(stderr,
+    \"No CUDA devices\\n\");\n\t\t} else {\n\n\t\t\tfor (int i = 1; i < devCount;
+    ++i) {\n\t\t\t\tint slavePipe[2];\n\t\t\t\tpipe(slavePipe);\n\t\t\t\tclientPipes.push_back(slavePipe[0]);\n\n\t\t\t\tpid_t
+    slavePid = fork();\n\n\t\t\t\tif (!slavePid) {\n\t\t\t\t\t// Child\n\t\t\t\t\tclose(slavePipe[0]);\n\t\t\t\t\tinitCuda();\n\t\t\t\t\tstartBurn<T>(i,
+    slavePipe[1], A, B, useDoubles);\n\n\t\t\t\t\tclose(slavePipe[1]);\n\t\t\t\t\treturn;\n\t\t\t\t}
+    else {\n\t\t\t\t\tclientPids.push_back(slavePid);\n\t\t\t\t\tclose(slavePipe[1]);\n\t\t\t\t}\n\t\t\t}\n\t\t\t\n\t\t\tlistenClients(clientPipes,
+    clientPids, runLength);\n\t\t}\n\t}\n\n\tfor (size_t i = 0; i < clientPipes.size();
+    ++i)\n\t\tclose(clientPipes.at(i));\n\n\tfree(A);\n\tfree(B);\n}\n\nint main(int
+    argc, char **argv) {\n\tint runLength = 10;\n\tbool useDoubles = false;\n\tint
+    thisParam = 0;\n\tif (argc >= 2 && std::string(argv[1]) == \"-d\") {\n\t\t\tuseDoubles
+    = true;\n\t\t\tthisParam++;\n\t\t}\n\tif (argc-thisParam < 2)\n\t\tprintf(\"Run
+    length not specified in the command line.  Burning for 10 secs\\n\");\n\telse
+    \n\t\trunLength = atoi(argv[1+thisParam]);\n\n\tif (useDoubles)\n\t\tlaunch<double>(runLength,
+    useDoubles);\n\telse\n\t\tlaunch<float>(runLength, useDoubles);\n\n\treturn 0;\n}\n"
+kind: ConfigMap
+metadata:
+  name: gpu-burn-src

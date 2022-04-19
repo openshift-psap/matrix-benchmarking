@@ -1,0 +1,54 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+ name: "{{ name }}"
+ namespace: "{{ namespace }}"
+ labels:
+   matrix-benchmarking: "true"
+   job-name: "{{ name }}"
+spec:
+  containers:
+  - name: cnt
+    image: "{{ image }}"
+    resources:
+      limits:
+        nvidia.com/gpu: "{{ fraction }}"
+    env:
+    - name: SRC_CONFIG_DIR
+      value: /workdir/models/research/configs/
+    - name: STORAGE_DIR
+      value: /storage
+    - name: INFERENCE_TIME
+      value: "{{ inference_time }}"
+    command: [ "bash", "-ceuxo", "pipefail"]
+    args:
+    - |
+          mkdir /tmp/cfg
+          cp -v "$SRC_CONFIG_DIR"/* /tmp/cfg
+          sed -i 's|/data/coco2017_tfrecords|'$STORAGE_DIR'/coco2017_tfrecords|' /tmp/cfg/*
+          sed -i 's|/checkpoints|'$STORAGE_DIR'/checkpoints|' /tmp/cfg/*
+
+          if [[ "{{ mode }}" == "inference" ]]; then
+            LOOP_COUNT=5
+            for i in $(seq $LOOP_COUNT); do
+              echo "Starting loop $i/$LOOP_COUNT"
+              bash examples/{{ script_name }} /tmp/cfg --raport_file=/tmp/summary.json
+              echo "Done with loop $i/$LOOP_COUNT"
+            done
+          else
+            RESULTS_DIR=/tmp/results
+            mkdir "$RESULTS_DIR"
+            bash examples/{{ script_name }} "$RESULTS_DIR" /tmp/cfg --raport_file=/tmp/summary.json
+          fi
+    volumeMounts:
+      - mountPath: /storage/
+        name: storage-volume
+  volumes:
+  - name: storage-volume
+    persistentVolumeClaim:
+      claimName: benchmarking-coco-dataset
+  restartPolicy: Never
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+    node.kubernetes.io/instance-type: p3.2xlarge

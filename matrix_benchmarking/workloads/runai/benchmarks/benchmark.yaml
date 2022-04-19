@@ -1,0 +1,61 @@
+--results-dirname: runai
+
+--remote-mode: false
+--stop-on-error: true
+
+--script-tpl: "workload/exec/run_{model}.sh"
+--path-tpl: "{framework}_{model}_{partionner}/{inference_count}inference-{inference_fraction}_{training_count}training-{training_fraction}/run_{run}_"
+
+--expe-to-run:
+  - try-sequential
+  - try-benchmark
+
+common_settings:
+  # repeat the experiment 5 times
+  run: 1 #, 2, 3, 4, 5
+  framework: tensorflow
+  model: ssd
+  fp: 16
+
+expe:
+  try-sequential:
+    partionner: sequential
+    extra:
+    - training_count=1, training_fraction=1, inference_count=0, inference_fraction=0.00
+    - training_count=2, training_fraction=1, inference_count=0, inference_fraction=0.00
+    - training_count=4, training_fraction=1, inference_count=0, inference_fraction=0.00
+    - inference_count=1, inference_fraction=1, training_count=0, training_fraction=0.00
+
+  try-benchmark:
+    partionner: runai
+    extra:
+      - inference_count=1, inference_fraction=0.50, training_count=1, training_fraction=0.50
+      - inference_count=2, inference_fraction=0.25, training_count=1, training_fraction=0.50
+      - inference_count=1, inference_fraction=0.25, training_count=1, training_fraction=0.75
+      - inference_count=3, inference_fraction=0.16, training_count=1, training_fraction=0.50
+      - inference_count=5, inference_fraction=0.10, training_count=1, training_fraction=0.50
+      - inference_count=0, inference_fraction=0.00, training_count=2, training_fraction=0.50
+      - inference_count=5, inference_fraction=0.20, training_count=0, training_fraction=0.00, inference_time=20
+
+  try-inference-runai:
+    run: 1 #, 2, 3 #, 4, 5
+
+    partionner: runai
+    mode: inference
+    fraction: 1, 0.5, 0.25, 0.95
+
+  try-training-runai:
+    partionner: runai
+    inference_count: 0
+    inference_fraction: 0.00
+    training_count: 1
+    training_fraction: 0.25, 0.5, 0.7, 0.8, 0.99, 1
+
+
+  try-training-native:
+    partionner: none
+    inference_count: 0
+    inference_fraction: 0.00
+
+    training_count: 1
+    training_fraction: 1

@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: runai-container-toolkit-exporter-scc
+  namespace: runai
+rules:
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - runai-container-toolkit-exporter-scc
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use

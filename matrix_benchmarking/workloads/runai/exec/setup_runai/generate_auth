@@ -1,0 +1,139 @@
+#! /bin/bash
+
+set -o pipefail
+set -o errexit
+set -o nounset
+
+err=0
+if [[ -z "${RUNAI_COMPANY_URL:-}" ]]; then
+    echo "ERROR: RUNAI_COMPANY_URL not exposed"
+    err=1
+fi
+if [[ -z "${RUNAI_CLIENT_ID:-}" ]]; then
+    echo "ERROR: RUNAI_CLIENT_ID not exposed"
+    err=1
+fi
+if [[ -z "${RUNAI_CLIENT_SECRET:-}" ]]; then
+    echo "ERROR: RUNAI_CLIENT_SECRET not exposed"
+    err=1
+fi
+if [[ -z "${CLUSTER_NAME:-}" ]]; then
+    echo "ERROR: CLUSTER_NAME not exposed"
+    err=1
+fi
+if [[ "$err" == 1 ]]; then
+    exit 1
+fi
+
+RUNAI_PROJECT=${1:-}
+if [[ -z "${RUNAI_PROJECT:-}" ]]; then
+    echo "WARNING: \$1 not set, not creating any project"
+else
+    echo "INFO: Creating project '$RUNAI_PROJECT' after creating the cluster ..."
+fi
+
+DEST=runai-$CLUSTER_NAME.yaml
+
+echo "Getting the auth data ..."
+# *** Log into Run:AI
+
+echo "Getting the auth token ..."
+TOKEN_DATA=$(
+    curl --silent \
+         -X POST "https://app.run.ai/auth/realms/redhat/protocol/openid-connect/token" \
+        --header 'Content-Type: application/x-www-form-urlencoded' \
+        --data-urlencode 'grant_type=client_credentials' \
+        --data-urlencode 'scope=openid' \
+        --data-urlencode 'response_type=id_token' \
+        --data-urlencode "client_id=$RUNAI_CLIENT_ID" \
+        --data-urlencode "client_secret=$RUNAI_CLIENT_SECRET"
+    )
+
+ERR=$(jq -r '.error' <<< "$TOKEN_DATA" 2>/dev/null || true)
+
+if [[ "$ERR" && "$ERR" != "null" ]]; then
+    echo "ERROR: could not get the token data: $ERR"
+    echo "$TOKEN_DATA"
+    exit 1
+fi
+
+BEARER=$(jq -r '.access_token' <<< "$TOKEN_DATA")
+
+# **** Verify that there are no clusters
+echo "Getting the list of clusters ..."
+
+CLUSTERS=$(curl --silent \
+                -X GET "https://$RUNAI_COMPANY_URL/v1/k8s/clusters" \
+                --header 'Accept: application/json' \
+                --header 'Content-Type: application/json' \
+                --header 'Authorization: Bearer '$BEARER''
+        )
+ERR=$(jq -r '.error' <<< "$CLUSTERS" 2>/dev/null || true)
+
+if [[ "$ERR" && "$ERR" != "null" ]]; then
+    echo "ERROR: Could not get the cluster list: $ERR"
+    echo "$CLUSTERS"
+    exit 1
+fi
+
+if jq -r '.[]'.name <<< "$CLUSTERS" | grep --quiet $CLUSTER_NAME; then
+    echo "Cluster already exists."
+
+    CLUSTER_DATA=$(jq -r '.[] | select(.name == "'$CLUSTER_NAME'")' <<< "$CLUSTERS")
+else
+    echo "Creating the cluster $CLUSTER_NAME ..."
+
+    # **** Create a cluster
+    CLUSTER_DATA=$(
+        curl --silent \
+             -X POST "https://$RUNAI_COMPANY_URL/v1/k8s/clusters" \
+             --header 'Accept: application/json' \
+             --header 'Content-Type: application/json' \
+             --header 'Authorization: Bearer '$BEARER'' \
+             --data '{ "name": "'$CLUSTER_NAME'"}'
+                )
+fi
+
+CLUSTER_UUID=$(jq -r '.uuid' <<< "$CLUSTER_DATA")
+rm -f "$DEST"
+if [[ -f "$DEST" ]]; then
+    echo "$DEST already exists, not touching it."
+
+else
+    echo "Getting the cluster operator values file ..."
+    # **** Download a cluster operator values file
+    curl --silent \
+         "https://$RUNAI_COMPANY_URL/v1/k8s/clusters/$CLUSTER_UUID/installfile?cloud=openshift" \
+         --header 'Authorization: Bearer '$BEARER'' \
+         > "$DEST"
+
+    echo "Run.ai values files saved into $DEST"
+fi
+
+yq --in-place --yaml-roundtrip \
+   '(."runai-operator".config."project-controller".createNamespaces = false)' \
+   "$DEST"
+
+if [[ -z "${RUNAI_PROJECT:-}" ]]; then
+    echo bye $RUNAI_PROJECT
+    exit 0
+fi
+
+echo "Creating the project '$RUNAI_PROJECT' ..."
+DEPARTMENT_ID=6
+set -x
+    # **** Create a project
+CLUSTER_DATA=$(
+    curl --silent \
+         -X POST "https://$RUNAI_COMPANY_URL/v1/k8s/clusters/$CLUSTER_UUID/projects" \
+         --header 'Accept: application/json' \
+         --header 'Content-Type: application/json' \
+         --header 'Authorization: Bearer '$BEARER'' \
+         --data '{
+         "name": "'$RUNAI_PROJECT'",
+         "departmentId": "'$DEPARTMENT_ID'",
+         "deservedGpus": 1,
+         "clusterUuid": "'$CLUSTER_UUID'"
+          }')
+
+echo $CLUSTER_DATA

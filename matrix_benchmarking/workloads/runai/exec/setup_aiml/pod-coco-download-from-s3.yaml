@@ -1,0 +1,40 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+ name: coco-download-from-s3
+ namespace: matrix-benchmarking
+spec:
+  containers:
+  - name: cnt
+    image: registry.access.redhat.com/ubi8/ubi
+    command: [ "bash", "-ceuxo", "pipefail"]
+    args:
+    - |
+      dnf install -y --quiet unzip
+      curl --silent https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip
+      unzip -q awscliv2.zip
+      ./aws/install
+      mkdir "$HOME/.aws"
+      cp /secret/credentials "$HOME/.aws"
+
+      aws s3 cp s3://psap-coco-mirror/coco_tf/ /storage/coco2017_tfrecords  --recursive
+
+      CHECKPOINT_DIR="/storage/checkpoints/resnet_v1_50"
+      mkdir -p "$CHECKPOINT_DIR"
+      curl --silent http://download.tensorflow.org/models/resnet_v1_50_2016_08_28.tar.gz \
+           | tar xfz - --directory "$CHECKPOINT_DIR" --transform 's/resnet_v1_50\.ckpt/model.ckpt/' --no-same-owner
+      chmod ugo+r /storage/checkpoints -R
+    volumeMounts:
+    - mountPath: /storage/
+      name: storage-volume
+    - mountPath: /secret/
+      name: s3-creds
+  volumes:
+  - name: storage-volume
+    persistentVolumeClaim:
+      claimName: benchmarking-coco-dataset
+  - name: s3-creds
+    secret:
+      secretName: s3-creds
+  restartPolicy: Never

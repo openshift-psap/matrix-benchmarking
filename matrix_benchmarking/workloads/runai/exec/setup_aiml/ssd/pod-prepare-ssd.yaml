@@ -1,0 +1,40 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+ name: prepare-ssd
+ namespace: matrix-benchmarking
+ annotations:
+   alpha.image.policy.openshift.io/resolve-names: '*'
+spec:
+  containers:
+  - name: cnt
+    image: "aiml:ssd"
+    command:
+    - bash
+    - -c
+    args:
+    - "python3
+    object_detection/dataset_tools/create_coco_tf_record.py
+    --logtostderr
+    --include_masks
+    --train_image_dir=$SHARED_DIR/train2017
+    --val_image_dir=$SHARED_DIR/val2017
+    --test_image_dir=$SHARED_DIR/test2017
+    --train_annotations_file=$SHARED_DIR/annotations/instances_train2017.json
+    --val_annotations_file=$SHARED_DIR/annotations/instances_val2017.json
+    --testdev_annotations_file=$SHARED_DIR/annotations/image_info_test-dev2017.json
+    --output_dir=$SHARED_DIR/coco_tf"
+    env:
+    - name: SHARED_DIR
+      value: /storage
+    volumeMounts:
+      - mountPath: /storage
+        name: storage-volume
+  volumes:
+  - name: storage-volume
+    persistentVolumeClaim:
+      claimName: benchmarking-coco-dataset
+  restartPolicy: Never
+  nodeSelector:
+    feature.node.kubernetes.io/pci-10de.present: "true"

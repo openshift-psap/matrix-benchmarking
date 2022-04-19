@@ -1,0 +1,72 @@
+apiVersion: run.ai/v1
+kind: RunaiJob
+metadata:
+  name: "{{ name }}"
+  namespace: "{{ namespace }}"
+  labels:
+    priorityClassName: "build"
+    matrix-benchmarking: "true"
+    matrix-benchmarking-mode: "{{ mode }}"
+spec:
+  template:
+    metadata:
+      labels:
+        user: admin
+        matrix-benchmarking: "true"
+        job-name: "{{ name }}"
+    spec:
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+        node.kubernetes.io/instance-type: p3.2xlarge
+      restartPolicy: Never
+      schedulerName: runai-scheduler
+      containers:
+      - image: "{{ image }}"
+        imagePullPolicy: Always
+        name: ctr
+        env:
+        - name: SRC_CONFIG_DIR
+          value: /workdir/models/research/configs/
+        - name: STORAGE_DIR
+          value: /storage
+        - name: INFERENCE_TIME
+          value: "{{ inference_time }}"
+        command: [ "bash", "-ceuxo", "pipefail"]
+        args:
+        - |
+          mkdir /tmp/cfg
+          cp -v "$SRC_CONFIG_DIR"/* /tmp/cfg
+          sed -i 's|/data/coco2017_tfrecords|'$STORAGE_DIR'/coco2017_tfrecords|' /tmp/cfg/*
+          sed -i 's|/checkpoints|'$STORAGE_DIR'/checkpoints|' /tmp/cfg/*
+
+          if [[ "{{ mode }}" == "inference" ]]; then
+            count=0
+            SECONDS=0 # Bash special var
+            while true; do
+              bash examples/{{ script_name }} /tmp/cfg --raport_file=/tmp/summary.json
+              count=$(($count + 1))
+              echo "INFERENCE_LOOP_COUNT=$count"
+              if [[ "$INFERENCE_TIME" ]]; then
+                minutes=$((SECONDS/60))
+                if [[ "$minutes" -ge "$INFERENCE_TIME" ]]; then
+                  echo "Inference ran for ${minutes}, bailing out."
+                  break
+                fi
+              fi
+            done
+          else
+            RESULTS_DIR=/tmp/results
+            mkdir "$RESULTS_DIR"
+            bash examples/{{ script_name }} "$RESULTS_DIR" /tmp/cfg --raport_file=/tmp/summary.json
+            cat "${RESULTS_DIR}/train_log" || true
+          fi
+        volumeMounts:
+        - mountPath: /storage/
+          name: storage-volume
+        resources:
+          limits:
+            nvidia.com/gpu: "{{ fraction }}"
+      volumes:
+      - name: storage-volume
+        persistentVolumeClaim:
+          claimName: benchmarking-coco-dataset

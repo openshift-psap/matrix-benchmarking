@@ -1,0 +1,162 @@
+name: file_configuration
+config_values:
+  namespace: matrix-benchmarking
+---
+name: has_everything
+spec:
+  requirements:
+  #- has_coco_dataset_downloaded
+  #- has_coco_dataset_prepared
+  - has_coco_dataset_prepared_from_s3
+  #- has_ssd_image
+  - prefetch_ssd_image
+---
+name: has_namespace
+spec:
+  configuration:
+  - namespace
+  tests:
+  - name: has_namespace
+    type: shell
+    spec: oc get ns/matrix-benchmarking
+  install:
+  - name: create_ns
+    type: shell
+    spec: |
+      oc create ns $namespace
+      oc label namespace $namespace openshift.io/cluster-monitoring=true
+---
+name: has_coco_dataset_downloaded
+spec:
+  configuration:
+  - namespace
+  requirements:
+  - has_namespace
+  - has_pci_gpu_nodes
+  tests:
+  - name: has_coco_dataset_downloaded
+    type: shell
+    spec: oc get pvc -ldownloaded=true -n $namespace -oname | grep benchmarking-coco-dataset
+  install:
+  - name: download_coco_dataset
+    type: shell
+    spec: |
+      cd $HOME/openshift/ci-artifacts
+      gpu_node=$(oc get nodes -lfeature.node.kubernetes.io/pci-10de.present -ojsonpath={.items[0].metadata.name})
+      ./run_toolbox.py benchmarking download_coco_dataset $gpu_node --namespace $namespace
+  - name: label_coco_dataset_pvc
+    type: shell
+    spec:
+      oc label pvc/benchmarking-coco-dataset downloaded=true -n $namespace
+---
+name: has_coco_dataset_prepared
+spec:
+  configuration:
+  - namespace
+  requirements:
+  - has_namespace
+  - has_ssd_image
+  - has_coco_dataset_pvc
+  tests:
+  - name: has_coco_dataset_prepared
+    type: shell
+    spec: oc get pvc -lprepared=true -n $namespace -oname | grep benchmarking-coco-dataset
+  install:
+  - name: prepare_coco_dataset
+    type: predefined
+    spec:
+      name: run_pod_file_to_completion
+      args:
+        pod_file: ssd/pod-prepare-ssd.yaml
+
+  - name: label_coco_dataset_pvc
+    type: shell
+    spec:
+      oc label pvc/benchmarking-coco-dataset prepared=true -n $namespace
+---
+name: has_coco_dataset_pvc
+spec:
+  configuration:
+  - namespace
+  requirements:
+  - has_namespace
+  tests:
+  - name: has_coco_dataset_pvc
+    type: shell
+    spec: oc get pvc benchmarking-coco-dataset -n $namespace -oname
+  install:
+  - name: create_coco_dataset_pvc
+    type: shell
+    spec: oc apply -f pvc-coco-dataset.yaml
+---
+name: has_coco_dataset_prepared_from_s3
+spec:
+  configuration:
+  - namespace
+  requirements:
+  - has_namespace
+  - has_coco_dataset_pvc
+  tests:
+  - name: has_coco_dataset_prepared_from_s3
+    type: shell
+    spec: oc get pvc -lprepared=true -n $namespace -oname | grep benchmarking-coco-dataset
+  install:
+  - name: create_s3-creds_secret
+    type: shell
+    spec: oc create secret generic s3-creds --from-file ~/.aws/credentials -n matrix-benchmarking -oyaml || true
+  - name: download_dataset_from_s3
+    type: predefined
+    spec:
+      name: run_pod_file_to_completion
+      args:
+        pod_file: pod-coco-download-from-s3.yaml
+
+  - name: label_coco_dataset_pvc
+    type: shell
+    spec:
+      oc label pvc/benchmarking-coco-dataset prepared=true -n matrix-benchmarking
+---
+name: has_aiml_imagestream
+spec:
+  requirements:
+  - has_namespace
+  tests:
+  - name: has_aiml_imagestream
+    type: shell
+    spec: oc get is/aiml -n matrix-benchmarking
+  install:
+  - name: create_imagestream
+    type: shell
+    spec: oc apply -f ./imagestream.yaml -n matrix-benchmarking
+---
+name: has_ssd_image
+spec:
+  requirements:
+  - has_aiml_imagestream
+  tests:
+  - name: has_ssd_image
+    type: shell
+    spec: oc get istag/aiml:ssd -oname -n matrix-benchmarking
+  install:
+  - name: build_ssd_image
+    type: predefined
+    spec:
+      name: run_build_config_to_completion
+      args:
+        buildconfig_file: ssd/buildconfig-ssd.yaml
+        buildconfig_name: aiml-ssd
+        namespace: matrix-benchmarking
+---
+name: prefetch_ssd_image
+spec:
+  requirements:
+  - has_namespace
+  - has_pci_gpu_nodes
+  tests:
+  install:
+  - name: prefetch_ssd_image
+    type: shell
+    spec: |
+      SSD_IMAGE=quay.io/openshift-psap/nvidiadl-ssd-training-benchmark:ssd
+      gpu_node=$(oc get nodes -lfeature.node.kubernetes.io/pci-10de.present -ojsonpath={.items[0].metadata.name})
+      oc debug --quiet node/$gpu_node --image=$SSD_IMAGE -- echo "$SSD_IMAGE prefetched."

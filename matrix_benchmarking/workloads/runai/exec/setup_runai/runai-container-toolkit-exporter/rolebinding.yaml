@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  creationTimestamp: "2022-02-09T09:16:52Z"
+  name: runai-container-toolkit-exporter-scc
+  namespace: runai
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: runai-container-toolkit-exporter-scc
+subjects:
+- kind: ServiceAccount
+  name: runai-container-toolkit-exporter
+  namespace: runai

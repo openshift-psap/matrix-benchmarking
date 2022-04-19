@@ -1,0 +1,26 @@
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: matrix-benchmarking
+  name: aiml-ssd
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: aiml:ssd
+  resources: {}
+  source:
+    type: Git
+    git:
+      uri: https://github.com/openshift-psap/DeepLearningExamples
+      ref: master
+    contextDir: TensorFlow/Detection/SSD
+  triggers:
+    - type: ConfigChange
+  strategy:
+    dockerStrategy:
+      from:
+        kind: DockerImage
+        name: quay.io/openshift-psap/nvidiadl-ssd-training-benchmark:tensorflow-20.06-tf1-py3

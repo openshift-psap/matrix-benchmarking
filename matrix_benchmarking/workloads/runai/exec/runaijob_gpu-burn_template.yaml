@@ -1,0 +1,55 @@
+apiVersion: run.ai/v1
+kind: RunaiJob
+metadata:
+  name: "{{ name }}"
+  namespace: "{{ namespace }}"
+  labels:
+    priorityClassName: "build"
+    matrix-benchmark: "true"
+spec:
+  template:
+    metadata:
+      labels:
+        user: admin
+        matrix-benchmark: "true"
+        job-name: "{{ name }}"
+    spec:
+      restartPolicy: Never
+      schedulerName: runai-scheduler
+      containers:
+      - image: "{{ image }}"
+        imagePullPolicy: Always
+        resources:
+          limits:
+            nvidia.com/gpu: 0.5
+        name: ctr
+        env:
+        - name: SRC_CONFIG_DIR
+          value: /workdir/models/research/configs/
+        - name: STORAGE_DIR
+          value: /storage
+        command: [ "bash", "-ceuxo", "pipefail"]
+        args:
+        - |
+          mkdir /tmp/cfg
+          cp -v "$SRC_CONFIG_DIR"/* /tmp/cfg
+          sed -i 's|/data/coco2017_tfrecords|'$STORAGE_DIR'/coco2017_tfrecords|' /tmp/cfg/*
+          sed -i 's|/checkpoints|'$STORAGE_DIR'/checkpoints|' /tmp/cfg/*
+
+          if [[ "{{ script_name }}" == *"inference"* ]]; then
+            bash -x examples/{{ script_name }} /tmp/cfg --raport_file=/tmp/summary.json
+          else
+            RESULTS_DIR=/tmp/results
+            mkdir "$RESULTS_DIR"
+            bash -x examples/{{ script_name }} "$RESULTS_DIR" /tmp/cfg --raport_file=/tmp/summary.json
+          fi
+        volumeMounts:
+        - mountPath: /storage/
+          name: storage-volume
+        resources:
+          limits:
+            nvidia.com/gpu: "{{ fraction }}"
+      volumes:
+      - name: storage-volume
+        persistentVolumeClaim:
+          claimName: benchmarking-coco-dataset

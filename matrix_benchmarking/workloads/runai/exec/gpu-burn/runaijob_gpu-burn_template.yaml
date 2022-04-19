@@ -1,0 +1,43 @@
+apiVersion: run.ai/v1
+kind: RunaiJob
+metadata:
+  name: gpu-burn
+  labels:
+    priorityClassName: "build"
+spec:
+  template:
+    metadata:
+      labels:
+        user: admin
+        app: gpu-burn
+    spec:
+      restartPolicy: Never
+      schedulerName: runai-scheduler
+      containers:
+      - image: nvcr.io/nvidia/cuda:11.2.2-devel-ubi8
+        imagePullPolicy: Always
+        name: gpu-burn-ctr
+        command:
+        - bash
+        - /mnt/cm-entrypoint/entrypoint.sh
+        volumeMounts:
+        - name: entrypoint
+          mountPath: /mnt/cm-entrypoint
+        - name: src
+          mountPath: /gpu-burn-src
+          readOnly: true
+        env:
+        - name: GPU_BURN_TIME
+          value: "{{ gpu_burn_time }}"
+        resources:
+          limits:
+            nvidia.com/gpu: "{{ gpu_burn_fraction }}"
+      volumes:
+      - name: entrypoint
+        configMap:
+          defaultMode: 0777
+          name: gpu-burn-entrypoint
+      - name: src
+        configMap:
+          defaultMode: 0777
+          name: gpu-burn-src
