@@ -125,6 +125,9 @@ def parse_filters(filters):
             logging.error(f"Unexpected filter value: {kv}")
             sys.exit(1)
 
+        if ":" in value:
+            value = value.split(":")
+
         experiment_filters[key] = value
 
 class TaskRunner:

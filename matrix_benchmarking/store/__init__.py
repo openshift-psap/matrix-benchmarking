@@ -22,16 +22,18 @@ def load_workload_store(kwargs):
 
 
 def should_be_filtered_out(settings):
-    for key, value in settings.items():
+    for key, _value in settings.items():
         if key not in cli_args.experiment_filters:
             # Keep it
             continue
-
+        value = str(_value)
         filter_value = cli_args.experiment_filters[key]
+        if isinstance(filter_value, list):
+            if value in filter_value:
+                continue # Keep it
 
-        if str(filter_value) == str(value):
-            # Keep it
-            continue
+        elif filter_value == value:
+            continue # Keep it
 
         # Skip it
         return True
