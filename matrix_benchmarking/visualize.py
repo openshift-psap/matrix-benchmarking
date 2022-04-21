@@ -49,11 +49,10 @@ Args:
         workload_store = store.load_workload_store(kwargs)
 
         # ---
-        results_dirname = kwargs["results_dirname"]
 
-        logging.info(f"Loading results from {results_dirname} ... ")
-        workload_store.parse_data(results_dirname)
-        logging.info(f"Loading results from {results_dirname} ... done. Found {len(common.Matrix.processed_map)} results.")
+        logging.info(f"Loading results ... ")
+        workload_store.parse_data()
+        logging.info(f"Loading results ... done. Found {len(common.Matrix.processed_map)} results.")
 
         try:
             ui.configure(kwargs)

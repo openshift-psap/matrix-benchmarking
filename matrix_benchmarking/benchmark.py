@@ -82,10 +82,9 @@ Args:
         # ---
 
         dry = not run
-        results_dirname = kwargs["results_dirname"]
 
-        logging.info(f"Loading previous results from {results_dirname} ... ")
-        workload_store.parse_data(results_dirname)
+        logging.info(f"Loading previous results ... ")
+        workload_store.parse_data()
         logging.info(f"Loading previous results: done, found {len(common.Matrix.processed_map)} results")
 
         if dry:
@@ -93,7 +92,7 @@ Args:
             logging.info("# DRY RUN")
             logging.info("#")
 
-        script_to_run = matrix.Matrix(results_dirname, benchmark_yaml_file)
+        script_to_run = matrix.Matrix(benchmark_yaml_file)
         script_to_run.run()
 
         return 0

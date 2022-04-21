@@ -273,7 +273,7 @@ class TableStats():
         if not entry:
             return None, f"Error: record not found in matrix ..."
 
-        loc = entry.location.replace(common.RESULTS_PATH+"/", "")
+        loc = entry.location
         msg = [f"{loc} ⇒ {value}"]
 
         return entry, msg

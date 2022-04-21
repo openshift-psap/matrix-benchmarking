@@ -104,14 +104,16 @@ def _parse_results(add_to_matrix, dirname, import_settings):
 
     return custom_parse_results(add_to_matrix, dirname, import_settings)
 
+
 def register_custom_parse_results(fn):
     global custom_parse_results
     custom_parse_results = fn
 
 # ---
 
-def parse_data(results_dirname):
-    results_dir = common.RESULTS_PATH / results_dirname
+def parse_data(results_dir=None):
+    if results_dir is None:
+        results_dir = pathlib.Path(".") / cli_args.kwargs["results_dirname"]
 
     path = os.walk(results_dir)
 

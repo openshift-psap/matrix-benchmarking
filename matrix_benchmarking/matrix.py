@@ -4,14 +4,14 @@ import uuid
 import logging
 import pathlib
 
+import matrix_benchmarking
 import matrix_benchmarking.common as common
 import matrix_benchmarking.store as store
 import matrix_benchmarking.cli_args as cli_args
 
 class Matrix():
-    def __init__(self, results_dirname, yaml_desc):
+    def __init__(self, yaml_desc):
         self.yaml_desc = yaml_desc
-        self.results_dirname = results_dirname
 
     def run(self,):
         tracker = types.SimpleNamespace()
@@ -63,7 +63,7 @@ class Matrix():
         context.params = types.SimpleNamespace()
 
         context.expe = expe
-        context.expe_dir = common.RESULTS_PATH / self.results_dirname / context.expe
+        context.expe_dir = pathlib.Path(".") / cli_args.kwargs["results_dirname"] / context.expe
 
         context.path_tpl = cli_args.kwargs["path_tpl"]
         context.script_tpl = cli_args.kwargs["script_tpl"]
@@ -146,7 +146,7 @@ EXEC_DIR="$(realpath "$2")"
                 location =  common.Matrix.processed_map[key].location if key in common.Matrix.processed_map \
                     else common.Matrix.import_map[key].location
 
-                logging.info(f"> {location.relative_to(common.RESULTS_PATH / self.results_dirname)}")
+                logging.info(f"> {location.relative_to(context.expe_dir.parent)}")
                 logging.info("")
                 tracker.expe_cnt.recorded += 1
                 continue
@@ -219,7 +219,7 @@ EXEC_DIR="$(realpath "$2")"
 
         if tracker.dry:
             logging.info(f"""\n
-Results: {context.bench_fullpath.relative_to(common.RESULTS_PATH)}
+Results: {context.bench_fullpath.relative_to(context.expe_dir.parent.parent)}
 Command: {script}{settings_str}
 ---
 """)

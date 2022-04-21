@@ -3,7 +3,6 @@ from collections import defaultdict
 import pathlib
 
 import matrix_benchmarking
-RESULTS_PATH = pathlib.Path(matrix_benchmarking.__path__[0]).parent / "results"
 
 class MatrixEntry(types.SimpleNamespace):
     def __init__(self, location, results,
