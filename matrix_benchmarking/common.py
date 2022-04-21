@@ -25,6 +25,7 @@ class MatrixEntry(types.SimpleNamespace):
 
         [Matrix.settings[k].add(v) for k, v in processed_settings.items()]
 
+
 class Matrix():
     settings = defaultdict(set)
     import_map = {}
