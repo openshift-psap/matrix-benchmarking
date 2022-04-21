@@ -95,19 +95,8 @@ def check_mandatory_kwargs(kwargs, mandatory_flags):
         raise SystemExit(1)
 
 
-def goto_work_directory(kwargs):
-    work_dir = kwargs["work_dir"]
-    if not work_dir:
-        work_dir = os.environ["MATBENCH_WORK_DIR"]
-    if not work_dir:
-        return
-
-    os.chdir(work_dir)
-
-
 def setup_env_and_kwargs(kwargs):
     # overriding order: env file <- env var <- benchmark file <- cli
-    goto_work_directory(kwargs)
     update_env_with_env_files()
     update_kwargs_with_env(kwargs)
 

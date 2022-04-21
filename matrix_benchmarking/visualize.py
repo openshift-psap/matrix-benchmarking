@@ -8,7 +8,6 @@ import matrix_benchmarking.cli_args as cli_args
 
 def main(workload: str = "",
          results_dirname: str = "",
-         work_dir: str = "",
          filters: list[str] = [],
          generate: bool = False):
     """
@@ -18,7 +17,6 @@ Env:
     MATBENCH_WORKLOAD
     MATBENCH_RESULTS_DIRNAME
     MATBENCH_GENERATE
-    MATBENCH_WORK_DIR
     MATBENCH_FILTERS
 
 See the `FLAGS` section for the descriptions.
@@ -27,7 +25,6 @@ Args:
     workload: Name of the workload to execute. (Mandatory.)
     results_dirname: Name of the directory where the results will be stored.  (Mandatory.)
     generate: If 'True', generates image files instead of running the Web UI.
-    work_dir: Absolute path indicating where files should read/written.
     filters: If provided, parse only the experiment matching the filters. Eg: expe=expe1:expe2,something=true.
 
 """
