@@ -8,7 +8,7 @@ import math
 logging.info("Importing prometheus_api_client ...")
 import prometheus_api_client
 
-import matrix_benchmarking.kube as kube
+import matrix_benchmarking.exec.kube as kube
 
 def _get_secret_token():
     logging.info("Prometheus: Fetching the monitoring secret token ...")

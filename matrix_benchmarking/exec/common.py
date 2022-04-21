@@ -8,8 +8,8 @@ import os
 
 import jinja2
 
-import matrix_benchmarking.kube as kube
-import matrix_benchmarking.prom as prom
+import matrix_benchmarking.exec.kube as kube
+import matrix_benchmarking.exec.prom as prom
 
 def apply_yaml_template(template_file, settings):
     with open(template_file) as f:
