@@ -8,19 +8,20 @@ import matrix_benchmarking.common as common
 import matrix_benchmarking.store as store
 import matrix_benchmarking.cli_args as cli_args
 
-def invalid_directory(dirname, settings, reason):
-    if not cli_args.kwargs.get("clean"):
-        # silently skip
-        return
+def invalid_directory(dirname, settings, reason, warn=False):
+    if not cli_args.kwargs.get("run"):
+        if not warn and not cli_args.kwargs.get("clean"):
+            # silently skip
+            return
 
-    if not cli_args.kwargs["run"]:
         logging.info("%s", dirname)
-        logging.info("%s", settings)
+        logging.info("%s", ", ".join(f"{k}={v}" for k, v in settings.items()))
         logging.info("\t\tis invalid: %s", reason)
+        logging.info("")
         return
 
     shutil.rmtree(dirname)
-    logging.info(f"{dirname}: removed")
+    logging.info(f"{dirname}: removed ({reason})")
 
 
 def _duplicated_directory(import_key, old_location, new_location):

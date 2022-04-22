@@ -113,7 +113,11 @@ def prepare_prometheus():
 
     return prom_data
 
-def finalize_prometheus(prom_data):
+def finalize_prometheus(prom_data=None):
+    if not prom_data:
+        prom_data = types.SimpleNamespace()
+        prom_data.handler = prom.get_handler()
+
     prom_data.end_ts = prom.query_current_ts(prom_data.handler)
 
     def save_db_raw():
