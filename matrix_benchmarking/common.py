@@ -8,13 +8,13 @@ class MatrixEntry(types.SimpleNamespace):
     def __init__(self, location, results,
                  processed_key, import_key,
                  processed_settings, import_settings):
-        self.params = types.SimpleNamespace()
+        self.settings = types.SimpleNamespace()
         self.stats = {}
 
         self.location = location
         self.results = results
 
-        self.params.__dict__.update(processed_settings)
+        self.settings.__dict__.update(processed_settings)
         self.processed_key = processed_key
         self.import_settings = processed_settings
 

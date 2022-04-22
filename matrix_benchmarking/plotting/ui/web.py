@@ -70,7 +70,7 @@ def run():
         for param in page.children[0].children:
             if not isinstance(param, dcc.Dropdown): continue
 
-            if param.id != "list-params-stats": continue
+            if param.id != "list-settings-stats": continue
             stats = param.value
             break
         else:

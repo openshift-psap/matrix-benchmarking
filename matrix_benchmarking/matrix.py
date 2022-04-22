@@ -60,7 +60,7 @@ class Matrix():
             raise RuntimeError(f"Expe '{expe}' content should be a mapping ...")
 
         context = types.SimpleNamespace()
-        context.params = types.SimpleNamespace()
+        context.settings = types.SimpleNamespace()
 
         context.expe = expe
         context.expe_dir = pathlib.Path(".") / cli_args.kwargs["results_dirname"] / context.expe

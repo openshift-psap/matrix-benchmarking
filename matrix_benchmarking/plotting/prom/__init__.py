@@ -16,12 +16,12 @@ class Plot():
     def do_hover(self, meta_value, variables, figure, data, click_info):
         return "nothing"
 
-    def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
+    def do_plot(self, ordered_vars, settings, param_lists, variables, cfg):
         fig = go.Figure()
 
         plot_title = f"Prometheus: {self.metric} (overview)"
         y_max = 0
-        for entry in common.Matrix.all_records(params, param_lists):
+        for entry in common.Matrix.all_records(settings, param_lists):
             for metric in entry.results.metrics[self.metric]:
                 if "run-bert" not in metric["metric"].get("exported_pod", ""):
                     continue
@@ -29,7 +29,7 @@ class Plot():
                 x_values = [x for x, y in metric["values"]]
                 y_values = [float(y) for x, y in metric["values"]]
 
-                name_key = "_".join(f"{k}={params[k]}" for k in ordered_vars)
+                name_key = "_".join(f"{k}={settings[k]}" for k in ordered_vars)
 
                 x_start = x_values[0]
                 x_values = [x-x_start for x in x_values]
