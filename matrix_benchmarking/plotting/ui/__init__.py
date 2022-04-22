@@ -54,7 +54,7 @@ def COLORS(idx):
 def configure(kwargs):
     workload = kwargs["workload"]
 
-    module = f"matrix_benchmarking.workloads.{workload}.plot"
+    module = f"matrix_benchmarking.workloads.{workload}.plotting"
     logging.info(f"Loading {module} module ...")
 
     plotting_module = importlib.import_module(module)
