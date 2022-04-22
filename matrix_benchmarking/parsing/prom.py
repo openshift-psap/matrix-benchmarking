@@ -1,24 +1,35 @@
 from collections import defaultdict
 import statistics as stats
 
-def mean(metrics, podname):
-    values = []
+def filter_value_in_label(metrics, value, label):
     for metric in metrics:
-        exported_pod = metric["metric"].get("exported_pod", "")
-        pod = metric["metric"].get("pod", "")
-        if podname not in exported_pod and podname not in pod: continue
+        label_value = metric["metric"].get(label)
+        if label_value is None: continue
+        if value not in label_value: continue
 
+        # found it
+        yield metric
+
+
+def filter_doesnt_have_label(metrics, label):
+    for metric in metrics:
+        if label in metric["metric"]: continue
+
+        yield metric
+
+# ---
+
+def mean(metrics, filter_fct):
+    values = []
+    for metric in filter_fct(metrics):
         values.append(stats.mean([float(v) for ts, v in metric["values"]]))
 
     return values
 
 
-def last(metrics, podname):
+def last(metrics, filter_fct):
     values = []
-    for metric in metrics:
-        exported_pod = metric["metric"].get("exported_pod", "")
-        pod = metric["metric"].get("pod", "")
-        if podname not in exported_pod and podname not in pod: continue
-
+    for metric in filter_fct(metrics):
         values.append(float(metric["values"][-1][1]))
+
     return values
