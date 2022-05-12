@@ -175,7 +175,7 @@ def build_layout(search, serializing=False):
     stats = defaults.get("stats", [])
     if serializing:
         for stats_name in stats:
-            logging.info("Generate {stats_name}")
+            logging.info(f"Generate {stats_name}")
             table_stat = TableStats.stats_by_name[stats_name]
 
             graph_children += [dcc.Graph(id=table_stat.id_name, style={},

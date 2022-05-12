@@ -9,7 +9,7 @@ import matrix_benchmarking.cli_args as cli_args
 def main(workload: str = "",
          results_dirname: str = "",
          filters: list[str] = [],
-         generate: bool = False):
+         generate: str = ""):
     """
 Visualize MatrixBenchmarking results.
 
@@ -24,7 +24,7 @@ See the `FLAGS` section for the descriptions.
 Args:
     workload: Name of the workload to execute. (Mandatory.)
     results_dirname: Name of the directory where the results will be stored.  (Mandatory.)
-    generate: If 'True', generates image files instead of running the Web UI.
+    generate: If set, the value is used as query to generates image files instead of running the Web UI.
     filters: If provided, parse only the experiment matching the filters. Eg: expe=expe1:expe2,something=true.
 
 """
@@ -39,6 +39,10 @@ Args:
     cli_args.setup_env_and_kwargs(kwargs)
 
     cli_args.check_mandatory_kwargs(kwargs, ("workload", "results_dirname"))
+
+    if generate and not isinstance(generate, str):
+        logging.error("The 'generate' flag must provide the query of the graph to generate.")
+        return 1
 
     def run():
         cli_args.store_kwargs(kwargs, execution_mode="visualize")
