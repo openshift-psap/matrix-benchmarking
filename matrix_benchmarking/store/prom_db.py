@@ -62,12 +62,11 @@ def _extract_metrics_from_prometheus(tsdb_path, missing_metrics, destdir):
     return metrics_values
 
 
-def extract_metrics(prometheus_tgz, metrics, dirname):
-
+def extract_metrics(prometheus_tgz, metrics, dirname, filename_prefix=""):
     metric_results = {}
     missing_metrics = []
     for metric in metrics:
-        metric_file = dirname / f"{metric}.json"
+        metric_file = dirname / f"{filename_prefix}{metric}.json"
         if not metric_file.exists():
             missing_metrics.append(metric)
             logging.info(f"{metric_file} missing")
@@ -88,7 +87,6 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
         prom_db_tmp_dir = pathlib.Path(tempfile.mkdtemp(prefix="prometheus_db_"))
         with tarfile.open(prometheus_tgz, "r:gz") as prometheus_tarfile:
             prometheus_tarfile.extractall(prom_db_tmp_dir)
-
         metrics_values = _extract_metrics_from_prometheus(prom_db_tmp_dir / "prometheus", missing_metrics, dirname)
     except KeyboardInterrupt:
         print("\n")
@@ -101,7 +99,7 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
         if metric not in metrics_values or not metrics_values[metric]:
             logging.warning(f"{metric} not found in Promtheus database.")
 
-        metric_file = dirname / f"{metric}.json"
+        metric_file = dirname / f"{filename_prefix}{metric}.json"
 
         with open(metric_file, "w") as f:
             json.dump(metrics_values[metric], f)
