@@ -119,7 +119,7 @@ def parse_data(results_dir=None):
     if results_dir is None:
         results_dir = pathlib.Path(".") / cli_args.kwargs["results_dirname"]
 
-    path = os.walk(results_dir)
+    path = os.walk(results_dir, followlinks=True)
 
     for _this_dir, directories, files in path:
         if "skip" in files: continue
