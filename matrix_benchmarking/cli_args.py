@@ -114,8 +114,10 @@ def parse_filters(filters):
             logging.error(f"Unexpected filter value: {kv}")
             sys.exit(1)
 
+        value = value.replace("\\:", "<escaped colon>")
         if ":" in value:
             value = value.split(":")
+        value = value.replace("<escaped colon>", ":")
 
         experiment_filters[key] = value
 
