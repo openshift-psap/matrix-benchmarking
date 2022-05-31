@@ -1,6 +1,5 @@
 import types, importlib
 import urllib.parse
-import re
 import datetime
 import sys
 import logging
@@ -16,40 +15,11 @@ logging.info("Loading dash ... done")
 
 from matrix_benchmarking.plotting.table_stats import TableStats
 from matrix_benchmarking.common import Matrix
-
-def natural_keys(text):
-    def atoi(text): return int(text) if text.isdigit() else text
-    return [atoi(c) for c in re.split(r'(\d+)', str(text))]
-
-def join(joiner, iterable):
-    i = iter(iterable)
-    try:
-        yield next(i)  # First value, or StopIteration
-        while True:
-            next_value = next(i)
-            yield joiner
-            yield next_value
-    except StopIteration: pass
+from matrix_benchmarking import plotting
 
 NB_GRAPHS = 3
 GRAPH_IDS = [f"graph-{i}" for i in range(NB_GRAPHS)]
 TEXT_IDS = [f"graph-{i}-txt" for i in range(NB_GRAPHS)]
-
-def COLORS(idx):
-    colors = [
-        '#1f77b4',  # muted blue
-        '#ff7f0e',  # safety orange
-        '#2ca02c',  # cooked asparagus green
-        '#d62728',  # brick red
-        '#9467bd',  # muted purple
-        '#8c564b',  # chestnut brown
-        '#e377c2',  # raspberry yogurt pink
-        '#7f7f7f',  # middle gray
-        '#bcbd22',  # curry yellow-green
-        '#17becf'   # blue-teal
-    ]
-    return colors[idx % len(colors)]
-
 
 def configure(kwargs):
     workload = kwargs["workload"]
@@ -92,7 +62,7 @@ def build_layout(search, serializing=False):
     matrix_controls = [html.B("Parameters:", id="lbl_settings"), html.Br()]
     serial_settings = []
     for key, values in Matrix.settings.items():
-        options = [{'label': i, 'value': i} for i in sorted(values, key=natural_keys)]
+        options = [{'label': i, 'value': i} for i in sorted(values, key=plotting.natural_keys)]
 
         attr = {}
         if key == "stats":
@@ -229,7 +199,7 @@ def build_callbacks(app):
     logging.info("---")
     for key, values in Matrix.settings.items():
         if key == "stats": continue
-        Matrix.settings[key] = sorted(values, key=natural_keys)
+        Matrix.settings[key] = sorted(values, key=plotting.natural_keys)
         logging.info(f"{key:20s}: {', '.join(map(str, Matrix.settings[key]))}")
     logging.info("---")
 

@@ -5,37 +5,30 @@ import logging
 import statistics
 
 import plotly.graph_objs as go
-import plotly.subplots
 from dash import html
 from dash import dcc
 
 import matrix_benchmarking.common as common
+from matrix_benchmarking.common import Matrix
+from matrix_benchmarking import plotting
 
 def register_all():
     for stat in TableStats.all_stats:
-        register = False
-        if not isinstance(stat, TableStats): continue
-        for entry in common.Matrix.processed_map.values():
-            if entry.is_gathered:
-                entry.stats[stat.name] = gathered_stats = []
-                for gathered_entry in entry.results:
-                    if not gathered_entry.results: continue
-                    if stat.field not in gathered_entry.results.__dict__: continue
-
-                    gathered_stats.append(stat.process(gathered_entry))
-                if gathered_stats:
-                    register = True
-            else:
-                d = entry.results if isinstance(entry.results, dict) else entry.results.__dict__
-                if stat.field not in d: continue
-
-                register = True
-
-            entry.stats[stat.name] = stat.process(entry)
-
-        if not register: continue
-
         common.Matrix.settings["stats"].add(stat.name)
+
+        if not isinstance(stat, TableStats): continue
+
+        for entry in common.Matrix.processed_map.values():
+            if not entry.is_gathered:
+                entry.stats[stat.name] = stat.process(entry)
+                continue
+
+            entry.stats[stat.name] = gathered_stats = []
+            for gathered_entry in entry.results:
+                if not gathered_entry.results: continue
+
+                gathered_stats.append(stat.process(gathered_entry))
+
 
 class TableStats():
     all_stats = []
@@ -113,11 +106,9 @@ class TableStats():
                     v = self.do_process(entry)
                 except Exception as e:
                     logging.error(f"Failed to process field '{self.field}' with"
-                                 f"{self.do_process.__self__.__class__.__name__}.{self.do_process.__name__}:")
-                    logging.error(e.__class__.__name__, e)
-                    logging.error("")
-
-                    return 0
+                                  f"{self.do_process.__self__.__class__.__name__}.{self.do_process.__name__}:")
+                    logging.error(f"{e.__class__.__name__}:{e}")
+                    raise e
 
                 try: myself._value, *myself._stdev = v
                 except TypeError: # cannot unpack non-iterable ... object
@@ -166,7 +157,7 @@ class TableStats():
         if entry.is_gathered:
             return self.process_gathered_value_dev(entry)
 
-        value = entry.results.__dict__[self.field]
+        value = self.field(entry)
 
         if value is None:
             return None, None
@@ -178,12 +169,12 @@ class TableStats():
 
         dev_field = self.kwargs.get('dev_field')
 
-        dev_value = entry.results.__dict__[dev_field] if dev_field else 0
+        dev_value = dev_field(entry) if dev_field else 0
 
         return value, dev_value
 
     def process_mean_std(self, entry):
-        values = entry.results.__dict__[self.field]
+        values = self.field(entry)
 
         if not isinstance(value, list):
             logging.warning(f"{entry.location}.results.{self.field} is "
@@ -309,16 +300,16 @@ class TableStats():
             subplots_var = second_vars[-1]
 
             showticks = len(second_vars) == 2
-            import matrix_benchmarking.plotting.ui as ui
-            for i, subplots_key in enumerate(sorted(variables[subplots_var], key=ui.natural_keys)):
+            for i, subplots_key in enumerate(sorted(variables[subplots_var], key=plotting.natural_keys)):
                 subplots[subplots_key] = f"x{i+1}"
                 ax = f"xaxis{i+1}"
-                layout[ax] = dict(title=f"{subplots_var}={subplots_key}",
-                                  type='category', showticklabels=showticks, tickangle=45)
+                layout[ax] = dict(title=f"{subplots_var}<br>{subplots_key}",
+                                  type='category', showticklabels=showticks)
+
         else:
             subplots_var = None
             subplots[subplots_var] = "x1"
-            layout["xaxis1"] = dict(type='category', showticklabels=True, tickfont=dict(size=18))
+            layout["xaxis1"] = dict(type='category', showticklabels=True, tickfont=dict(size=18), tickangle=45)
 
         x = defaultdict(list); y = defaultdict(list); y_err = defaultdict(list)
         legend_keys = set()
@@ -350,8 +341,12 @@ class TableStats():
             legend_names.add(legend_name)
             x[legend_key].append(x_key)
 
-            y[legend_key].append(entry.stats[self.name].value)
-            y_err[legend_key].append(entry.stats[self.name].stdev)
+            if entry.is_gathered:
+                y[legend_key].append(entry.stats[self.name][0].value)
+                y_err[legend_key].append(entry.stats[self.name][0].stdev)
+            else:
+                y[legend_key].append(entry.stats[self.name].value)
+                y_err[legend_key].append(entry.stats[self.name].stdev)
 
         # ---
         def prepare_histogram(legend_key, color):
@@ -435,9 +430,8 @@ class TableStats():
             return max([yval for yval in [y_max]+y_err_data if yval is not None])
 
         y_max = 0
-        import matrix_benchmarking.plotting.ui as ui
-        legend_keys = sorted(list(legend_keys), key=ui.natural_keys)
-        legend_names = sorted(list(legend_names), key=ui.natural_keys)
+        legend_keys = sorted(list(legend_keys), key=plotting.natural_keys)
+        legend_names = sorted(list(legend_names), key=plotting.natural_keys)
 
         DO_LOCAL_SORT = True
         for legend_key in legend_keys:
@@ -445,7 +439,7 @@ class TableStats():
             ax = subplots[subplots_key]
             has_err = any(y_err[legend_key])
 
-            color = ui.COLORS(list(legend_names).index(legend_name))
+            color = plotting.COLORS(list(legend_names).index(legend_name))
             plot_args = dict()
 
             if var_length <= 2:
@@ -515,4 +509,9 @@ class TableStats():
 
         layout.legend.traceorder = 'normal'
 
-        return { 'data': data, 'layout': layout}, [""]
+        # ---
+
+        fig = go.Figure(data)
+        fig.update_layout(layout)
+        fig.update_layout(title_x=0.5)
+        return fig, [""]
