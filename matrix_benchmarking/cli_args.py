@@ -115,9 +115,8 @@ def parse_filters(filters):
             sys.exit(1)
 
         value = value.replace("\\:", "<escaped colon>")
-        if ":" in value:
-            value = value.split(":")
-        value = value.replace("<escaped colon>", ":")
+        value = value.split(":") if ":" in value else [value]
+        value = [v.replace("<escaped colon>", ":") for v in value]
 
         experiment_filters[key] = value
 
