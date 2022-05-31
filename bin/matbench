@@ -10,7 +10,7 @@ export PYTHONPATH="${PYTHONPATH}:${BASE_DIR}"
 
 export MATBENCH_WORKLOAD=$(basename "$PWD")
 
-if ! python -c "import sys,importlib; sys.exit(0 if importlib.util.find_spec('matrix_benchmarking.workloads.$MATBENCH_WORKLOAD') else 1)";
+if ! python -c "import sys,importlib.util; sys.exit(0 if importlib.util.find_spec('matrix_benchmarking.workloads.$MATBENCH_WORKLOAD') else 1)";
 then
     echo "ERROR: the current directory '$PWD' ($MATBENCH_WORKLOAD) cannot be imported as a matrix-benchmarking workload"
     exit 1
