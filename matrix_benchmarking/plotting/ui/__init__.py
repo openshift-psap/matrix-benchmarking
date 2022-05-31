@@ -54,7 +54,7 @@ def COLORS(idx):
 def configure(kwargs):
     workload = kwargs["workload"]
 
-    module = f"matrix_benchmarking.workloads.{workload}.plot"
+    module = f"matrix_benchmarking.workloads.{workload}.plotting"
     logging.info(f"Loading {module} module ...")
 
     plotting_module = importlib.import_module(module)
@@ -64,13 +64,13 @@ def configure(kwargs):
         plotting_module.register()
 
 def get_permalink(args, full=False):
-    params = dict(zip(Matrix.settings.keys(), args[:len(Matrix.settings)]))
+    settings = dict(zip(Matrix.settings.keys(), args[:len(Matrix.settings)]))
 
     def val(k, v):
         if isinstance(v, list): return "&".join(f"{k}={vv}" for vv in v)
         else: return f"{k}={v}"
 
-    search = "?"+"&".join(val(k, v) for k, v in params.items() \
+    search = "?"+"&".join(val(k, v) for k, v in settings.items() \
                             if v not in ('---', None) and (full or len(Matrix.settings[k]) != 1))
     *_, custom_cfg, custom_cfg_saved, settings_order, custom_cfg_saved_state = args
 
@@ -89,8 +89,8 @@ def get_permalink(args, full=False):
 def build_layout(search, serializing=False):
     defaults = urllib.parse.parse_qs(search.split("?", maxsplit=1)[-1]) if search else {}
 
-    matrix_controls = [html.B("Parameters:", id="lbl_params"), html.Br()]
-    serial_params = []
+    matrix_controls = [html.B("Parameters:", id="lbl_settings"), html.Br()]
+    serial_settings = []
     for key, values in Matrix.settings.items():
         options = [{'label': i, 'value': i} for i in sorted(values, key=natural_keys)]
 
@@ -119,10 +119,10 @@ def build_layout(search, serializing=False):
 
         if serializing:
             attr["disabled"] = True
-            serial_params.append(attr["value"])
-            serial_stats_position = len(serial_params) - 1
+            serial_settings.append(attr["value"])
+            serial_stats_position = len(serial_settings) - 1
 
-        tag = dcc.Dropdown(id='list-params-'+key, options=options,
+        tag = dcc.Dropdown(id='list-settings-'+key, options=options,
                            **attr, clearable=False)
 
         matrix_controls += [html.Span(f"{key}: ", id=f"label_{key}"), tag]
@@ -160,7 +160,7 @@ def build_layout(search, serializing=False):
             settings_order = settings_order.split("|")
 
         permalink = "/matrix/"+get_permalink((
-            serial_params # [Input('list-params-'+key, "value") for key in Matrix.settings]
+            serial_settings # [Input('list-settings-'+key, "value") for key in Matrix.settings]
             + [''] # custom-config useless here
             + [cfg_data]
             + [settings_order]
@@ -175,19 +175,19 @@ def build_layout(search, serializing=False):
     stats = defaults.get("stats", [])
     if serializing:
         for stats_name in stats:
-            logging.info("Generate {stats_name}")
+            logging.info(f"Generate {stats_name}")
             table_stat = TableStats.stats_by_name[stats_name]
 
             graph_children += [dcc.Graph(id=table_stat.id_name, style={},
                                          config=dict(showTips=False)),
                                html.P(id=table_stat.id_name+'-txt')]
 
-            current_serial_params = [e for e in serial_params]
-            current_serial_params[serial_stats_position] = [stats_name]
+            current_serial_settings = [e for e in serial_settings]
+            current_serial_settings[serial_stats_position] = [stats_name]
 
             figure_text = TableStats.graph_figure(*(
-                current_serial_params                  # [Input('list-params-'+key, "value") for key in Matrix.settings]
-                + [0]                                  # Input("lbl_params", "n_clicks")
+                current_serial_settings                  # [Input('list-settings-'+key, "value") for key in Matrix.settings]
+                + [0]                                  # Input("lbl_settings", "n_clicks")
                 + defaults.get("settings-order", [[]]) # Input('settings-order', 'data-order')
                 + [None]                               # Input('config-title', 'n_clicks') | None->not clicked yet
                 + ['']                                 # Input('custom-config', 'value')
@@ -254,7 +254,7 @@ def build_callbacks(app):
     app.clientside_callback(
         ClientsideFunction(namespace="clientside", function_name="resize_graph"),
         Output("text-box:clientside-output", "children"),
-        [Input('permalink', "href"), Input('list-params-stats', "value")],
+        [Input('permalink', "href"), Input('list-settings-stats', "value")],
     )
 
     @app.callback([Output('custom-config-saved', 'children'),
@@ -316,7 +316,7 @@ def build_callbacks(app):
         Output('graph-hover-info', 'children'),
         [Input(graph_id, 'clickData') for graph_id in GRAPH_IDS],
         [State(graph_id, 'figure') for graph_id in GRAPH_IDS]
-       +[State('list-params-'+key, "value") for key in Matrix.settings])
+       +[State('list-settings-'+key, "value") for key in Matrix.settings])
     def display_hover_data(*args):
         hoverData = args[:NB_GRAPHS]
 
@@ -351,7 +351,7 @@ def build_callbacks(app):
         return obj.do_hover(meta.get('value'), variables, figure, data, click_info)
 
     @app.callback([Output("permalink", 'href'), Output("download", 'href')],
-                  [Input('list-params-'+key, "value") for key in Matrix.settings]
+                  [Input('list-settings-'+key, "value") for key in Matrix.settings]
                   +[Input('custom-config', 'value'),
                     Input('custom-config-saved', 'data-label'),
                     Input('settings-order', 'data-order')],
@@ -369,7 +369,7 @@ def build_callbacks(app):
         def create_callback(graph_idx, graph_id):
             @app.callback([Output(graph_id, 'style'),
                            Output(graph_id+"-txt", 'style')],
-                          [Input('list-params-stats', "value")])
+                          [Input('list-settings-stats', "value")])
             def graph_style(stats_values):
                 try: triggered_id = dash.callback_context.triggered[0]["prop_id"]
                 except IndexError: triggered_id = None # nothing triggered the script (on multiapp load)
@@ -401,8 +401,8 @@ def build_callbacks(app):
 
             @app.callback([Output(graph_id, 'figure'),
                            Output(graph_id+"-txt", 'children')],
-                          [Input('list-params-'+key, "value") for key in Matrix.settings]
-                          +[Input("lbl_params", "n_clicks")]
+                          [Input('list-settings-'+key, "value") for key in Matrix.settings]
+                          +[Input("lbl_settings", "n_clicks")]
                           +[Input('settings-order', 'data-order')]
                           +[Input('config-title', 'n_clicks'),
                             Input('custom-config', 'value'),
@@ -451,9 +451,9 @@ def build_callbacks(app):
                 if not var_order:
                     var_order = list(Matrix.settings.keys())
 
-                params = dict(zip(Matrix.settings.keys(), args[:len(Matrix.settings)]))
+                settings = dict(zip(Matrix.settings.keys(), args[:len(Matrix.settings)]))
 
-                stats_values = params.get("stats")
+                stats_values = settings.get("stats")
                 if not stats_values:
                     return {}, ""
 
@@ -471,7 +471,7 @@ def build_callbacks(app):
                 except KeyError:
                     return "Stat '{stats_values[graph_idx]}' not found ...", None
 
-                variables = {k:(Matrix.settings[k]) for k, v in params.items() \
+                variables = {k:(Matrix.settings[k]) for k, v in settings.items() \
                              if k != "stats" and v == "---"}
                 for k in list(variables.keys()):
                     if k.startswith("@"):
@@ -482,7 +482,7 @@ def build_callbacks(app):
 
                 param_lists = [[(key, v) for v in variables[key]] for key in ordered_vars]
 
-                plot, msg = table_stat.do_plot(ordered_vars, params, param_lists, variables, cfg)
+                plot, msg = table_stat.do_plot(ordered_vars, settings, param_lists, variables, cfg)
 
                 if "help" not in cfg.d:
                     return plot, msg

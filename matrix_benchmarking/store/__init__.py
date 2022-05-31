@@ -94,7 +94,7 @@ def add_to_matrix(import_settings, location, results, duplicate_handler):
     return entry
 
 def gather_rolling_entries(entry):
-    gathered_settings = dict(entry.params.__dict__)
+    gathered_settings = dict(entry.settings.__dict__)
     gathered_keys = []
     for k in gathered_settings.keys():
         if not k.startswith("@"): continue
@@ -119,7 +119,7 @@ def gather_rolling_entries(entry):
 
     gathered_entry.results.append(entry)
     for gathered_key in gathered_keys:
-        gathered_entry.gathered_keys[gathered_key].add(entry.params.__dict__[gathered_key])
+        gathered_entry.gathered_keys[gathered_key].add(entry.settings.__dict__[gathered_key])
 
 
 # ---

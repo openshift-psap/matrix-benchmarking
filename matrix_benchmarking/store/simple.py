@@ -9,16 +9,19 @@ import matrix_benchmarking.store as store
 import matrix_benchmarking.cli_args as cli_args
 
 def invalid_directory(dirname, settings, reason, warn=False):
-    if not cli_args.kwargs.get("run"):
-        if not warn and not cli_args.kwargs.get("clean"):
-            # silently skip
-            return
+    run_flag = cli_args.kwargs.get("run")
+    clean_flag = cli_args.kwargs.get("clean")
+    benchmark_mode = cli_args.kwargs["execution_mode"]
 
+    if warn or clean_flag:
         logging.info("%s", dirname)
         logging.info("%s", ", ".join(f"{k}={v}" for k, v in settings.items()))
         logging.info("\t\tis invalid: %s", reason)
         logging.info("")
-        return
+
+    if benchmark_mode: return
+    if not run_flag: return
+    if not clean_flag: return
 
     shutil.rmtree(dirname)
     logging.info(f"{dirname}: removed ({reason})")
@@ -116,7 +119,7 @@ def parse_data(results_dir=None):
     if results_dir is None:
         results_dir = pathlib.Path(".") / cli_args.kwargs["results_dirname"]
 
-    path = os.walk(results_dir)
+    path = os.walk(results_dir, followlinks=True)
 
     for _this_dir, directories, files in path:
         if "skip" in files: continue

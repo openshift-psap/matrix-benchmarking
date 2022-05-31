@@ -279,7 +279,7 @@ class TableStats():
         return entry, msg
 
 
-    def do_plot(self, ordered_vars, params, param_lists, variables, cfg):
+    def do_plot(self, ordered_vars, settings, param_lists, variables, cfg):
         cfg_plot_mode = cfg.get('stats.var_length', "")
 
         if cfg_plot_mode:
@@ -326,14 +326,14 @@ class TableStats():
         legends_visible = []
         subplots_used = set()
 
-        for entry in common.Matrix.all_records(params, param_lists):
+        for entry in common.Matrix.all_records(settings, param_lists):
             if self.name not in entry.stats:
                 logging.info(f"Stat '{self.name}' not found for entry '{entry.location}'")
                 continue
 
-            x_key = ", ".join([f'{v}={params[v]}' for v in reversed(second_vars) if v != subplots_var])
-            legend_name = f"{legend_var}={params[legend_var]}"
-            legend_key = (legend_name, params[subplots_var] if subplots_var else None)
+            x_key = ", ".join([f'{v}={settings[v]}' for v in reversed(second_vars) if v != subplots_var])
+            legend_name = f"{legend_var}={settings[legend_var]}"
+            legend_key = (legend_name, settings[subplots_var] if subplots_var else None)
 
             if var_length > 3 and x[legend_key]:
                 prev_first_param = x[legend_key][-1].partition(" ")[0]

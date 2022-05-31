@@ -70,7 +70,7 @@ def run():
         for param in page.children[0].children:
             if not isinstance(param, dcc.Dropdown): continue
 
-            if param.id != "list-params-stats": continue
+            if param.id != "list-settings-stats": continue
             stats = param.value
             break
         else:
@@ -86,10 +86,12 @@ def run():
                 #logging.warning(f"Not a graph... {graph}")
                 continue
             figure = graph.figure
+
             dest = f"{idx}_{stats[idx].replace(' ', '_')}"
+
             logging.info(f"Saving {dest} ...")
-            figure.write_html(f"../{dest}.html")
-            figure.write_image(f"../{dest}.png")
+            figure.write_html(f"{dest}.html")
+            figure.write_image(f"{dest}.png")
             idx += 1
 
         sys.exit(0)
