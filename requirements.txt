@@ -2,3 +2,5 @@ pandas
 dash
 plotly
 kaleido
+fire
+pyyaml
