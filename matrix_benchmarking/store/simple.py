@@ -132,7 +132,7 @@ def parse_data(results_dir=None):
         except IndexError:
             expe = DEFAULT_EXPE
             if not default_expe_warned:
-                logging.warning("Could not find the expe directory of {results_dir}. Using expe={expe}")
+                logging.warning(f"Could not find the expe directory of {results_dir}. Using expe={expe}")
                 default_expe_warned = True
 
         _parse_directory(expe, this_dir)
