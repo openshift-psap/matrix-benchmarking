@@ -115,17 +115,24 @@ def register_custom_parse_results(fn):
 
 # ---
 
+DEFAULT_EXPE = "default"
 def parse_data(results_dir=None):
     if results_dir is None:
         results_dir = pathlib.Path(".") / cli_args.kwargs["results_dirname"]
 
     path = os.walk(results_dir, followlinks=True)
-
+    default_expe_warned = False
     for _this_dir, directories, files in path:
         if "skip" in files: continue
         if "settings" not in files: continue
 
         this_dir = pathlib.Path(_this_dir)
-        expe = this_dir.relative_to(results_dir).parents[-2].name
+        try:
+            expe = this_dir.relative_to(results_dir).parents[-2].name
+        except IndexError:
+            expe = DEFAULT_EXPE
+            if not default_expe_warned:
+                logging.warning("Could not find the expe directory of {results_dir}. Using expe={expe}")
+                default_expe_warned = True
 
         _parse_directory(expe, this_dir)
