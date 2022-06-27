@@ -119,3 +119,16 @@ def extract_metrics(prometheus_tgz, metrics, dirname, filename_prefix=""):
         metric_results[metric] = _parse_metric_values_from_file(metric_file)
 
     return metric_results
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"),
+                    format="%(levelname)s | %(message)s",)
+
+    def process_metrics(prom_connect):
+        print("Prometheus is listing on", PROMETHEUS_URL)
+        msg = input("Press enter to terminate it. (or type 'pdb' to enter pdb debugger) ")
+        if msg == "pdb": import pdb;pdb.set_trace()
+        pass
+
+    prepare_prom_db(sys.argv[1], process_metrics)
