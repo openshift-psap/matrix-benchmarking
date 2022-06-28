@@ -63,6 +63,7 @@ def _extract_metrics_from_prometheus(tsdb_path, process_metrics):
 
 
 def prepare_prom_db(prometheus_tgz, process_metrics):
+    logging.info(f"Processing {prometheus_tgz} ...")
     if not tarfile.is_tarfile(prometheus_tgz):
         logging.error(f"{prometheus_tgz} isn't a valid tar file.")
         return
@@ -73,6 +74,8 @@ def prepare_prom_db(prometheus_tgz, process_metrics):
             prometheus_tarfile.extractall(prom_db_tmp_dir)
 
         _extract_metrics_from_prometheus(prom_db_tmp_dir, process_metrics)
+    except EOFError as e:
+        logging.error(f"File '{prometheus_tgz}' is an invalid tarball: %s", e)
     except KeyboardInterrupt:
         print("\n")
         logging.error("Interrupted :/")
