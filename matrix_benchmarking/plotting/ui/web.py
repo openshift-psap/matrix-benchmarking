@@ -86,7 +86,8 @@ def run():
                 #logging.warning(f"Not a graph... {graph}")
                 continue
             figure = graph.figure
-
+            if figure is None:
+                continue
             dest = f"{idx}_{stats[idx].replace(' ', '_')}"
 
             logging.info(f"Saving {dest} ...")
