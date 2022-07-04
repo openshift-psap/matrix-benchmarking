@@ -88,7 +88,7 @@ def run():
             figure = graph.figure
             if figure is None:
                 continue
-            dest = f"{idx}_{stats[idx].replace(' ', '_')}"
+            dest = f"{idx}_{stats[idx].replace(' ', '_').replace('/', '_')}"
 
             logging.info(f"Saving {dest} ...")
             figure.write_html(f"{dest}.html")
