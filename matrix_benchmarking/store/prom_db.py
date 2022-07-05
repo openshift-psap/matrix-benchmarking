@@ -104,7 +104,7 @@ def extract_metrics(prometheus_tgz, metrics, dirname, filename_prefix=""):
     def process_metrics(prom_connect):
         nonlocal metrics_values
         for metric in missing_metrics:
-            metrics_values[metric] = prom_connect.custom_query(query=f'{{__name__="{metric}"}}[60y]')
+            metrics_values[metric] = prom_connect.custom_query(query=f'{metric}[60y]')
 
     logging.info("Launching Prometheus instance to grab %s", ", ".join(missing_metrics))
     prepare_prom_db(prometheus_tgz, process_metrics)
