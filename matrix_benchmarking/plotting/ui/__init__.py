@@ -455,7 +455,12 @@ def build_callbacks(app):
 
                 param_lists = [[(key, v) for v in variables[key]] for key in ordered_vars]
 
-                plot, msg = table_stat.do_plot(ordered_vars, settings, param_lists, variables, cfg)
+                try:
+                    plot, msg = table_stat.do_plot(ordered_vars, settings, param_lists, variables, cfg)
+                except Exception as e:
+                    msg = f"FAILED: {e.__class__.__name__}: {e}"
+                    logging.error(msg)
+                    return {}, msg
 
                 if "help" not in cfg.d:
                     return plot, msg
