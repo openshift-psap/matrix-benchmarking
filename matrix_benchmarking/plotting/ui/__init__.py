@@ -166,6 +166,9 @@ def build_layout(search, serializing=False):
             ))
 
             graph, text = graph_children[-2:]
+            if text:
+                logging.info("==>" + str(text))
+
             graph.figure = figure_text[0]
             graph.style['height'] = '100vh'
             graph.style["height"] = f"{100/(min(NB_GRAPHS, len(stats))):.2f}vh"
