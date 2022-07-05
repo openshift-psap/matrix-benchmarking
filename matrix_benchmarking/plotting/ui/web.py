@@ -80,20 +80,19 @@ def run():
         if isinstance(stats, str):
             stats = [stats]
 
-        idx = 0
+        idx = -1
         for graph in page.children[1].children[::2]:
             if not isinstance(graph, dcc.Graph):
-                #logging.warning(f"Not a graph... {graph}")
                 continue
+            idx += 1
             figure = graph.figure
             if figure is None:
                 continue
-            dest = f"{idx}_{stats[idx].replace(' ', '_').replace('/', '_')}"
+            dest = f"{idx}_{graph.id.replace(' ', '_').replace('/', '_')}"
 
             logging.info(f"Saving {dest} ...")
             figure.write_html(f"{dest}.html")
             figure.write_image(f"{dest}.png")
-            idx += 1
 
         sys.exit(0)
 
