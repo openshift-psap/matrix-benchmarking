@@ -38,10 +38,8 @@ class _Report():
         self.figure_index += 1
 
         logging.info(f"Saving {dest} ...")
-        if not pathlib.Path(f"{dest}.html").exists():
-            figure.write_html(f"{dest}.html")
-        if not pathlib.Path(f"{dest}.png").exists():
-            figure.write_image(f"{dest}.png")
+        figure.write_html(f"{dest}.html")
+        figure.write_image(f"{dest}.png")
 
         return [
             f"<p><a href='{dest}.html' target='_blank' title='Click to access the full-size interactive version.'><img src='{dest}.png'/></a></p>"
