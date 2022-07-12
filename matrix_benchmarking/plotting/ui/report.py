@@ -68,7 +68,7 @@ class _Report():
 
         html_content = "\n".join(html)
 
-        dest = f"report_{self.index}_{self.id_name}.html"
+        dest = f"report_{self.index:02d}_{self.id_name}.html"
         print(f"Saving {dest} ...")
         with open(dest, "w") as out_f:
             print(html_content, file=out_f)
