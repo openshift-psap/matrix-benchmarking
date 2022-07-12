@@ -33,6 +33,7 @@ def register_all():
 class TableStats():
     all_stats = []
     stats_by_name = {}
+    stats_by_id = {}
     graph_figure = None
 
     @classmethod
@@ -45,6 +46,7 @@ class TableStats():
             raise Exception(f"Duplicated name: {stat_obj.name}")
 
         clazz.stats_by_name[stat_obj.name] = stat_obj
+        clazz.stats_by_id[stat_obj.id_name] = stat_obj
 
     def __init__(self, id_name, name, field, fmt, unit, higher_better, divisor=1, **kwargs):
         self.id_name = id_name

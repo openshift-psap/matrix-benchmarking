@@ -14,6 +14,8 @@ except ImportError: pass
 import matrix_benchmarking.plotting.ui as ui
 import matrix_benchmarking.store as store
 import matrix_benchmarking.cli_args as cli_args
+import matrix_benchmarking.plotting.table_stats as table_stats
+import matrix_benchmarking.plotting.ui.report as report
 
 # stylesheets now served via assets/bWLwgP.css and automatically included
 main_app = dash.Dash(__name__)
@@ -66,33 +68,29 @@ def run():
 
         page = ui.build_layout(generate, serializing=True)
 
-
-        for param in page.children[0].children:
-            if not isinstance(param, dcc.Dropdown): continue
-
-            if param.id != "list-settings-stats": continue
-            stats = param.value
-            break
-        else:
-            stats = []
-        if not stats:
-            logging.warning("could not find any stats enabled ...")
-        if isinstance(stats, str):
-            stats = [stats]
-
         idx = -1
-        for graph in page.children[1].children[::2]:
+        content = page.children[1].children
+        for graph, text in zip(content[0::2], content[1::2]):
             if not isinstance(graph, dcc.Graph):
                 continue
             idx += 1
+
+            stats = table_stats.TableStats.stats_by_id[graph.id]
+
+            if stats.is_report:
+                report.generate(idx, graph.id, text)
+                continue
+
             figure = graph.figure
             if figure is None:
                 continue
-            dest = f"{idx}_{graph.id.replace(' ', '_').replace('/', '_')}"
+            dest = f"{idx:02d}_{graph.id.replace(' ', '_').replace('/', '_')}"
 
             logging.info(f"Saving {dest} ...")
-            figure.write_html(f"{dest}.html")
-            figure.write_image(f"{dest}.png")
+            figure.write_html(f"fig_{dest}.html")
+            figure.write_image(f"fig_{dest}.png")
+            if text:
+                logging.info(text)
 
         sys.exit(0)
 
