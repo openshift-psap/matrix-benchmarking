@@ -77,7 +77,7 @@ def run():
 
             stats = table_stats.TableStats.stats_by_id[graph.id]
 
-            if stats.is_report:
+            if getattr(stats, "is_report", False):
                 report.generate(idx, graph.id, text)
                 continue
 
