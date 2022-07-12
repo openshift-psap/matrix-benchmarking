@@ -60,8 +60,8 @@ class _Report():
 
     def generate(self, content):
         header = [
-            "<p><i>Click on the image to open the interactive full-size view of the plot.<i><br/>",
-            "<i>In the interactive view, click in the legend to hide a line, double click to see only this line..<i></p>",
+            "<p><i>Click on the image to open the interactive full-size view of the plot.</i><br/>",
+            "<i>In the interactive view, click in the legend to hide a line, double click to see only this line..</i></p>",
             "<hr>",
         ]
         html = header + self._element_to_html(content)
