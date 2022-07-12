@@ -3,6 +3,7 @@ import urllib.parse
 import datetime
 import sys
 import logging
+import traceback
 
 logging.info("Loading dash ...")
 import dash
@@ -460,6 +461,8 @@ def build_callbacks(app):
                 except Exception as e:
                     msg = f"FAILED: {e.__class__.__name__}: {e}"
                     logging.error(msg)
+
+                    traceback.print_exc()
                     return {}, msg
 
                 if "help" not in cfg.d:
