@@ -12,17 +12,19 @@ class _Report():
         self.figure_index = 0
 
     def _children_element_to_html(self, elt):
-        content = [f"<{elt._type}>"]
+
 
         if elt.children is None:
-            content += ["<b>children not available :/</b>"]
-        elif isinstance(elt.children, str):
+            return [f"<{elt._type.lower()}/>"]
+
+        content = [f"<{elt._type.lower()}>"]
+        if isinstance(elt.children, str):
             content += [elt.children]
         else:
             for child in elt.children:
                 content += self._element_to_html(child)
 
-        content += [f"</{elt._type}>"]
+        content += [f"</{elt._type.lower()}>"]
 
         return content
 
@@ -57,7 +59,12 @@ class _Report():
             pass
 
     def generate(self, content):
-        html = self._element_to_html(content)
+        header = [
+            "<p><i>Click on the image to open the interactive full-size view of the plot.<i><br/>",
+            "<i>In the interactive view, click in the legend to hide a line, double click to see only this line..<i></p>",
+            "<hr>",
+        ]
+        html = header + self._element_to_html(content)
 
         html_content = "\n".join(html)
 
