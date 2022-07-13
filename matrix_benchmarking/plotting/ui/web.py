@@ -89,8 +89,10 @@ def run():
             logging.info(f"Saving {dest} ...")
             figure.write_html(f"fig_{dest}.html")
             figure.write_image(f"fig_{dest}.png")
-            if text:
-                logging.info(text)
+            if text and text.children:
+                for child in text.children:
+                    if not child: continue
+                    logging.info(child)
 
         sys.exit(0)
 
