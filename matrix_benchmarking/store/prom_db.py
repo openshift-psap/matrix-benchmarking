@@ -118,7 +118,7 @@ def extract_metrics(prometheus_tgz, metrics, dirname, filename_prefix=""):
         metric_file = dirname / f"{filename_prefix}{metric}.json"
 
         with open(metric_file, "w") as f:
-            json.dump(metrics_values[metric], f)
+            json.dump(metrics_values.get(metric, {}), f)
 
         logging.info(f"{metric_file} generated")
         metric_results[metric] = _parse_metric_values_from_file(metric_file)
