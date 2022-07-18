@@ -12,14 +12,16 @@ class _Report():
         self.figure_index = 0
 
     def _children_element_to_html(self, elt):
-
+        props = " ".join([f"{k}='{getattr(elt, k)}'" for k in elt.available_properties if k != "children" and hasattr(elt, k)])
+        content = [f"<{elt._type.lower()}{' ' if props else ''}{props}{'/' if not elt.children else ''}>"]
 
         if elt.children is None:
-            return [f"<{elt._type.lower()}/>"]
+            return content
 
-        content = [f"<{elt._type.lower()}>"]
         if isinstance(elt.children, str):
             content += [elt.children]
+        elif hasattr(elt.children, "_type"):
+            content += self._children_element_to_html(elt.children)
         else:
             for child in elt.children:
                 content += self._element_to_html(child)
@@ -40,12 +42,13 @@ class _Report():
         self.figure_index += 1
 
         logging.info(f"Saving {dest} ...")
-        figure.write_html(f"{dest}.html")
-        figure.write_image(f"{dest}.png")
+        dest_html = f"{dest}.html"
+        dest_png = f"{dest}.png"
 
-        return [
-            f"<p><a href='{dest}.html' target='_blank' title='Click to access the full-size interactive version.'><img src='{dest}.png'/></a></p>"
-        ]
+        figure.write_html(dest_html)
+        figure.write_image(dest_png)
+
+        return [html.P(html.A(html.Img(src=dest_png), href=dest_html, target="_blank", title="Click to access the full-size interactive version."))]
 
     def _element_to_html(self, elt):
         if isinstance(elt, str):
