@@ -48,7 +48,9 @@ class _Report():
         figure.write_html(dest_html)
         figure.write_image(dest_png)
 
-        return [html.P(html.A(html.Img(src=dest_png), href=dest_html, target="_blank", title="Click to access the full-size interactive version."))]
+        return [
+             f"<p><a href='{dest}.html' target='_blank' title='Click to access the full-size interactive version.'><img src='{dest}.png'/></a></p>"
+         ]
 
     def _element_to_html(self, elt):
         if isinstance(elt, str):
