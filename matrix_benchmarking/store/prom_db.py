@@ -88,7 +88,7 @@ def extract_metrics(prometheus_tgz, metrics, dirname, filename_prefix=""):
     metric_results = {}
     missing_metrics = []
     for metric in metrics:
-        metric_file = dirname / f"{filename_prefix}{metric}.json"
+        metric_file = dirname / "metrics" / f"{filename_prefix}{metric}.json"
         if not metric_file.exists():
             missing_metrics.append(metric)
             logging.info(f"{metric_file} missing")
@@ -115,7 +115,7 @@ def extract_metrics(prometheus_tgz, metrics, dirname, filename_prefix=""):
         if metric not in metrics_values or not metrics_values[metric]:
             logging.warning(f"{metric} not found in Promtheus database.")
 
-        metric_file = dirname / f"{filename_prefix}{metric}.json"
+        metric_file = dirname / "metrics" / f"{filename_prefix}{metric}.json"
 
         with open(metric_file, "w") as f:
             json.dump(metrics_values.get(metric, {}), f)
