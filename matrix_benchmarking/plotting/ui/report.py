@@ -12,7 +12,15 @@ class _Report():
         self.figure_index = 0
 
     def _children_element_to_html(self, elt):
-        props = " ".join([f"{k}='{getattr(elt, k)}'" for k in elt.available_properties if k != "children" and hasattr(elt, k)])
+        props = " ".join([f"{k}='{getattr(elt, k)}'" for k in elt.available_properties if k not in ("children", "style") and hasattr(elt, k)])
+
+        if hasattr(elt, "style"):
+            if not isinstance(elt.style, dict):
+                logging.warning("The 'style' attribute should be a dict ...")
+                props += f" style='{elt.style}'"
+            else:
+                props += " style='" + " ".join([f"{k}:{v};" for k,v in elt.style.items()]) + "'"
+
         content = [f"<{elt._type.lower()}{' ' if props else ''}{props}{'/' if not elt.children else ''}>"]
 
         if elt.children is None:
