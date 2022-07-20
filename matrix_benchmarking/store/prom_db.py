@@ -9,6 +9,7 @@ import types
 import sys
 import time
 import os
+import datetime
 
 import prometheus_api_client
 
@@ -84,19 +85,21 @@ def prepare_prom_db(prometheus_tgz, process_metrics):
         shutil.rmtree(prom_db_tmp_dir, ignore_errors=True)
 
 
-def extract_metrics(prometheus_tgz, metrics, dirname, filename_prefix=""):
+def extract_metrics(prometheus_tgz, metrics, dirname):
     metric_results = {}
     missing_metrics = []
     metrics_base_dir = dirname / "metrics"
 
     for metric in metrics:
-        metric_file = metrics_base_dir / f"{filename_prefix}{metric}.json"
+        metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
+        metric_filename = metric_name.replace('.*', '').replace("'", "").replace("~", "")
+        metric_file = metrics_base_dir / f"{metric_filename}.json"
         if not metric_file.exists():
-            missing_metrics.append(metric)
-            logging.info(f"{metric_file} missing")
+            missing_metrics.append([metric_name, metric_query, metric_file])
+            logging.info(f"Metric {metric_name} missing")
             continue
 
-        metric_results[metric] = _parse_metric_values_from_file(metric_file)
+        metric_results[metric_name] = _parse_metric_values_from_file(metric_file)
 
     if not missing_metrics:
         logging.debug("All the metrics files exist, no need to launch Prometheus.")
@@ -107,25 +110,52 @@ def extract_metrics(prometheus_tgz, metrics, dirname, filename_prefix=""):
     metrics_values = {}
     def process_metrics(prom_connect):
         nonlocal metrics_values
-        for metric in missing_metrics:
-            metrics = metrics_values[metric] = prom_connect.custom_query(query=f'{metric}[60y]')
-            if not metrics:
-                logging.warning(f"{filename_prefix}{metric} has no data :/")
+        res = prom_connect.custom_query(query='up{namespace="default",service="kubernetes"}[60y]')
+        start_date = datetime.datetime.fromtimestamp(res[0]["values"][0][0])
+        end_date = datetime.datetime.fromtimestamp(res[0]["values"][-1][0])
 
-    logging.info("Launching Prometheus instance to grab %s", ", ".join(missing_metrics))
+        for metric_name, metric_query, metric_file in missing_metrics:
+            if "(" in metric_query:
+                values = prom_connect.custom_query_range(query=metric_query, step=5,
+                                                         start_time=start_date, end_time=end_date)
+
+                metrics_values[metric_name] = metric_values = [{}]
+
+                # deduplicate the values
+                metric_values[0]["metric"] = values[0]["metric"] # empty :/
+                metric_values[0]["values"] = []
+                prev_val = None
+                prev_ts = None
+                has_skipped = False
+                for ts, val in values[0]["values"]:
+                    prev_ts = ts
+                    if val == prev_val:
+                        has_skipped = True
+                        continue
+                    if has_skipped:
+                        metric_values[0]["values"].append([prev_ts, prev_val])
+                        has_skipped = False
+                    metric_values[0]["values"].append([ts, val])
+                    prev_val = val
+                if prev_val is not None and has_skipped:
+                    # add the last value if the list wasn't empty
+                    metric_values[0]["values"].append([ts, val])
+
+            else:
+                metric_values = metrics_values[metric_name] = prom_connect.custom_query(query=f'{metric_query}[60y]')
+
+            if not metric_values:
+                logging.warning(f"{metric_name} has no data :/")
+
+    logging.info("Launching Prometheus instance to grab %s", ", ".join([name for name, query, file in missing_metrics]))
     prepare_prom_db(prometheus_tgz, process_metrics)
 
-    for metric in missing_metrics:
-        if metric not in metrics_values or not metrics_values[metric]:
-            logging.warning(f"{metric} not found in Promtheus database.")
-
-        metric_file = metrics_base_dir / f"{filename_prefix}{metric}.json"
-
+    for metric_name, metric_query, metric_file in missing_metrics:
         with open(metric_file, "w") as f:
-            json.dump(metrics_values.get(metric, {}), f)
+            json.dump(metrics_values.get(metric_name, {}), f)
 
-        logging.info(f"{metric_file} generated")
-        metric_results[metric] = _parse_metric_values_from_file(metric_file)
+        logging.info(f"Metric {metric_name} fetched and stored.")
+        metric_results[metric_name] = _parse_metric_values_from_file(metric_file)
 
     return metric_results
 

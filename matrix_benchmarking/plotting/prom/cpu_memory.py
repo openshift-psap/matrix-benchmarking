@@ -14,7 +14,12 @@ class Plot():
     def __init__(self, metrics, y_title,
                  get_metrics=default_get_metrics,
                  filter_metrics=lambda x:x,
-                 as_timestamp=False):
+                 as_timestamp=False,
+                 container_name="all",
+                 is_memory=False,
+                 is_cluster=False,
+                 ):
+
         self.name = f"Prom: {y_title}"
 
         self.id_name = f"prom_overview_{y_title}"
@@ -23,6 +28,9 @@ class Plot():
         self.filter_metrics = filter_metrics
         self.get_metrics = get_metrics
         self.as_timestamp = as_timestamp
+        self.container_name = container_name
+        self.is_memory = is_memory
+        self.is_cluster = is_cluster
 
         table_stats.TableStats._register_stat(self)
         common.Matrix.settings["stats"].add(self.name)
@@ -37,7 +45,7 @@ class Plot():
             for metric in self.metrics
         ]
 
-        plot_title = f"Prometheus: {self.y_title}<br>{'<br>'.join(metric_names)}"
+        plot_title = f"Prometheus: {self.y_title}"
         y_max = 0
 
         for entry in common.Matrix.all_records(settings, param_lists):
@@ -48,8 +56,12 @@ class Plot():
                     x_values = [x for x, y in metric["values"]]
                     y_values = [float(y) for x, y in metric["values"]]
 
-                    legend_name = metric["metric"].get("__name__", metric_name)
-                    legend_group = None
+                    metric_actual_name = metric["metric"].get("__name__", metric_name)
+                    legend_name = metric_actual_name
+                    if metric["metric"].get("container") == "POD": continue
+
+                    legend_group = metric["metric"].get("pod") + "/" + metric["metric"].get("container", self.container_name) \
+                        if not self.is_cluster else None
 
                     if self.as_timestamp:
                         x_values = [datetime.datetime.fromtimestamp(x) for x in x_values]
@@ -59,13 +71,30 @@ class Plot():
 
                     y_max = max([y_max]+y_values)
 
+                    opts = {}
+
+                    if self.is_memory and "node" not in metric["metric"]:
+                        continue
+
+                    if "requests" in metric_actual_name:
+                        opts["line_color"] = "orange"
+                        opts["line_dash"] = "dot"
+                        opts["mode"] = "lines"
+
+                    elif "limits" in metric_actual_name or "capacity" in metric_actual_name:
+                        opts["line_color"] = "red"
+                        opts["mode"] = "lines"
+                        opts["line_dash"] = "dash"
+                    else:
+                        opts["mode"] = "markers+lines"
+
                     trace = go.Scatter(x=x_values, y=y_values,
                                        name=legend_name,
                                        hoverlabel= {'namelength' :-1},
                                        showlegend=True,
                                        legendgroup=legend_group,
                                        legendgrouptitle_text=legend_group,
-                                   mode='markers+lines')
+                                       **opts)
                     fig.add_trace(trace)
 
         fig.update_layout(
