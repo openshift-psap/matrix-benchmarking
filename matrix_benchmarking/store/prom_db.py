@@ -40,6 +40,11 @@ def _extract_metrics_from_prometheus(tsdb_path, process_metrics):
         RETRY_COUNT = 10
         time.sleep(5)
         for i in range(RETRY_COUNT):
+            if prom_proc.poll() is not None:
+                logging.error(f"Prometheus failed. Return code: {prom_proc.returncode}.")
+                failed = True
+                sys.exit(1)
+
             try:
                 prom_connect = prometheus_api_client.PrometheusConnect(url=PROMETHEUS_URL, disable_ssl=True,)
                 all_metrics = prom_connect.all_metrics()
@@ -59,7 +64,7 @@ def _extract_metrics_from_prometheus(tsdb_path, process_metrics):
         prom_proc.terminate()
         prom_proc.kill()
         prom_proc.wait()
-        if failed:
+        if failed or prom_proc.returncode:
             logging.info("<Promtheus stderr>\n%s\n</Promtheus stderr>", prom_proc.stderr.read().decode("utf8").strip())
 
 
@@ -110,7 +115,11 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
     metrics_values = {}
     def process_metrics(prom_connect):
         nonlocal metrics_values
-        res = prom_connect.custom_query(query='up{namespace="default",service="kubernetes"}[60y]')
+        res = prom_connect.custom_query(query='up[60y]')
+        if not res:
+            logging.error(f"No 'up' metric available in the database at '{prometheus_tgz}' ...")
+            return
+
         start_date = datetime.datetime.fromtimestamp(res[0]["values"][0][0])
         end_date = datetime.datetime.fromtimestamp(res[0]["values"][-1][0])
 
