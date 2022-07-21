@@ -43,7 +43,7 @@ class Plot():
             list(metric.items())[0][0] if isinstance(metric, dict) else metric
             for metric in self.metrics
         ]
-        plot_title = self.title if self.title else f"Prometheus: {self.y_title}"
+        plot_title = self.title if self.title else self.name
         if self.show_metrics_in_title:
             plot_title += f"<br>{'<br>'.join(metric_names)}"
 
