@@ -11,18 +11,25 @@ def default_get_metrics(entry, metric):
 
 
 class Plot():
-    def __init__(self, metrics, y_title,
+    def __init__(self, metrics, name, title, y_title,
                  get_metrics=default_get_metrics,
                  filter_metrics=lambda x:x,
-                 as_timestamp=False):
-        self.name = f"Prom: {y_title}"
-
-        self.id_name = f"prom_overview_{y_title}"
+                 as_timestamp=False,
+                 get_legend_name=None,
+                 show_metrics_in_title=False,
+                 show_legend=True,
+                 ):
+        self.name = name
+        self.id_name = f"prom_overview_{self.name}"
+        self.title = title
         self.metrics = metrics
         self.y_title = y_title
         self.filter_metrics = filter_metrics
         self.get_metrics = get_metrics
         self.as_timestamp = as_timestamp
+        self.get_legend_name = get_legend_name
+        self.show_metrics_in_title = show_metrics_in_title
+        self.show_legend = show_legend
 
         table_stats.TableStats._register_stat(self)
         common.Matrix.settings["stats"].add(self.name)
@@ -36,8 +43,10 @@ class Plot():
             list(metric.items())[0][0] if isinstance(metric, dict) else metric
             for metric in self.metrics
         ]
+        plot_title = self.title if self.title else f"Prometheus: {self.y_title}"
+        if self.show_metrics_in_title:
+            plot_title += f"<br>{'<br>'.join(metric_names)}"
 
-        plot_title = f"Prometheus: {self.y_title}<br>{'<br>'.join(metric_names)}"
         y_max = 0
 
         for entry in common.Matrix.all_records(settings, param_lists):
@@ -48,8 +57,11 @@ class Plot():
                     x_values = [x for x, y in metric["values"]]
                     y_values = [float(y) for x, y in metric["values"]]
 
-                    legend_name = metric["metric"].get("__name__", metric_name)
-                    legend_group = None
+                    if self.get_legend_name:
+                        legend_name, legend_group = self.get_legend_name(metric_name, metric["metric"])
+                    else:
+                        legend_name = metric["metric"].get("__name__", metric_name)
+                        legend_group = None
 
                     if self.as_timestamp:
                         x_values = [datetime.datetime.fromtimestamp(x) for x in x_values]
@@ -62,7 +74,7 @@ class Plot():
                     trace = go.Scatter(x=x_values, y=y_values,
                                        name=legend_name,
                                        hoverlabel= {'namelength' :-1},
-                                       showlegend=True,
+                                       showlegend=self.show_legend,
                                        legendgroup=legend_group,
                                        legendgrouptitle_text=legend_group,
                                    mode='markers+lines')
