@@ -129,7 +129,7 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
                                                          start_time=start_date, end_time=end_date)
 
                 metrics_values[metric_name] = metric_values = [{}]
-
+                if not values: continue
                 # deduplicate the values
                 metric_values[0]["metric"] = values[0]["metric"] # empty :/
                 metric_values[0]["values"] = []
