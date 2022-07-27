@@ -215,11 +215,16 @@ EXEC_DIR="$(realpath "$2")"
             return None
 
         args = f"{settings_str} 1> >(tee stdout) 2> >(tee stderr >&2)"
-        cmd_fullpath = str(pathlib.Path(os.getcwd()).parent / script) + " " + args
+        cmd_fullpath = str(pathlib.Path(os.getcwd()) / script) + " " + args
 
         if tracker.dry:
+            try:
+                results_dir = context.bench_fullpath.relative_to(context.expe_dir.parent.parent)
+            except ValueError: # (fullpath )is not in the subpath of (expe_dir)
+                results_dir = context.expe_dir
+
             logging.info(f"""\n
-Results: {context.bench_fullpath.relative_to(context.expe_dir.parent.parent)}
+Results: {results_dir}
 Command: {script}{settings_str}
 ---
 """)
