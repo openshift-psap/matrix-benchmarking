@@ -61,15 +61,17 @@ class _Report():
          ]
 
     def _element_to_html(self, elt):
-        if isinstance(elt, str):
+        if elt is None:
+            return ["None"]
+        elif isinstance(elt, str):
             return [elt]
         elif hasattr(elt, "children"):
             return self._children_element_to_html(elt)
         elif isinstance(elt, dcc.Graph):
             return self._graph_element_to_html(elt)
         else:
-            logging.warning("Unsupported report element:", elt.__class__.__name__)
-            pass
+            logging.warning("Unsupported report element: %s", elt.__class__.__name__)
+            return [str(elt)]
 
     def generate(self, content):
         header = [
