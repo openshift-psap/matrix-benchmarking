@@ -117,7 +117,7 @@ def register_custom_parse_results(fn):
 
 def parse_data(results_dir=None):
     if results_dir is None:
-        results_dir = pathlib.Path(".") / cli_args.kwargs["results_dirname"]
+        results_dir = pathlib.Path(cli_args.kwargs["results_dirname"])
 
     path = os.walk(results_dir, followlinks=True)
     for _this_dir, directories, files in path:
