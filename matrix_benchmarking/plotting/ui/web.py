@@ -70,6 +70,9 @@ def run():
 
         idx = -1
         content = page.children[1].children
+        report_index_f = open("reports_index.html", "w")
+        print("<ul>", file=report_index_f)
+
         for graph, text in zip(content[0::2], content[1::2]):
             if not isinstance(graph, dcc.Graph):
                 continue
@@ -78,21 +81,25 @@ def run():
             stats = table_stats.TableStats.stats_by_id[graph.id]
 
             if getattr(stats, "is_report", False):
-                report.generate(idx, graph.id, text)
+                report.generate(idx, graph.id, text, report_index_f)
                 continue
 
             figure = graph.figure
             if figure is None:
                 continue
+
             dest = f"{idx:02d}_{graph.id.replace(' ', '_').replace('/', '_')}"
 
             logging.info(f"Saving {dest} ...")
             figure.write_html(f"fig_{dest}.html")
             figure.write_image(f"fig_{dest}.png")
+
             if text and text.children:
                 for child in text.children:
                     if not child: continue
                     logging.info(child)
+        print("</ul>", file=report_index_f)
+        report_index_f.close()
 
         sys.exit(0)
 

@@ -73,10 +73,11 @@ class _Report():
             logging.warning("Unsupported report element: %s", elt.__class__.__name__)
             return [str(elt)]
 
-    def generate(self, content):
+    def generate(self, content, report_index_f):
         header = [
             "<p><i>Click on the image to open the interactive full-size view of the plot.</i><br/>",
-            "<i>In the interactive view, click in the legend to hide a line, double click to see only this line..</i></p>",
+            "<i>In the interactive view, click in the legend to hide a line, double click to see only this line.</i></p>",
+            "<p><a href='reports_index.html'>Back to the reports index.</a></p>"
             "<hr>",
         ]
         html = header + self._element_to_html(content)
@@ -88,6 +89,7 @@ class _Report():
         with open(dest, "w") as out_f:
             print(html_content, file=out_f)
 
+        print(f"<li><a href='{dest}'> Report {self.index:02d}: {self.id_name}</a>", file=report_index_f)
 
-def generate(idx, id_name, content):
-    _Report(id_name, idx).generate(content)
+def generate(idx, id_name, content, report_index_f):
+    _Report(id_name, idx).generate(content, report_index_f)
