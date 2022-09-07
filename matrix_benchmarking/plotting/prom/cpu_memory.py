@@ -53,7 +53,7 @@ class Plot():
                 metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
 
                 for metric in self.filter_metrics(self.get_metrics(entry, metric_name)):
-                    if metric: continue
+                    if not metric: continue
 
                     x_values = [x for x, y in metric["values"]]
                     y_values = [float(y) for x, y in metric["values"]]
