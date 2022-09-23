@@ -85,7 +85,7 @@ def run():
                 continue
 
             figure = graph.figure
-            if figure is None:
+            if not figure:
                 continue
 
             dest = f"{idx:02d}_{graph.id.replace(' ', '_').replace('/', '_')}"

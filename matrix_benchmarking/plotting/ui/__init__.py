@@ -463,7 +463,7 @@ def build_callbacks(app):
                     logging.error(msg)
 
                     traceback.print_exc()
-                    return {}, msg
+                    return None, msg
 
                 if "help" not in cfg.d:
                     return plot, msg
