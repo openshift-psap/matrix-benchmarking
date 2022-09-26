@@ -18,12 +18,14 @@ class Plot():
                  get_legend_name=None,
                  show_metrics_in_title=False,
                  show_legend=True,
+                 y_divisor=1,
                  ):
         self.name = name
         self.id_name = f"prom_overview_{self.name}"
         self.title = title
         self.metrics = metrics
         self.y_title = y_title
+        self.y_divisor = y_divisor
         self.filter_metrics = filter_metrics
         self.get_metrics = get_metrics
         self.as_timestamp = as_timestamp
@@ -57,7 +59,7 @@ class Plot():
                     if not metric: continue
 
                     x_values = [x for x, y in metric["values"]]
-                    y_values = [float(y) for x, y in metric["values"]]
+                    y_values = [float(y)/self.y_divisor for x, y in metric["values"]]
 
                     if self.get_legend_name:
                         legend_name, legend_group = self.get_legend_name(metric_name, metric["metric"])
