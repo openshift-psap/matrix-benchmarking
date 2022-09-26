@@ -2,6 +2,7 @@ import yaml
 import os, sys
 import pathlib
 import logging
+import importlib
 
 kwargs = None
 experiment_filters = {}
@@ -82,6 +83,23 @@ def update_kwargs_with_benchmark_file(kwargs, benchmark_desc_file):
         logging.warning(f"unexpected flag found in the benchmark file: {key} = '{value}'")
 
 
+def update_kwargs_with_workload(kwargs):
+    if "workload" in kwargs and kwargs["workload"]:
+        # workload already set, no need to guess it
+        return
+
+    cwd_dirname = pathlib.Path(os.getcwd()).name
+
+    # try to import `cwd_dirname` as a MatrixBenchmarking workload
+    workload = importlib.util.find_spec(f'matrix_benchmarking.workloads.{cwd_dirname}')
+    if workload:
+        # it worked, so `cwd_dirname` is a directory inside
+        # matrix-benchmarking/matrix_benchmarking/workloads.
+        # Use it a workload plugin.
+        logging.info(f"Using: '{cwd_dirname}' (from the current working directory) as workload plugin")
+        kwargs["workload"] = cwd_dirname
+
+
 def check_mandatory_kwargs(kwargs, mandatory_flags):
     err = False
     for flag in mandatory_flags:
@@ -99,6 +117,7 @@ def setup_env_and_kwargs(kwargs):
     # overriding order: env file <- env var <- benchmark file <- cli
     update_env_with_env_files()
     update_kwargs_with_env(kwargs)
+    update_kwargs_with_workload(kwargs)
 
     filters = kwargs.get("filters")
     if isinstance(filters, bool):
