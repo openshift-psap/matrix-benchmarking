@@ -54,7 +54,8 @@ class _Report():
         dest_png = f"{dest}.png"
 
         figure.write_html(dest_html)
-        figure.write_image(dest_png)
+        from .web import IMAGE_SCALE
+        figure.write_image(dest_png, scale=IMAGE_SCALE)
 
         return [
              f"<p><a href='{dest}.html' target='_blank' title='Click to access the full-size interactive version.'><img src='{dest}.png'/></a></p>"

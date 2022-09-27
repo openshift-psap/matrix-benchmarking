@@ -17,6 +17,8 @@ import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.plotting.ui.report as report
 
+IMAGE_SCALE = 1.5
+
 # stylesheets now served via assets/bWLwgP.css and automatically included
 main_app = dash.Dash(__name__)
 
@@ -92,7 +94,7 @@ def run():
 
             logging.info(f"Saving {dest} ...")
             figure.write_html(f"fig_{dest}.html")
-            figure.write_image(f"fig_{dest}.png")
+            figure.write_image(f"fig_{dest}.png", scale=IMAGE_SCALE)
 
             if text and text.children:
                 for child in text.children:
