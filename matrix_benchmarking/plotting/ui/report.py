@@ -90,7 +90,8 @@ class _Report():
         with open(dest, "w") as out_f:
             print(html_content, file=out_f)
 
-        print(f"<li><a href='{dest}'> Report {self.index:02d}: {self.id_name}</a>", file=report_index_f)
+        print(f"<li><a href='{dest}'> Report {self.index:02d}: {self.id_name.replace('_', ' ')}</a>",
+              file=report_index_f)
 
 def generate(idx, id_name, content, report_index_f):
     _Report(id_name, idx).generate(content, report_index_f)
