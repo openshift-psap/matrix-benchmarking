@@ -115,6 +115,7 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
     metrics_values = {}
     def process_metrics(prom_connect):
         nonlocal metrics_values
+
         res = prom_connect.custom_query(query='up[60y]')
         if not res:
             logging.error(f"No 'up' metric available in the database at '{prometheus_tgz}' ...")
@@ -128,27 +129,30 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
                 values = prom_connect.custom_query_range(query=metric_query, step=5,
                                                          start_time=start_date, end_time=end_date)
 
-                metrics_values[metric_name] = metric_values = [{}]
+                metrics_values[metric_name] = metric_values = []
                 if not values: continue
                 # deduplicate the values
-                metric_values[0]["metric"] = values[0]["metric"] # empty :/
-                metric_values[0]["values"] = []
-                prev_val = None
-                prev_ts = None
-                has_skipped = False
-                for ts, val in values[0]["values"]:
-                    prev_ts = ts
-                    if val == prev_val:
-                        has_skipped = True
-                        continue
-                    if has_skipped:
-                        metric_values[0]["values"].append([prev_ts, prev_val])
-                        has_skipped = False
-                    metric_values[0]["values"].append([ts, val])
-                    prev_val = val
-                if prev_val is not None and has_skipped:
-                    # add the last value if the list wasn't empty
-                    metric_values[0]["values"].append([ts, val])
+                for current_values in values:
+                    current_metric_values = {}
+                    metric_values.append(current_metric_values)
+                    current_metric_values["metric"] = current_values["metric"] # empty :/
+                    current_metric_values["values"] = []
+                    prev_val = None
+                    prev_ts = None
+                    has_skipped = False
+                    for ts, val in current_values["values"]:
+                        prev_ts = ts
+                        if val == prev_val:
+                            has_skipped = True
+                            continue
+                        if has_skipped:
+                            current_metric_values["values"].append([prev_ts, prev_val])
+                            has_skipped = False
+                        current_metric_values["values"].append([ts, val])
+                        prev_val = val
+                    if prev_val is not None and has_skipped:
+                        # add the last value if the list wasn't empty
+                        current_metric_values["values"].append([ts, val])
 
             else:
                 metric_values = metrics_values[metric_name] = prom_connect.custom_query(query=f'{metric_query}[60y]')
