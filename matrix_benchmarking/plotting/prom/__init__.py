@@ -17,6 +17,7 @@ class Plot():
                  as_timestamp=False,
                  get_legend_name=None,
                  show_metrics_in_title=False,
+                 show_queries_in_title=False,
                  show_legend=True,
                  y_divisor=1,
                  ):
@@ -31,6 +32,7 @@ class Plot():
         self.as_timestamp = as_timestamp
         self.get_legend_name = get_legend_name
         self.show_metrics_in_title = show_metrics_in_title
+        self.show_queries_in_title = show_queries_in_title
         self.show_legend = show_legend
 
         table_stats.TableStats._register_stat(self)
@@ -41,13 +43,18 @@ class Plot():
 
     def do_plot(self, ordered_vars, settings, param_lists, variables, cfg):
         fig = go.Figure()
-        metric_names = [
-            list(metric.items())[0][0] if isinstance(metric, dict) else metric
-            for metric in self.metrics
-        ]
         plot_title = self.title if self.title else self.name
+
         if self.show_metrics_in_title:
+            metric_names = [
+                list(metric.items())[0][0] if isinstance(metric, dict) else metric
+                for metric in self.metrics.keys()
+            ]
             plot_title += f"<br>{'<br>'.join(metric_names)}"
+
+        if self.show_queries_in_title:
+            queries_names = self.metrics.values()
+            plot_title += f"<br>{'<br>'.join(queries_names)}"
 
         y_max = 0
 
