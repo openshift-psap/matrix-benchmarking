@@ -97,6 +97,6 @@ class Plot():
         fig.update_layout(
             title=plot_title, title_x=0.5,
             yaxis=dict(title=self.y_title, range=[0, y_max*1.05]),
-            xaxis=dict(title=f"Time (in s)"))
+            xaxis=dict(title=None if self.as_timestamp else "Time (in s)"))
 
         return fig, ""
