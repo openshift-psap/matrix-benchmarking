@@ -74,6 +74,9 @@ class Plot():
                         legend_name = metric["metric"].get("__name__", metric_name)
                         legend_group = None
 
+                    if legend_group: legend_group = str(legend_group)
+                    else: legend_group = None
+
                     if self.as_timestamp:
                         x_values = [datetime.datetime.fromtimestamp(x) for x in x_values]
                     else:
@@ -83,7 +86,7 @@ class Plot():
                     y_max = max([y_max]+y_values)
 
                     trace = go.Scatter(x=x_values, y=y_values,
-                                       name=legend_name,
+                                       name=str(legend_name),
                                        hoverlabel= {'namelength' :-1},
                                        showlegend=self.show_legend,
                                        legendgroup=legend_group,
