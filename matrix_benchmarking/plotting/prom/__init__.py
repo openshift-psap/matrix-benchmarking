@@ -13,7 +13,7 @@ def default_get_metrics(entry, metric):
 class Plot():
     def __init__(self, metrics, name, title, y_title,
                  get_metrics=default_get_metrics,
-                 filter_metrics=lambda x:x,
+                 filter_metrics=lambda entry, metrics: metrics,
                  as_timestamp=False,
                  get_legend_name=None,
                  show_metrics_in_title=False,
@@ -62,7 +62,7 @@ class Plot():
             for metric in self.metrics:
                 metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
 
-                for metric in self.filter_metrics(self.get_metrics(entry, metric_name)):
+                for metric in self.filter_metrics(entry, self.get_metrics(entry, metric_name)):
                     if not metric: continue
 
                     x_values = [x for x, y in metric["values"]]
