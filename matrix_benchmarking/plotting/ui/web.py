@@ -17,8 +17,8 @@ import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.plotting.ui.report as report
 
-IMAGE_WIDTH = 1024 * 2
-IMAGE_HEIGHT = 768
+IMAGE_WIDTH = 1900
+IMAGE_HEIGHT = 1000
 
 # stylesheets now served via assets/bWLwgP.css and automatically included
 main_app = dash.Dash(__name__)
