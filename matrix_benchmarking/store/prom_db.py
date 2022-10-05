@@ -12,6 +12,7 @@ import os
 import datetime
 
 import prometheus_api_client
+import prometheus_api_client.exceptions
 
 PROMETHEUS_URL = "http://localhost:9090"
 
@@ -126,8 +127,13 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
 
         for metric_name, metric_query, metric_file in missing_metrics:
             if "(" in metric_query:
-                values = prom_connect.custom_query_range(query=metric_query, step=5,
-                                                         start_time=start_date, end_time=end_date)
+                try:
+                    values = prom_connect.custom_query_range(query=metric_query, step=5,
+                                                             start_time=start_date, end_time=end_date)
+                except prometheus_api_client.exceptions.PrometheusApiClientException as e:
+                    logging.warning(f"Fetching {metric_query} raised an exception")
+                    logging.warning(f"Exception: {e}")
+                    continue
 
                 metrics_values[metric_name] = metric_values = []
                 if not values: continue
