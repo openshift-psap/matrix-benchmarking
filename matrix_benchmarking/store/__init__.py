@@ -11,6 +11,9 @@ import matrix_benchmarking.cli_args as cli_args
 
 def load_workload_store(kwargs):
     workload = kwargs["workload"]
+    if workload is True:
+        raise ValueError("'workload' must have a value ...")
+
     module = f"matrix_benchmarking.workloads.{workload}.store"
     logging.info(f"Loading {module} module ...")
 
