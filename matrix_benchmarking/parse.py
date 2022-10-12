@@ -26,7 +26,7 @@ Env:
 See the `FLAGS` section for the descriptions.
 
 Args:
-    workload_dir: Name of the workload to execute. (Mandatory.)
+    workload: Name of the workload to execute. (Mandatory.)
     results_dirname: Name of the directory where the results will be stored. Can be set in the benchmark file. (Mandatory.)
     filters: If provided, parse only the experiment matching the filters. Eg: expe=expe1:expe2,something=true.
     clean: If 'True', run in cleanup mode.
