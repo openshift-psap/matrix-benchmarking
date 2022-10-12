@@ -11,9 +11,6 @@ import time
 import os
 import datetime
 
-import prometheus_api_client
-import prometheus_api_client.exceptions
-
 PROMETHEUS_URL = "http://localhost:9090"
 
 def _parse_metric_values_from_file(metric_file):
@@ -24,6 +21,8 @@ def _parse_metric_values_from_file(metric_file):
 
 
 def _extract_metrics_from_prometheus(tsdb_path, process_metrics):
+    import prometheus_api_client # lazy loading ...
+
     metrics_values = {}
     logging.info("Checking Prometheus availability ...")
 
@@ -116,6 +115,7 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
     metrics_values = {}
     def process_metrics(prom_connect):
         nonlocal metrics_values
+        import prometheus_api_client.exceptions # lazy loading ...
 
         res = prom_connect.custom_query(query='up[60y]')
         if not res:
