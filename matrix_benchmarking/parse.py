@@ -6,11 +6,11 @@ import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 
 def main(workload: str = "",
-          results_dirname: str = "",
-          filters: list[str] = [],
-          clean: bool = False,
-          run: bool = False,
-          ):
+         results_dirname: str = "",
+         filters: list[str] = [],
+         clean: bool = False,
+         run: bool = False,
+         ):
     """
 Run MatrixBenchmarking results parsing.
 

@@ -13,7 +13,7 @@ def default_get_metrics(entry, metric):
 class Plot():
     def __init__(self, metrics, y_title,
                  get_metrics=default_get_metrics,
-                 filter_metrics=lambda x:x,
+                 filter_metrics=lambda entry, metrics: metrics,
                  as_timestamp=False,
                  container_name="all",
                  is_memory=False,
@@ -48,15 +48,17 @@ class Plot():
         plot_title = f"Prometheus: {self.y_title}"
         y_max = 0
 
+        y_divisor = 1024*1024*1024 if self.is_memory else 1
+
         for entry in common.Matrix.all_records(settings, param_lists):
             for metric in self.metrics:
                 metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
 
-                for metric in self.filter_metrics(self.get_metrics(entry, metric_name)):
+                for metric in self.filter_metrics(entry, self.get_metrics(entry, metric_name)):
                     if not metric: continue
 
                     x_values = [x for x, y in metric["values"]]
-                    y_values = [float(y) for x, y in metric["values"]]
+                    y_values = [float(y)/y_divisor for x, y in metric["values"]]
 
                     metric_actual_name = metric["metric"].get("__name__", metric_name)
                     legend_name = metric_actual_name
@@ -101,7 +103,7 @@ class Plot():
 
         fig.update_layout(
             title=plot_title, title_x=0.5,
-            yaxis=dict(title=self.y_title, range=[0, y_max*1.05]),
+            yaxis=dict(title=self.y_title + (" (in Gi)" if self.is_memory else ""), range=[0, y_max*1.05]),
             xaxis=dict(title=f"Time (in s)"))
 
         return fig, ""
