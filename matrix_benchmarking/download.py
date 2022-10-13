@@ -57,6 +57,7 @@ Args:
             with open(dest_dir / "source_url", "w") as f:
                 print(url, file=f)
 
+            logging.info("{dest_dirname} --> {site}/{base_dir}")
             scrapper = ScrapOCPCiArtifacts(workload_store, site, base_dir, dest_dir)
 
             try:
@@ -72,7 +73,8 @@ Args:
 class ScrapOCPCiArtifacts(scrap.ScrapOCPCiArtifactsBase):
     def handle_file(self, filepath_rel, local_filename, depth):
         if not self.workload_store.check_interesting_file(pathlib.Path("/not-used/"), filepath_rel, do_check=True):
-            logging.debug(f"File: {filepath_rel}: SKIP")
+            logging.info(f"File: {filepath_rel}: SKIP")
             return # file isn't interesting, do not download it
 
+        logging.info(f"File: {filepath_rel}: DOWNLOAD")
         self.download_file(filepath_rel, local_filename, depth)
