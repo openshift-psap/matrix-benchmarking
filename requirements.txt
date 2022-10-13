@@ -4,3 +4,4 @@ plotly
 kaleido
 fire
 pyyaml
+BeautifulSoup4==4.11.*
