@@ -1,6 +1,8 @@
 import datetime
 
 import plotly.graph_objs as go
+import plotly.express as px
+import pandas as pd
 
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
@@ -42,7 +44,6 @@ class Plot():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, param_lists, variables, cfg):
-        fig = go.Figure()
         plot_title = self.title if self.title else self.name
 
         if self.show_metrics_in_title:
@@ -58,6 +59,9 @@ class Plot():
 
         y_max = 0
 
+        single_expe = sum(1 for _ in common.Matrix.all_records(settings, param_lists)) == 1
+
+        data = []
         for entry in common.Matrix.all_records(settings, param_lists):
             for metric in self.metrics:
                 metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
@@ -84,19 +88,34 @@ class Plot():
                         x_values = [x-x_start for x in x_values]
 
                     y_max = max([y_max]+y_values)
+                    if single_expe:
+                        data.append(
+                            go.Scatter(
+                                x=x_values, y=y_values,
+                                name=str(legend_name),
+                                hoverlabel= {'namelength' :-1},
+                                showlegend=self.show_legend,
+                                legendgroup=legend_group,
+                                legendgrouptitle_text=legend_group,
+                                mode='markers+lines'))
+                    else:
+                        for y_value in y_values:
+                            data.append(dict(Version=entry.location.name,
+                                             Metric=legend_name,
+                                             Value=y_value))
 
-                    trace = go.Scatter(x=x_values, y=y_values,
-                                       name=str(legend_name),
-                                       hoverlabel= {'namelength' :-1},
-                                       showlegend=self.show_legend,
-                                       legendgroup=legend_group,
-                                       legendgrouptitle_text=legend_group,
-                                   mode='markers+lines')
-                    fig.add_trace(trace)
+        if single_expe:
+            fig = go.Figure(data=data)
 
-        fig.update_layout(
-            title=plot_title, title_x=0.5,
-            yaxis=dict(title=self.y_title, range=[0, y_max*1.05]),
-            xaxis=dict(title=None if self.as_timestamp else "Time (in s)"))
-
+            fig.update_layout(
+                title=plot_title, title_x=0.5,
+                yaxis=dict(title=self.y_title, range=[0, y_max*1.05]),
+                xaxis=dict(title=None if self.as_timestamp else "Time (in s)"))
+        else:
+            df = pd.DataFrame(data).sort_values(by=["Version"])
+            fig = px.box(df, x="Version", y="Value", color="Version")
+            fig.update_layout(
+                title=plot_title, title_x=0.5,
+                yaxis=dict(title=self.y_title)
+            )
         return fig, ""

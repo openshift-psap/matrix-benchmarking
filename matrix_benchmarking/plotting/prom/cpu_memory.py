@@ -1,6 +1,8 @@
 import datetime
 
 import plotly.graph_objs as go
+import plotly.express as px
+import pandas as pd
 
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
@@ -50,6 +52,9 @@ class Plot():
 
         y_divisor = 1024*1024*1024 if self.is_memory else 1
 
+        single_expe = sum(1 for _ in common.Matrix.all_records(settings, param_lists)) == 1
+
+        data = []
         for entry in common.Matrix.all_records(settings, param_lists):
             for metric in self.metrics:
                 metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
@@ -80,30 +85,49 @@ class Plot():
                     if self.is_memory and "node" not in metric["metric"]:
                         continue
 
-                    if "requests" in metric_actual_name:
-                        opts["line_color"] = "orange"
-                        opts["line_dash"] = "dot"
-                        opts["mode"] = "lines"
+                    if single_expe:
+                        if "requests" in metric_actual_name:
+                            opts["line_color"] = "orange"
+                            opts["line_dash"] = "dot"
+                            opts["mode"] = "lines"
 
-                    elif "limits" in metric_actual_name or "capacity" in metric_actual_name:
-                        opts["line_color"] = "red"
-                        opts["mode"] = "lines"
-                        opts["line_dash"] = "dash"
+                        elif "limits" in metric_actual_name or "capacity" in metric_actual_name:
+                            opts["line_color"] = "red"
+                            opts["mode"] = "lines"
+                            opts["line_dash"] = "dash"
+                        else:
+                            opts["mode"] = "markers+lines"
+
+                        trace = go.Scatter(x=x_values, y=y_values,
+                                           name=legend_name,
+                                           hoverlabel= {'namelength' :-1},
+                                           showlegend=True,
+                                           legendgroup=legend_group,
+                                           legendgrouptitle_text=legend_group,
+                                           **opts)
+                        data.append(trace)
                     else:
-                        opts["mode"] = "markers+lines"
+                        if "limits" in legend_name: continue
+                        if "requests" in legend_name: continue
 
-                    trace = go.Scatter(x=x_values, y=y_values,
-                                       name=legend_name,
-                                       hoverlabel= {'namelength' :-1},
-                                       showlegend=True,
-                                       legendgroup=legend_group,
-                                       legendgrouptitle_text=legend_group,
-                                       **opts)
-                    fig.add_trace(trace)
+                        for y_value in y_values:
+                            data.append(dict(Version=entry.location.name,
+                                             Metric=legend_name,
+                                             Value=y_value))
 
-        fig.update_layout(
-            title=plot_title, title_x=0.5,
-            yaxis=dict(title=self.y_title + (" (in Gi)" if self.is_memory else ""), range=[0, y_max*1.05]),
-            xaxis=dict(title=f"Time (in s)"))
 
+        if single_expe:
+            fig = go.Figure(data=data)
+
+            fig.update_layout(
+                title=plot_title, title_x=0.5,
+                yaxis=dict(title=self.y_title + (" (in Gi)" if self.is_memory else ""), range=[0, y_max*1.05]),
+                xaxis=dict(title=f"Time (in s)"))
+        else:
+            df = pd.DataFrame(data).sort_values(by=["Version"])
+            fig = px.box(df, x="Version", y="Value", color="Version")
+            fig.update_layout(
+                title=plot_title, title_x=0.5,
+                yaxis=dict(title=self.y_title + (" (in Gi)" if self.is_memory else ""))
+            )
         return fig, ""
