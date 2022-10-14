@@ -63,14 +63,18 @@ def _parse_directory(expe, dirname):
 
     try:
         with open(dirname / "exit_code") as f:
-            exit_code = int(f.read().strip())
+            content = f.read().strip()
+            if not content:
+                logging.info(f"{dirname}: exit_code is empty, skipping ...")
+                return
 
+        exit_code = int(content)
     except FileNotFoundError as e:
         invalid_directory(dirname, import_settings, "exit_code not found")
         return
 
     except Exception as e:
-        logging.info(f"{dirname}: exit_code cannot be read/parsed, skipping ...")
+        logging.info(f"{dirname}: exit_code cannot be read/parsed, skipping ... ({e})")
         return
 
     if exit_code != 0:

@@ -55,6 +55,7 @@ Args:
             if not kwargs["run"]:
                 logging.info("Cleaner ran in dry mode. Pass --run to perform the deletion.")
 
-        return 0
+        has_result = len(common.Matrix.processed_map) != 0
+        return 0 if has_result else 1
 
     return cli_args.TaskRunner(run)
