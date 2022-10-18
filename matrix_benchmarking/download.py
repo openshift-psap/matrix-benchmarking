@@ -10,11 +10,12 @@ from matrix_benchmarking.downloading import DownloadModes
 import matrix_benchmarking.downloading.scrape as scrape
 
 def main(url_file: str = "",
+         url: str = "",
          workload: str = "",
          results_dirname: str = "",
          filters: list[str] = [],
          do_download: bool = False,
-         mode: DownloadModes = DownloadModes.CACHE_ONLY,
+         mode: DownloadModes = None,
          ):
     """
 Download MatrixBenchmarking results.
@@ -23,14 +24,17 @@ Download MatrixBenchmarking results.
 
 Env:
     MATBENCH_URL_FILE
+    MATBENCH_URL
     MATBENCH_WORKLOAD
     MATBENCH_RESULTS_DIRNAME
     MATBENCH_DO_DOWNLOAD
+    MATBENCH_MODE
 
 See the `FLAGS` section for the descriptions.
 
 Args:
     url_file: File where the URLs to download are stored.
+    url: URL that will be downloaded
     workload_dir: Name of the workload to execute. (Mandatory.)
     results_dirname: Name of the directory where the results will be stored. Can be set in the benchmark file. (Mandatory.)
     do_download: if 'False', list the files that would be downloaded. If 'True', download them.
@@ -43,6 +47,15 @@ Args:
     cli_args.setup_env_and_kwargs(kwargs)
     cli_args.check_mandatory_kwargs(kwargs, ("workload", "results_dirname",))
 
+    try:
+        if not kwargs["mode"]:
+            kwargs["mode"] = 'prefer_cache'
+
+        kwargs["mode"] = DownloadModes(kwargs["mode"])
+    except ValueError:
+        logging.error(f"Invalid download mode: {kwargs['mode']}")
+        return 1
+
     if not do_download:
         logging.warning("Running in DRY MODE (pass the flag --do-download to disable it)")
 
@@ -51,18 +64,21 @@ Args:
 
         workload_store = store.load_workload_store(kwargs)
 
-        try:
-            with open(url_file) as f:
-                urls = [line.strip() for line in f.readlines()]
-        except FileNotFoundError as e:
-            logging.error(f"Could not open the 'url-file': {e}")
-            return 1
+        if url_file:
+            try:
+                with open(url_file) as f:
+                    urls = [line.strip() for line in f.readlines()]
+            except FileNotFoundError as e:
+                logging.error(f"Could not open the 'url-file': {e}")
+                return 1
+        elif url:
+            urls = [f"expe/from_url {url}"]
 
         for dest_dirname__url in urls:
-            dest_dirname, _, _url = dest_dirname__url.partition(" ")
-            url = urllib3.util.url.parse_url(_url)
-            site = f"{url.scheme}://{url.host}"
-            base_dir = pathlib.Path(url.path)
+            dest_dirname, _, _an_url = dest_dirname__url.partition(" ")
+            an_url = urllib3.util.url.parse_url(_an_url)
+            site = f"{an_url.scheme}://{an_url.host}"
+            base_dir = pathlib.Path(an_url.path)
             dest_dir = pathlib.Path(kwargs["results_dirname"]) / dest_dirname
 
             if do_download:
@@ -71,7 +87,7 @@ Args:
                     print(url, file=f)
 
             logging.info(f"Download {dest_dirname} <-- {site}/{base_dir}")
-            scrapper = ScrapOCPCiArtifacts(workload_store, site, base_dir, dest_dir, do_download, mode)
+            scrapper = ScrapOCPCiArtifacts(workload_store, site, base_dir, dest_dir, do_download, kwargs["mode"])
 
             try:
                 scrapper.scrape()
