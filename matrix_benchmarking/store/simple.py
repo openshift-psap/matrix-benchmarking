@@ -46,17 +46,18 @@ def _duplicated_directory(import_key, old_location, new_location):
 def _parse_directory(expe, dirname):
     import_settings = {"expe": expe}
 
-    with open(dirname / "settings") as f:
-        for line in f.readlines():
-            if not line.strip(): continue
+    for filename in [dirname / "settings"] + list(dirname.glob("settings.*")):
+        with open(filename) as f:
+            for line in f.readlines():
+                if not line.strip(): continue
 
-            key, found, value = line.strip().partition("=")
-            if not found:
-                logging.error(f"invalid line in {dirname}/settings:")
-                logging.error(f"{line.strip()}")
-                continue
+                key, found, value = line.strip().partition("=")
+                if not found:
+                    logging.error(f"invalid line in {dirname}/settings:")
+                    logging.error(f"{line.strip()}")
+                    continue
 
-            import_settings[key] = value
+                import_settings[key] = value
 
     if store.should_be_filtered_out(import_settings):
         return
