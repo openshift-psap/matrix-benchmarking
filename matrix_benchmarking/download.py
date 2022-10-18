@@ -10,11 +10,12 @@ from matrix_benchmarking.downloading import DownloadModes
 import matrix_benchmarking.downloading.scrape as scrape
 
 def main(url_file: str = "",
+         url: str = "",
          workload: str = "",
          results_dirname: str = "",
          filters: list[str] = [],
          do_download: bool = False,
-         mode: DownloadModes = DownloadModes.CACHE_ONLY,
+         mode: DownloadModes = None,
          ):
     """
 Download MatrixBenchmarking results.
@@ -26,6 +27,7 @@ Env:
     MATBENCH_WORKLOAD
     MATBENCH_RESULTS_DIRNAME
     MATBENCH_DO_DOWNLOAD
+    MATBENCH_MODE
 
 See the `FLAGS` section for the descriptions.
 
@@ -42,6 +44,15 @@ Args:
     kwargs = dict(locals()) # capture the function arguments
     cli_args.setup_env_and_kwargs(kwargs)
     cli_args.check_mandatory_kwargs(kwargs, ("workload", "results_dirname",))
+
+    try:
+        if not kwargs["mode"]:
+            kwargs["mode"] = 'prefer_cache'
+
+        kwargs["mode"] = DownloadModes(kwargs["mode"])
+    except ValueError:
+        logging.error(f"Invalid download mode: {kwargs['mode']}")
+        return 1
 
     if not do_download:
         logging.warning("Running in DRY MODE (pass the flag --do-download to disable it)")
@@ -71,7 +82,7 @@ Args:
                     print(url, file=f)
 
             logging.info(f"Download {dest_dirname} <-- {site}/{base_dir}")
-            scrapper = ScrapOCPCiArtifacts(workload_store, site, base_dir, dest_dir, do_download, mode)
+            scrapper = ScrapOCPCiArtifacts(workload_store, site, base_dir, dest_dir, do_download, kwargs["mode"])
 
             try:
                 scrapper.scrape()
