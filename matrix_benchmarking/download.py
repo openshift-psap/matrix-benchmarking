@@ -69,7 +69,7 @@ Args:
                 with open(url_file) as f:
                     urls = [line.strip() for line in f.readlines()]
             except FileNotFoundError as e:
-                logging.error(f"Could not open the 'url-file': {e}")
+                logging.error(f"Could not open the URL file: {e}")
                 return 1
         elif url:
             urls = [f"expe/from_url {url}"]
