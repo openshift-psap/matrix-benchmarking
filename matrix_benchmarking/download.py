@@ -3,6 +3,8 @@ import logging
 import urllib3
 import pathlib
 
+import csv
+
 import matrix_benchmarking.store as store
 import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
@@ -67,26 +69,31 @@ Args:
         if url_file:
             try:
                 with open(url_file) as f:
-                    urls = [line.strip() for line in f.readlines()]
+                    data = [row for row in csv.reader(f)]
             except FileNotFoundError as e:
                 logging.error(f"Could not open the URL file: {e}")
                 return 1
         elif url:
-            urls = [f"expe/from_url {url}"]
+            data = [["expe/from_url", url]]
 
-        for dest_dirname__url in urls:
-            dest_dirname, _, _an_url = dest_dirname__url.partition(" ")
-            an_url = urllib3.util.url.parse_url(_an_url)
-            site = f"{an_url.scheme}://{an_url.host}"
-            base_dir = pathlib.Path(an_url.path)
-            dest_dir = pathlib.Path(kwargs["results_dirname"]) / dest_dirname
+        for row in data:
+            destdir, _destdir_url, *settings = row
+
+            destdir_url = urllib3.util.url.parse_url(_destdir_url)
+            site = f"{destdir_url.scheme}://{destdir_url.host}"
+            base_dir = pathlib.Path(destdir_url.path)
+            dest_dir = pathlib.Path(kwargs["results_dirname"]) / destdir
 
             if do_download:
                 dest_dir.mkdir(parents=True, exist_ok=True)
                 with open(dest_dir / "source_url", "w") as f:
                     print(url, file=f)
 
-            logging.info(f"Download {dest_dirname} <-- {site}/{base_dir}")
+                with open(dest_dir / "settings.from_url_file", "w") as f:
+                    for setting in settings:
+                        print(setting, file=f)
+
+            logging.info(f"Download {dest_dir} <-- {site}/{base_dir}")
             scrapper = ScrapOCPCiArtifacts(workload_store, site, base_dir, dest_dir, do_download, kwargs["mode"])
 
             try:
