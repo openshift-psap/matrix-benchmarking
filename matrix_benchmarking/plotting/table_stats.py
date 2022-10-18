@@ -272,7 +272,7 @@ class TableStats():
         return entry, msg
 
 
-    def do_plot(self, ordered_vars, settings, param_lists, variables, cfg):
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         cfg_plot_mode = cfg.get('stats.var_length', "")
 
         if cfg_plot_mode:
@@ -319,7 +319,7 @@ class TableStats():
         legends_visible = []
         subplots_used = set()
 
-        for entry in common.Matrix.all_records(settings, param_lists):
+        for entry in common.Matrix.all_records(settings, setting_lists):
             if self.name not in entry.stats:
                 logging.info(f"Stat '{self.name}' not found for entry '{entry.location}'")
                 continue
@@ -329,10 +329,10 @@ class TableStats():
             legend_key = (legend_name, settings[subplots_var] if subplots_var else None)
 
             if var_length > 3 and x[legend_key]:
-                prev_first_param = x[legend_key][-1].partition(" ")[0]
-                first_param = x_key.partition(" ")[0]
+                prev_first_setting = x[legend_key][-1].partition(" ")[0]
+                first_setting = x_key.partition(" ")[0]
 
-                if prev_first_param != first_param:
+                if prev_first_setting != first_setting:
                     x[legend_key].append(None)
                     y[legend_key].append(None)
                     y_err[legend_key].append(None)
