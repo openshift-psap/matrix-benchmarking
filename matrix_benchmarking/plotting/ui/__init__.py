@@ -60,7 +60,7 @@ def get_permalink(args, full=False):
 def build_layout(search, serializing=False):
     defaults = urllib.parse.parse_qs(search.split("?", maxsplit=1)[-1]) if search else {}
 
-    matrix_controls = [html.B("Parameters:", id="lbl_settings"), html.Br()]
+    matrix_controls = [html.B("Settings:", id="lbl_settings"), html.Br()]
     serial_settings = []
     for key, values in Matrix.settings.items():
         options = [{'label': i, 'value': i} for i in sorted(values, key=plotting.natural_keys)]
@@ -194,7 +194,7 @@ def build_layout(search, serializing=False):
 
 def build_callbacks(app):
     # Dash doesn't support creating the callbacks AFTER the app is running,
-    # can the Matrix callback IDs are dynamic (base on the name of the parameters)
+    # can the Matrix callback IDs are dynamic (base on the name of the settings)
 
     if not Matrix.settings:
         logging.error("Matrix empty, cannot build its GUI")
@@ -454,10 +454,10 @@ def build_callbacks(app):
                 ordered_vars = sorted(variables.keys(), key=lambda x: var_order.index(x) if x in var_order else 999)
                 ordered_vars.reverse()
 
-                param_lists = [[(key, v) for v in variables[key]] for key in ordered_vars]
+                setting_lists = [[(key, v) for v in variables[key]] for key in ordered_vars]
 
                 try:
-                    plot, msg = table_stat.do_plot(ordered_vars, settings, param_lists, variables, cfg)
+                    plot, msg = table_stat.do_plot(ordered_vars, settings, setting_lists, variables, cfg)
                 except Exception as e:
                     msg = f"FAILED: {e.__class__.__name__}: {e}"
                     logging.error(msg)

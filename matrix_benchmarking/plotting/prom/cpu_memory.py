@@ -40,7 +40,7 @@ class Plot():
     def do_hover(self, meta_value, variables, figure, data, click_info):
         return "nothing"
 
-    def do_plot(self, ordered_vars, settings, param_lists, variables, cfg):
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         fig = go.Figure()
         metric_names = [
             list(metric.items())[0][0] if isinstance(metric, dict) else metric
@@ -52,10 +52,10 @@ class Plot():
 
         y_divisor = 1024*1024*1024 if self.is_memory else 1
 
-        single_expe = sum(1 for _ in common.Matrix.all_records(settings, param_lists)) == 1
+        single_expe = sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) == 1
 
         data = []
-        for entry in common.Matrix.all_records(settings, param_lists):
+        for entry in common.Matrix.all_records(settings, setting_lists):
             for metric in self.metrics:
                 metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
 
