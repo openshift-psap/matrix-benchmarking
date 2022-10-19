@@ -33,6 +33,7 @@ class Plot():
         self.container_name = container_name
         self.is_memory = is_memory
         self.is_cluster = is_cluster
+        self.threshold_key = f"{y_title.replace(' ', '_').replace(':', '').lower()}"
 
         table_stats.TableStats._register_stat(self)
         common.Matrix.settings["stats"].add(self.name)
@@ -55,7 +56,12 @@ class Plot():
         single_expe = sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) == 1
 
         data = []
+        data_rq = []
+        data_lm = []
+        data_threshold = []
         for entry in common.Matrix.all_records(settings, setting_lists):
+            threshold_value = entry.results.thresholds.get(self.threshold_key) if self.threshold_key else None
+
             for metric in self.metrics:
                 metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
 
@@ -107,13 +113,21 @@ class Plot():
                                            **opts)
                         data.append(trace)
                     else:
-                        if "limits" in legend_name: continue
-                        if "requests" in legend_name: continue
+                        if threshold_value:
+                            data_threshold.append(dict(Version=entry.location.name,
+                                                       Value=threshold_value,
+                                                       Metric=legend_name))
+                        if "limit" in legend_name or "requests" in legend_name:
+                            lst = data_lm if "limits" in legend_name else data_rq
 
-                        for y_value in y_values:
-                            data.append(dict(Version=entry.location.name,
-                                             Metric=legend_name,
-                                             Value=y_value))
+                            lst.append(dict(Version=entry.location.name,
+                                            Value=y_values[0],
+                                            Metric=legend_name))
+                        else:
+                            for y_value in y_values:
+                                data.append(dict(Version=entry.location.name,
+                                                 Metric=legend_name,
+                                                 Value=y_value))
 
 
         if single_expe:
@@ -130,4 +144,20 @@ class Plot():
                 title=plot_title, title_x=0.5,
                 yaxis=dict(title=self.y_title + (" (in Gi)" if self.is_memory else ""))
             )
+            if data_rq:
+                df_rq = pd.DataFrame(data_rq).sort_values(by=["Version"])
+                fig.add_scatter(name="Request",
+                                x=df_rq['Version'], y=df_rq['Value'], mode='lines',
+                                line=dict(color='orange', width=5, dash='dot'))
+            if data_lm:
+                df_lm = pd.DataFrame(data_lm).sort_values(by=["Version"])
+                fig.add_scatter(name="Limit",
+                                x=df_lm['Version'], y=df_lm['Value'], mode='lines',
+                                line=dict(color='red', width=5, dash='dot'))
+            if data_threshold:
+                df_threshold = pd.DataFrame(data_threshold).sort_values(by=["Version"])
+                fig.add_scatter(name="Threshold",
+                                x=df_threshold['Version'], y=df_threshold['Value'], mode='lines+markers',
+                                marker=dict(color='red', size=15, symbol="triangle-down"),
+                                line=dict(color='brown', width=5, dash='dot'))
         return fig, ""
