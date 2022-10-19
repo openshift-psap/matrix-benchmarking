@@ -47,7 +47,7 @@ def update_env_with_env_files():
                     if not found:
                         logging.warning("invalid line in {env}: {line.strip()}")
                         continue
-                    if key in os.environ: continue # prefer env to env file
+                    if key in os.environ and os.environ[key]: continue # prefer env to env file
                     os.environ[key] = value
         except FileNotFoundError: pass # ignore missing files
 
