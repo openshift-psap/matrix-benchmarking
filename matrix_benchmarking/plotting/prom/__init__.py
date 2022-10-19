@@ -22,9 +22,10 @@ class Plot():
                  show_queries_in_title=False,
                  show_legend=True,
                  y_divisor=1,
+                 higher_better=False,
                  ):
         self.name = name
-        self.id_name = f"prom_overview_{self.name}"
+        self.id_name = f"prom_overview_{''.join( c for c in self.name if c not in '?:!/;()' ).replace(' ', '_').lower()}"
         self.title = title
         self.metrics = metrics
         self.y_title = y_title
@@ -36,6 +37,8 @@ class Plot():
         self.show_metrics_in_title = show_metrics_in_title
         self.show_queries_in_title = show_queries_in_title
         self.show_legend = show_legend
+        self.threshold_key = self.id_name
+        self.higher_better = higher_better
 
         table_stats.TableStats._register_stat(self)
         common.Matrix.settings["stats"].add(self.name)
@@ -60,9 +63,12 @@ class Plot():
         y_max = 0
 
         single_expe = sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) == 1
+        data_threshold = []
 
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):
+            threshold_value = entry.results.thresholds.get(self.threshold_key) if self.threshold_key else None
+
             for metric in self.metrics:
                 metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
 
@@ -103,6 +109,16 @@ class Plot():
                             data.append(dict(Version=entry.location.name,
                                              Metric=legend_name,
                                              Value=y_value))
+                        if threshold_value:
+                            if threshold_value.endswith("%"):
+                                _threshold_pct = int(threshold_value[:-1]) / 100
+                                _threshold_value = _threshold_pct * max(y_values)
+                            else:
+                                _threshold_value = threshold_value
+
+                            data_threshold.append(dict(Version=entry.location.name,
+                                                       Value=_threshold_value,
+                                                       Metric=legend_name))
 
         if single_expe:
             fig = go.Figure(data=data)
@@ -118,4 +134,10 @@ class Plot():
                 title=plot_title, title_x=0.5,
                 yaxis=dict(title=self.y_title)
             )
+            if data_threshold:
+                df_threshold = pd.DataFrame(data_threshold).sort_values(by=["Version"])
+                fig.add_scatter(name="Threshold",
+                                x=df_threshold['Version'], y=df_threshold['Value'], mode='lines+markers',
+                                marker=dict(color='red', size=15, symbol="triangle-up" if self.higher_better else "triangle-down"),
+                                line=dict(color='brown', width=5, dash='dot'))
         return fig, ""
