@@ -22,7 +22,7 @@ class ScrapOCPCiArtifactsBase():
         self.cache_found = False
 
     def download_file(self, filepath_rel, local_filename, depth):
-        print(f"{' '*depth}File: {filepath_rel}: DOWNLOAD")
+        logging.info(f"{' '*depth}File: {filepath_rel}: DOWNLOAD")
 
         url = f"{self.site}/{self.base_dir}/{filepath_rel}"
 
@@ -97,10 +97,10 @@ class ScrapOCPCiArtifactsBase():
                 # link to a directory, recurse into it
 
                 if self.cache_found and self.download_only_cache:
-                    print(f"{' '*depth}Directory: {new_href.relative_to(self.base_dir)}: SKIP (cache found)")
+                    logging.info(f"{' '*depth}Directory: {new_href.relative_to(self.base_dir)}: SKIP (cache found)")
                     continue
 
-                print(f"{' '*depth}Directory: {new_href.relative_to(self.base_dir)}")
+                logging.info(f"{' '*depth}Directory: {new_href.relative_to(self.base_dir)}")
                 self.scrape(new_href, depth=depth+1)
 
             elif img_src == "/icons/file.png":
