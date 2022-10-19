@@ -127,7 +127,7 @@ class ScrapOCPCiArtifacts(scrape.ScrapOCPCiArtifactsBase):
 
         only_important_files = self.download_mode in (DownloadModes.IMPORTANT, DownloadModes.PREFER_CACHE)
         if only_important_files and not important:
-            logging.info(f"File: {filepath_rel}: NOT IMPORTANT")
+            logging.info(f"{' '*depth}File: {filepath_rel}: NOT IMPORTANT")
             return # file isn't important, do not download it
 
         self.download_file(filepath_rel, local_filename, depth)
