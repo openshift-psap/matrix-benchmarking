@@ -75,6 +75,9 @@ Args:
                 return 1
         elif url:
             data = [["expe/from_url", url]]
+        else:
+            logging.error("Please specify an URL file or an URL")
+            return 1
 
         for row in data:
             if not row: continue # empty line
