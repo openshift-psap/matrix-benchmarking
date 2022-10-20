@@ -77,6 +77,8 @@ Args:
             data = [["expe/from_url", url]]
 
         for row in data:
+            if not row: continue # empty line
+
             destdir, _destdir_url, *settings = row
 
             destdir_url = urllib3.util.url.parse_url(_destdir_url)
