@@ -67,7 +67,9 @@ class Plot():
 
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):
-            threshold_value = entry.results.thresholds.get(self.threshold_key) if self.threshold_key else None
+            try:
+                threshold_value = entry.results.thresholds.get(self.threshold_key) if self.threshold_key else None
+            except AttributeError: threshold_value = None
 
             for metric in self.metrics:
                 metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
