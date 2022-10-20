@@ -146,6 +146,9 @@ class Plot():
                                     status = f"FAIL: {max(y_values):.2f} > threshold={threshold_value}"
                                 threshold_status[entry_version].append(status)
 
+        if not data:
+            return None, "No data to plot ..."
+
         if single_expe:
             fig = go.Figure(data=data)
 
