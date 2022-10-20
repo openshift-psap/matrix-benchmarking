@@ -445,14 +445,14 @@ def build_callbacks(app):
                 except KeyError:
                     return "Stat '{stats_values[graph_idx]}' not found ...", None
 
-                variables = {k:(Matrix.settings[k]) for k, v in settings.items() \
-                             if k != "stats" and v == "---"}
+                ordered_vars = list({k for k, v in settings.items() if k != "stats" and v == "---"})
+                ordered_vars.sort(key=lambda x: var_order.index(x) if x in var_order else 999)
+
+                variables = {k: Matrix.settings[k] for k in ordered_vars}
+
                 for k in list(variables.keys()):
                     if k.startswith("@"):
                         variables[k] = [v for v in variables[k] if v != "<all>"]
-
-                ordered_vars = sorted(variables.keys(), key=lambda x: var_order.index(x) if x in var_order else 999)
-                ordered_vars.reverse()
 
                 setting_lists = [[(key, v) for v in variables[key]] for key in ordered_vars]
 
