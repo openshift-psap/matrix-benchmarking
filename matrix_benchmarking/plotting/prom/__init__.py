@@ -1,12 +1,13 @@
 import datetime
+from collections import defaultdict
 
 import plotly.graph_objs as go
 import plotly.express as px
 import pandas as pd
+from dash import html
 
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
-
 
 def default_get_metrics(entry, metric):
     return entry.results.metrics[metric]
@@ -64,10 +65,17 @@ class Plot():
 
         single_expe = sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) == 1
         data_threshold = []
+        threshold_status = defaultdict(list)
+        threshold_passes = defaultdict(int)
 
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):
-            threshold_value = entry.results.thresholds.get(self.threshold_key) if self.threshold_key else None
+            try:
+                threshold_value = entry.results.thresholds.get(self.threshold_key) if self.threshold_key else None
+            except AttributeError: threshold_value = None
+
+            try: check_thresholds = entry.results.check_thresholds
+            except AttributeError: check_thresholds = False
 
             for metric in self.metrics:
                 metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
@@ -105,8 +113,9 @@ class Plot():
                                 legendgrouptitle_text=legend_group,
                                 mode='markers+lines'))
                     else:
+                        entry_version = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
                         for y_value in y_values:
-                            data.append(dict(Version=entry.location.name,
+                            data.append(dict(Version=entry_version,
                                              Metric=legend_name,
                                              Value=y_value))
                         if threshold_value:
@@ -116,9 +125,38 @@ class Plot():
                             else:
                                 _threshold_value = threshold_value
 
-                            data_threshold.append(dict(Version=entry.location.name,
+                            data_threshold.append(dict(Version=entry_version,
                                                        Value=_threshold_value,
                                                        Metric=legend_name))
+                        if threshold_value and check_thresholds:
+
+                            if threshold_value.endswith("%"):
+                                _threshold_pct = int(threshold_value[:-1]) / 100
+                                _threshold_value = _threshold_pct * max(y_values)
+                            else:
+                                _threshold_value = float(threshold_value)
+
+                            status = "PASS"
+                            if self.higher_better:
+                                test_passed = min(y_values) >= _threshold_value
+                                if test_passed:
+                                    status = f"PASS: {min(y_values):.2f} >= threshold={threshold_value}"
+                                else:
+                                    status = f"FAIL: {min(y_values):.2f} < threshold={threshold_value}"
+                            else:
+                                test_passed = max(y_values) <= _threshold_value
+                                if test_passed:
+                                    status = f"PASS: {max(y_values):.2f} <= threshold={threshold_value}"
+                                else:
+                                    status = f"FAIL: {max(y_values):.2f} > threshold={threshold_value}"
+
+                            if test_passed:
+                                threshold_passes[entry_version] += 1
+
+                            if threshold_value.endswith("%"):
+                                status += f" (={_threshold_value:.2f})"
+
+                            threshold_status[entry_version].append(status)
 
         if single_expe:
             fig = go.Figure(data=data)
@@ -140,4 +178,20 @@ class Plot():
                                 x=df_threshold['Version'], y=df_threshold['Value'], mode='lines+markers',
                                 marker=dict(color='red', size=15, symbol="triangle-up" if self.higher_better else "triangle-down"),
                                 line=dict(color='brown', width=5, dash='dot'))
-        return fig, ""
+
+        msg = []
+        if threshold_status:
+            msg.append(html.H3(self.title if self.title else self.name))
+
+        for entry_name, status in threshold_status.items():
+            total_count = len(status)
+            pass_count = threshold_passes[entry_name]
+            success = pass_count == total_count
+            msg += [html.B(entry_name), ": ", html.B("PASSED" if success else "FAILED"), f" ({pass_count}/{total_count} success{'es' if pass_count > 1 else ''})"]
+            details = []
+            for a_status in status:
+                details.append(html.Li(a_status))
+
+            msg.append(html.Ul(details))
+
+        return fig, msg
