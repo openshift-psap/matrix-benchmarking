@@ -38,6 +38,8 @@ class Plot():
         self.is_cluster = is_cluster
         self.threshold_key = f"{y_title.replace(' ', '_').replace(':', '').lower()}"
 
+        self.skip_nodes = self.is_memory and not self.is_cluster
+
         table_stats.TableStats._register_stat(self)
         common.Matrix.settings["stats"].add(self.name)
 
@@ -98,7 +100,7 @@ class Plot():
 
                     opts = {}
 
-                    if self.is_memory and "node" not in metric["metric"]:
+                    if self.skip_nodes and "node" not in metric["metric"]:
                         continue
 
                     if single_expe:
