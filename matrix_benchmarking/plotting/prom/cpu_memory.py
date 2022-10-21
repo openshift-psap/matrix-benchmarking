@@ -64,6 +64,7 @@ class Plot():
         data_threshold = []
 
         threshold_status = defaultdict(list)
+        threshold_passes = defaultdict(int)
         for entry in common.Matrix.all_records(settings, setting_lists):
             try: threshold_value = entry.results.thresholds.get(self.threshold_key) if self.threshold_key else None
             except AttributeError: threshold_value = None
@@ -122,29 +123,33 @@ class Plot():
                                            **opts)
                         data.append(trace)
                     else:
-                        entry_version = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
+                        entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
                         if threshold_value:
-                            data_threshold.append(dict(Version=entry_version,
+                            data_threshold.append(dict(Version=entry_name,
                                                        Value=threshold_value,
                                                        Metric=legend_name))
 
                         if "limit" in legend_name or "requests" in legend_name:
                             lst = data_lm if "limits" in legend_name else data_rq
 
-                            lst.append(dict(Version=entry_version,
+                            lst.append(dict(Version=entry_name,
                                             Value=y_values[0],
                                             Metric=legend_name))
                         else:
                             for y_value in y_values:
-                                data.append(dict(Version=entry_version,
+                                data.append(dict(Version=entry_name,
                                                  Metric=legend_name,
                                                  Value=y_value))
 
                             if threshold_value and check_thresholds:
-                                status = "PASS"
+
                                 if max(y_values) > float(threshold_value):
                                     status = f"FAIL: {max(y_values):.2f} > threshold={threshold_value}"
-                                threshold_status[entry_version].append(status)
+                                else:
+                                    status = f"PASS: {max(y_values):.2f} <= threshold={threshold_value}"
+                                    threshold_passes[entry_name] += 1
+
+                                threshold_status[entry_name].append(status)
 
         if not data:
             return None, "No data to plot ..."
@@ -181,18 +186,18 @@ class Plot():
                                 line=dict(color='brown', width=5, dash='dot'))
 
         msg = []
-        for legend_name, status in threshold_status.items():
+        if threshold_status:
+            msg.append(html.H3(self.y_title))
+
+        for entry_name, status in threshold_status.items():
             total_count = len(status)
-            pass_count = status.count("PASS")
+            pass_count = threshold_passes[entry_name]
             success = pass_count == total_count
-            msg += [html.B(legend_name), ": ", html.B("PASSED" if success else "FAILED"), f" ({pass_count}/{total_count} success{'es' if pass_count > 1 else ''})"]
-            failures = []
+            msg += [html.B(entry_name), ": ", html.B("PASSED" if success else "FAILED"), f" ({pass_count}/{total_count} success{'es' if pass_count > 1 else ''})"]
+            details = []
             for a_status in status:
-                if a_status == "PASS": continue
-                failures.append(html.Li(a_status))
-            if failures:
-                msg.append(html.Ul(failures))
-            else:
-                msg.append(html.Br())
+                details.append(html.Li(a_status))
+
+            msg.append(html.Ul(details))
 
         return fig, msg
