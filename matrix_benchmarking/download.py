@@ -92,7 +92,7 @@ Args:
             if do_download:
                 dest_dir.mkdir(parents=True, exist_ok=True)
                 with open(dest_dir / "source_url", "w") as f:
-                    print(url, file=f)
+                    print(destdir_url, file=f)
 
                 with open(dest_dir / "settings.from_url_file", "w") as f:
                     for setting in settings:
