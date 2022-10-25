@@ -98,11 +98,27 @@ Args:
                     for setting in settings:
                         print(setting, file=f)
 
-            logging.info(f"Download {dest_dir} <-- {site}/{base_dir}")
-            scrapper = ScrapOCPCiArtifacts(workload_store, site, base_dir, dest_dir, do_download, kwargs["mode"])
+            def download(dl_mode):
+                logging.info(f"Download {dest_dir} <-- {site}/{base_dir}")
+                scrapper = ScrapOCPCiArtifacts(workload_store, site, base_dir, dest_dir, do_download, dl_mode)
+                scrapper.scrape()
+
+            def download_prefer_cache():
+                if hasattr(workload_store, "load_cache"):
+                    download(DownloadModes.CACHE_ONLY)
+
+                    if workload_store.load_cache(dest_dir):
+                        return # download and reload from cache worked
+
+                # download or reload from cache worked failed, try again with the important files
+                download(DownloadModes.IMPORTANT)
 
             try:
-                scrapper.scrape()
+                if do_download and kwargs["mode"] == DownloadModes.PREFER_CACHE:
+                    download_prefer_cache()
+                else:
+                    download(kwargs["mode"])
+
             except KeyboardInterrupt:
                 print("Interrupted :/")
                 break
