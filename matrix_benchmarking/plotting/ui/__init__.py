@@ -457,13 +457,20 @@ def build_callbacks(app):
                 setting_lists = [[(key, v) for v in variables[key]] for key in ordered_vars]
 
                 try:
-                    plot, msg = table_stat.do_plot(ordered_vars, settings, setting_lists, variables, cfg)
+                    plot_msg = table_stat.do_plot(ordered_vars, settings, setting_lists, variables, cfg)
                 except Exception as e:
                     msg = f"FAILED: {e.__class__.__name__}: {e}"
                     logging.error(msg)
 
                     traceback.print_exc()
                     return None, msg
+
+                if plot_msg is None:
+                    msg = f"FAILED: {table_stat.do_plot.__qualname__} returned None ..."
+                    logging.error(msg)
+                    return None, msg
+
+                plot, msg = plot_msg
 
                 if "help" not in cfg.d:
                     return plot, msg
