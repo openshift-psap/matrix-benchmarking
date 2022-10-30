@@ -38,7 +38,7 @@ def main():
 
     # Run the actual workload
     if hasattr(runnable, "run"):
-        runnable.run()
+        return runnable.run()
     else:
         # CLI didn't resolve completely - either by lack of arguments
         # or use of `--help`. This is okay.
