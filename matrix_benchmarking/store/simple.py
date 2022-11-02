@@ -53,8 +53,7 @@ def _parse_directory(expe, dirname):
 
                 key, found, value = line.strip().partition("=")
                 if not found:
-                    logging.error(f"invalid line in {dirname}/settings:")
-                    logging.error(f"{line.strip()}")
+                    logging.error(f"Cannot parse setting from {filename}: invalid line (no '='): {line.strip()}")
                     continue
 
                 import_settings[key] = value
