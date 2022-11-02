@@ -66,15 +66,15 @@ Args:
 
         workload_store = store.load_workload_store(kwargs)
 
-        if url_file:
+        if kwargs["url_file"]:
             try:
-                with open(url_file) as f:
+                with open(kwargs["url_file"]) as f:
                     data = [row for row in csv.reader(f)]
             except FileNotFoundError as e:
                 logging.error(f"Could not open the URL file: {e}")
                 return 1
-        elif url:
-            data = [["expe/from_url", url]]
+        elif kwargs["url"]:
+            data = [["expe/from_url", kwargs["url"]]]
         else:
             logging.error("Please specify an URL file or an URL")
             return 1
