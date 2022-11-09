@@ -129,6 +129,8 @@ def parse_data(results_dir=None):
         if "settings" not in files: continue
 
         this_dir = pathlib.Path(_this_dir)
-        expe = this_dir.relative_to(results_dir).parents[0].name
 
-        _parse_directory(expe, this_dir)
+        relative = this_dir.relative_to(results_dir)
+        expe_name = relative.parents[0].name if relative.parents else "expe"
+
+        _parse_directory(expe_name, this_dir)
