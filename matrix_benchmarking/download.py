@@ -3,7 +3,7 @@ import logging
 import urllib3
 import pathlib
 
-import csv
+import yaml
 
 import matrix_benchmarking.store as store
 import matrix_benchmarking.common as common
@@ -69,22 +69,24 @@ Args:
         if kwargs["url_file"]:
             try:
                 with open(kwargs["url_file"]) as f:
-                    data = [row for row in csv.reader(f)]
+                    data = yaml.safe_load(f)
             except FileNotFoundError as e:
                 logging.error(f"Could not open the URL file: {e}")
                 return 1
+
         elif kwargs["url"]:
-            data = [["expe/from_url", kwargs["url"]]]
+            data = dict(download=[dict(url=kwargs["url"], dest_dir="expe/from_url", settings={})])
+
         else:
             logging.error("Please specify an URL file or an URL")
             return 1
 
-        for row in data:
-            if not row: continue # empty line
+        for entry in data["download"]:
 
-            destdir, _destdir_url, *settings = row
+            destdir = entry["dest_dir"]
+            destdir_url = urllib3.util.url.parse_url(entry["url"])
+            settings = entry["settings"]
 
-            destdir_url = urllib3.util.url.parse_url(_destdir_url)
             site = f"{destdir_url.scheme}://{destdir_url.host}"
             base_dir = pathlib.Path(destdir_url.path)
             dest_dir = pathlib.Path(kwargs["results_dirname"]) / destdir
@@ -95,8 +97,8 @@ Args:
                     print(destdir_url, file=f)
 
                 with open(dest_dir / "settings.from_url_file", "w") as f:
-                    for setting in settings:
-                        print(setting, file=f)
+                    for setting_key, setting_value in settings.items():
+                        print(f"{setting_key}={setting_value}", file=f)
 
             def download(dl_mode):
                 logging.info(f"Download {dest_dir} <-- {site}/{base_dir}")

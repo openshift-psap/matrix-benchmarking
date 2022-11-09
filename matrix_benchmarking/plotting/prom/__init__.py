@@ -118,8 +118,8 @@ class Plot():
                             data.append(dict(Version=entry_version,
                                              Metric=legend_name,
                                              Value=y_value))
-                        if threshold_value:
-                            if threshold_value.endswith("%"):
+                        if threshold_value is not None:
+                            if str(threshold_value).endswith("%"):
                                 _threshold_pct = int(threshold_value[:-1]) / 100
                                 _threshold_value = _threshold_pct * max(y_values)
                             else:
@@ -128,9 +128,10 @@ class Plot():
                             data_threshold.append(dict(Version=entry_version,
                                                        Value=_threshold_value,
                                                        Metric=legend_name))
-                        if threshold_value and check_thresholds:
 
-                            if threshold_value.endswith("%"):
+                        if threshold_value is not None and check_thresholds:
+
+                            if str(threshold_value).endswith("%"):
                                 _threshold_pct = int(threshold_value[:-1]) / 100
                                 _threshold_value = _threshold_pct * max(y_values)
                             else:
@@ -153,7 +154,7 @@ class Plot():
                             if test_passed:
                                 threshold_passes[entry_version] += 1
 
-                            if threshold_value.endswith("%"):
+                            if str(threshold_value).endswith("%"):
                                 status += f" (={_threshold_value:.2f})"
 
                             threshold_status[entry_version].append(status)
