@@ -108,9 +108,11 @@ Args:
             def download_prefer_cache():
                 if hasattr(workload_store, "load_cache"):
                     download(DownloadModes.CACHE_ONLY)
-
-                    if workload_store.load_cache(dest_dir):
-                        return # download and reload from cache worked
+                    try:
+                        if workload_store.load_cache(dest_dir):
+                            return # download and reload from cache worked
+                    except FileNotFoundError:
+                        pass
 
                 # download or reload from cache worked failed, try again with the important files
                 download(DownloadModes.IMPORTANT)
