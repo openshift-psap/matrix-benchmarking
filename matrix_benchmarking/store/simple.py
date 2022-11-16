@@ -8,6 +8,8 @@ import matrix_benchmarking.common as common
 import matrix_benchmarking.store as store
 import matrix_benchmarking.cli_args as cli_args
 
+IGNORE_EXIT_CODE = None
+
 def invalid_directory(dirname, settings, reason, warn=False):
     run_flag = cli_args.kwargs.get("run")
     clean_flag = cli_args.kwargs.get("clean")
@@ -61,26 +63,27 @@ def _parse_directory(expe, dirname):
     if store.should_be_filtered_out(import_settings):
         return
 
-    try:
-        with open(dirname / "exit_code") as f:
-            content = f.read().strip()
-            if not content:
-                logging.info(f"{dirname}: exit_code is empty, skipping ...")
-                return
+    if not IGNORE_EXIT_CODE:
+        try:
+            with open(dirname / "exit_code") as f:
+                content = f.read().strip()
+                if not content:
+                    logging.info(f"{dirname}: exit_code is empty, skipping ...")
+                    return
 
-        exit_code = int(content)
-    except FileNotFoundError as e:
-        invalid_directory(dirname, import_settings, "exit_code not found")
-        return
+            exit_code = int(content)
+        except FileNotFoundError as e:
+            invalid_directory(dirname, import_settings, "exit_code not found")
+            return
 
-    except Exception as e:
-        logging.info(f"{dirname}: exit_code cannot be read/parsed, skipping ... ({e})")
-        return
+        except Exception as e:
+            logging.info(f"{dirname}: exit_code cannot be read/parsed, skipping ... ({e})")
+            return
 
-    if exit_code != 0:
-        logging.debug(f"{dirname}: exit_code == {exit_code}, skipping ...")
-        invalid_directory(dirname, import_settings, "exit code != 0")
-        return
+        if exit_code != 0:
+            logging.debug(f"{dirname}: exit_code == {exit_code}, skipping ...")
+            invalid_directory(dirname, import_settings, "exit code != 0")
+            return
 
     def add_to_matrix(results, extra_settings=None):
         if extra_settings:
@@ -120,6 +123,12 @@ def register_custom_parse_results(fn):
 # ---
 
 def parse_data(results_dir=None):
+    global IGNORE_EXIT_CODE
+    IGNORE_EXIT_CODE = os.environ.get("MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE", "false") == "true"
+
+    if IGNORE_EXIT_CODE:
+        logging.info("simple store: ignoring exit code.")
+
     if results_dir is None:
         results_dir = pathlib.Path(cli_args.kwargs["results_dirname"])
 
