@@ -1,4 +1,4 @@
-import traceback, sys
+import traceback, sys, os
 import logging
 
 import dash
@@ -17,8 +17,8 @@ import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.plotting.ui.report as report
 
-IMAGE_WIDTH = 1200
-IMAGE_HEIGHT = 650
+IMAGE_WIDTH = int(os.environ.get("MATBENCH_PLOTTING_IMAGE_WIDTH", 1200))
+IMAGE_HEIGHT = int(os.environ.get("MATBENCH_PLOTTING_IMAGE_HEIGHT", 650))
 
 # stylesheets now served via assets/bWLwgP.css and automatically included
 main_app = dash.Dash(__name__)
