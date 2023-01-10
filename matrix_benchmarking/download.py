@@ -61,6 +61,46 @@ Args:
     if not do_download:
         logging.warning("Running in DRY MODE (pass the flag --do-download to disable it)")
 
+    def download_an_entry(an_entry, workload_store):
+        destdir = an_entry["dest_dir"]
+        destdir_url = urllib3.util.url.parse_url(an_entry["url"])
+        settings = an_entry["settings"]
+
+        site = f"{destdir_url.scheme}://{destdir_url.host}"
+        base_dir = pathlib.Path(destdir_url.path)
+        dest_dir = pathlib.Path(kwargs["results_dirname"]) / destdir
+
+        if do_download:
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            with open(dest_dir / "source_url", "w") as f:
+                print(destdir_url, file=f)
+
+            with open(dest_dir / "settings.from_url_file", "w") as f:
+                for setting_key, setting_value in settings.items():
+                    print(f"{setting_key}={setting_value}", file=f)
+
+        def download(dl_mode):
+            logging.info(f"Download {dest_dir} <-- {site}/{base_dir}")
+            scrapper = ScrapOCPCiArtifacts(workload_store, site, base_dir, dest_dir, do_download, dl_mode)
+            scrapper.scrape()
+
+        def download_prefer_cache():
+            if hasattr(workload_store, "load_cache"):
+                download(DownloadModes.CACHE_ONLY)
+                try:
+                    if workload_store.load_cache(dest_dir):
+                        return # download and reload from cache worked
+                except FileNotFoundError:
+                    pass
+
+            # download or reload from cache worked failed, try again with the important files
+            download(DownloadModes.IMPORTANT)
+
+        if do_download and kwargs["mode"] == DownloadModes.PREFER_CACHE:
+            download_prefer_cache()
+        else:
+            download(kwargs["mode"])
+
     def run():
         cli_args.store_kwargs(kwargs, execution_mode="download")
 
@@ -81,51 +121,23 @@ Args:
             logging.error("Please specify an URL file or an URL")
             return 1
 
-        for entry in data["download"]:
+        try:
+            for entry in data["download"]:
+                if "files" not in entry:
+                    # download entry is here, download it
+                    download_an_entry(entry, workload_store)
+                    continue
 
-            destdir = entry["dest_dir"]
-            destdir_url = urllib3.util.url.parse_url(entry["url"])
-            settings = entry["settings"]
+                # download entries are in another file, process it
+                for filename in entry["files"]:
+                    with open(pathlib.Path(kwargs["url_file"]).parent / filename) as f:
+                        download_file_data = yaml.safe_load(f)
+                        for download_file_entry in download_file_data:
+                            download_an_entry(download_file_entry, workload_store)
 
-            site = f"{destdir_url.scheme}://{destdir_url.host}"
-            base_dir = pathlib.Path(destdir_url.path)
-            dest_dir = pathlib.Path(kwargs["results_dirname"]) / destdir
-
-            if do_download:
-                dest_dir.mkdir(parents=True, exist_ok=True)
-                with open(dest_dir / "source_url", "w") as f:
-                    print(destdir_url, file=f)
-
-                with open(dest_dir / "settings.from_url_file", "w") as f:
-                    for setting_key, setting_value in settings.items():
-                        print(f"{setting_key}={setting_value}", file=f)
-
-            def download(dl_mode):
-                logging.info(f"Download {dest_dir} <-- {site}/{base_dir}")
-                scrapper = ScrapOCPCiArtifacts(workload_store, site, base_dir, dest_dir, do_download, dl_mode)
-                scrapper.scrape()
-
-            def download_prefer_cache():
-                if hasattr(workload_store, "load_cache"):
-                    download(DownloadModes.CACHE_ONLY)
-                    try:
-                        if workload_store.load_cache(dest_dir):
-                            return # download and reload from cache worked
-                    except FileNotFoundError:
-                        pass
-
-                # download or reload from cache worked failed, try again with the important files
-                download(DownloadModes.IMPORTANT)
-
-            try:
-                if do_download and kwargs["mode"] == DownloadModes.PREFER_CACHE:
-                    download_prefer_cache()
-                else:
-                    download(kwargs["mode"])
-
-            except KeyboardInterrupt:
-                print("Interrupted :/")
-                break
+        except KeyboardInterrupt:
+            print("Interrupted :/")
+            return 1
 
         return 0
 

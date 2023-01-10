@@ -69,8 +69,6 @@ class ScrapOCPCiArtifactsBase():
                 if self.download_mode == DownloadModes.CACHE_ONLY:
                     logging.error(msg + " :/")
                     return False
-                    logging.info(msg)
-                pass
 
 
         for link in s.find_all("a"):
