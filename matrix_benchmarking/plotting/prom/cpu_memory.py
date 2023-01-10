@@ -47,6 +47,8 @@ class Plot():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
+
         fig = go.Figure()
         metric_names = [
             list(metric.items())[0][0] if isinstance(metric, dict) else metric
@@ -73,6 +75,9 @@ class Plot():
 
             try: check_thresholds = entry.results.check_thresholds
             except AttributeError: check_thresholds = False
+
+            if cfg__check_all_thresholds:
+                check_thresholds = True
 
             for metric in self.metrics:
                 metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
@@ -103,7 +108,11 @@ class Plot():
                     if self.skip_nodes and "node" not in metric["metric"]:
                         continue
 
+                    is_req_or_lim = "limit" in legend_name or "requests" in legend_name
+
                     if single_expe:
+                        entry_name = "Test"
+
                         if "requests" in metric_actual_name:
                             opts["line_color"] = "orange"
                             opts["line_dash"] = "dot"
@@ -116,14 +125,26 @@ class Plot():
                         else:
                             opts["mode"] = "markers+lines"
 
-                        trace = go.Scatter(x=x_values, y=y_values,
-                                           name=legend_name,
+                        data.append(
+                            go.Scatter(x=x_values, y=y_values,
+                                       name=legend_name,
+                                       hoverlabel= {'namelength' :-1},
+                                       showlegend=True,
+                                       legendgroup=legend_group,
+                                       legendgrouptitle_text=legend_group,
+                                       **opts))
+
+                        if not is_req_or_lim and check_thresholds:
+                            data.append(
+                                go.Scatter(x=[x_values[0], x_values[-1]], y=[threshold_value, threshold_value],
+                                           name="threshold",
                                            hoverlabel= {'namelength' :-1},
                                            showlegend=True,
+                                           line_color="red",
+                                           marker=dict(color='red', size=15, symbol="triangle-down"),
                                            legendgroup=legend_group,
-                                           legendgrouptitle_text=legend_group,
-                                           **opts)
-                        data.append(trace)
+                                           legendgrouptitle_text=legend_group))
+
                     else:
                         entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
                         if threshold_value:
@@ -131,27 +152,29 @@ class Plot():
                                                        Value=threshold_value,
                                                        Metric=legend_name))
 
-                        if "limit" in legend_name or "requests" in legend_name:
+                        if is_req_or_lim:
                             lst = data_lm if "limits" in legend_name else data_rq
 
                             lst.append(dict(Version=entry_name,
                                             Value=y_values[0],
                                             Metric=legend_name))
+
                         else:
                             for y_value in y_values:
                                 data.append(dict(Version=entry_name,
                                                  Metric=legend_name,
                                                  Value=y_value))
 
-                            if threshold_value and check_thresholds:
 
-                                if max(y_values) > float(threshold_value):
-                                    status = f"FAIL: {max(y_values):.2f} > threshold={threshold_value}"
-                                else:
-                                    status = f"PASS: {max(y_values):.2f} <= threshold={threshold_value}"
-                                    threshold_passes[entry_name] += 1
+                    if not is_req_or_lim and threshold_value and check_thresholds:
 
-                                threshold_status[entry_name].append(status)
+                        if max(y_values) > float(threshold_value):
+                            status = f"FAIL: {max(y_values):.2f} > threshold={threshold_value}"
+                        else:
+                            status = f"PASS: {max(y_values):.2f} <= threshold={threshold_value}"
+                            threshold_passes[entry_name] += 1
+
+                        threshold_status[entry_name].append(status)
 
         if not data:
             return None, "No data to plot ..."
