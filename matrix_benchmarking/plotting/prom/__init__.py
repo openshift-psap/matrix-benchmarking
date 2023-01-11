@@ -50,6 +50,8 @@ class Plot():
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         plot_title = self.title if self.title else self.name
 
+        cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
+
         if self.show_metrics_in_title:
             metric_names = [
                 list(metric.items())[0][0] if isinstance(metric, dict) else metric
@@ -76,6 +78,9 @@ class Plot():
 
             try: check_thresholds = entry.results.check_thresholds
             except AttributeError: check_thresholds = False
+
+            if cfg__check_all_thresholds:
+                check_thresholds = True
 
             for metric in self.metrics:
                 metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
@@ -112,6 +117,26 @@ class Plot():
                                 legendgroup=legend_group,
                                 legendgrouptitle_text=legend_group,
                                 mode='markers+lines'))
+
+                        if threshold_value is not None:
+                            if str(threshold_value).endswith("%"):
+                                _threshold_pct = int(threshold_value[:-1]) / 100
+                                _threshold_value = _threshold_pct * max(y_values)
+                            else:
+                                _threshold_value = threshold_value
+
+                            data.append(
+                                go.Scatter(
+                                    x=[x_values[0], x_values[-1]], y=[_threshold_value, _threshold_value],
+                                    name=f"{legend_name} threshold",
+                                    hoverlabel= {'namelength' :-1},
+                                    showlegend=self.show_legend,
+                                    legendgroup=legend_group,
+                                    legendgrouptitle_text=legend_group,
+                                    line_color="red",
+                                    marker=dict(color='red', size=15, symbol="triangle-up" if self.higher_better else "triangle-down"),
+                                    mode='markers+lines'))
+                            entry_version = "Test"
                     else:
                         entry_version = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
                         for y_value in y_values:
@@ -129,35 +154,34 @@ class Plot():
                                                        Value=_threshold_value,
                                                        Metric=legend_name))
 
-                        if threshold_value is not None and check_thresholds:
+                    if threshold_value is not None and check_thresholds:
+                        if str(threshold_value).endswith("%"):
+                            _threshold_pct = int(threshold_value[:-1]) / 100
+                            _threshold_value = _threshold_pct * max(y_values)
+                        else:
+                            _threshold_value = float(threshold_value)
 
-                            if str(threshold_value).endswith("%"):
-                                _threshold_pct = int(threshold_value[:-1]) / 100
-                                _threshold_value = _threshold_pct * max(y_values)
-                            else:
-                                _threshold_value = float(threshold_value)
-
-                            status = "PASS"
-                            if self.higher_better:
-                                test_passed = min(y_values) >= _threshold_value
-                                if test_passed:
-                                    status = f"PASS: {min(y_values):.2f} >= threshold={threshold_value}"
-                                else:
-                                    status = f"FAIL: {min(y_values):.2f} < threshold={threshold_value}"
-                            else:
-                                test_passed = max(y_values) <= _threshold_value
-                                if test_passed:
-                                    status = f"PASS: {max(y_values):.2f} <= threshold={threshold_value}"
-                                else:
-                                    status = f"FAIL: {max(y_values):.2f} > threshold={threshold_value}"
-
+                        status = "PASS"
+                        if self.higher_better:
+                            test_passed = min(y_values) >= _threshold_value
                             if test_passed:
-                                threshold_passes[entry_version] += 1
+                                status = f"PASS: {min(y_values):.2f} >= threshold={threshold_value}"
+                            else:
+                                status = f"FAIL: {min(y_values):.2f} < threshold={threshold_value}"
+                        else:
+                            test_passed = max(y_values) <= _threshold_value
+                            if test_passed:
+                                status = f"PASS: {max(y_values):.2f} <= threshold={threshold_value}"
+                            else:
+                                status = f"FAIL: {max(y_values):.2f} > threshold={threshold_value}"
 
-                            if str(threshold_value).endswith("%"):
-                                status += f" (={_threshold_value:.2f})"
+                        if test_passed:
+                            threshold_passes[entry_version] += 1
 
-                            threshold_status[entry_version].append(status)
+                        if str(threshold_value).endswith("%"):
+                            status += f" (={_threshold_value:.2f})"
+
+                        threshold_status[entry_version].append(status)
 
         if not data:
             return None, "No data to plot ..."
