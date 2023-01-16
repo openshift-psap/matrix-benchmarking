@@ -97,10 +97,6 @@ def run():
             figure.write_html(f"fig_{dest}.html")
             figure.write_image(f"fig_{dest}.png", width=IMAGE_WIDTH, height=IMAGE_HEIGHT)
 
-            if text and text.children:
-                for child in text.children:
-                    if not child: continue
-                    logging.info(child)
         print("</ul>", file=report_index_f)
         report_index_f.close()
 

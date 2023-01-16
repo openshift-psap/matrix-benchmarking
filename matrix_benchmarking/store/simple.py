@@ -45,20 +45,23 @@ def _duplicated_directory(import_key, old_location, new_location):
     logging.info(f"{new_location}: removed")
 
 
-def _parse_directory(expe, dirname):
+def _parse_directory(results_dir, expe, dirname):
     import_settings = {"expe": expe}
 
-    for filename in [dirname / "settings"] + list(dirname.glob("settings.*")):
-        with open(filename) as f:
-            for line in f.readlines():
-                if not line.strip(): continue
+    # search for settings[.*] in dirname and all of its parent directories.
+    # start in the top-most parent, so that each subdirectory overrides its parents.
+    for parent_dir in list(reversed([dirname] + list(dirname.parents))):
+        for filename in list(parent_dir.glob("settings")) + list(parent_dir.glob("settings.*")):
+            with open(filename) as f:
+                for line in f.readlines():
+                    if not line.strip(): continue
 
-                key, found, value = line.strip().partition("=")
-                if not found:
-                    logging.error(f"Cannot parse setting from {filename}: invalid line (no '='): {line.strip()}")
-                    continue
+                    key, found, value = line.strip().partition("=")
+                    if not found:
+                        logging.error(f"Cannot parse setting from {filename}: invalid line (no '='): {line.strip()}")
+                        continue
 
-                import_settings[key] = value
+                    import_settings[key] = value
 
     if store.should_be_filtered_out(import_settings):
         return
@@ -141,4 +144,4 @@ def parse_data(results_dir=None):
 
         relative = this_dir.relative_to(results_dir)
         expe_name = relative.parents[0].name if relative.parents and relative.parents[0].name else "expe"
-        _parse_directory(expe_name, this_dir)
+        _parse_directory(results_dir, expe_name, this_dir)
