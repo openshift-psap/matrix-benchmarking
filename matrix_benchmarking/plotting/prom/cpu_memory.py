@@ -79,8 +79,8 @@ class Plot():
             if cfg__check_all_thresholds:
                 check_thresholds = True
 
-            for metric in self.metrics:
-                metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
+            for _metric in self.metrics:
+                metric_name, metric_query = list(_metric.items())[0] if isinstance(_metric, dict) else (_metric, _metric)
 
                 for metric in self.filter_metrics(entry, self.get_metrics(entry, metric_name)):
                     if not metric: continue
