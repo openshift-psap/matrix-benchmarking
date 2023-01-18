@@ -195,7 +195,7 @@ class Plot():
                 xaxis=dict(title=f"Time (in s)"))
         else:
             df = pd.DataFrame(data).sort_values(by=["SortIndex"])
-            import pdb;pdb.set_trace()
+
             fig = px.box(df, x="Version", y="Value", color="Version")
             fig.update_layout(
                 title=plot_title, title_x=0.5,
