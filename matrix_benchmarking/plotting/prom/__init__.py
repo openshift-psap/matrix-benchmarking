@@ -82,6 +82,8 @@ class Plot():
             if cfg__check_all_thresholds:
                 check_thresholds = True
 
+            entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
+
             sort_index = entry.settings.__dict__[ordered_vars[0]] if len(variables) == 1 \
                 else entry_name
 
