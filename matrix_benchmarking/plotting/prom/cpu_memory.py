@@ -79,8 +79,11 @@ class Plot():
             if cfg__check_all_thresholds:
                 check_thresholds = True
 
-            for metric in self.metrics:
-                metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
+            sort_index = entry.settings.__dict__[ordered_vars[0]] if len(variables) == 1 \
+                else entry_name
+
+            for _metric in self.metrics:
+                metric_name, metric_query = list(_metric.items())[0] if isinstance(_metric, dict) else (_metric, _metric)
 
                 for metric in self.filter_metrics(entry, self.get_metrics(entry, metric_name)):
                     if not metric: continue
@@ -149,6 +152,7 @@ class Plot():
                         entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
                         if threshold_value:
                             data_threshold.append(dict(Version=entry_name,
+                                                       SortIndex=sort_index,
                                                        Value=threshold_value,
                                                        Metric=legend_name))
 
@@ -156,12 +160,14 @@ class Plot():
                             lst = data_lm if "limits" in legend_name else data_rq
 
                             lst.append(dict(Version=entry_name,
+                                            SortIndex=sort_index,
                                             Value=y_values[0],
                                             Metric=legend_name))
 
                         else:
                             for y_value in y_values:
                                 data.append(dict(Version=entry_name,
+                                                 SortIndex=sort_index,
                                                  Metric=legend_name,
                                                  Value=y_value))
 
@@ -187,24 +193,25 @@ class Plot():
                 yaxis=dict(title=self.y_title + (" (in Gi)" if self.is_memory else ""), range=[0, y_max*1.05]),
                 xaxis=dict(title=f"Time (in s)"))
         else:
-            df = pd.DataFrame(data).sort_values(by=["Version"])
+            df = pd.DataFrame(data).sort_values(by=["SortIndex"])
+            import pdb;pdb.set_trace()
             fig = px.box(df, x="Version", y="Value", color="Version")
             fig.update_layout(
                 title=plot_title, title_x=0.5,
                 yaxis=dict(title=self.y_title + (" (in Gi)" if self.is_memory else ""))
             )
             if data_rq:
-                df_rq = pd.DataFrame(data_rq).sort_values(by=["Version"])
+                df_rq = pd.DataFrame(data_rq).sort_values(by=["SortIndex"])
                 fig.add_scatter(name="Request",
                                 x=df_rq['Version'], y=df_rq['Value'], mode='lines',
                                 line=dict(color='orange', width=5, dash='dot'))
             if data_lm:
-                df_lm = pd.DataFrame(data_lm).sort_values(by=["Version"])
+                df_lm = pd.DataFrame(data_lm).sort_values(by=["SortIndex"])
                 fig.add_scatter(name="Limit",
                                 x=df_lm['Version'], y=df_lm['Value'], mode='lines',
                                 line=dict(color='red', width=5, dash='dot'))
             if data_threshold:
-                df_threshold = pd.DataFrame(data_threshold).sort_values(by=["Version"])
+                df_threshold = pd.DataFrame(data_threshold).sort_values(by=["SortIndex"])
                 fig.add_scatter(name="Threshold",
                                 x=df_threshold['Version'], y=df_threshold['Value'], mode='lines+markers',
                                 marker=dict(color='red', size=15, symbol="triangle-down"),

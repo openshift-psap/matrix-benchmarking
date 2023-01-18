@@ -82,8 +82,11 @@ class Plot():
             if cfg__check_all_thresholds:
                 check_thresholds = True
 
-            for metric in self.metrics:
-                metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
+            sort_index = entry.settings.__dict__[ordered_vars[0]] if len(variables) == 1 \
+                else entry_name
+
+            for _metric in self.metrics:
+                metric_name, metric_query = list(_metric.items())[0] if isinstance(_metric, dict) else (_metric, _metric)
 
                 for metric in self.filter_metrics(entry, self.get_metrics(entry, metric_name)):
                     if not metric: continue
@@ -141,6 +144,7 @@ class Plot():
                         entry_version = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
                         for y_value in y_values:
                             data.append(dict(Version=entry_version,
+                                             SortIndex=sort_index,
                                              Metric=legend_name,
                                              Value=y_value))
                         if threshold_value is not None:
@@ -194,14 +198,14 @@ class Plot():
                 yaxis=dict(title=self.y_title, range=[0, y_max*1.05]),
                 xaxis=dict(title=None if self.as_timestamp else "Time (in s)"))
         else:
-            df = pd.DataFrame(data).sort_values(by=["Version"])
+            df = pd.DataFrame(data).sort_values(by=["SortIndex"])
             fig = px.box(df, x="Version", y="Value", color="Version")
             fig.update_layout(
                 title=plot_title, title_x=0.5,
                 yaxis=dict(title=self.y_title)
             )
             if data_threshold:
-                df_threshold = pd.DataFrame(data_threshold).sort_values(by=["Version"])
+                df_threshold = pd.DataFrame(data_threshold).sort_values(by=["SortIndex"])
                 fig.add_scatter(name="Threshold",
                                 x=df_threshold['Version'], y=df_threshold['Value'], mode='lines+markers',
                                 marker=dict(color='red', size=15, symbol="triangle-up" if self.higher_better else "triangle-down"),
