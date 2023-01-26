@@ -101,7 +101,7 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
         metric_file = metrics_base_dir / f"{metric_filename}.json"
         if not metric_file.exists():
             missing_metrics.append([metric_name, metric_query, metric_file])
-            logging.info(f"Metric {metric_name} missing")
+            logging.info(f"No cache available for metric '{metric_name}'")
             continue
 
         metric_results[metric_name] = _parse_metric_values_from_file(metric_file)
