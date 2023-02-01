@@ -143,5 +143,5 @@ def parse_data(results_dir=None):
         this_dir = pathlib.Path(_this_dir)
 
         relative = this_dir.relative_to(results_dir)
-        expe_name = relative.parents[0].name if relative.parents and relative.parents[0].name else "expe"
+        expe_name = relative.parents[-2].name if relative.parents and relative.parents[0].name else "expe"
         _parse_directory(results_dir, expe_name, this_dir)

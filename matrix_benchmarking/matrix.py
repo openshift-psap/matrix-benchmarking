@@ -137,7 +137,7 @@ EXEC_DIR="$(realpath "$2")"
                     if "=" not in kv:
                         raise ValueError(f"Invalid 'extra' setting: '{extra}' ('{kv}' has no '=')")
                     k, v = kv.split("=")
-                    settings[k] = v
+                    settings[k.strip()] = v.strip()
 
             key = common.Matrix.settings_to_key(settings)
 
