@@ -31,8 +31,16 @@ class _Report():
         elif hasattr(elt.children, "_type"):
             content += self._children_element_to_html(elt.children)
         else:
-            for child in elt.children:
-                content += self._element_to_html(child)
+            try:
+                it = iter(elt.children)
+            except TypeError:
+                it = None # not iterable
+
+            if it:
+                for child in it:
+                    content += self._element_to_html(child)
+            else:
+                content += [str(elt.children)]
 
         content += [f"</{elt._type.lower()}>"]
 
