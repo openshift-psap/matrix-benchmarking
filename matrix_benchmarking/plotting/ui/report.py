@@ -61,12 +61,19 @@ class _Report():
         dest_html = f"{dest}.html"
         dest_png = f"{dest}.png"
 
-        figure.write_html(dest_html)
         from .web import IMAGE_WIDTH, IMAGE_HEIGHT
-        figure.write_image(dest_png, width=IMAGE_WIDTH, height=IMAGE_HEIGHT)
+        try:
+            figure.write_html(dest_html)
+            figure.write_image(dest_png, width=IMAGE_WIDTH, height=IMAGE_HEIGHT)
+        except Exception as e:
+            msg = f"Failed to save graph #{self.index} {self.id_name}:"
+            logging.error(f"Failed to save graph #{self.index} {self.id_name}:", e)
+            return [
+                f"<p>{msg}: {e}</p>"
+            ]
 
         return [
-             f"<p><a href='{dest}.html' target='_blank' title='Click to access the full-size interactive version.'><img src='{dest}.png'/></a></p>"
+            f"<p><a href='{dest}.html' target='_blank' title='Click to access the full-size interactive version.'><img src='{dest}.png'/></a></p>"
          ]
 
     def _element_to_html(self, elt):
