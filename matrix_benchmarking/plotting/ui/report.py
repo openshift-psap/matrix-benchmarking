@@ -67,7 +67,7 @@ class _Report():
             figure.write_image(dest_png, width=IMAGE_WIDTH, height=IMAGE_HEIGHT)
         except Exception as e:
             msg = f"Failed to save graph #{self.index} {self.id_name}:"
-            logging.error(f"Failed to save graph #{self.index} {self.id_name}:", e)
+            logging.error(f"Failed to save graph #{self.index} {self.id_name}: {e}")
             return [
                 f"<p>{msg}: {e}</p>"
             ]
