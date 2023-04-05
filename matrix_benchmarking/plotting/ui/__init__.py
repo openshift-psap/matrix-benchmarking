@@ -147,7 +147,11 @@ def build_layout(search, serializing=False):
     if serializing:
         for idx, stats_name in enumerate(stats):
             logging.info(f"Generate {idx}) {stats_name}")
-            table_stat = TableStats.stats_by_name[stats_name]
+            try:
+                table_stat = TableStats.stats_by_name[stats_name]
+            except KeyError:
+                logging.error(f"Stats '{stats_name}' does not exist. Skipping it.")
+                continue
 
             graph_children += [dcc.Graph(id=table_stat.id_name, style={},
                                          config=dict(showTips=False)),
