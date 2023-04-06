@@ -42,7 +42,8 @@ class ScrapOCPCiArtifactsBase():
                 for line in f.readlines():
                     if page_not_found_anchor not in line: continue
                     local_filename.unlink()
-                    raise requests.exceptions.HTTPError(404, "Page not found: {filepath_rel}")
+
+                    raise requests.exceptions.HTTPError(404, f"Page not found: {filepath_rel}")
 
             except UnicodeDecodeError:
                 pass # file isn't unicode, it's can't be the 404 page
