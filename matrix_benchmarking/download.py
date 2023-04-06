@@ -150,17 +150,19 @@ class ScrapOCPCiArtifacts(scrape.ScrapOCPCiArtifactsBase):
             # file already downloaded, skip it
             return
 
-        mandatory = self.workload_store.is_mandatory_file(filepath_rel)
+        result_filepath_rel = pathlib.Path(*filepath_rel.parts[-(depth+1):])
+
+        mandatory = self.workload_store.is_mandatory_file(result_filepath_rel)
 
         if (self.cache_found
             and self.download_only_cache
             and not mandatory):
             return # found the cache file, and not a mandatory file, continue.
 
-        cache = self.workload_store.is_cache_file(filepath_rel)
+        cache = self.workload_store.is_cache_file(result_filepath_rel)
 
         important = True if cache or mandatory \
-            else self.workload_store.is_important_file(filepath_rel)
+            else self.workload_store.is_important_file(result_filepath_rel)
 
         only_important_files = self.download_mode in (DownloadModes.IMPORTANT, DownloadModes.PREFER_CACHE)
         if only_important_files and not important:
