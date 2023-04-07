@@ -42,7 +42,8 @@ class ScrapOCPCiArtifactsBase():
                 for line in f.readlines():
                     if page_not_found_anchor not in line: continue
                     local_filename.unlink()
-                    raise requests.exceptions.HTTPError(404, "Page not found: {filepath_rel}")
+
+                    raise requests.exceptions.HTTPError(404, f"Page not found: {filepath_rel}")
 
             except UnicodeDecodeError:
                 pass # file isn't unicode, it's can't be the 404 page
@@ -55,6 +56,10 @@ class ScrapOCPCiArtifactsBase():
         r = requests.get(url)
         s = BeautifulSoup(r.text,"html.parser")
 
+        filenames = [(pathlib.Path(link.attrs['href']).name) for link in s.find_all("a")]
+        if "exit_code" in filenames or "settings" in filenames:
+            depth = 0
+
         if depth == 0:
             cache_file = pathlib.Path(self.workload_store.CACHE_FILENAME)
             try:
@@ -63,13 +68,6 @@ class ScrapOCPCiArtifactsBase():
 
             except requests.exceptions.HTTPError as e:
                 if e.errno != 404: raise e
-
-                # error 404
-                msg = f"Cache file '{self.workload_store.CACHE_FILENAME}' not found"
-                if self.download_mode == DownloadModes.CACHE_ONLY:
-                    logging.error(msg + " :/")
-                    return False
-
 
         for link in s.find_all("a"):
 
