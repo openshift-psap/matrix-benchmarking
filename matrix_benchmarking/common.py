@@ -7,8 +7,12 @@ import matrix_benchmarking
 class MatrixEntry(types.SimpleNamespace):
     def __init__(self, location, results,
                  processed_key, import_key,
-                 processed_settings, import_settings):
-        self.settings = types.SimpleNamespace()
+                 processed_settings, import_settings, settings=None,
+                 stats=None, is_gathered=None):
+        if settings:
+            self.settings = settings
+        else:
+            self.settings = types.SimpleNamespace()
         self.stats = {}
 
         self.location = location
