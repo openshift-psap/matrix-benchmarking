@@ -5,3 +5,4 @@ kaleido
 fire
 pyyaml
 BeautifulSoup4==4.11.*
+python-keycloak
