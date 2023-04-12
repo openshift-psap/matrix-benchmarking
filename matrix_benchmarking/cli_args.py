@@ -100,7 +100,7 @@ def update_kwargs_with_workload(kwargs):
         kwargs["workload"] = cwd_dirname
 
 
-def check_mandatory_kwargs(kwargs, mandatory_flags):
+def check_mandatory_kwargs(kwargs, mandatory_flags, sensitive = []):
     err = False
     for flag in mandatory_flags:
         if kwargs.get(flag): continue
@@ -109,7 +109,11 @@ def check_mandatory_kwargs(kwargs, mandatory_flags):
         err = True
 
     if err:
+        for key in sensitive:
+            kwargs[key] = "<CENSORED>" if kwargs[key] else ""
+
         print(kwargs)
+
         raise SystemExit(1)
 
 
