@@ -13,6 +13,8 @@ import matrix_benchmarking.visualize
 import matrix_benchmarking.benchmark
 import matrix_benchmarking.parse
 import matrix_benchmarking.download
+import matrix_benchmarking.upload_lts
+import matrix_benchmarking.download_lts
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"),
                     format="%(levelname)s | %(message)s",)
@@ -27,6 +29,8 @@ class MatrixBenchmarking:
         self.visualize = matrix_benchmarking.visualize.main
         self.parse = matrix_benchmarking.parse.main
         self.download = matrix_benchmarking.download.main
+        self.upload_lts = matrix_benchmarking.upload_lts.main
+        self.download_lts = matrix_benchmarking.download_lts.main
 
 def main():
     # Print help rather than opening a pager
