@@ -1,5 +1,6 @@
 import os, sys
 import logging
+import json
 
 import matrix_benchmarking.store as store
 import matrix_benchmarking.common as common
@@ -10,6 +11,7 @@ def main(workload: str = "",
          filters: list[str] = [],
          clean: bool = False,
          run: bool = False,
+         output_lts: str = "",
          ):
     """
 Run MatrixBenchmarking results parsing.
@@ -31,6 +33,7 @@ Args:
     filters: If provided, parse only the experiment matching the filters. Eg: expe=expe1:expe2,something=true.
     clean: If 'True', run in cleanup mode.
     run: In cleanup mode: if 'False', list the results that would be cleanup. If 'True', execute the cleanup.
+    output_lts: Output the parsed results into a specified file, or to stdout if '-' is supplied
 """
 
     kwargs = dict(locals()) # capture the function arguments
@@ -54,6 +57,15 @@ Args:
         if kwargs["clean"]:
             if not kwargs["run"]:
                 logging.info("Cleaner ran in dry mode. Pass --run to perform the deletion.")
+
+        if kwargs["output_lts"]:
+            file = sys.stdout if kwargs["output_lts"] == '-' else open(kwargs["output_lts"], "w")
+            
+            parsed_results = []
+            for (payload, _, __) in workload_store.build_lts_payloads():
+                parsed_results.append(payload)
+            json.dump(parsed_results, file)
+
 
         has_result = len(common.Matrix.processed_map) != 0
         return 0 if has_result else 1
