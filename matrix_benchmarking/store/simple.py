@@ -111,6 +111,7 @@ def _parse_directory(results_dir, expe, dirname):
 # ---
 
 custom_parse_results = None
+custom_build_lts_payloads = None
 
 def _parse_results(add_to_matrix, dirname, import_settings):
     if custom_parse_results is None:
@@ -118,11 +119,19 @@ def _parse_results(add_to_matrix, dirname, import_settings):
 
     return custom_parse_results(add_to_matrix, dirname, import_settings)
 
+def _build_lts_payloads():
+    if custom_build_lts_payloads is None:
+        raise RuntimeError("simple store: No payload builder registered :/")
+
+    return custom_build_lts_payloads()
 
 def register_custom_parse_results(fn):
     global custom_parse_results
     custom_parse_results = fn
 
+def register_custom_build_lts_payloads(fn):
+    global custom_build_lts_payloads
+    custom_build_lts_payloads = fn
 # ---
 
 def parse_data(results_dir=None):
@@ -143,8 +152,13 @@ def parse_data(results_dir=None):
         this_dir = pathlib.Path(_this_dir)
 
         relative = this_dir.relative_to(results_dir)
+
         try:
             expe_name = relative.parents[-1].name
         except Exception:
             expe_name = "expe"
         _parse_directory(results_dir, expe_name, this_dir)
+
+
+def build_lts_payloads():
+    return _build_lts_payloads()
