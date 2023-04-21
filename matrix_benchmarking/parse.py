@@ -12,6 +12,7 @@ def main(workload: str = "",
          clean: bool = False,
          run: bool = False,
          output_lts: str = "",
+         pretty: bool = True
          ):
     """
 Run MatrixBenchmarking results parsing.
@@ -60,11 +61,14 @@ Args:
 
         if kwargs["output_lts"]:
             file = sys.stdout if kwargs["output_lts"] == '-' else open(kwargs["output_lts"], "w")
-            
+            indent = None
+            if kwargs['pretty']:
+                indent = 4
+
             parsed_results = []
             for (payload, _, __) in workload_store.build_lts_payloads():
                 parsed_results.append(payload)
-            json.dump(parsed_results, file)
+            json.dump(parsed_results, file, indent=indent)
 
 
         has_result = len(common.Matrix.processed_map) != 0
