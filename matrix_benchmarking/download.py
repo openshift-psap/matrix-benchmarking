@@ -161,6 +161,10 @@ class ScrapOCPCiArtifacts(scrape.ScrapOCPCiArtifactsBase):
 
         cache = self.workload_store.is_cache_file(result_filepath_rel)
 
+        if self.download_mode == DownloadModes.CACHE_ONLY and not cache and not mandatory:
+            logging.info(f"{' '*depth}File: {filepath_rel}: NOT CACHE/MANDATORY")
+            return # file isn't important, do not download it
+
         important = True if cache or mandatory \
             else self.workload_store.is_important_file(result_filepath_rel)
 
