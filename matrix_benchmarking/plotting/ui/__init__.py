@@ -463,6 +463,9 @@ def build_callbacks(app):
                 try:
                     plot_msg = table_stat.do_plot(ordered_vars, settings, setting_lists, variables, cfg)
                 except Exception as e:
+                    import bdb
+                    if isinstance(e, bdb.BdbQuit): raise e
+
                     msg = f"FAILED: {e.__class__.__name__}: {e}"
                     logging.error(msg)
 
