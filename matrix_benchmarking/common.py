@@ -9,8 +9,10 @@ class LTSEntry(types.SimpleNamespace):
         self.metadata = metadata
         self.data = data
 
-        Matrix.import_map[import_key] = \
-            Matrix.processed_map[processed_key] = self
+        self.is_gathered = False
+        
+        Matrix.lts_import_map[import_key] = \
+            Matrix.lts_processed_map[processed_key] = self
         
         [Matrix.settings[k].add(v) for k, v in processed_settings.items()]
 
@@ -52,6 +54,9 @@ class Matrix():
     settings = defaultdict(set)
     import_map = {}
     processed_map = {}
+    
+    lts_import_map = {}
+    lts_processed_map = {}
 
     @staticmethod
     def settings_to_key(settings):
@@ -72,4 +77,21 @@ class Matrix():
         key = Matrix.settings_to_key(settings)
 
         try: return Matrix.processed_map[key]
+        except KeyError: return None
+
+    @staticmethod
+    def all_lts_records(settings, setting_lists):
+        for settings_values in sorted(itertools.product(*setting_lists)):
+            settings.update(dict(settings_values))
+            key = Matrix.settings_to_key(settings)
+            try:
+                yield Matrix.lts_processed_map[key]
+            except KeyError:
+                continue # missing experiment
+    
+    @staticmethod
+    def get_lts_record(settings):
+        key = Matrix.settings_to_key(settings)
+
+        try: return Matrix.lts_processed_map[key]
         except KeyError: return None
