@@ -67,7 +67,7 @@ class Plot():
 
         single_expe = sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) == 1
         data_threshold = []
-        threshold_status = defaultdict(list)
+        threshold_status = defaultdict(dict)
         threshold_passes = defaultdict(int)
 
         data = []
@@ -187,7 +187,7 @@ class Plot():
                         if str(threshold_value).endswith("%"):
                             status += f" (={_threshold_value:.2f})"
 
-                        threshold_status[entry_version].append(status)
+                        threshold_status[entry_version][legend_group or legend_name] = status
 
         if not data:
             return None, "No data to plot ..."
@@ -223,8 +223,9 @@ class Plot():
             success = pass_count == total_count
             msg += [html.B(entry_name), ": ", html.B("PASSED" if success else "FAILED"), f" ({pass_count}/{total_count} success{'es' if pass_count > 1 else ''})"]
             details = []
-            for a_status in status:
-                details.append(html.Li(a_status))
+            for legend_name, entry_status in status.items():
+                entry_details = html.Ul(html.Li(entry_status))
+                details.append(html.Li([legend_name, entry_details]))
 
             msg.append(html.Ul(details))
 
