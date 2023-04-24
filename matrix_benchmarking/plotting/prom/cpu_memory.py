@@ -67,7 +67,7 @@ class Plot():
         data_lm = []
         data_threshold = []
 
-        threshold_status = defaultdict(list)
+        threshold_status = defaultdict(dict)
         threshold_passes = defaultdict(int)
         for entry in common.Matrix.all_records(settings, setting_lists):
             try: threshold_value = entry.results.thresholds.get(self.threshold_key) if self.threshold_key else None
@@ -100,6 +100,8 @@ class Plot():
                     if "_sum_" in metric_name:
                         legend_group = None
                         legend_name = "sum(all)"
+                        if check_thresholds:
+                            continue
                     else:
                         legend_group = metric["metric"].get("pod", "<no podname>") + "/" + metric["metric"].get("container", self.container_name) \
                             if not self.is_cluster else None
@@ -178,14 +180,13 @@ class Plot():
 
 
                     if not is_req_or_lim and threshold_value and check_thresholds:
-
                         if max(y_values) > float(threshold_value):
                             status = f"FAIL: {max(y_values):.2f} > threshold={threshold_value}"
                         else:
                             status = f"PASS: {max(y_values):.2f} <= threshold={threshold_value}"
                             threshold_passes[entry_name] += 1
 
-                        threshold_status[entry_name].append(status)
+                        threshold_status[entry_name][legend_group] = status
 
         if not data:
             return None, "No data to plot ..."
@@ -230,10 +231,12 @@ class Plot():
             total_count = len(status)
             pass_count = threshold_passes[entry_name]
             success = pass_count == total_count
+
             msg += [html.B(entry_name), ": ", html.B("PASSED" if success else "FAILED"), f" ({pass_count}/{total_count} success{'es' if pass_count > 1 else ''})"]
             details = []
-            for a_status in status:
-                details.append(html.Li(a_status))
+            for legend_name, entry_status in status.items():
+                entry_details = html.Ul(html.Li(entry_status))
+                details.append(html.Li([legend_name, entry_details]))
 
             msg.append(html.Ul(details))
 
