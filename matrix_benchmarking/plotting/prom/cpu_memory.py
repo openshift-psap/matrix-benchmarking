@@ -100,6 +100,8 @@ class Plot():
                     if "_sum_" in metric_name:
                         legend_group = None
                         legend_name = "sum(all)"
+                        if check_thresholds:
+                            continue
                     else:
                         legend_group = metric["metric"].get("pod", "<no podname>") + "/" + metric["metric"].get("container", self.container_name) \
                             if not self.is_cluster else None
