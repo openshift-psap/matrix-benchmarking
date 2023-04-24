@@ -4,6 +4,24 @@ import pathlib
 
 import matrix_benchmarking
 
+class LTSEntry(types.SimpleNamespace):
+    def __init__(self, data: dict, metadata: dict, processed_key, import_key):
+        self.metadata = metadata
+        self.data = data
+
+        Matrix.import_map[import_key] = \
+            Matrix.processed_map[processed_key] = self
+        
+        [Matrix.settings[k].add(v) for k, v in processed_settings.items()]
+
+    @staticmethod
+    def from_dict(payload: dict, processed_key, import_key):
+        try:
+            return LTSEntry(payload['data'], payload['metadata'], processed_key, import_key)
+        except KeyError:
+            return None
+
+
 class MatrixEntry(types.SimpleNamespace):
     def __init__(self, location, results,
                  processed_key, import_key,
