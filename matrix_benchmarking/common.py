@@ -5,21 +5,21 @@ import pathlib
 import matrix_benchmarking
 
 class LTSEntry(types.SimpleNamespace):
-    def __init__(self, data: dict, metadata: dict, processed_key, import_key):
+    def __init__(self, data: dict, metadata: dict, processed_key, import_key, processed_settings, import_settings):
         self.metadata = metadata
         self.data = data
 
         self.is_gathered = False
         
-        Matrix.lts_import_map[import_key] = \
-            Matrix.lts_processed_map[processed_key] = self
+        Matrix.lts_import_map[import_key] = self
+        Matrix.lts_processed_map[processed_key] = self
         
         [Matrix.settings[k].add(v) for k, v in processed_settings.items()]
 
     @staticmethod
-    def from_dict(payload: dict, processed_key, import_key):
+    def from_dict(payload: dict, processed_key, import_key,  processed_settings, import_settings):
         try:
-            return LTSEntry(payload['data'], payload['metadata'], processed_key, import_key)
+            return LTSEntry(payload['data'], payload['metadata'], processed_key, import_key, processed_settings, import_settings)
         except KeyError:
             return None
 
