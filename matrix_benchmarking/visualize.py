@@ -53,7 +53,7 @@ Args:
 
         logging.info(f"Loading results ... ")
         workload_store.parse_data()
-        logging.info(f"Loading results ... done. Found {len(common.Matrix.processed_map)} results and {len(common.Matrix().lts_processed_map)} LTS results.")
+        logging.info(f"Loading results ... done. Found {len(common.Matrix.processed_map)} results.")
         if not common.Matrix.processed_map and not common.Matrix.lts_processed_map:
             logging.error("Not result found, exiting.")
             return 1

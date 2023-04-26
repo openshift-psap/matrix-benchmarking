@@ -60,8 +60,6 @@ class Plot():
 
         y_divisor = 1024*1024*1024 if self.is_memory else 1
 
-        single_expe = sum(1 for _ in common.Matrix.all_lts_records(settings, setting_lists)) == 1
-
         data = []
         data_rq = []
         data_lm = []
@@ -69,7 +67,7 @@ class Plot():
 
         threshold_status = defaultdict(list)
         threshold_passes = defaultdict(int)
-        for entry in common.Matrix.all_lts_records(settings, setting_lists):
+        for entry in common.Matrix.all_records(settings, setting_lists):
             try: threshold_value = entry.data['thresholds'].get(self.threshold_key) if self.threshold_key else None
             except AttributeError: threshold_value = None
             check_thresholds = True
@@ -252,8 +250,6 @@ class Plot():
         y_divisor = 1024*1024*1024 if self.is_memory else 1
 
         single_expe = sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) == 1
-        if sum(1 for _ in common.Matrix.all_lts_records(settings, setting_lists)) >= 1:
-            return self.do_lts_plot(ordered_vars, settings, setting_lists, variables, cfg)
 
         data = []
         data_rq = []

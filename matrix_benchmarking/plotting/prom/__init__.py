@@ -65,13 +65,12 @@ class Plot():
 
         y_max = 0
 
-        single_expe = sum(1 for _ in common.Matrix.all_lts_records(settings, setting_lists)) == 1
         data_threshold = []
         threshold_status = defaultdict(list)
         threshold_passes = defaultdict(int)
 
         data = []
-        for entry in common.Matrix.all_lts_records(settings, setting_lists):
+        for entry in common.Matrix.all_records(settings, setting_lists):
             try:
                 threshold_value = entry.data['thresholds'].get(self.threshold_key) if self.threshold_key else None
             except AttributeError: threshold_value = None
@@ -244,9 +243,6 @@ class Plot():
             plot_title += f"<br>{'<br>'.join(queries_names)}"
 
         y_max = 0
-
-        if sum(1 for _ in common.Matrix().all_lts_records(settings, setting_lists)) >= 1:
-            return self.do_lts_plot(ordered_vars, settings, setting_lists, variables, cfg)
 
         single_expe = sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) == 1
         data_threshold = []
