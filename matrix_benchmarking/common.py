@@ -1,3 +1,5 @@
+from typing import Iterator
+
 import os, types, itertools
 from collections import defaultdict
 import pathlib
@@ -8,6 +10,9 @@ class LTSEntry(types.SimpleNamespace):
     def __init__(self, data: dict, metadata: dict, processed_key, import_key, processed_settings, import_settings):
         self.metadata = metadata
         self.data = data
+
+        self.metrics: dict = data.get('metrics', {})
+        self.thresholds: dict = data.get('thresholds', {})
 
         self.is_gathered = False
         
@@ -22,6 +27,15 @@ class LTSEntry(types.SimpleNamespace):
             return LTSEntry(payload['data'], payload['metadata'], processed_key, import_key, processed_settings, import_settings)
         except KeyError:
             return None
+    
+    def get_threshold(self, threshold_value, default: str = None) -> str:
+        return self.thresholds.get(threshold_value, default)
+    
+    def get_name(self, variables) -> str:
+        return ", ".join([f"{key}={entry.metadata['settings'][key]}" for key in variables])
+    
+    def get_settings(self) -> dict:
+        return self.metadata.get('settings', {})
 
 
 class MatrixEntry(types.SimpleNamespace):
@@ -49,6 +63,18 @@ class MatrixEntry(types.SimpleNamespace):
 
         [Matrix.settings[k].add(v) for k, v in processed_settings.items()]
 
+    def get_name(self, variables):
+        return ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
+
+    def get_threshold(self, threshold_value, default: str = None) -> str:
+        if hasattr(self.results, 'thresholds'):
+            return self.results.thresholds.get(threshold_value, default)
+        return default
+    
+    def get_settings(self) -> dict:
+        return entry.settings.__dict__
+
+
 
 class Matrix():
     settings = defaultdict(set)
@@ -60,7 +86,7 @@ class Matrix():
         return "|".join(f"{k}={settings[k]}" for k in sorted(settings) if k != "stats")
 
     @staticmethod
-    def all_records(settings, setting_lists):
+    def all_records(settings, setting_lists) -> Iterator[MatrixEntry | LTSEntry]:
         for settings_values in sorted(itertools.product(*setting_lists)):
             settings.update(dict(settings_values))
             key = Matrix.settings_to_key(settings)
