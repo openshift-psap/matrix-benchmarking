@@ -93,14 +93,16 @@ class Matrix():
         return "|".join(f"{k}={settings[k]}" for k in sorted(settings) if k != "stats")
 
     @staticmethod
-    def all_records(settings, setting_lists) -> Iterator[MatrixEntry | LTSEntry]:
+    def all_records(settings, setting_lists, include_local=True, include_lts=True) -> Iterator[MatrixEntry | LTSEntry]:
         for settings_values in sorted(itertools.product(*setting_lists)):
             settings.update(dict(settings_values))
             key = Matrix.settings_to_key(settings)
             try:
-                yield Matrix.processed_map[key]
+                entry = Matrix.processed_map[key]
             except KeyError:
                 continue # missing experiment
+            if (entry.is_lts and include_lts) or (not entry.is_lts and include_local):
+                yield entry
 
     @staticmethod
     def get_record(settings):
@@ -121,4 +123,5 @@ class Matrix():
                 continue # missing experiment
             if (entry.is_lts and include_lts) or (not entry.is_lts and include_local):
                 count += 1
+        return count
 
