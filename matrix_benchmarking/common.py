@@ -15,6 +15,7 @@ class LTSEntry(types.SimpleNamespace):
         self.thresholds: dict = data.get('thresholds', {})
 
         self.is_gathered = False
+        self.is_lts = True
         
         Matrix.import_map[import_key] = self
         Matrix.processed_map[processed_key] = self
@@ -37,6 +38,8 @@ class LTSEntry(types.SimpleNamespace):
     def get_settings(self) -> dict:
         return self.metadata.get('settings', {})
 
+    def check_thresholds(self) -> bool:
+        return False #Not currently stored
 
 class MatrixEntry(types.SimpleNamespace):
     def __init__(self, location, results,
@@ -57,13 +60,14 @@ class MatrixEntry(types.SimpleNamespace):
         self.import_settings = processed_settings
 
         self.is_gathered = False
+        self.is_lts = False
 
         Matrix.import_map[import_key] = \
         Matrix.processed_map[processed_key] = self
 
         [Matrix.settings[k].add(v) for k, v in processed_settings.items()]
 
-    def get_name(self, variables):
+    def get_name(self, variables) -> str:
         return ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
 
     def get_threshold(self, threshold_value, default: str = None) -> str:
@@ -73,6 +77,9 @@ class MatrixEntry(types.SimpleNamespace):
     
     def get_settings(self) -> dict:
         return entry.settings.__dict__
+    
+    def check_thresholds(self) -> bool:
+        return hasattr(self.results, 'check_thresholds') and self.results.check_thresholds
 
 
 
