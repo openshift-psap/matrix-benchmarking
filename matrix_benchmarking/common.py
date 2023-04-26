@@ -109,3 +109,16 @@ class Matrix():
         try: return Matrix.processed_map[key]
         except KeyError: return None
 
+    @staticmethod
+    def count_records(settings, setting_lists, include_local=True, include_lts=True):
+        count = 0
+        for settings_values in sorted(itertools.product(*setting_lists)):
+            settings.update(dict(settings_values))
+            key = Matrix.settings_to_key(settings)
+            try:
+                entry = Matrix.processed_map[key]
+            except KeyError:
+                continue # missing experiment
+            if (entry.is_lts and include_lts) or (not entry.is_lts and include_local):
+                count += 1
+
