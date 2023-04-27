@@ -1,5 +1,7 @@
 from typing import Iterator
 
+import uuid
+
 import os, types, itertools
 from collections import defaultdict
 import pathlib
@@ -50,12 +52,14 @@ class MatrixEntry(types.SimpleNamespace):
             self.settings = settings
         else:
             self.settings = types.SimpleNamespace()
+            self.settings.id = str(uuid.uuid4())
         self.stats = {}
 
         self.location = location
         self.results = results
 
         self.settings.__dict__.update(processed_settings)
+
         self.processed_key = processed_key
         self.import_settings = processed_settings
 
@@ -97,6 +101,7 @@ class Matrix():
         for settings_values in sorted(itertools.product(*setting_lists)):
             settings.update(dict(settings_values))
             key = Matrix.settings_to_key(settings)
+            logging.debug(f"Key: {key}")
             try:
                 entry = Matrix.processed_map[key]
             except KeyError:
