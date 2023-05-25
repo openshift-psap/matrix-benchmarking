@@ -48,6 +48,7 @@ class Plot():
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
+        cfg__show_lts = cfg.get("show_lts", False)
 
         fig = go.Figure()
         metric_names = [
@@ -60,7 +61,7 @@ class Plot():
 
         y_divisor = 1024*1024*1024 if self.is_memory else 1
 
-        single_expe = sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) == 1
+        single_expe = single_expe = common.Matrix.count_records(settings, setting_lists, include_lts=cfg__show_lts) == 1
 
         data = []
         data_rq = []
@@ -69,19 +70,17 @@ class Plot():
 
         threshold_status = defaultdict(dict)
         threshold_passes = defaultdict(int)
-        for entry in common.Matrix.all_records(settings, setting_lists):
-            try: threshold_value = entry.results.thresholds.get(self.threshold_key) if self.threshold_key else None
-            except AttributeError: threshold_value = None
+        for entry in common.Matrix.all_records(settings, setting_lists, include_lts=cfg__show_lts):
+            threshold_value = entry.get_threshold(self.threshold_key, None) if self.threshold_key else None
 
-            try: check_thresholds = entry.results.check_thresholds
-            except AttributeError: check_thresholds = False
+            check_thresholds = entry.check_thresholds()
 
             if cfg__check_all_thresholds:
                 check_thresholds = True
 
-            entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
+            entry_name = entry.get_name(variables)
 
-            sort_index = entry.settings.__dict__[ordered_vars[0]] if len(variables) == 1 \
+            sort_index = entry.get_settings()[ordered_vars[0]] if len(variables) == 1 \
                 else entry_name
 
             for _metric in self.metrics:

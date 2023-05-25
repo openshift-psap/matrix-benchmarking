@@ -51,6 +51,7 @@ class Plot():
         plot_title = self.title if self.title else self.name
 
         cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
+        cfg__show_lts = cfg.get('show_lts', False)
 
         if self.show_metrics_in_title:
             metric_names = [
@@ -64,27 +65,24 @@ class Plot():
             plot_title += f"<br>{'<br>'.join(queries_names)}"
 
         y_max = 0
-
-        single_expe = sum(1 for _ in common.Matrix.all_records(settings, setting_lists)) == 1
+        single_expe = common.Matrix.count_records(settings, setting_lists, include_lts=cfg__show_lts) == 1
         data_threshold = []
         threshold_status = defaultdict(dict)
         threshold_passes = defaultdict(int)
 
         data = []
-        for entry in common.Matrix.all_records(settings, setting_lists):
-            try:
-                threshold_value = entry.results.thresholds.get(self.threshold_key) if self.threshold_key else None
-            except AttributeError: threshold_value = None
+        for entry in common.Matrix.all_records(settings, setting_lists, include_lts=cfg__show_lts):
+            threshold_value = entry.get_threshold(self.threshold_key)
 
-            try: check_thresholds = entry.results.check_thresholds
+            try: check_thresholds = entry.check_thresholds()
             except AttributeError: check_thresholds = False
 
             if cfg__check_all_thresholds:
                 check_thresholds = True
 
-            entry_name = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
+            entry_name = entry.get_name(variables)
 
-            sort_index = entry.settings.__dict__[ordered_vars[0]] if len(variables) == 1 \
+            sort_index = entry.get_settings()[ordered_vars[0]] if len(variables) == 1 \
                 else entry_name
 
             for _metric in self.metrics:
@@ -143,7 +141,7 @@ class Plot():
                                     mode='markers+lines'))
                             entry_version = "Test"
                     else:
-                        entry_version = ", ".join([f"{key}={entry.settings.__dict__[key]}" for key in variables])
+                        entry_version = entry.get_name(variables)
                         for y_value in y_values:
                             data.append(dict(Version=entry_version,
                                              SortIndex=sort_index,
@@ -158,7 +156,9 @@ class Plot():
 
                             data_threshold.append(dict(Version=entry_version,
                                                        Value=_threshold_value,
-                                                       Metric=legend_name))
+                                                       Metric=legend_name,
+                                                       SortIndex=sort_index
+                                                    ))
 
                     if threshold_value is not None and check_thresholds:
                         if str(threshold_value).endswith("%"):

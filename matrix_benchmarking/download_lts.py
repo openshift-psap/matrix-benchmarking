@@ -86,8 +86,7 @@ def download(url: str, id: int, token: str, filters: list[str], dest_dir: str):
 
 def write_settings(fname, data):
     with open(fname, "w") as settings:
-        del data['settings']['$type']
-        for (key, val) in data['settings'].items():
+        for (key, val) in data['metadata']['settings'].items():
             settings.write(f"{key}={val}\n")
 
 
