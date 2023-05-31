@@ -160,6 +160,7 @@ def parse_data(results_dir=None):
     if results_dir is None:
         results_dir = pathlib.Path(cli_args.kwargs["results_dirname"])
 
+    results_directories = []
     path = os.walk(results_dir, followlinks=True)
     for _this_dir, directories, files in path:
         if "skip" in files: continue
@@ -167,13 +168,22 @@ def parse_data(results_dir=None):
 
         this_dir = pathlib.Path(_this_dir)
 
-        relative = this_dir.relative_to(results_dir)
+        is_subdir_of_results_dir = False
+        for existing_results_directory in results_directories:
+            if existing_results_directory in this_dir.parents:
+                is_subdir_of_results_dir = True
+                break
+        if is_subdir_of_results_dir:
+            # we don't want nested results dirs
+            continue
 
+        relative = this_dir.relative_to(results_dir)
         try:
             expe_name = relative.parents[-1].name
         except Exception:
             expe_name = "expe"
 
+        results_directories.append(this_dir)
         if 'lts' in files:
             _parse_lts_dir(results_dir, expe_name, this_dir)
         else:
