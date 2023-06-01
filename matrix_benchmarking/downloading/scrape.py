@@ -51,16 +51,17 @@ class ScrapOCPCiArtifactsBase():
     def handle_file(self, filepath_rel, local_filename, depth):
         raise RuntimeError("not implemented ...")
 
-    def scrape(self, current_href=None, depth=0):
+    def scrape(self, current_href=None, depth=0, found=False):
         url = f"{self.site}{current_href if current_href else self.base_dir}"
         r = requests.get(url)
         s = BeautifulSoup(r.text,"html.parser")
 
         filenames = [(pathlib.Path(link.attrs['href']).name) for link in s.find_all("a")]
-        if "exit_code" in filenames or "settings" in filenames:
+        if not found and ("exit_code" in filenames or "settings" in filenames):
             depth = 0
+            found = True
 
-        if depth == 0:
+        if found and depth == 0:
             cache_file = pathlib.Path(self.workload_store.CACHE_FILENAME)
             try:
                 self.handle_file(cache_file, self.result_local_dir / cache_file, depth)
@@ -97,7 +98,7 @@ class ScrapOCPCiArtifactsBase():
                     continue
 
                 logging.info(f"{' '*depth}Directory: {new_href.relative_to(self.base_dir)}")
-                self.scrape(new_href, depth=depth+1)
+                self.scrape(new_href, depth=depth+1, found=found)
 
             elif img_src == "/icons/file.png":
                 # link to a file, delete to the child class to decide what to do with it
