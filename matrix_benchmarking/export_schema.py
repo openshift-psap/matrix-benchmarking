@@ -20,7 +20,7 @@ Args:
     kwargs = dict(locals())
 
     cli_args.setup_env_and_kwargs(kwargs)
-    cli_args.check_mandatory_kwargs(kwargs, ("workload"))
+    cli_args.check_mandatory_kwargs(kwargs, ["workload"])
 
     def run():
         cli_args.store_kwargs(kwargs, execution_mode="export_schema")
