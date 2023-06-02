@@ -1,5 +1,6 @@
 from typing import List, Tuple
 import datetime as dt
+from enum import Enum
 
 from pydantic import BaseModel
 
@@ -25,3 +26,8 @@ class PrometheusValue(BaseModel):
 class PrometheusMetric(BaseModel):
     query: str
     data: List[PrometheusValue]
+
+
+class PSAPEnum(Enum):
+    def _generate_next_value_(name, start, count, last_values):
+        return name.replace('_', ' ')
