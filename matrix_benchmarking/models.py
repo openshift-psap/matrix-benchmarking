@@ -2,7 +2,7 @@ from typing import List, Tuple
 import datetime as dt
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConstrainedStr
 
 
 class Metadata(BaseModel):
@@ -31,3 +31,8 @@ class PrometheusMetric(BaseModel):
 class PSAPEnum(Enum):
     def _generate_next_value_(name, start, count, last_values):
         return name.replace('_', ' ')
+
+
+class SemVer(ConstrainedStr):
+    regex = "^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
+
