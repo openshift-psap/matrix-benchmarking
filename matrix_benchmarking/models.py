@@ -2,20 +2,27 @@ from typing import List, Tuple
 import datetime as dt
 from enum import Enum
 
-from pydantic import BaseModel, ConstrainedStr
+from pydantic import BaseModel, ConstrainedStr, constr
 
+SEMVER_REGEX="(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?"
 
 class Metadata(BaseModel):
     start: dt.datetime
     end: dt.datetime
 
 
-class PSAPPayload(BaseModel):
-    """
-    The underlying model of PSAP payloads
-    """
-    data: dict
-    metadata: Metadata
+def create_PSAPPayload(schema_name):
+    class PSAPPayload(BaseModel):
+        """
+        The underlying model of PSAP payloads
+        """
+        payload_schema: constr(regex=f"^urn:{schema_name}:{SEMVER_REGEX}$")
+        data: dict
+        metadata: Metadata
+        
+        class Config:
+            fields = {'payload_schema': '$schema'}
+    return PSAPPayload
 
 
 class PrometheusValue(BaseModel):
@@ -34,5 +41,5 @@ class PSAPEnum(Enum):
 
 
 class SemVer(ConstrainedStr):
-    regex = "^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
+    regex = f"^{SEMVER_REGEX}$"
 
