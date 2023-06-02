@@ -4,7 +4,7 @@ import datetime as dt
 from pydantic import BaseModel
 
 
-class Metadata(BaseModel()):
+class Metadata(BaseModel):
     start: dt.datetime
     end: dt.datetime
 
