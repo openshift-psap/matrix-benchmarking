@@ -147,7 +147,7 @@ def register_custom_schema(model):
     global custom_schema
     custom_schema = model
 
-def _get_custom_schema():
+def get_custom_schema():
     if custom_schema is None:
         logging.warning("No Schema model registered")
         return models.PSAPPayload
