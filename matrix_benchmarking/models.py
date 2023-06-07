@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Union
 import datetime as dt
 from enum import Enum
 
@@ -28,15 +28,21 @@ def create_PSAPPayload(schema_name):
             fields = {'payload_schema': '$schema'}
     return PSAPPayload
 
+class Empty(BaseModel):
+    ...
+
+    class Config:
+        extra = "forbid"
 
 class PrometheusValue(ExclusiveModel):
-    metric: dict
+    metric: Dict[str, str]
     values: List[Tuple[int, str]]
 
+PrometheusValues = Union[List[PrometheusValue], Empty]
 
 class PrometheusMetric(ExclusiveModel):
     query: str
-    data: List[PrometheusValue]
+    data: PrometheusValues
 
 
 class PSAPEnum(Enum):
@@ -46,4 +52,3 @@ class PSAPEnum(Enum):
 
 class SemVer(ConstrainedStr):
     regex = f"^{SEMVER_REGEX}$"
-
