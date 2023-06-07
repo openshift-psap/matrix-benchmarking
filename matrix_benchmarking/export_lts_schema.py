@@ -33,7 +33,12 @@ Args:
         else:
             output = open(file, 'w')
 
-        output.write(store.get_custom_schema().schema_json(indent=4))
+        schema = store.get_lts_schema()
+        if not schema:
+            logging.error(f"No LTS schema registered for workload '{workload}', cannot export it.")
+            sys.exit(1)
+
+        output.write(schema.schema_json(indent=4))
         output.close()
-   
+
     return cli_args.TaskRunner(run)
