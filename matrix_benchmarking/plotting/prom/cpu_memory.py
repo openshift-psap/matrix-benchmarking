@@ -89,12 +89,12 @@ class Plot():
                 for metric in self.filter_metrics(entry, self.get_metrics(entry, metric_name)):
                     if not metric: continue
 
-                    x_values = [x for x, y in metric["values"]]
-                    y_values = [float(y)/y_divisor for x, y in metric["values"]]
+                    x_values = [x for x, y in metric.values]
+                    y_values = [float(y)/y_divisor for x, y in metric.values]
 
-                    metric_actual_name = metric["metric"].get("__name__", metric_name)
+                    metric_actual_name = metric.metric.get("__name__", metric_name)
                     legend_name = metric_actual_name
-                    if metric["metric"].get("container") == "POD": continue
+                    if metric.metric.get("container") == "POD": continue
 
                     if "_sum_" in metric_name:
                         legend_group = None
@@ -102,7 +102,7 @@ class Plot():
                         if check_thresholds:
                             continue
                     else:
-                        legend_group = metric["metric"].get("pod", "<no podname>") + "/" + metric["metric"].get("container", self.container_name) \
+                        legend_group = metric.metric.get("pod", "<no podname>") + "/" + metric.metric.get("container", self.container_name) \
                             if not self.is_cluster else None
 
                     if self.as_timestamp:
@@ -115,7 +115,7 @@ class Plot():
 
                     opts = {}
 
-                    if self.skip_nodes and "node" not in metric["metric"]:
+                    if self.skip_nodes and "node" not in metric.metric:
                         continue
 
                     is_req_or_lim = "limit" in legend_name or "requests" in legend_name
