@@ -10,6 +10,11 @@ import sys
 import time
 import os
 import datetime
+import typing
+
+import pydantic
+
+import matrix_benchmarking.models
 
 PROMETHEUS_URL = "http://localhost:9090"
 
@@ -17,7 +22,7 @@ def _parse_metric_values_from_file(metric_file):
     with open(metric_file) as f:
         json_metrics = json.load(f)
 
-    return json_metrics
+    return pydantic.parse_obj_as(matrix_benchmarking.models.PrometheusValues, json_metrics)
 
 
 def _extract_metrics_from_prometheus(tsdb_path, process_metrics):
