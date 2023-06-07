@@ -15,7 +15,7 @@ import matrix_benchmarking.parse
 import matrix_benchmarking.download
 import matrix_benchmarking.upload_lts
 import matrix_benchmarking.download_lts
-import matrix_benchmarking.export_schema
+import matrix_benchmarking.export_lts_schema
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"),
                     format="%(levelname)s | %(message)s",)
