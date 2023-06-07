@@ -6,3 +6,5 @@ fire
 pyyaml
 BeautifulSoup4==4.11.*
 python-keycloak
+prometheus_api_client
+pydantic
