@@ -32,7 +32,7 @@ class MatrixBenchmarking:
         self.download = matrix_benchmarking.download.main
         self.upload_lts = matrix_benchmarking.upload_lts.main
         self.download_lts = matrix_benchmarking.download_lts.main
-        self.export_schema = matrix_benchmarking.export_schema.main
+        self.export_lts_schema = matrix_benchmarking.export_lts_schema.main
 
 def main():
     # Print help rather than opening a pager

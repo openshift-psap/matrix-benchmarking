@@ -129,7 +129,6 @@ def gather_rolling_entries(entry):
 # ---
 
 custom_rewrite_settings = None
-custom_schema = None
 
 def _rewrite_settings(import_settings):
     if custom_rewrite_settings is None:
@@ -142,14 +141,20 @@ def register_custom_rewrite_settings(fn):
     global custom_rewrite_settings
     custom_rewrite_settings = fn
 
+# --
 
-def register_custom_schema(model):
-    global custom_schema
-    custom_schema = model
+lts_schema = None
 
-def get_custom_schema():
-    if custom_schema is None:
-        logging.warning("No Schema model registered")
-        return models.PSAPPayload
-    return custom_schema
+def register_lts_schema(schema):
+    global lts_schema
+    lts_schema = schema
+
+
+def get_lts_schema():
+    if lts_schema is None:
+        logging.warning("No LTS schema registered")
+
+
+    return lts_schema
+
 # ---
