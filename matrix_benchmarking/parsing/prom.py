@@ -3,7 +3,7 @@ import statistics as stats
 
 def filter_value_in_label(metrics, value, label):
     for metric in metrics:
-        label_value = metric["metric"].get(label)
+        label_value = metric.metric.get(label)
         if label_value is None: continue
         if value not in label_value: continue
 
@@ -13,7 +13,7 @@ def filter_value_in_label(metrics, value, label):
 
 def filter_doesnt_have_label(metrics, label):
     for metric in metrics:
-        if label in metric["metric"]: continue
+        if label in metric.metric: continue
 
         yield metric
 
@@ -22,7 +22,7 @@ def filter_doesnt_have_label(metrics, label):
 def mean(metrics, filter_fct):
     values = []
     for metric in filter_fct(metrics):
-        values.append(stats.mean([float(v) for ts, v in metric["values"]]))
+        values.append(stats.mean([float(v) for ts, v in metric.values]))
 
     return values
 
@@ -30,6 +30,6 @@ def mean(metrics, filter_fct):
 def last(metrics, filter_fct):
     values = []
     for metric in filter_fct(metrics):
-        values.append(float(metric["values"][-1][1]))
+        values.append(float(metric.values[-1][1]))
 
     return values

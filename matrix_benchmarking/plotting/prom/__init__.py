@@ -91,13 +91,13 @@ class Plot():
                 for metric in self.filter_metrics(entry, self.get_metrics(entry, metric_name)):
                     if not metric: continue
 
-                    x_values = [x for x, y in metric["values"]]
-                    y_values = [float(y)/self.y_divisor for x, y in metric["values"]]
+                    x_values = [x for x, y in metric.values]
+                    y_values = [float(y)/self.y_divisor for x, y in metric.values]
 
                     if self.get_legend_name:
-                        legend_name, legend_group = self.get_legend_name(metric_name, metric["metric"])
+                        legend_name, legend_group = self.get_legend_name(metric_name, metric.metric)
                     else:
-                        legend_name = metric["metric"].get("__name__", metric_name)
+                        legend_name = metric.metric.get("__name__", metric_name)
                         legend_group = None
 
                     if legend_group: legend_group = str(legend_group)
