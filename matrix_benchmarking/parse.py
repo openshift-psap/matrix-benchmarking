@@ -68,8 +68,28 @@ Args:
             parsed_results = []
             for (payload, _, __) in workload_store.build_lts_payloads():
                 parsed_results.append(payload)
-            json.dump(parsed_results, file, indent=indent)
 
+            def dumper(obj):
+                import datetime
+                import pathlib
+
+                if hasattr(obj, "toJSON"):
+                    return obj.toJSON()
+
+                elif hasattr(obj, "__dict__"):
+                    return obj.__dict__
+
+                if isinstance(obj, datetime.datetime):
+                    return str(obj) # TO BE IMPROVED
+
+                elif isinstance(obj, pathlib.Path):
+                    return str(obj)
+                else:
+                    raise RuntimeError("No default serializer for object of type {obj.__class__}: {obj}")
+
+            json.dump(parsed_results, file, indent=indent, default=dumper)
+            print("", file=file)
+            file.close()
 
         has_result = len(common.Matrix.processed_map) != 0
         return 0 if has_result else 1
