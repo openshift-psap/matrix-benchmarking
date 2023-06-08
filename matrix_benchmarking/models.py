@@ -39,6 +39,8 @@ class PrometheusValue(ExclusiveModel):
 
 PrometheusValues = Union[List[PrometheusValue], Empty]
 
+PrometheusNamedMetricValues = Dict[str, PrometheusValues]
+
 class PrometheusMetric(ExclusiveModel):
     query: str
     data: PrometheusValues
