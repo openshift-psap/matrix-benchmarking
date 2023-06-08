@@ -28,11 +28,10 @@ def create_PSAPPayload(schema_name):
             fields = {'payload_schema': '$schema'}
     return PSAPPayload
 
-class Empty(BaseModel):
+
+class Empty(ExclusiveModel):
     ...
 
-    class Config:
-        extra = "forbid"
 
 class PrometheusValue(ExclusiveModel):
     metric: Dict[str, str]
