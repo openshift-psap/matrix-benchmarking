@@ -13,7 +13,7 @@ class ExclusiveModel(BaseModel):
 class Metadata(ExclusiveModel):
     start: dt.datetime
     end: dt.datetime
-
+    settings: Dict[str, Union[str, int]]
 
 def create_PSAPPayload(schema_name):
     class PSAPPayload(ExclusiveModel):
