@@ -1,6 +1,7 @@
 import os, sys
 import logging
 import json
+import functools
 
 import matrix_benchmarking.store as store
 import matrix_benchmarking.common as common
@@ -12,6 +13,7 @@ def main(workload: str = "",
          clean: bool = False,
          run: bool = False,
          output_lts: str = "",
+         output_matrix: str = "",
          pretty: bool = True
          ):
     """
@@ -34,7 +36,8 @@ Args:
     filters: If provided, parse only the experiment matching the filters. Eg: expe=expe1:expe2,something=true.
     clean: If 'True', run in cleanup mode.
     run: In cleanup mode: if 'False', list the results that would be cleanup. If 'True', execute the cleanup.
-    output_lts: Output the parsed results into a specified file, or to stdout if '-' is supplied
+    output_lts: Output the parsed LTS results into a specified file, or to stdout if '-' is supplied
+    output_matrix: Output the internal entry matrix into a specified file, or to stdout if '-' is supplied
 """
 
     kwargs = dict(locals()) # capture the function arguments
@@ -59,6 +62,41 @@ Args:
             if not kwargs["run"]:
                 logging.info("Cleaner ran in dry mode. Pass --run to perform the deletion.")
 
+
+        def json_dumper(obj, strict=False):
+            import datetime
+            import pathlib
+
+            if hasattr(obj, "toJSON"):
+                return obj.toJSON()
+
+            elif hasattr(obj, "__dict__"):
+                return obj.__dict__
+
+            if isinstance(obj, datetime.datetime):
+                return str(obj) # TO BE IMPROVED
+
+            elif isinstance(obj, pathlib.Path):
+                return str(obj)
+            elif not fail_on_unknown:
+                return str(obj)
+            else:
+                raise RuntimeError("No default serializer for object of type {obj.__class__}: {obj}")
+
+        if kwargs["output_matrix"]:
+            file = sys.stdout if kwargs["output_matrix"] == '-' else open(kwargs["output_matrix"], "w")
+            indent = None
+            if kwargs['pretty']:
+                indent = 4
+
+            parsed_results = []
+            for entry in common.Matrix.processed_map.values():
+                parsed_results.append(entry)
+
+            json.dump(parsed_results, file, indent=indent, default=functools.partial(json_dumper, strict=True))
+            print("", file=file)
+            file.close()
+
         if kwargs["output_lts"]:
             file = sys.stdout if kwargs["output_lts"] == '-' else open(kwargs["output_lts"], "w")
             indent = None
@@ -69,25 +107,7 @@ Args:
             for (payload, _, __) in workload_store.build_lts_payloads():
                 parsed_results.append(payload)
 
-            def dumper(obj):
-                import datetime
-                import pathlib
-
-                if hasattr(obj, "toJSON"):
-                    return obj.toJSON()
-
-                elif hasattr(obj, "__dict__"):
-                    return obj.__dict__
-
-                if isinstance(obj, datetime.datetime):
-                    return str(obj) # TO BE IMPROVED
-
-                elif isinstance(obj, pathlib.Path):
-                    return str(obj)
-                else:
-                    raise RuntimeError("No default serializer for object of type {obj.__class__}: {obj}")
-
-            json.dump(parsed_results, file, indent=indent, default=dumper)
+            json.dump(parsed_results, file, indent=indent, default=functools.partial(json_dumper, strict=False))
             print("", file=file)
             file.close()
 
