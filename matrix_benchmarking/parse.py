@@ -74,7 +74,7 @@ Args:
                 return obj.__dict__
 
             if isinstance(obj, datetime.datetime):
-                return str(obj) # TO BE IMPROVED
+                return obj.isoformat()
 
             elif isinstance(obj, pathlib.Path):
                 return str(obj)
