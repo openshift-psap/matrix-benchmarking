@@ -1,14 +1,30 @@
-from typing import List, Tuple, Dict, Union
+from __future__ import annotations
+
+from typing import List, Tuple, Dict, Union, Optional
 import datetime as dt
 from enum import Enum
 
 from pydantic import BaseModel, ConstrainedStr, constr, Extra
+import pydantic
 
 SEMVER_REGEX="(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?"
 
 class ExclusiveModel(BaseModel):
+    __force_annotation: int # workaround for https://github.com/python/cpython/issues/95532, for AllOptional 'annotations.update(base.__annotations__)' to work
+
     class Config:
         extra = Extra.forbid
+
+class AllOptional(pydantic.main.ModelMetaclass):
+    def __new__(self, name, bases, namespaces, **kwargs):
+        annotations = namespaces.get('__annotations__', {})
+        for base in bases:
+            annotations.update(base.__annotations__)
+        for field in annotations:
+            if not field.startswith('__'):
+                annotations[field] = Optional[annotations[field]]
+        namespaces['__annotations__'] = annotations
+        return super().__new__(self, name, bases, namespaces, **kwargs)
 
 class Metadata(ExclusiveModel):
     start: dt.datetime
