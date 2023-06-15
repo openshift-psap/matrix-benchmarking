@@ -62,10 +62,12 @@ class PrometheusMetric(ExclusiveModel):
     data: PrometheusValues
 
 
-class PSAPEnum(Enum):
+class PSAPEnum(str, Enum):
     def _generate_next_value_(name, start, count, last_values):
         return name.replace('_', ' ')
 
+    def __str__(self) -> str:
+        return self.value
 
 class SemVer(ConstrainedStr):
     regex = f"^{SEMVER_REGEX}$"
