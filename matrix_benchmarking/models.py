@@ -31,19 +31,6 @@ class Metadata(ExclusiveModel):
     end: dt.datetime
     settings: Dict[str, Union[str, int]]
 
-def create_PSAPPayload(schema_name):
-    class PSAPPayload(ExclusiveModel):
-        """
-        The underlying model of PSAP payloads
-        """
-        payload_schema: constr(regex=f"^urn:{schema_name}:{SEMVER_REGEX}$")
-        data: dict
-        metadata: Metadata
-
-        class Config:
-            fields = {'payload_schema': '$schema'}
-    return PSAPPayload
-
 
 class Empty(ExclusiveModel):
     ...
