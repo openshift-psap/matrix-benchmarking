@@ -58,3 +58,6 @@ class PSAPEnum(str, Enum):
 
 class SemVer(ConstrainedStr):
     regex = f"^{SEMVER_REGEX}$"
+
+def create_schema_field(schema_name):
+    return constr(regex = f"^urn:{schema_name}:{SEMVER_REGEX}$")
