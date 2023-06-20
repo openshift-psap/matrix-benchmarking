@@ -36,12 +36,17 @@ def create_PSAPPayload(schema_name):
         """
         The underlying model of PSAP payloads
         """
-        payload_schema: constr(regex=f"^urn:{schema_name}:{SEMVER_REGEX}$")
+        # Disabling this because of this exception:
+        # TypeError: issubclass() arg 1 must be a class
+        # See: https://github.com/pydantic/pydantic/issues/545
+
+        # payload_schema: constr(regex=f"^urn:{schema_name}:{SEMVER_REGEX}$")
         data: dict
         metadata: Metadata
 
         class Config:
             fields = {'payload_schema': '$schema'}
+
     return PSAPPayload
 
 
