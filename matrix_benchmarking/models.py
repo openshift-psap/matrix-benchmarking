@@ -31,24 +31,6 @@ class Metadata(ExclusiveModel):
     end: dt.datetime
     settings: Dict[str, Union[str, int]]
 
-def create_PSAPPayload(schema_name):
-    class PSAPPayload(ExclusiveModel):
-        """
-        The underlying model of PSAP payloads
-        """
-        # Disabling this because of this exception:
-        # TypeError: issubclass() arg 1 must be a class
-        # See: https://github.com/pydantic/pydantic/issues/545
-
-        # payload_schema: constr(regex=f"^urn:{schema_name}:{SEMVER_REGEX}$")
-        data: dict
-        metadata: Metadata
-
-        class Config:
-            fields = {'payload_schema': '$schema'}
-
-    return PSAPPayload
-
 
 class Empty(ExclusiveModel):
     ...
@@ -67,10 +49,15 @@ class PrometheusMetric(ExclusiveModel):
     data: PrometheusValues
 
 
-class PSAPEnum(Enum):
+class PSAPEnum(str, Enum):
     def _generate_next_value_(name, start, count, last_values):
         return name.replace('_', ' ')
 
+    def __str__(self) -> str:
+        return self.value
 
 class SemVer(ConstrainedStr):
     regex = f"^{SEMVER_REGEX}$"
+
+def create_schema_field(schema_name):
+    return constr(regex = f"^urn:{schema_name}:{SEMVER_REGEX}$")
