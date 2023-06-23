@@ -78,7 +78,7 @@ Args:
 
             elif isinstance(obj, pathlib.Path):
                 return str(obj)
-            elif not fail_on_unknown:
+            elif not strict:
                 return str(obj)
             else:
                 raise RuntimeError("No default serializer for object of type {obj.__class__}: {obj}")
