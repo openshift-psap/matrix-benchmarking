@@ -81,7 +81,7 @@ Args:
             elif not strict:
                 return str(obj)
             else:
-                raise RuntimeError("No default serializer for object of type {obj.__class__}: {obj}")
+                raise RuntimeError(f"No default serializer for object of type {obj.__class__}: {obj}")
 
         if kwargs["output_matrix"]:
             file = sys.stdout if kwargs["output_matrix"] == '-' else open(kwargs["output_matrix"], "w")
