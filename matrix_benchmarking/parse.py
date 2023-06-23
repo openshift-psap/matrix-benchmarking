@@ -93,7 +93,7 @@ Args:
             for entry in common.Matrix.processed_map.values():
                 parsed_results.append(entry)
 
-            json.dump(parsed_results, file, indent=indent, default=functools.partial(json_dumper, strict=True))
+            json.dump(parsed_results, file, indent=indent, default=functools.partial(json_dumper, strict=False))
             print("", file=file)
             file.close()
 
