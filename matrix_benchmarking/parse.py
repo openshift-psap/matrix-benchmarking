@@ -78,10 +78,10 @@ Args:
 
             elif isinstance(obj, pathlib.Path):
                 return str(obj)
-            elif not fail_on_unknown:
+            elif not strict:
                 return str(obj)
             else:
-                raise RuntimeError("No default serializer for object of type {obj.__class__}: {obj}")
+                raise RuntimeError(f"No default serializer for object of type {obj.__class__}: {obj}")
 
         if kwargs["output_matrix"]:
             file = sys.stdout if kwargs["output_matrix"] == '-' else open(kwargs["output_matrix"], "w")
@@ -93,7 +93,7 @@ Args:
             for entry in common.Matrix.processed_map.values():
                 parsed_results.append(entry)
 
-            json.dump(parsed_results, file, indent=indent, default=functools.partial(json_dumper, strict=True))
+            json.dump(parsed_results, file, indent=indent, default=functools.partial(json_dumper, strict=False))
             print("", file=file)
             file.close()
 
