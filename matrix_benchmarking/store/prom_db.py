@@ -14,13 +14,13 @@ import typing
 
 import pydantic
 
-import matrix_benchmarking.models
-
 PROMETHEUS_URL = "http://localhost:9090"
 
 def _parse_metric_values_from_file(metric_file):
     with open(metric_file) as f:
         json_metrics = json.load(f)
+
+    import matrix_benchmarking.models # import here, otherwise this file cannot be executed standalone
 
     return pydantic.parse_obj_as(matrix_benchmarking.models.PrometheusValues, json_metrics)
 
