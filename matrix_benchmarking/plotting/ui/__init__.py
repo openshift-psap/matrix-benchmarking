@@ -57,6 +57,13 @@ def get_permalink(args, full=False):
 
     return search
 
+
+def sanitize_setting_key(key):
+    # dash.exceptions.InvalidComponentIdError: The element `list-settings-name.i` contains `.` in its ID.
+    # Characters `.`, `{` are not allowed in IDs.
+    return key.replace(".", "-").replace("{", "(").replace("}", ")")
+
+
 def build_layout(search, serializing=False):
     defaults = urllib.parse.parse_qs(search.split("?", maxsplit=1)[-1]) if search else {}
 
@@ -93,10 +100,10 @@ def build_layout(search, serializing=False):
             serial_settings.append(attr["value"])
             serial_stats_position = len(serial_settings) - 1
 
-        tag = dcc.Dropdown(id='list-settings-'+key, options=options,
+        tag = dcc.Dropdown(id=f"list-settings-{sanitize_setting_key(key)}", options=options,
                            **attr, clearable=False)
 
-        matrix_controls += [html.Span(f"{key}: ", id=f"label_{key}"), tag]
+        matrix_controls += [html.Span(f"{key}: ", id=f"label_{sanitize_setting_key(key)}"), tag]
 
 
     cfg_data = defaults.get('cfg', [])
@@ -131,7 +138,7 @@ def build_layout(search, serializing=False):
             settings_order = settings_order.split("|")
 
         permalink = "/matrix/"+get_permalink((
-            serial_settings # [Input('list-settings-'+key, "value") for key in Matrix.settings]
+            serial_settings # [Input('list-settings-'+sanitize_setting_key(key), "value") for key in Matrix.settings]
             + [''] # custom-config useless here
             + [cfg_data]
             + [settings_order]
@@ -161,7 +168,7 @@ def build_layout(search, serializing=False):
             current_serial_settings[serial_stats_position] = [stats_name]
 
             figure_text = TableStats.graph_figure(*(
-                current_serial_settings                  # [Input('list-settings-'+key, "value") for key in Matrix.settings]
+                current_serial_settings                  # [Input('list-settings-'+sanitize_setting_key(key), "value") for key in Matrix.settings]
                 + [0]                                  # Input("lbl_settings", "n_clicks")
                 + defaults.get("settings-order", [[]]) # Input('settings-order', 'data-order')
                 + [None]                               # Input('config-title', 'n_clicks') | None->not clicked yet
@@ -266,7 +273,7 @@ def build_callbacks(app):
         return list([html.P(e) for e in data]), data, ''
 
     @app.callback([Output('settings-order', 'children'), Output('settings-order', 'data-order')],
-                  [Input(f"label_{key}", 'n_clicks') for key in Matrix.settings] +
+                  [Input(f"label_{sanitize_setting_key(key)}", 'n_clicks') for key in Matrix.settings] +
                   [Input(f"settings-order", 'n_clicks')],
                   [State('settings-order', 'data-order')])
     def varname_click(*args):
@@ -294,7 +301,7 @@ def build_callbacks(app):
         Output('graph-hover-info', 'children'),
         [Input(graph_id, 'clickData') for graph_id in GRAPH_IDS],
         [State(graph_id, 'figure') for graph_id in GRAPH_IDS]
-       +[State('list-settings-'+key, "value") for key in Matrix.settings])
+       +[State(f"list-settings-{sanitize_setting_key(key)}", "value") for key in Matrix.settings])
     def display_hover_data(*args):
         hoverData = args[:NB_GRAPHS]
 
@@ -329,7 +336,7 @@ def build_callbacks(app):
         return obj.do_hover(meta.get('value'), variables, figure, data, click_info)
 
     @app.callback([Output("permalink", 'href'), Output("download", 'href')],
-                  [Input('list-settings-'+key, "value") for key in Matrix.settings]
+                  [Input(f"list-settings-{sanitize_setting_key(key)}", "value") for key in Matrix.settings]
                   +[Input('custom-config', 'value'),
                     Input('custom-config-saved', 'data-label'),
                     Input('settings-order', 'data-order')],
@@ -379,7 +386,7 @@ def build_callbacks(app):
 
             @app.callback([Output(graph_id, 'figure'),
                            Output(graph_id+"-txt", 'children')],
-                          [Input('list-settings-'+key, "value") for key in Matrix.settings]
+                          [Input(f"list-settings-{sanitize_setting_key(key)}", "value") for key in Matrix.settings]
                           +[Input("lbl_settings", "n_clicks")]
                           +[Input('settings-order', 'data-order')]
                           +[Input('config-title', 'n_clicks'),
