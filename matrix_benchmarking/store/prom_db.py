@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 import tarfile
 import logging
 import tempfile
@@ -12,8 +14,6 @@ import os
 import datetime
 import typing
 
-import pydantic
-
 PROMETHEUS_URL = "http://localhost:9090"
 
 def _parse_metric_values_from_file(metric_file):
@@ -21,6 +21,7 @@ def _parse_metric_values_from_file(metric_file):
         json_metrics = json.load(f)
 
     import matrix_benchmarking.models # import here, otherwise this file cannot be executed standalone
+    import pydantic
 
     return pydantic.parse_obj_as(matrix_benchmarking.models.PrometheusValues, json_metrics)
 
