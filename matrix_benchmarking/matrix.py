@@ -70,7 +70,7 @@ class Matrix():
         context.remote_mode = cli_args.kwargs["remote_mode"]
         context.stop_on_error = cli_args.kwargs["stop_on_error"]
 
-        context.common_settings = self.yaml_desc['common_settings']
+        context.common_settings = self.yaml_desc.get('common_settings', {})
 
         if not tracker.dry and context.remote_mode and tracker.expe_cnt.current_idx == 0:
             print(f"""#! /bin/bash
