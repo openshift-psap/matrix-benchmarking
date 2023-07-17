@@ -116,7 +116,7 @@ EXEC_DIR="$(realpath "$2")"
     def do_run_matrix(self, tracker, all_settings_items, context, yaml_expe):
         for settings_items in itertools.product(*all_settings_items):
             settings = dict(settings_items)
-            settings['expe'] = context.expe
+
             tracker.expe_cnt.current_idx += 1
 
             path_tpl = context.path_tpl
@@ -194,8 +194,6 @@ EXEC_DIR="$(realpath "$2")"
         if not tracker.dry and not context.remote_mode:
             with open(context.bench_fullpath / "settings", "w") as out_f:
                 for k, v in settings.items():
-                    if k == "expe": continue
-
                     print(f"{k}={v}", file=out_f)
                 print("", file=out_f)
 
