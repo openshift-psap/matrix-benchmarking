@@ -152,7 +152,7 @@ EXEC_DIR="$(realpath "$2")"
                 continue
 
             try:
-                bench_common_path = path_tpl.format(**settings)
+                bench_common_path = path_tpl.format(**settings, settings=settings)
             except KeyError as e:
                 logging.error(f"cannot apply the path template '{path_tpl}': key '{e.args[0]}' missing from {settings}")
                 tracker.expe_cnt.errors += 1
