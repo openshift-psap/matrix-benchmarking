@@ -202,11 +202,6 @@ EXEC_DIR="$(realpath "$2")"
                     print(f"{k}={v}", file=out_f)
                 print("", file=out_f)
 
-        settings_str = ""
-        for k, v in settings.items():
-            kv = f"{k}={v}"
-            settings_str += f" '{kv}'" if " " in kv else f" {kv}"
-
         try:
             script = context.script_tpl.format(**settings)
         except KeyError as e:
@@ -217,8 +212,7 @@ EXEC_DIR="$(realpath "$2")"
 
             return None
 
-        args = f"{settings_str} 1> >(tee stdout) 2> >(tee stderr >&2)"
-        cmd_fullpath = str(pathlib.Path(os.getcwd()) / script) + " " + args
+        cmd_fullpath = f"{pathlib.Path(os.getcwd()) / script} 1> >(tee stdout) 2> >(tee stderr >&2)"
 
         if tracker.dry:
             try:
@@ -228,13 +222,13 @@ EXEC_DIR="$(realpath "$2")"
 
             logging.info(f"""\n
 Results: {results_dir}
-Command: {script}{settings_str}
+Command: {script}
 ---
 """)
 
             return None
         elif context.remote_mode:
-            settings_str = "\\n".join([f"{k}={v}" for k, v in settings.items()])
+            settings_str = yaml.dump(settings)
             print(f"""
 echo "Expe {tracker.expe_cnt.current_idx}/{tracker.expe_cnt.total}"
 CURRENT_DIRNAME="${{RESULTS_DIR}}/{context.bench_dir}"
@@ -243,9 +237,9 @@ if [[ "$(cat "$CURRENT_DIRNAME/exit_code" 2>/dev/null)" != 0 ]]; then
   mkdir -p "$CURRENT_DIRNAME"
   cd "$CURRENT_DIRNAME"
   [[ "$$CURRENT_DIRNAME" ]] && rm -rf -- "$CURRENT_DIRNAME"/*
-  echo -e "{settings_str}" > ./settings
+  echo -e "{settings_str}" > ./settings.yaml
   echo "$(date) Running expe {tracker.expe_cnt.current_idx}/{tracker.expe_cnt.total}"
-  ${{EXEC_DIR}}/{cmd}
+  ${{EXEC_DIR}}/{script}
   echo "$?" > ./exit_code
 else
   echo "Already recorded in $CURRENT_DIRNAME."
