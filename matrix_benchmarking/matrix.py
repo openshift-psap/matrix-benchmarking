@@ -4,6 +4,8 @@ import uuid
 import logging
 import pathlib
 
+import yaml
+
 import matrix_benchmarking
 import matrix_benchmarking.common as common
 import matrix_benchmarking.store as store
@@ -192,6 +194,9 @@ EXEC_DIR="$(realpath "$2")"
 
     def execute_benchmark(self, settings, context, tracker):
         if not tracker.dry and not context.remote_mode:
+            with open(context.bench_fullpath / "settings.yaml", "w") as out_f:
+                yaml.dump(settings, out_f)
+
             with open(context.bench_fullpath / "settings", "w") as out_f:
                 for k, v in settings.items():
                     print(f"{k}={v}", file=out_f)
