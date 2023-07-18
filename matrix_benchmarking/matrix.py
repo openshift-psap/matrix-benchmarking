@@ -4,6 +4,8 @@ import uuid
 import logging
 import pathlib
 
+import yaml
+
 import matrix_benchmarking
 import matrix_benchmarking.common as common
 import matrix_benchmarking.store as store
@@ -47,6 +49,8 @@ class Matrix():
         logging.info(f"- {tracker.expe_cnt.recorded} {'was' if tracker.expe_cnt.recorded == 1 else 'were'} already recorded,")
         logging.info(f"- {tracker.expe_cnt.errors} failed.")
 
+        return tracker.expe_cnt.errors
+
     def do_run_expe(self, tracker, expe):
         logging.info("setup()")
 
@@ -70,7 +74,7 @@ class Matrix():
         context.remote_mode = cli_args.kwargs["remote_mode"]
         context.stop_on_error = cli_args.kwargs["stop_on_error"]
 
-        context.common_settings = self.yaml_desc['common_settings']
+        context.common_settings = self.yaml_desc.get('common_settings', {})
 
         if not tracker.dry and context.remote_mode and tracker.expe_cnt.current_idx == 0:
             print(f"""#! /bin/bash
@@ -116,7 +120,7 @@ EXEC_DIR="$(realpath "$2")"
     def do_run_matrix(self, tracker, all_settings_items, context, yaml_expe):
         for settings_items in itertools.product(*all_settings_items):
             settings = dict(settings_items)
-            settings['expe'] = context.expe
+
             tracker.expe_cnt.current_idx += 1
 
             path_tpl = context.path_tpl
@@ -152,7 +156,7 @@ EXEC_DIR="$(realpath "$2")"
                 continue
 
             try:
-                bench_common_path = path_tpl.format(**settings)
+                bench_common_path = path_tpl.format(**settings, settings=settings)
             except KeyError as e:
                 logging.error(f"cannot apply the path template '{path_tpl}': key '{e.args[0]}' missing from {settings}")
                 tracker.expe_cnt.errors += 1
@@ -192,17 +196,13 @@ EXEC_DIR="$(realpath "$2")"
 
     def execute_benchmark(self, settings, context, tracker):
         if not tracker.dry and not context.remote_mode:
+            with open(context.bench_fullpath / "settings.yaml", "w") as out_f:
+                yaml.dump(settings, out_f)
+
             with open(context.bench_fullpath / "settings", "w") as out_f:
                 for k, v in settings.items():
-                    if k == "expe": continue
-
                     print(f"{k}={v}", file=out_f)
                 print("", file=out_f)
-
-        settings_str = ""
-        for k, v in settings.items():
-            kv = f"{k}={v}"
-            settings_str += f" '{kv}'" if " " in kv else f" {kv}"
 
         try:
             script = context.script_tpl.format(**settings)
@@ -214,8 +214,7 @@ EXEC_DIR="$(realpath "$2")"
 
             return None
 
-        args = f"{settings_str} 1> >(tee stdout) 2> >(tee stderr >&2)"
-        cmd_fullpath = str(pathlib.Path(os.getcwd()) / script) + " " + args
+        cmd_fullpath = f"{pathlib.Path(os.getcwd()) / script} 1> >(tee stdout) 2> >(tee stderr >&2)"
 
         if tracker.dry:
             try:
@@ -225,13 +224,13 @@ EXEC_DIR="$(realpath "$2")"
 
             logging.info(f"""\n
 Results: {results_dir}
-Command: {script}{settings_str}
+Command: {script}
 ---
 """)
 
             return None
         elif context.remote_mode:
-            settings_str = "\\n".join([f"{k}={v}" for k, v in settings.items()])
+            settings_str = yaml.dump(settings)
             print(f"""
 echo "Expe {tracker.expe_cnt.current_idx}/{tracker.expe_cnt.total}"
 CURRENT_DIRNAME="${{RESULTS_DIR}}/{context.bench_dir}"
@@ -240,9 +239,9 @@ if [[ "$(cat "$CURRENT_DIRNAME/exit_code" 2>/dev/null)" != 0 ]]; then
   mkdir -p "$CURRENT_DIRNAME"
   cd "$CURRENT_DIRNAME"
   [[ "$$CURRENT_DIRNAME" ]] && rm -rf -- "$CURRENT_DIRNAME"/*
-  echo -e "{settings_str}" > ./settings
+  echo -e "{settings_str}" > ./settings.yaml
   echo "$(date) Running expe {tracker.expe_cnt.current_idx}/{tracker.expe_cnt.total}"
-  ${{EXEC_DIR}}/{cmd}
+  ${{EXEC_DIR}}/{script}
   echo "$?" > ./exit_code
 else
   echo "Already recorded in $CURRENT_DIRNAME."

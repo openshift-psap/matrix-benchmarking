@@ -52,6 +52,8 @@ def _parse_directory(results_dir, expe, dirname):
     # start in the top-most parent, so that each subdirectory overrides its parents.
     for parent_dir in list(reversed([dirname] + list(dirname.parents))):
         for filename in list(parent_dir.glob("settings")) + list(parent_dir.glob("settings.*")):
+            if filename.name == "settings.yaml": continue
+
             with open(filename) as f:
                 for line in f.readlines():
                     if not line.strip(): continue
