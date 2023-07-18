@@ -49,6 +49,8 @@ class Matrix():
         logging.info(f"- {tracker.expe_cnt.recorded} {'was' if tracker.expe_cnt.recorded == 1 else 'were'} already recorded,")
         logging.info(f"- {tracker.expe_cnt.errors} failed.")
 
+        return tracker.expe_cnt.errors
+
     def do_run_expe(self, tracker, expe):
         logging.info("setup()")
 
