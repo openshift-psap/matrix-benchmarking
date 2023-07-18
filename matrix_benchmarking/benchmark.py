@@ -89,9 +89,8 @@ Args:
             logging.info("# DRY RUN")
             logging.info("#")
 
-        script_to_run = matrix.Matrix(benchmark_yaml_file)
-        script_to_run.run()
+        failed_count = matrix.Matrix(benchmark_yaml_file).run()
 
-        return 0
+        sys.exit(failed_count)
 
     return cli_args.TaskRunner(run)
