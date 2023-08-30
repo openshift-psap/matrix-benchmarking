@@ -38,7 +38,13 @@ def _extract_metrics_from_prometheus(tsdb_path, process_metrics):
 
     failed = False
     try:
-        prom_proc = subprocess.Popen(["prometheus", "--storage.tsdb.path", str(tsdb_path)],
+        prom_cfg = os.environ.get("PROMETHEUS_CONFIG_FILE", "/etc/prometheus/prometheus.yml")
+
+        prom_cmd = ["prometheus",
+                    "--storage.tsdb.path", str(tsdb_path),
+                    "--config.file", prom_cfg]
+
+        prom_proc = subprocess.Popen(prom_cmd,
                                      stdout=subprocess.DEVNULL,
                                      stderr=subprocess.PIPE)
 
