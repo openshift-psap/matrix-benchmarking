@@ -89,8 +89,10 @@ Args:
                 download(DownloadModes.CACHE_ONLY)
                 try:
                     if workload_store.load_cache(dest_dir):
+                        logging.info("Downloading the cache succeeded.")
                         return # download and reload from cache worked
-                except FileNotFoundError:
+                except FileNotFoundError as e:
+                    logging.warning(f"Downloading the cache failed ({e}). Now dowloading the important files.")
                     pass
 
             # download or reload from cache worked failed, try again with the important files

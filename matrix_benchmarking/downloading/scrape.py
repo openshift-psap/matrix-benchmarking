@@ -66,9 +66,11 @@ class ScrapOCPCiArtifactsBase():
             try:
                 self.handle_file(cache_file, self.result_local_dir / cache_file, depth)
                 self.cache_found = True
+                logging.info(f"Cache found :) {cache_file}")
 
             except requests.exceptions.HTTPError as e:
                 if e.errno != 404: raise e
+                logging.info(f"Cache not found :( {cache_file}")
 
         for link in s.find_all("a"):
 
