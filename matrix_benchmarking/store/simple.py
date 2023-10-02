@@ -2,6 +2,7 @@ import os
 import shutil
 import logging
 import pathlib
+import yaml
 
 import matrix_benchmarking.matrix as matrix
 import matrix_benchmarking.common as common
@@ -45,6 +46,21 @@ def _duplicated_directory(import_key, old_location, new_location):
     logging.info(f"{new_location}: removed")
 
 
+def parse_old_settings(filename):
+    settings = {}
+    with open(filename) as f:
+        for line in f.readlines():
+            if not line.strip(): continue
+
+            key, found, value = line.strip().partition("=")
+            if not found:
+                logging.error(f"Cannot parse setting from {filename}: invalid line (no '='): {line.strip()}")
+                continue
+
+        settings[key] = value
+    return settings
+
+
 def _parse_directory(results_dir, expe, dirname):
     import_settings = {"expe": expe}
 
@@ -52,18 +68,14 @@ def _parse_directory(results_dir, expe, dirname):
     # start in the top-most parent, so that each subdirectory overrides its parents.
     for parent_dir in list(reversed([dirname] + list(dirname.parents))):
         for filename in list(parent_dir.glob("settings")) + list(parent_dir.glob("settings.*")):
-            if filename.name == "settings.yaml": continue
+            if filename.suffix not in (".yaml", ".yml"): # deprecated
+                logging.warning(f"Found deprecated 'settings' file in {dirname}")
 
+                import_settings.update(parse_old_settings(filename))
+                continue
             with open(filename) as f:
-                for line in f.readlines():
-                    if not line.strip(): continue
-
-                    key, found, value = line.strip().partition("=")
-                    if not found:
-                        logging.error(f"Cannot parse setting from {filename}: invalid line (no '='): {line.strip()}")
-                        continue
-
-                    import_settings[key] = value
+                settings = yaml.safe_load(f)
+            import_settings.update(settings)
 
     if store.should_be_filtered_out(import_settings):
         return
@@ -162,11 +174,23 @@ def parse_data(results_dir=None):
     if results_dir is None:
         results_dir = pathlib.Path(cli_args.kwargs["results_dirname"])
 
+    def has_settings(files):
+        if "settings" in files:
+            logging.warning(f"Found deprecated 'settings' file in {dirname}")
+            return True # deprecated
+        if "settings.yml" in files:
+            logging.warning(f"Found settings file with invalid extention 'settings.yml' file in {dirname}")
+            return True
+
+        if "settings.yaml" in files: return True
+
+        return False
+
     results_directories = []
     path = os.walk(results_dir, followlinks=True)
     for _this_dir, directories, files in path:
         if "skip" in files: continue
-        if "settings" not in files: continue
+        if not has_settings(files): continue
 
         this_dir = pathlib.Path(_this_dir)
 
