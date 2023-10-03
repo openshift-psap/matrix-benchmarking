@@ -101,19 +101,24 @@ def update_kwargs_with_workload(kwargs):
 
 
 def check_mandatory_kwargs(kwargs, mandatory_flags, sensitive = []):
+
+    import sys
+    command = [f"matbench {sys.argv[1]}"]
+    for k, v in sorted(kwargs.items()):
+        if v not in mandatory_flags and not v: continue
+
+        value = "<CENSORED>" if k in sensitive else v
+        command += [f"--{k.replace('_', '-')}='{value}'"]
+    logging.info("MatrixBenchmarking starting with:\n" + " \\\n\t".join(command))
+
     err = False
     for flag in mandatory_flags:
         if kwargs.get(flag): continue
 
-        logging.error(f"--{flag} must be set in CLI, in the benchmark file or though MATBENCH_{flag.upper()} environment variable.")
+        logging.fatal(f"--{flag} must be set in CLI, in the benchmark file or though MATBENCH_{flag.upper()} environment variable.")
         err = True
 
     if err:
-        for key in sensitive:
-            kwargs[key] = "<CENSORED>" if kwargs[key] else ""
-
-        print(kwargs)
-
         raise SystemExit(1)
 
 
