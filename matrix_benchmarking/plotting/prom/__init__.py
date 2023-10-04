@@ -201,7 +201,7 @@ class Plot():
                 xaxis=dict(title=None if self.as_timestamp else "Time (in s)"))
         else:
             df = pd.DataFrame(data).sort_values(by=["SortIndex"])
-            fig = px.box(df, x="Version", y="Value", color="Version")
+            fig = px.box(df, x="Version", y="Value", color="Version", points="all")
             fig.update_layout(
                 title=plot_title, title_x=0.5,
                 yaxis=dict(title=self.y_title)
