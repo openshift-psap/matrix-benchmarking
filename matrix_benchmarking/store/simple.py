@@ -176,10 +176,10 @@ def parse_data(results_dir=None):
 
     def has_settings(files):
         if "settings" in files:
-            logging.warning(f"Found deprecated 'settings' file in {dirname}")
+            logging.warning(f"Found deprecated 'settings' file ...")
             return True # deprecated
         if "settings.yml" in files:
-            logging.warning(f"Found settings file with invalid extention 'settings.yml' file in {dirname}")
+            logging.warning(f"Found settings file with invalid extention 'settings.yml' file ...")
             return True
 
         if "settings.yaml" in files: return True
