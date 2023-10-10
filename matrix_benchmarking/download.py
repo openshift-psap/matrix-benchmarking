@@ -75,9 +75,8 @@ Args:
             with open(dest_dir / "source_url", "w") as f:
                 print(destdir_url, file=f)
 
-            with open(dest_dir / "settings.from_url_file", "w") as f:
-                for setting_key, setting_value in settings.items():
-                    print(f"{setting_key}={setting_value}", file=f)
+            with open(dest_dir / "settings.from_url_file.yaml", "w") as f:
+                yaml.dump(settings, f, indent=4)
 
         def download(dl_mode):
             logging.info(f"Download {dest_dir} <-- {site}/{base_dir}")
