@@ -57,7 +57,8 @@ def parse_old_settings(filename):
                 logging.error(f"Cannot parse setting from {filename}: invalid line (no '='): {line.strip()}")
                 continue
 
-        settings[key] = value
+            settings[key] = value
+
     return settings
 
 
