@@ -70,7 +70,7 @@ def _parse_directory(results_dir, expe, dirname):
     for parent_dir in list(reversed([dirname] + list(dirname.parents))):
         for filename in list(parent_dir.glob("settings")) + list(parent_dir.glob("settings.*")):
             if filename.suffix not in (".yaml", ".yml"): # deprecated
-                logging.warning(f"Found deprecated 'settings' file in {dirname}")
+                logging.warning(f"Found deprecated 'settings' file in {dirname}: {filename}")
 
                 import_settings.update(parse_old_settings(filename))
                 continue
