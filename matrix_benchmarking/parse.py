@@ -62,6 +62,12 @@ Args:
             if not kwargs["run"]:
                 logging.info("Cleaner ran in dry mode. Pass --run to perform the deletion.")
 
+        if common.Matrix.processed_map:
+            logging.info("Settings matrix:")
+        for key, values in common.Matrix.settings.items():
+            if key == "stats": continue
+            common.Matrix.settings[key] = sorted(values)
+            logging.info(f"{key:20s}: {', '.join(map(str, common.Matrix.settings[key]))}")
 
         def json_dumper(obj, strict=False):
             import datetime
