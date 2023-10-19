@@ -7,6 +7,27 @@ import matrix_benchmarking.store as store
 import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 
+def json_dumper(obj, strict=False):
+    import datetime
+    import pathlib
+
+    if hasattr(obj, "toJSON"):
+        return obj.toJSON()
+
+    elif hasattr(obj, "__dict__"):
+        return obj.__dict__
+
+    if isinstance(obj, datetime.datetime):
+        return obj.isoformat()
+
+    elif isinstance(obj, pathlib.Path):
+        return str(obj)
+    elif not strict:
+        return str(obj)
+    else:
+        raise RuntimeError(f"No default serializer for object of type {obj.__class__}: {obj}")
+
+
 def main(workload: str = "",
          results_dirname: str = "",
          filters: list[str] = [],
@@ -68,26 +89,6 @@ Args:
             if key == "stats": continue
             common.Matrix.settings[key] = sorted(values)
             logging.info(f"{key:20s}: {', '.join(map(str, common.Matrix.settings[key]))}")
-
-        def json_dumper(obj, strict=False):
-            import datetime
-            import pathlib
-
-            if hasattr(obj, "toJSON"):
-                return obj.toJSON()
-
-            elif hasattr(obj, "__dict__"):
-                return obj.__dict__
-
-            if isinstance(obj, datetime.datetime):
-                return obj.isoformat()
-
-            elif isinstance(obj, pathlib.Path):
-                return str(obj)
-            elif not strict:
-                return str(obj)
-            else:
-                raise RuntimeError(f"No default serializer for object of type {obj.__class__}: {obj}")
 
         if kwargs["output_matrix"]:
             file = sys.stdout if kwargs["output_matrix"] == '-' else open(kwargs["output_matrix"], "w")
