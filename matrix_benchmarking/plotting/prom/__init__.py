@@ -52,6 +52,7 @@ class Plot():
 
         cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
         cfg__show_lts = cfg.get('show_lts', False)
+        cfg__as_timeline = cfg.get("as_timeline", True)
 
         if self.show_metrics_in_title:
             metric_names = [
@@ -66,6 +67,8 @@ class Plot():
 
         y_max = 0
         single_expe = common.Matrix.count_records(settings, setting_lists, include_lts=cfg__show_lts) == 1
+        as_timeline = single_expe or cfg__as_timeline
+
         data_threshold = []
         threshold_status = defaultdict(dict)
         threshold_passes = defaultdict(int)
@@ -100,6 +103,13 @@ class Plot():
                         legend_name = metric.metric.get("__name__", metric_name)
                         legend_group = None
 
+                    if cfg__as_timeline:
+                        if legend_group is None:
+                            legend_group = ""
+                        else:
+                            legend_group += "<br>"
+                        legend_group += entry.get_name(variables)
+
                     if legend_group: legend_group = str(legend_group)
                     else: legend_group = None
 
@@ -110,7 +120,7 @@ class Plot():
                         x_values = [x-x_start for x in x_values]
 
                     y_max = max([y_max]+y_values)
-                    if single_expe:
+                    if as_timeline:
                         data.append(
                             go.Scatter(
                                 x=x_values, y=y_values,
@@ -192,7 +202,7 @@ class Plot():
         if not data:
             return None, "No data to plot ..."
 
-        if single_expe:
+        if as_timeline:
             fig = go.Figure(data=data)
 
             fig.update_layout(
