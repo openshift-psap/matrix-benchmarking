@@ -12,6 +12,41 @@ import matrix_benchmarking.common as common
 def default_get_metrics(entry, metric):
     return entry.results.metrics[metric]
 
+def get_tests_timestamp_plots(entries, y_max):
+    data = []
+    tests_timestamp_y_position = [-y_max*0.25] * 3
+
+    now = datetime.datetime.now()
+    tz_offset = datetime.datetime.fromtimestamp(now.timestamp()) - datetime.datetime.utcfromtimestamp(now.timestamp())
+
+    for entry in entries:
+        if "tests_timestamp" not in entry.results.__dict__: continue
+
+        for test_timestamp in entry.results.tests_timestamp:
+            # convert to local timezone and remove timezone info
+            start = test_timestamp.start + tz_offset; start.replace(tzinfo=None)
+            end = test_timestamp.end + tz_offset; end.replace(tzinfo=None)
+
+
+            mid = start + (end-start) / 2
+            data.append(
+                go.Scatter(
+                    x=[start, mid, end],
+                    y=tests_timestamp_y_position,
+                    name="Test timestamps",
+                    hoverlabel={'namelength' :-1},
+                    hovertext="<br>".join(f"{k}={v}" for k, v in test_timestamp.settings.items()),
+                    legendgroup="Test timestamps",
+                    legendgrouptitle_text="Test timestamps",
+                    text=["", "<br>".join(str(v) if k.startswith("*") else f"{k}={v}" for k, v in test_timestamp.settings.items()) + "<br>",""],
+                    mode='lines+text',
+                    textposition="top center",
+                    showlegend=False,
+                    line=dict(width=15),
+                ))
+
+    return tests_timestamp_y_position[0], data
+
 
 class Plot():
     def __init__(self, metrics, name, title, y_title,
@@ -69,6 +104,10 @@ class Plot():
         single_expe = common.Matrix.count_records(settings, setting_lists, include_lts=cfg__show_lts) == 1
         as_timeline = single_expe or cfg__as_timeline
 
+        show_test_timestamps = True
+        if not as_timeline:
+            show_test_timestamps = False
+
         data_threshold = []
         threshold_status = defaultdict(dict)
         threshold_passes = defaultdict(int)
@@ -103,7 +142,7 @@ class Plot():
                         legend_name = metric.metric.get("__name__", metric_name)
                         legend_group = None
 
-                    if cfg__as_timeline:
+                    if as_timeline:
                         if legend_group is None:
                             legend_group = ""
                         else:
@@ -199,6 +238,11 @@ class Plot():
 
                         threshold_status[entry_version][legend_group or legend_name] = status
 
+
+        if show_test_timestamps:
+            tests_timestamp_y_position, plots = get_tests_timestamp_plots(common.Matrix.all_records(settings, setting_lists, include_lts=cfg__show_lts), y_max)
+            data += plots
+
         if not data:
             return None, "No data to plot ..."
 
@@ -207,7 +251,7 @@ class Plot():
 
             fig.update_layout(
                 title=plot_title, title_x=0.5,
-                yaxis=dict(title=self.y_title, range=[0, y_max*1.05]),
+                yaxis=dict(title=self.y_title, range=[tests_timestamp_y_position if show_test_timestamps else 0, y_max*1.05]),
                 xaxis=dict(title=None if self.as_timestamp else "Time (in s)"))
         else:
             df = pd.DataFrame(data).sort_values(by=["SortIndex"])
