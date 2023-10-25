@@ -52,7 +52,7 @@ class Plot():
 
         cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
         cfg__show_lts = cfg.get('show_lts', False)
-        cfg__as_timeline = cfg.get("as_timeline", True)
+        cfg__as_timeline = cfg.get("as_timeline", False)
 
         if self.show_metrics_in_title:
             metric_names = [

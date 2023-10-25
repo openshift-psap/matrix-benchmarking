@@ -49,6 +49,7 @@ class Plot():
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
         cfg__show_lts = cfg.get("show_lts", False)
+        cfg__as_timeline = cfg.get("as_timeline", False)
 
         fig = go.Figure()
         metric_names = [
@@ -61,8 +62,9 @@ class Plot():
 
         y_divisor = 1024*1024*1024 if self.is_memory else 1
 
-        single_expe = single_expe = common.Matrix.count_records(settings, setting_lists, include_lts=cfg__show_lts) == 1
+        single_expe = common.Matrix.count_records(settings, setting_lists, include_lts=cfg__show_lts) == 1
 
+        as_timeline = single_expe or cfg__as_timeline
         data = []
         data_rq = []
         data_lm = []
@@ -120,7 +122,7 @@ class Plot():
 
                     is_req_or_lim = "limit" in legend_name or "requests" in legend_name
 
-                    if single_expe:
+                    if as_timeline:
                         entry_name = "Test"
 
                         if "requests" in metric_actual_name:
@@ -190,7 +192,7 @@ class Plot():
         if not data:
             return None, "No data to plot ..."
 
-        if single_expe:
+        if as_timeline:
             fig = go.Figure(data=data)
 
             fig.update_layout(
