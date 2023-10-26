@@ -62,7 +62,7 @@ def parse_old_settings(filename):
     return settings
 
 
-def _parse_directory(results_dir, expe, dirname):
+def parse_settings(dirname, expe):
     import_settings = {"expe": expe}
 
     # search for settings[.*] in dirname and all of its parent directories.
@@ -77,6 +77,12 @@ def _parse_directory(results_dir, expe, dirname):
             with open(filename) as f:
                 settings = yaml.safe_load(f)
             import_settings.update(settings)
+
+    return import_settings
+
+
+def _parse_directory(results_dir, expe, dirname):
+    import_settings = parse_settings(dirname, expe)
 
     if store.should_be_filtered_out(import_settings):
         return

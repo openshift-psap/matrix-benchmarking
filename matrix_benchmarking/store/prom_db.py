@@ -107,16 +107,26 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
     missing_metrics = []
     metrics_base_dir = dirname / "metrics"
 
-    for metric in metrics:
-        metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
-        metric_filename = metric_name.replace('.*', '').replace("'", "").replace("~", "")
-        metric_file = metrics_base_dir / f"{metric_filename}.json"
-        if not metric_file.exists():
-            missing_metrics.append([metric_name, metric_query, metric_file])
-            logging.info(f"No cache available for metric '{metric_name}'")
-            continue
+    if not metrics: return
 
-        metric_results[metric_name] = _parse_metric_values_from_file(metric_file)
+    with open(dirname / "metrics.txt", "w") as f:
+        for metric in metrics:
+
+            metric_name, metric_query = list(metric.items())[0] if isinstance(metric, dict) else (metric, metric)
+            print(f"# {metric_name}", file=f)
+            print(f"{metric_query}", file=f)
+
+            print(f"# {metric_name}")
+            print(f"{metric_query}")
+
+            metric_filename = metric_name.replace('.*', '').replace("'", "").replace("~", "")
+            metric_file = metrics_base_dir / f"{metric_filename}.json"
+            if not metric_file.exists():
+                missing_metrics.append([metric_name, metric_query, metric_file])
+                logging.info(f"No cache available for metric '{metric_name}'")
+                continue
+
+            metric_results[metric_name] = _parse_metric_values_from_file(metric_file)
 
     if not missing_metrics:
         logging.debug("All the metrics files exist, no need to launch Prometheus.")

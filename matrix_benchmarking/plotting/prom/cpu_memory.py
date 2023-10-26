@@ -10,6 +10,7 @@ from dash import html
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
+from . import get_tests_timestamp_plots
 
 def default_get_metrics(entry, metric):
     return entry.results.metrics[metric]
@@ -49,6 +50,7 @@ class Plot():
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
         cfg__show_lts = cfg.get("show_lts", False)
+        cfg__as_timeline = cfg.get("as_timeline", False)
 
         fig = go.Figure()
         metric_names = [
@@ -61,7 +63,13 @@ class Plot():
 
         y_divisor = 1024*1024*1024 if self.is_memory else 1
 
-        single_expe = single_expe = common.Matrix.count_records(settings, setting_lists, include_lts=cfg__show_lts) == 1
+        single_expe = common.Matrix.count_records(settings, setting_lists, include_lts=cfg__show_lts) == 1
+
+        as_timeline = single_expe or cfg__as_timeline
+
+        show_test_timestamps = True
+        if not as_timeline:
+            show_test_timestamps = False
 
         data = []
         data_rq = []
@@ -120,7 +128,7 @@ class Plot():
 
                     is_req_or_lim = "limit" in legend_name or "requests" in legend_name
 
-                    if single_expe:
+                    if as_timeline:
                         entry_name = "Test"
 
                         if "requests" in metric_actual_name:
@@ -187,15 +195,19 @@ class Plot():
 
                         threshold_status[entry_name][legend_group] = status
 
+        if show_test_timestamps:
+            tests_timestamp_y_position, plots = get_tests_timestamp_plots(common.Matrix.all_records(settings, setting_lists, include_lts=cfg__show_lts), y_max)
+            data += plots
+
         if not data:
             return None, "No data to plot ..."
 
-        if single_expe:
+        if as_timeline:
             fig = go.Figure(data=data)
 
             fig.update_layout(
                 title=plot_title, title_x=0.5,
-                yaxis=dict(title=self.y_title + (" (in Gi)" if self.is_memory else ""), range=[0, y_max*1.05]),
+                yaxis=dict(title=self.y_title + (" (in Gi)" if self.is_memory else ""), range=[tests_timestamp_y_position if show_test_timestamps else 0, y_max*1.05]),
                 xaxis=dict(title=f"Time (in s)"))
         else:
             df = pd.DataFrame(data).sort_values(by=["SortIndex"])
