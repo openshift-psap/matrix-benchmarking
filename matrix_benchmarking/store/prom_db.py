@@ -116,9 +116,6 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
             print(f"# {metric_name}", file=f)
             print(f"{metric_query}", file=f)
 
-            print(f"# {metric_name}")
-            print(f"{metric_query}")
-
             metric_filename = metric_name.replace('.*', '').replace("'", "").replace("~", "")
             metric_file = metrics_base_dir / f"{metric_filename}.json"
             if not metric_file.exists():
