@@ -24,6 +24,7 @@ class Plot():
                  container_name="all",
                  is_memory=False,
                  is_cluster=False,
+                 skip_nodes=None,
                  ):
 
         self.name = f"Prom: {y_title}"
@@ -39,7 +40,10 @@ class Plot():
         self.is_cluster = is_cluster
         self.threshold_key = f"{y_title.replace(' ', '_').replace(':', '').lower()}"
 
-        self.skip_nodes = self.is_memory and not self.is_cluster
+        if skip_nodes is not None:
+            self.skip_nodes = skip_nodes
+        else:
+            self.skip_nodes = self.is_memory and not self.is_cluster
 
         table_stats.TableStats._register_stat(self)
         common.Matrix.settings["stats"].add(self.name)
