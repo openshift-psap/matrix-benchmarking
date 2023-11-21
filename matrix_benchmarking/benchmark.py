@@ -11,6 +11,7 @@ import matrix_benchmarking.cli_args as cli_args
 # default values must evaluate to False, otherwise they cannot be
 # overriden in the benchmark file.
 def main(workload: str = "",
+         workload_base_dir: str = "",
          benchmark_file: str = "",
          results_dirname: str = "",
          run: bool = False,
@@ -29,6 +30,7 @@ Run MatrixBenchmarking benchmarking.
 
 Env:
     MATBENCH_WORKLOAD
+    MATBENCH_WORKLOAD_BASE_DIR
     MATBENCH_BENCHMARK_FILE
     MATBENCH_RUN
     MATBENCH_RESULTS_DIRNAME
@@ -43,6 +45,7 @@ See the `FLAGS` section for the descriptions.
 
 Args:
     workload: Name of the workload to execute. (Mandatory.)
+    workload_base_directory: the directory from where the workload packages should be loaded. (Optional)
     benchmark_file: Path of the benchmark file to execute. (Mandatory.)
 
     run: If 'False', run in dry mode. If 'True', execute the benchmark.

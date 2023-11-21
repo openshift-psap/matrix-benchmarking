@@ -10,6 +10,7 @@ import matrix_benchmarking.store as store
 
 def main(
         workload: str = "",
+        workload_base_dir: str = "",
         results_dirname: str = "",
         filters: list[str] = [],
         dry_run: bool = False
@@ -21,6 +22,7 @@ Upload MatrixBenchmark to Long-Term Storage
 
 Args:
     workload: Name of the workload to execute. (Mandatory)
+    workload_base_directory: the directory from where the workload packages should be loaded. (Optional)
     results_dirname: Name of the directory where the results are stored. Can be set in the benchmark file. (Mandatory)
     horreum_url: The URL to the Horreum instance where the data will be uploaded. (Mandatory)
     keycloak_url: The URL for the KeyCloak instance used to login to Horruem. (Mandatory)
@@ -42,7 +44,7 @@ Args:
 
     cli_args.setup_env_and_kwargs(kwargs)
     cli_args.check_mandatory_kwargs(kwargs,
-        ("workload", "results_dirname", "horreum_url", "keycloak_url", "horreum_test", "horreum_uname", "horreum_passwd"), 
+        ("workload", "results_dirname", "horreum_url", "keycloak_url", "horreum_test", "horreum_uname", "horreum_passwd"),
         sensitive=["horreum_url", "keycloak_url", "horreum_test", "horreum_uname", "horreum_passwd"]
     )
 
@@ -58,7 +60,7 @@ Args:
             logging.debug(f"Sending {json.dumps(payload)} to Horreum")
             if not dry_run:
                 upload(kwargs.get('horreum_url'), payload, kwargs.get('horreum_test'), start, end, token)
-    
+
     return cli_args.TaskRunner(run)
 
 

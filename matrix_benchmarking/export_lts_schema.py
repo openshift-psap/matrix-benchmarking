@@ -9,7 +9,9 @@ import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store as store
 
-def main(workload: str = "", file: str = "-"):
+def main(workload: str = "",
+         workload_base_dir: str = "",
+         file: str = "-"):
     """
 Export a JSON Schema for a particular workload
 
@@ -17,6 +19,7 @@ Export a JSON Schema for a workload, which is commonly used in Horreum
 
 Args:
     workload: Name of the workload to execute. (Mandatory)
+    workload_base_directory: the directory from where the workload packages should be loaded. (Optional)
     file: Name of the file to export the schema to, "-" to output to stdout.  (Default is "-")
     """
     kwargs = dict(locals())

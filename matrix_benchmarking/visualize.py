@@ -7,6 +7,7 @@ import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 
 def main(workload: str = "",
+         workload_base_dir: str = "",
          results_dirname: str = "",
          filters: list[str] = [],
          generate: str = ""):
@@ -15,6 +16,7 @@ Visualize MatrixBenchmarking results.
 
 Env:
     MATBENCH_WORKLOAD
+    MATBENCH_WORKLOAD_BASE_DIR
     MATBENCH_RESULTS_DIRNAME
     MATBENCH_GENERATE
     MATBENCH_FILTERS
@@ -23,6 +25,7 @@ See the `FLAGS` section for the descriptions.
 
 Args:
     workload: Name of the workload to execute. (Mandatory.)
+    workload_base_directory: the directory from where the workload packages should be loaded. (Optional)
     results_dirname: Name of the directory where the results will be stored.  (Mandatory.)
     generate: If set, the value is used as query to generates image files instead of running the Web UI.
     filters: If provided, parse only the experiment matching the filters. Eg: expe=expe1:expe2,something=true.
