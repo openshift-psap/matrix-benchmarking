@@ -59,7 +59,7 @@ Args:
             return 1
 
         try:
-            ui.configure(kwargs)
+            ui.configure(kwargs, workload_store)
         except Exception as e:
             logging.error(f"Failed to configure the plotting module: {e}")
             raise e

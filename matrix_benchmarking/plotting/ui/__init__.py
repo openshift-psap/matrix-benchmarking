@@ -22,10 +22,9 @@ NB_GRAPHS = 3
 GRAPH_IDS = [f"graph-{i}" for i in range(NB_GRAPHS)]
 TEXT_IDS = [f"graph-{i}-txt" for i in range(NB_GRAPHS)]
 
-def configure(kwargs):
-    workload = kwargs["workload"]
-
-    module = f"matrix_benchmarking.workloads.{workload}.plotting"
+def configure(kwargs, workload_store):
+    workload_package = workload_store.__package__.removesuffix(".store")
+    module = f"{workload_package}.plotting"
     logging.info(f"Loading {module} module ...")
 
     plotting_module = importlib.import_module(module)
