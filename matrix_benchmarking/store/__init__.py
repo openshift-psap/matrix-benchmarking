@@ -15,6 +15,10 @@ def load_workload_store(kwargs):
     if workload is True:
         raise ValueError("'workload' must have a value ...")
 
+    if workload_base_dir := kwargs.get("workload_base_dir"):
+        logging.info(f"Adding workload_base_dir='{workload_base_dir}' to the Python module path list")
+        sys.path.insert(0, workload_base_dir)
+
     try:
         module = f"{workload}.store"
         logging.info(f"Loading {module} module ...")
