@@ -15,10 +15,17 @@ def load_workload_store(kwargs):
     if workload is True:
         raise ValueError("'workload' must have a value ...")
 
-    module = f"matrix_benchmarking.workloads.{workload}.store"
-    logging.info(f"Loading {module} module ...")
+    try:
+        module = f"{workload}.store"
+        logging.info(f"Loading {module} module ...")
 
-    store_module = importlib.import_module(module)
+        store_module = importlib.import_module(module)
+    except ModuleNotFoundError:
+        logging.info(f"Could not load '{module}' module. Trying the common location.")
+        module = f"matrix_benchmarking.workloads.{workload}.store"
+        logging.info(f"Loading {module} module ...")
+
+        store_module = importlib.import_module(module)
 
     logging.info(f"Loading {module} module ... done.")
 
