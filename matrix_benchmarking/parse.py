@@ -94,7 +94,6 @@ Args:
             logging.info(f"{key:20s}: {', '.join(map(str, common.Matrix.settings[key]))}")
 
         if kwargs["output_matrix"]:
-            file = sys.stdout if kwargs["output_matrix"] == '-' else open(kwargs["output_matrix"], "w")
             indent = None
             if kwargs['pretty']:
                 indent = 4
@@ -103,23 +102,32 @@ Args:
             for entry in common.Matrix.processed_map.values():
                 parsed_results.append(entry)
 
-            json.dump(parsed_results, file, indent=indent, default=functools.partial(json_dumper, strict=False))
-            print("", file=file)
-            file.close()
+            file = None
+            try:
+                file = sys.stdout if kwargs["output_matrix"] == '-' else open(kwargs["output_matrix"], "w")
+                json.dump(parsed_results, file, indent=indent, default=functools.partial(json_dumper, strict=False))
+                print("", file=file) # add the EOL delimiter after the JSON dump
+            finally:
+                if file:
+                    file.close()
 
         if kwargs["output_lts"]:
-            file = sys.stdout if kwargs["output_lts"] == '-' else open(kwargs["output_lts"], "w")
             indent = None
             if kwargs['pretty']:
                 indent = 4
 
             parsed_results = []
-            for (payload, _, __) in workload_store.build_lts_payloads():
+            for payload, _, __ in workload_store.build_lts_payloads():
                 parsed_results.append(payload)
 
-            json.dump(parsed_results, file, indent=indent, default=functools.partial(json_dumper, strict=False))
-            print("", file=file)
-            file.close()
+            file = None
+            try:
+                file = sys.stdout if kwargs["output_lts"] == '-' else open(kwargs["output_lts"], "w")
+                json.dump(parsed_results, file, indent=indent, default=functools.partial(json_dumper, strict=False))
+                print("", file=file)
+            finally:
+                if file:
+                    file.close()
 
         has_result = len(common.Matrix.processed_map) != 0
         return 0 if has_result else 1
