@@ -14,6 +14,9 @@ def json_dumper(obj, strict=False):
     if hasattr(obj, "toJSON"):
         return obj.toJSON()
 
+    elif hasattr(obj, "json"):
+        return obj.dict(by_alias=True)
+
     elif hasattr(obj, "__dict__"):
         return obj.__dict__
 
