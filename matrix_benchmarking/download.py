@@ -14,6 +14,7 @@ import matrix_benchmarking.downloading.scrape as scrape
 def main(url_file: str = "",
          url: str = "",
          workload: str = "",
+         workload_base_dir: str = "",
          results_dirname: str = "",
          filters: list[str] = [],
          do_download: bool = False,
@@ -28,6 +29,7 @@ Env:
     MATBENCH_URL_FILE
     MATBENCH_URL
     MATBENCH_WORKLOAD
+    MATBENCH_WORKLOAD_BASE_DIR
     MATBENCH_RESULTS_DIRNAME
     MATBENCH_DO_DOWNLOAD
     MATBENCH_MODE
@@ -38,6 +40,7 @@ Args:
     url_file: File where the URLs to download are stored.
     url: URL that will be downloaded
     workload_dir: Name of the workload to execute. (Mandatory.)
+    workload_base_directory: the directory from where the workload packages should be loaded. (Optional)
     results_dirname: Name of the directory where the results will be stored. Can be set in the benchmark file. (Mandatory.)
     do_download: if 'False', list the files that would be downloaded. If 'True', download them.
     mode: 'prefer_cache' to download only the cache file, if it exists, or turn to 'mandatory' if it doesn't.
