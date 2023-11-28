@@ -25,11 +25,8 @@ def load_workload_store(kwargs):
 
         store_module = importlib.import_module(module)
     except ModuleNotFoundError:
-        logging.info(f"Could not load '{module}' module. Trying the common location.")
-        module = f"matrix_benchmarking.workloads.{workload}.store"
-        logging.info(f"Loading {module} module ...")
-
-        store_module = importlib.import_module(module)
+        logging.error(f"Could not load '{module}' module :/")
+        raise
 
     logging.info(f"Loading {module} module ... done.")
 
