@@ -98,7 +98,7 @@ EXEC_DIR="$(realpath "$2")"
         settings.update(yaml_expe)
 
         all_settings_items = [
-            [(name, value) for value in (values if isinstance(values, list) else str(values).split(", "))]
+            [(name, value) for value in (values if isinstance(values, list) else [values])]
             for name, values in settings.items()
         ]
 
