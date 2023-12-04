@@ -199,10 +199,12 @@ EXEC_DIR="$(realpath "$2")"
             with open(context.bench_fullpath / "settings.yaml", "w") as out_f:
                 yaml.dump(settings, out_f)
 
-            with open(context.bench_fullpath / "settings", "w") as out_f:
-                for k, v in settings.items():
-                    print(f"{k}={v}", file=out_f)
-                print("", file=out_f)
+            for test_file, _content in self.yaml_desc.get("test_files", {}).items():
+                content = _content if isinstance(_content, str) else \
+                    yaml.dump(_content, default_flow_style=False, sort_keys=False)
+
+                with open(context.bench_fullpath / test_file, "w") as f:
+                    print(content, file=f)
 
         try:
             script = context.script_tpl.format(**settings)
@@ -214,7 +216,7 @@ EXEC_DIR="$(realpath "$2")"
 
             return None
 
-        cmd_fullpath = f"{pathlib.Path(os.getcwd()) / script} 1> >(tee stdout) 2> >(tee stderr >&2)"
+        cmd_fullpath = f"{pathlib.Path(os.getcwd()) / script} &> >(tee run.log)"
 
         if tracker.dry:
             try:
