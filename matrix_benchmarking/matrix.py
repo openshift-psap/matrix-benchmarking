@@ -166,7 +166,7 @@ EXEC_DIR="$(realpath "$2")"
 
             parent_dir = (context.expe_dir / f"{bench_common_path}").parent # may or may not exist
             parent_dir_matches = list(parent_dir.glob("*__*"))
-            next_id = (int(list(parent_dir_matches[-1].name.split("__")[0])) + 1) \
+            next_id = (int(list(parent_dir_matches[-1].name.split("__"))[0]) + 1) \
                           if parent_dir_matches else 0
 
             bench_common_pathname = f"{next_id:03d}__{bench_common_path}"
