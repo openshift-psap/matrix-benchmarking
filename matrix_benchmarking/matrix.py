@@ -164,10 +164,15 @@ EXEC_DIR="$(realpath "$2")"
                     return True
                 continue
 
-            bench_uid = datetime.datetime.today().strftime("%Y%m%d_%H%M") + f".{uuid.uuid4().hex[:4]}"
+            parent_dir = (context.expe_dir / f"{bench_common_path}").parent # may or may not exist
+            parent_dir_matches = list(parent_dir.glob("*__*"))
+            next_id = (int(list(parent_dir_matches[-1].name.split("__")[0])) + 1) \
+                          if parent_dir_matches else 0
 
-            context.bench_dir = pathlib.Path(context.expe) / f"{bench_common_path}{bench_uid}"
-            context.bench_fullpath = context.expe_dir / f"{bench_common_path}{bench_uid}"
+            bench_common_pathname = f"{next_id:03d}__{bench_common_path}"
+
+            context.bench_dir = pathlib.Path(context.expe) / bench_common_pathname
+            context.bench_fullpath = context.expe_dir / bench_common_pathname
 
             if not tracker.dry and not context.remote_mode:
                 os.makedirs(context.bench_fullpath)
