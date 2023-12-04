@@ -216,7 +216,7 @@ EXEC_DIR="$(realpath "$2")"
 
             return None
 
-        cmd_fullpath = f"{pathlib.Path(os.getcwd()) / script} 1> >(tee stdout) 2> >(tee stderr >&2)"
+        cmd_fullpath = f"{pathlib.Path(os.getcwd()) / script} &> >(tee run.log)"
 
         if tracker.dry:
             try:
