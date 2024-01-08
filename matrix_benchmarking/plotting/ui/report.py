@@ -82,6 +82,8 @@ class _Report():
             return ["None"]
         elif isinstance(elt, str):
             return [elt]
+        elif any([isinstance(elt, t) for t in (str, float, int)]):
+            return [str(elt)]
         elif hasattr(elt, "children"):
             return self._children_element_to_html(elt)
         elif isinstance(elt, dcc.Graph):
