@@ -11,8 +11,7 @@ class MatrixEntry(types.SimpleNamespace):
     def __init__(self, location, results,
                  processed_key, import_key,
                  processed_settings, import_settings, settings=None,
-                 stats=None, is_gathered=None, is_lts=False):
-        self.is_lts = is_lts
+                 stats=None, is_gathered=None):
         self.is_gathered = False
 
         self.settings = settings or types.SimpleNamespace()
@@ -39,10 +38,10 @@ class MatrixEntry(types.SimpleNamespace):
         if hasattr(self.results, 'thresholds'):
             return self.results.thresholds.get(threshold_value, default)
         return default
-    
+
     def get_settings(self) -> dict:
         return self.settings.__dict__
-    
+
     def check_thresholds(self) -> bool:
         return hasattr(self.results, 'check_thresholds') and self.results.check_thresholds
 
@@ -58,37 +57,30 @@ class Matrix():
         return "|".join(f"{k}={settings[k]}" for k in sorted(settings) if k != "stats")
 
     @staticmethod
-    def all_records(settings, setting_lists, include_local=True, include_lts=False, local_first=True) -> Iterator[MatrixEntry]:
-        if local_first: # Does nothing if both are not set to true, this is to provide a default behaviour
-            if include_local and include_lts:
-                yield from Matrix.all_records(settings, setting_lists, include_local=True, include_lts=False)
-                yield from Matrix.all_records(settings, setting_lists, include_local=False, include_lts=True)
-                return
-
+    def all_records(settings, setting_lists) -> Iterator[MatrixEntry]:
         for settings_values in sorted(itertools.product(*setting_lists)):
             settings.update(dict(settings_values))
             key = Matrix.settings_to_key(settings)
 
             try:
-                entry = Matrix.processed_map[key]
-            except KeyError:
-                continue # missing experiment
-            if (entry.is_lts and include_lts) or (not entry.is_lts and include_local):
-                yield entry
+                yield Matrix.processed_map[key]
+            except KeyError: # missing experiment, ignore
+                continue
 
     @staticmethod
     def get_record(settings):
         key = Matrix.settings_to_key(settings)
 
-        try: return Matrix.processed_map[key]
-        except KeyError: return None
+        return Matrix.processed_map.get(key, None)
 
     @staticmethod
-    def count_records(settings, setting_lists, include_local=True, include_lts=False):
-        return sum([ 1 for _ in Matrix.all_records(settings, setting_lists, include_local, include_lts) ])
+    def count_records(settings, setting_lists):
+        return sum([ 1 for _ in Matrix.all_records(settings, setting_lists)]) # don't use len(list(...)) with a generator, this form is more memory efficient
 
     @staticmethod
-    def has_records(settings, setting_lists, include_local=True, include_lts=False):
-         for _ in Matrix.all_records(settings, setting_lists, include_local, include_lts):
-              return True
-         return False
+    def has_records(settings, setting_lists):
+        try:
+            _first_entry = next(Matrix.all_records(settings, setting_lists)) # raises an exception is the generator is empty
+            return True
+        except StopIteration:
+            return False
