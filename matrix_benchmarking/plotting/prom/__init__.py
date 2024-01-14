@@ -86,7 +86,6 @@ class Plot():
         plot_title = self.title if self.title else self.name
 
         cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
-        cfg__show_lts = cfg.get('show_lts', False)
         cfg__as_timeline = cfg.get("as_timeline", False)
 
         if self.show_metrics_in_title:
@@ -101,7 +100,7 @@ class Plot():
             plot_title += f"<br>{'<br>'.join(queries_names)}"
 
         y_max = 0
-        single_expe = common.Matrix.count_records(settings, setting_lists, include_lts=cfg__show_lts) == 1
+        single_expe = common.Matrix.count_records(settings, setting_lists) == 1
         as_timeline = single_expe or cfg__as_timeline
 
         show_test_timestamps = True
@@ -113,7 +112,7 @@ class Plot():
         threshold_passes = defaultdict(int)
 
         data = []
-        for entry in common.Matrix.all_records(settings, setting_lists, include_lts=cfg__show_lts):
+        for entry in common.Matrix.all_records(settings, setting_lists):
             threshold_value = entry.get_threshold(self.threshold_key)
 
             try: check_thresholds = entry.check_thresholds()
@@ -240,7 +239,7 @@ class Plot():
 
 
         if show_test_timestamps:
-            tests_timestamp_y_position, plots = get_tests_timestamp_plots(common.Matrix.all_records(settings, setting_lists, include_lts=cfg__show_lts), y_max)
+            tests_timestamp_y_position, plots = get_tests_timestamp_plots(common.Matrix.all_records(settings, setting_lists), y_max)
             data += plots
 
         if not data:

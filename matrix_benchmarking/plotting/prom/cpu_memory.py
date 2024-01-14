@@ -53,7 +53,6 @@ class Plot():
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
-        cfg__show_lts = cfg.get("show_lts", False)
         cfg__as_timeline = cfg.get("as_timeline", False)
 
         fig = go.Figure()
@@ -67,7 +66,7 @@ class Plot():
 
         y_divisor = 1024*1024*1024 if self.is_memory else 1
 
-        single_expe = common.Matrix.count_records(settings, setting_lists, include_lts=cfg__show_lts) == 1
+        single_expe = common.Matrix.count_records(settings, setting_lists) == 1
 
         as_timeline = single_expe or cfg__as_timeline
 
@@ -82,7 +81,7 @@ class Plot():
 
         threshold_status = defaultdict(dict)
         threshold_passes = defaultdict(int)
-        for entry in common.Matrix.all_records(settings, setting_lists, include_lts=cfg__show_lts):
+        for entry in common.Matrix.all_records(settings, setting_lists):
             threshold_value = entry.get_threshold(self.threshold_key, None) if self.threshold_key else None
 
             check_thresholds = entry.check_thresholds()
@@ -200,7 +199,7 @@ class Plot():
                         threshold_status[entry_name][legend_group] = status
 
         if show_test_timestamps:
-            tests_timestamp_y_position, plots = get_tests_timestamp_plots(common.Matrix.all_records(settings, setting_lists, include_lts=cfg__show_lts), y_max)
+            tests_timestamp_y_position, plots = get_tests_timestamp_plots(common.Matrix.all_records(settings, setting_lists), y_max)
             data += plots
 
         if not data:
