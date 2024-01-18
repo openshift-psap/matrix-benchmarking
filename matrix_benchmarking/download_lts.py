@@ -37,7 +37,6 @@ Download MatrixBenchmark from Long-Term Storage, expects OpenSearch credentials 
     filters: If provided, only download the experiments matching the filters. Eg: expe=expe1:expe2,something=true. (Optional.)
     """
     kwargs = dict(locals()) # capture the function arguments
-
     optionals_flags = ["filters"]
     safe_flags = ["filters", "results_dirname", "opensearch_index"]
 
@@ -51,7 +50,13 @@ Download MatrixBenchmark from Long-Term Storage, expects OpenSearch credentials 
 
         client = connect_opensearch_client(kwargs)
 
-        return download(client, kwargs.get("opensearch_index"), kwargs.get("filters"), pathlib.Path(kwargs.get("results_dirname")))
+        return download(
+            client,
+            kwargs.get("opensearch_index"),
+            kwargs.get("filters"),
+            pathlib.Path(kwargs.get("results_dirname")),
+            kwargs.get("max_records")
+        )
 
     return cli_args.TaskRunner(run)
 
@@ -72,14 +77,33 @@ def connect_opensearch_client(kwargs):
 
     return client
 
-def download(client, opensearch_index, filters, results_dirname):
+def download(client, opensearch_index, filters, results_dirname, max_records):
     lts_dir_anchor = results_dirname / LTS_ANCHOR_NAME
     if lts_dir_anchor.exists():
         logging.critical(f"{lts_dir_anchor} already exists, cannot continue.")
         return 1
 
     logging.info(f"Querying OpenSearch {opensearch_index} ...")
-    search = client.search(index=opensearch_index)
+
+    query = {
+        "size": max_records
+    }
+
+    # Restrict the results to specific settings
+    if filters:
+        query["query"] = {
+            "bool": {
+                "must": [
+                    {"match": {k: v}} for k, v in filters.items()
+                ]
+            }
+        }
+
+    search = client.search(
+        body=query,
+        index=opensearch_index
+    )
+    print(filters)
 
     logging.info(f"Saving OpenSearch {opensearch_index} results ...")
     saved = 0
