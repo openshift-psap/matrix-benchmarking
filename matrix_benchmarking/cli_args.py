@@ -83,32 +83,14 @@ def update_kwargs_with_benchmark_file(kwargs, benchmark_desc_file):
         logging.warning(f"unexpected flag found in the benchmark file: {key} = '{value}'")
 
 
-def update_kwargs_with_workload(kwargs):
-    if "workload" in kwargs and kwargs["workload"]:
-        # workload already set, no need to guess it
-        return
-
-    cwd_dirname = pathlib.Path(os.getcwd()).name
-
-    # try to import `cwd_dirname` as a MatrixBenchmarking workload
-    workload = importlib.util.find_spec(f'matrix_benchmarking.workloads.{cwd_dirname}')
-    if workload:
-        # it worked, so `cwd_dirname` is a directory inside
-        # matrix-benchmarking/matrix_benchmarking/workloads.
-        # Use it a workload plugin.
-        logging.info(f"Using: '{cwd_dirname}' (from the current working directory) as workload plugin")
-        kwargs["workload"] = cwd_dirname
-
-
-def check_mandatory_kwargs(kwargs, mandatory_flags, sensitive = []):
-
-    import sys
+def check_mandatory_kwargs(kwargs, mandatory_flags, sensitive_flags = []):
     command = [f"matbench {sys.argv[1]}"]
     for k, v in sorted(kwargs.items()):
         if v not in mandatory_flags and not v: continue
 
-        value = "<CENSORED>" if k in sensitive else v
+        value = "<OMITTED>" if k in sensitive_flags else v
         command += [f"--{k.replace('_', '-')}='{value}'"]
+
     logging.info("MatrixBenchmarking starting with:\n" + " \\\n\t".join(command))
 
     err = False
@@ -126,7 +108,6 @@ def setup_env_and_kwargs(kwargs):
     # overriding order: env file <- env var <- benchmark file <- cli
     update_env_with_env_files()
     update_kwargs_with_env(kwargs)
-    update_kwargs_with_workload(kwargs)
 
     filters = kwargs.get("filters")
     if isinstance(filters, bool):
