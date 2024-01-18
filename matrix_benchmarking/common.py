@@ -57,7 +57,11 @@ class Matrix():
         return "|".join(f"{k}={settings[k]}" for k in sorted(settings) if k != "stats")
 
     @staticmethod
-    def all_records(settings, setting_lists) -> Iterator[MatrixEntry]:
+    def all_records(settings=None, setting_lists=None) -> Iterator[MatrixEntry]:
+        if settings is None and setting_lists is None:
+            yield from Matrix.processed_map.values()
+            return
+
         for settings_values in sorted(itertools.product(*setting_lists)):
             settings.update(dict(settings_values))
             key = Matrix.settings_to_key(settings)
