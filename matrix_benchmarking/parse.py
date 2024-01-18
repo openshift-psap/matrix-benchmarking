@@ -39,7 +39,8 @@ def main(workload: str = "",
          run: bool = False,
          output_lts: str = "",
          output_matrix: str = "",
-         pretty: bool = True
+         pretty: bool = True,
+         lts: bool = False,
          ):
     """
 Run MatrixBenchmarking results parsing.
@@ -65,12 +66,12 @@ Args:
     run: In cleanup mode: if 'False', list the results that would be cleanup. If 'True', execute the cleanup.
     output_lts: Output the parsed LTS results into a specified file, or to stdout if '-' is supplied
     output_matrix: Output the internal entry matrix into a specified file, or to stdout if '-' is supplied
+    lts: If 'True', invoke the LTS parser only.
 """
 
     kwargs = dict(locals()) # capture the function arguments
 
     cli_args.setup_env_and_kwargs(kwargs)
-
     cli_args.check_mandatory_kwargs(kwargs, ("workload", "results_dirname",))
 
     def run():
@@ -82,7 +83,12 @@ Args:
         workload_store = store.load_workload_store(kwargs)
 
         logging.info(f"Loading results ... ")
-        workload_store.parse_data()
+
+        if kwargs.get("lts"):
+            workload_store.parse_lts_data()
+        else:
+            workload_store.parse_data()
+
         logging.info(f"Loading results: done, found {len(common.Matrix.processed_map)} results")
 
         if kwargs["clean"]:

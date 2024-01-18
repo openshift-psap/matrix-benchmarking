@@ -29,7 +29,7 @@ Args:
     results_dirname: Name of the directory where the results will be stored.  (Mandatory.)
     generate: If set, the value is used as query to generates image files instead of running the Web UI.
     filters: If provided, parse only the experiment matching the filters. Eg: expe=expe1:expe2,something=true.
-
+    lts: If 'True', invoke the LTS parser only.
 """
     kwargs = dict(locals()) # capture the function arguments
 
