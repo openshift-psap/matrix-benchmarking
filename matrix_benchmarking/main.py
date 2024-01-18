@@ -16,6 +16,7 @@ import matrix_benchmarking.download
 import matrix_benchmarking.upload_lts
 import matrix_benchmarking.download_lts
 import matrix_benchmarking.export_lts_schema
+import matrix_benchmarking.analyze_lts
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"),
                     format="%(levelname)s | %(message)s",)
@@ -33,6 +34,8 @@ class MatrixBenchmarking:
         self.upload_lts = matrix_benchmarking.upload_lts.main
         self.download_lts = matrix_benchmarking.download_lts.main
         self.export_lts_schema = matrix_benchmarking.export_lts_schema.main
+        self.analyze_lts = matrix_benchmarking.analyze_lts.main
+
 
 def main():
     # Print help rather than opening a pager
