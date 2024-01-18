@@ -74,6 +74,12 @@ class KPI(ExclusiveModel):
     timestamp: datetime.datetime = Field(..., alias="@timestamp")
     value: Union[float,int]
 
+    def __str__(self):
+        labels = {k:v for k, v in self.__dict__.items() if k not in ("unit", "help", "timestamp", "value")}
+        labels_str = ", ".join(f"{k}=\"{v}\"" for k, v in labels.items())
+
+        return f"""# HELP {self.help}, in {self.unit}
+__NAME__{{{labels_str}}} {self.value} {self.unit}"""
 
 def KPIMetadata(**kwargs):
     def decorator(fct):
@@ -92,9 +98,16 @@ def KPIMetadata(**kwargs):
 
 
 def getKPIsModel(name, module_name, KPIs, KPImodel):
-    return pydantic.create_model(
+    model = pydantic.create_model(
         name,
         __base__=ExclusiveModel,
         **dict(zip(KPIs.keys(), [(KPImodel, ...) for _ in range(len(KPIs))])),
         __module__=module_name
     )
+
+    def tostr(self):
+        return "\n".join([str(getattr(self, name)).replace("__NAME__", name) for name in self.__fields__.keys()])
+
+    model.tostr = tostr
+
+    return model
