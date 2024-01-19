@@ -3,88 +3,124 @@ import getpass
 import datetime as dt
 import requests
 import json
+import functools
 
 import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store as store
+import matrix_benchmarking.download_lts as download_lts
+import matrix_benchmarking.parse as parse
+
 
 def main(
         workload: str = "",
         workload_base_dir: str = "",
         results_dirname: str = "",
+        opensearch_host: str = "",
+        opensearch_port: str = "",
+        opensearch_username: str = "",
+        opensearch_password: str = "",
+        opensearch_index: str = "",
         filters: list[str] = [],
-        dry_run: bool = False
+        dry_run: bool = False,
     ):
     """
-Upload MatrixBenchmark result to Horreum
+Upload MatrixBenchmark LTS payloads to OpenSearch
 
-Upload MatrixBenchmark to Long-Term Storage
+Upload MatrixBenchmark LTS payloads to OpenSearch, expects OpenSearch credentials and configuration to be available either in the enviornment or in an env file.
 
 Args:
-    workload: Name of the workload to execute. (Mandatory)
-    workload_base_directory: the directory from where the workload packages should be loaded. (Optional)
-    results_dirname: Name of the directory where the results are stored. Can be set in the benchmark file. (Mandatory)
-    horreum_url: The URL to the Horreum instance where the data will be uploaded. (Mandatory)
-    keycloak_url: The URL for the KeyCloak instance used to login to Horruem. (Mandatory)
-    horreum_test: The name of the test in Horreum for the data to be uploaded under. (Mandatory)
-    horreum_uname: The username of your Horreum user. (Mandatory)
-    horreum_passwd: The password for your Horreum user. (Mandatory)
+    workload: name of the workload to execute. (Mandatory)
+    workload_base_dir: the directory from where the workload packages should be loaded. (Optional)
+
+    results_dirname: name of the directory where the results are stored. Can be set in the benchmark file. (Mandatory)
+
+    opensearch_host: hostname of the OpenSearch instance
+    opensearch_port: port of the OpenSearch instance
+    opensearch_username: username of the OpenSearch instance
+    opensearch_password: password of the OpenSearch instance
+    opensearch_index: the OpenSearch index where the LTS payloads are stored (Mandatory)
 
     filters: If provided, parse and upload only the experiment matching the filters. Eg: expe=expe1:expe2,something=true. (Optional.)
     dry_run: If provided, only parse results and not upload results to horreum. (Optional.)
     """
-    kwargs = {
-        "horreum_url": None,
-        "keycloak_url": None,
-        "horreum_test": None,
-        "horreum_uname": None,
-        "horreum_passwd": None,
-        **dict(locals())
-    }
+
+    kwargs = dict(locals()) # capture the function arguments
+
+    optionals_flags = ["filters", "workload_base_dir", "dry_run"]
+    safe_flags = ["results_dirname", "workload", "opensearch_index"] + optionals_flags
 
     cli_args.setup_env_and_kwargs(kwargs)
     cli_args.check_mandatory_kwargs(kwargs,
-        ("workload", "results_dirname", "horreum_url", "keycloak_url", "horreum_test", "horreum_uname", "horreum_passwd"),
-        sensitive=["horreum_url", "keycloak_url", "horreum_test", "horreum_uname", "horreum_passwd"]
-    )
+                                    mandatory_flags=[k for k in kwargs.keys() if k not in optionals_flags],
+                                    sensitive_flags=[k for k in kwargs.keys() if k not in safe_flags])
 
     def run():
         cli_args.store_kwargs(kwargs, execution_mode="upload-lts")
+
         workload_store = store.load_workload_store(kwargs)
+
+        if kwargs.get("dry_run"):
+            logging.warning("Running in dry mode.")
+
+        logging.info(f"Loading results ... ")
         workload_store.parse_data()
+        logging.info(f"Loading results: done, found {len(common.Matrix.processed_map)} results")
 
-        if not dry_run:
-            token = login(kwargs.get('keycloak_url'), kwargs.get("horreum_uname"), kwargs.get("horreum_passwd"))
+        common.Matrix.print_settings_to_log()
 
-        for (payload, start, end) in workload_store.build_lts_payloads():
-            logging.debug(f"Sending {json.dumps(payload)} to Horreum")
-            if not dry_run:
-                upload(kwargs.get('horreum_url'), payload, kwargs.get('horreum_test'), start, end, token)
+        client = download_lts.connect_opensearch_client(kwargs) \
+            if not kwargs.get("dry_run") else None
+
+        logging.info(f"Uploading to OpenSearch /{kwargs.get('opensearch_index')}...")
+        return upload(client, workload_store, kwargs.get("dry_run"), kwargs.get("opensearch_index"))
 
     return cli_args.TaskRunner(run)
 
 
-def upload(url: str, payload: dict, test: str, starttime: dt.datetime, endtime: dt.datetime, token: str):
-    start = int(dt.datetime.timestamp(starttime) * 1e3)
-    end = int(dt.datetime.timestamp(endtime) * 1e3)
-    resp = requests.post(
-        f"{url}/api/run/data?test={test}&start={start}&stop={end}&access=PUBLIC",
-        json=payload,
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
-        },
-        verify=False
-    )
-    print(resp.content)
+def upload(client, workload_store, dry_run, opensearch_index):
+    variables = [k for k, v in common.Matrix.settings.items() if len(v) > 1]
+
+    for idx, (payload, start, end) in enumerate(workload_store.build_lts_payloads()):
+        key = ",".join(f"{k}={v}" for k, v in payload.metadata.settings.items() if (not variables or k in variables))
+        logging.info(f"Uploading payload #{idx} | {key}")
+
+        payload_json = json.dumps(payload, default=functools.partial(parse.json_dumper, strict=False))
+        payload_dict = json.loads(payload_json)
+
+        upload_lts_to_opensearch(client, payload_dict, dry_run, opensearch_index)
+        upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index)
+
+    logging.info("All done :)")
 
 
-def login(url: str, uname: str, passwd: str) -> str:
-    from keycloak import KeycloakOpenID
-    open_id = KeycloakOpenID(
-        server_url=url,
-        realm_name="horreum",
-        client_id="horreum-ui",
-        verify=False
+def upload_lts_to_opensearch(client, payload_dict, dry_run, opensearch_index):
+    logging.info(f"Uploading the LTS document to /{opensearch_index} ...")
+
+    return upload_to_opensearch(client, payload_dict, dry_run, opensearch_index)
+
+
+def upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index):
+    if "kpis" not in payload_dict.keys():
+        logging.info(f"==> no KPI found in the payload.")
+        return
+
+    for kpi_name, kpi in payload_dict["kpis"].items():
+        kpi_index = f"{opensearch_index}__{kpi_name}"
+        logging.info(f"Uploading the KPI to /{kpi_index} ...")
+
+        upload_to_opensearch(client, kpi, dry_run, kpi_index)
+
+
+def upload_to_opensearch(client, document, dry_run, index):
+    if dry_run:
+        logging.info(f"==> skip upload (dry run)")
+        return
+
+    response = client.index(
+        index=index,
+        body=document,
+        refresh=True
     )
-    return open_id.token(uname, passwd)['access_token']
+
+    logging.info(f"==> {response['result']}")
