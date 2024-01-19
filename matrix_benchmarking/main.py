@@ -15,7 +15,7 @@ import matrix_benchmarking.parse
 import matrix_benchmarking.download
 import matrix_benchmarking.upload_lts
 import matrix_benchmarking.download_lts
-import matrix_benchmarking.export_lts_schema
+import matrix_benchmarking.generate_lts_schema
 import matrix_benchmarking.analyze_lts
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"),
@@ -33,7 +33,7 @@ class MatrixBenchmarking:
         self.download = matrix_benchmarking.download.main
         self.upload_lts = matrix_benchmarking.upload_lts.main
         self.download_lts = matrix_benchmarking.download_lts.main
-        self.export_lts_schema = matrix_benchmarking.export_lts_schema.main
+        self.generate_lts_schema = matrix_benchmarking.generate_lts_schema.main
         self.analyze_lts = matrix_benchmarking.analyze_lts.main
 
 

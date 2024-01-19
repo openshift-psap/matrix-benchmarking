@@ -13,15 +13,16 @@ def main(workload: str = "",
          workload_base_dir: str = "",
          file: str = "-"):
     """
-Export a JSON Schema for a particular workload
+Generate the JSON LTS schema of the workload
 
-Export a JSON Schema for a workload, which is commonly used in Horreum
+Generate the JSON LTS schema of the workload
 
 Args:
     workload: Name of the workload to execute. (Mandatory)
     workload_base_directory: the directory from where the workload packages should be loaded. (Optional)
     file: Name of the file to export the schema to, "-" to output to stdout.  (Default is "-")
-    """
+"""
+
     kwargs = dict(locals())
 
     cli_args.setup_env_and_kwargs(kwargs)
