@@ -3,9 +3,11 @@ import os, sys
 import pathlib
 import logging
 import importlib
+import json
 
 kwargs = None
 experiment_filters = {}
+cli_environ = {}
 
 def store_kwargs(_kwargs, *, execution_mode):
     global kwargs
@@ -39,17 +41,24 @@ def update_env_with_env_files():
     """
     Overrides the function default args with the flags found in the environment variables files
     """
-    for env in ".env", ".env.generated":
-        try:
-            with open(env) as f:
+
+    for env in ".env", ".env.generated", ".env.yaml",".env.json", ".env.generated.json", ".env.generated.yaml":
+        env_file = pathlib.Path(env)
+        if not env_file.exists(): continue
+        with open(env) as f:
+            if env_file.suffix in (".yaml", ".json"):
+                doc = yaml.safe_load(f) if env_file.suffix == ".yaml" else json.load(f)
+                for k, v in doc.items():
+                    key = f"MATBENCH_{k.upper()}"
+                    cli_environ[key] = str(v)
+            else:
                 for line in f.readlines():
                     key, found , value = line.strip().partition("=")
                     if not found:
                         logging.warning("invalid line in {env}: {line.strip()}")
                         continue
                     if key in os.environ and os.environ[key]: continue # prefer env to env file
-                    os.environ[key] = value
-        except FileNotFoundError: pass # ignore missing files
+                    cli_environ[key] = value
 
 
 def update_kwargs_with_env(kwargs):
@@ -57,9 +66,13 @@ def update_kwargs_with_env(kwargs):
 
     for flag, current_value in kwargs.items():
         if current_value: continue # already set, ignore.
+        key = f"MATBENCH_{flag.upper()}"
+        env_value = os.environ.get(key)
+        if not env_value:
+            # not set as environment var
+            env_value = cli_environ.get(key)
+            if not env_value: continue # not set in an environment file, ignore
 
-        env_value = os.environ.get(f"MATBENCH_{flag.upper()}")
-        if not env_value: continue # not set, ignore.
         kwargs[flag] = env_value # override the function arg with the environment variable value
 
 
