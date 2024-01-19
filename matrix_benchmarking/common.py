@@ -1,5 +1,5 @@
 from typing import Iterator
-
+import logging
 import os, types, itertools
 from collections import defaultdict
 import pathlib
@@ -88,3 +88,18 @@ class Matrix():
             return True
         except StopIteration:
             return False
+
+    @staticmethod
+    def print_settings_to_log():
+        if not Matrix.processed_map:
+            return False
+
+        logging.info("Settings matrix:")
+
+        for key, values in Matrix.settings.items():
+            if key == "stats": continue
+            Matrix.settings[key] = sorted(values)
+            logging.info(f"{key:20s}: {', '.join(map(str, Matrix.settings[key]))}")
+        logging.info("---")
+
+        return True
