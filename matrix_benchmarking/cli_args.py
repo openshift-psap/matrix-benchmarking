@@ -123,10 +123,12 @@ def setup_env_and_kwargs(kwargs):
     update_env_with_env_files()
     update_kwargs_with_env(kwargs)
 
-    kwargs["max_records"] = 10000 if "max_records" not in kwargs else kwargs.get("max_records")
     filters = kwargs.get("filters")
     if isinstance(filters, bool):
         filters = str(filters)
+
+    if filters:
+        parse_filters(filters)
 
 def parse_filters(filters):
     for kv in filters.split(","):

@@ -40,7 +40,8 @@ Download MatrixBenchmark from Long-Term Storage, expects OpenSearch credentials 
     optionals_flags = ["filters"]
     safe_flags = ["filters", "results_dirname", "opensearch_index"]
 
-    cli_args.setup_env_and_kwargs(kwargs)
+    cli_args.update_env_with_env_files()
+    cli_args.update_kwargs_with_env(kwargs)
     cli_args.check_mandatory_kwargs(kwargs,
                                     mandatory_flags=[k for k in kwargs.keys() if k not in optionals_flags],
                                     sensitive_flags=[k for k in kwargs.keys() if k not in safe_flags])
@@ -103,7 +104,6 @@ def download(client, opensearch_index, filters, results_dirname, max_records):
         body=query,
         index=opensearch_index
     )
-    print(filters)
 
     logging.info(f"Saving OpenSearch {opensearch_index} results ...")
     saved = 0
