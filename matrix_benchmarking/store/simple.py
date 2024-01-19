@@ -72,7 +72,7 @@ def parse_settings(dirname, expe):
     for parent_dir in list(reversed([dirname] + list(dirname.parents))):
         for filename in list(parent_dir.glob("settings")) + list(parent_dir.glob("settings.*")):
             if filename.suffix not in (".yaml", ".yml"): # deprecated
-                logging.warning(f"Found deprecated 'settings' file in {dirname}: {filename}")
+                logging.debug(f"Found deprecated 'settings' file in {dirname}: {filename}")
 
                 import_settings.update(parse_old_settings(filename))
                 continue
@@ -201,7 +201,7 @@ def parse_data(results_dir=None):
 
     def has_settings(files):
         if "settings" in files:
-            logging.warning(f"Found deprecated 'settings' file ...")
+            logging.debug(f"Found deprecated 'settings' file ...")
             return True # deprecated
         if "settings.yml" in files:
             logging.warning(f"Found settings file with invalid extention 'settings.yml' file ...")
