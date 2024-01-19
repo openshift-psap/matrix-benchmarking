@@ -21,6 +21,7 @@ def main(opensearch_host: str = "",
          opensearch_index: str = "",
          results_dirname: str = "",
          filters: list[str] = [],
+         max_records: int = 10000, 
          ):
     """
 Download MatrixBenchmark result from OpenSearch
@@ -34,11 +35,13 @@ Download MatrixBenchmark from Long-Term Storage, expects OpenSearch credentials 
     opensearch_index: the OpenSearch index where the LTS payloads are stored (Mandatory)
 
     results_dirname: The directory to place the downloaded results files.
-    filters: If provided, only download the experiments matching the filters. Eg: expe=expe1:expe2,something=true. (Optional.)
+    filters: If provided, only download the experiments matching the filters. Eg: {"image_name": "1.2"}. (Optional.)
+    max_records: Maximum number of records to retrieve from the OpenSearch instance. 10,000 is the largest number possible without paging (Optional.)
     """
     kwargs = dict(locals()) # capture the function arguments
-    optionals_flags = ["filters"]
-    safe_flags = ["filters", "results_dirname", "opensearch_index"]
+
+    optionals_flags = ["filters", "max_records"]
+    safe_flags = ["filters", "results_dirname", "opensearch_index", "max_records"]
 
     cli_args.update_env_with_env_files()
     cli_args.update_kwargs_with_env(kwargs)
