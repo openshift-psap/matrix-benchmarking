@@ -28,6 +28,7 @@ Download MatrixBenchmark result from OpenSearch
 
 Download MatrixBenchmark from Long-Term Storage, expects OpenSearch credentials and configuration to be available either in the enviornment or in an env file.
 
+Args:
     opensearch_host: hostname of the OpenSearch instance
     opensearch_port: port of the OpenSearch instance
     opensearch_username: username of the OpenSearch instance
@@ -98,7 +99,7 @@ def download(client, opensearch_index, filters, results_dirname, max_records):
         query["query"] = {
             "bool": {
                 "must": [
-                    {"match": {k: v}} for k, v in filters.items()
+                    {"term": {f"{k}.keyword": v}} for k, v in filters.items()
                 ]
             }
         }
