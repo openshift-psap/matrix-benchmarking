@@ -1,5 +1,5 @@
 from typing import Iterator
-
+import logging
 import os, types, itertools
 from collections import defaultdict
 import pathlib
@@ -57,7 +57,11 @@ class Matrix():
         return "|".join(f"{k}={settings[k]}" for k in sorted(settings) if k != "stats")
 
     @staticmethod
-    def all_records(settings, setting_lists) -> Iterator[MatrixEntry]:
+    def all_records(settings=None, setting_lists=None) -> Iterator[MatrixEntry]:
+        if settings is None and setting_lists is None:
+            yield from Matrix.processed_map.values()
+            return
+
         for settings_values in sorted(itertools.product(*setting_lists)):
             settings.update(dict(settings_values))
             key = Matrix.settings_to_key(settings)
@@ -84,3 +88,18 @@ class Matrix():
             return True
         except StopIteration:
             return False
+
+    @staticmethod
+    def print_settings_to_log():
+        if not Matrix.processed_map:
+            return False
+
+        logging.info("Settings matrix:")
+
+        for key, values in Matrix.settings.items():
+            if key == "stats": continue
+            Matrix.settings[key] = sorted(values)
+            logging.info(f"{key:20s}: {', '.join(map(str, Matrix.settings[key]))}")
+        logging.info("---")
+
+        return True

@@ -3,11 +3,13 @@ import shutil
 import logging
 import pathlib
 import yaml
+import json
 
 import matrix_benchmarking.matrix as matrix
 import matrix_benchmarking.common as common
 import matrix_benchmarking.store as store
 import matrix_benchmarking.cli_args as cli_args
+from matrix_benchmarking import download_lts
 
 IGNORE_EXIT_CODE = None
 
@@ -70,7 +72,7 @@ def parse_settings(dirname, expe):
     for parent_dir in list(reversed([dirname] + list(dirname.parents))):
         for filename in list(parent_dir.glob("settings")) + list(parent_dir.glob("settings.*")):
             if filename.suffix not in (".yaml", ".yml"): # deprecated
-                logging.warning(f"Found deprecated 'settings' file in {dirname}: {filename}")
+                logging.debug(f"Found deprecated 'settings' file in {dirname}: {filename}")
 
                 import_settings.update(parse_old_settings(filename))
                 continue
@@ -141,7 +143,7 @@ def _parse_results(add_to_matrix, dirname, import_settings):
 
     return custom_parse_results(add_to_matrix, dirname, import_settings)
 
-def _build_lts_payloads():
+def build_lts_payloads():
     if custom_build_lts_payloads is None:
         raise RuntimeError("simple store: No payload builder registered :/")
 
@@ -154,21 +156,52 @@ def register_custom_parse_results(fn):
 def register_custom_build_lts_payloads(fn):
     global custom_build_lts_payloads
     custom_build_lts_payloads = fn
+
+# ---
+
+def parse_lts_data(results_dir):
+    def has_lts_anchor(files):
+        return download_lts.LTS_ANCHOR_NAME in files
+
+    results_directories = []
+    path = os.walk(results_dir, followlinks=True)
+    for _this_dir, directories, files in path:
+        this_dir = pathlib.Path(_this_dir)
+        if "skip" in files: continue
+        if not has_lts_anchor(files): continue
+
+        with open(this_dir / download_lts.LTS_ANCHOR_NAME) as f:
+            lts_anchor = yaml.safe_load(f)
+
+        for filename in files:
+            if filename == download_lts.LTS_ANCHOR_NAME: continue
+
+            filepath = this_dir / filename
+            with open(filepath) as f:
+                document = json.load(f)
+
+            entry = store.lts_schema.parse_obj(document)
+
+            store.add_to_matrix(entry.metadata.settings,
+                                filepath,
+                                entry, None)
+
+        pass
 # ---
 
 def parse_data(results_dir=None):
+    if results_dir is None:
+        results_dir = pathlib.Path(cli_args.kwargs["results_dirname"])
+
     global IGNORE_EXIT_CODE
     IGNORE_EXIT_CODE = os.environ.get("MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE", "false") == "true"
 
     if IGNORE_EXIT_CODE:
         logging.info("simple store: ignoring exit code.")
 
-    if results_dir is None:
-        results_dir = pathlib.Path(cli_args.kwargs["results_dirname"])
-
     def has_settings(files):
         if "settings" in files:
-            logging.warning(f"Found deprecated 'settings' file ...")
+            logging.debug(f"Found deprecated 'settings' file ...")
             return True # deprecated
         if "settings.yml" in files:
             logging.warning(f"Found settings file with invalid extention 'settings.yml' file ...")
@@ -203,7 +236,3 @@ def parse_data(results_dir=None):
 
         results_directories.append(this_dir)
         _parse_directory(results_dir, expe_name, this_dir)
-
-
-def build_lts_payloads():
-    return _build_lts_payloads()

@@ -3,9 +3,11 @@ import os, sys
 import pathlib
 import logging
 import importlib
+import json
 
 kwargs = None
 experiment_filters = {}
+cli_environ = {}
 
 def store_kwargs(_kwargs, *, execution_mode):
     global kwargs
@@ -39,17 +41,24 @@ def update_env_with_env_files():
     """
     Overrides the function default args with the flags found in the environment variables files
     """
-    for env in ".env", ".env.generated":
-        try:
-            with open(env) as f:
+
+    for env in ".env", ".env.generated", ".env.yaml",".env.json", ".env.generated.json", ".env.generated.yaml":
+        env_file = pathlib.Path(env)
+        if not env_file.exists(): continue
+        with open(env) as f:
+            if env_file.suffix in (".yaml", ".json"):
+                doc = yaml.safe_load(f) if env_file.suffix == ".yaml" else json.load(f)
+                for k, v in doc.items():
+                    key = f"MATBENCH_{k.upper()}"
+                    cli_environ[key] = str(v)
+            else:
                 for line in f.readlines():
                     key, found , value = line.strip().partition("=")
                     if not found:
                         logging.warning("invalid line in {env}: {line.strip()}")
                         continue
                     if key in os.environ and os.environ[key]: continue # prefer env to env file
-                    os.environ[key] = value
-        except FileNotFoundError: pass # ignore missing files
+                    cli_environ[key] = value
 
 
 def update_kwargs_with_env(kwargs):
@@ -57,9 +66,13 @@ def update_kwargs_with_env(kwargs):
 
     for flag, current_value in kwargs.items():
         if current_value: continue # already set, ignore.
+        key = f"MATBENCH_{flag.upper()}"
+        env_value = os.environ.get(key)
+        if not env_value:
+            # not set as environment var
+            env_value = cli_environ.get(key)
+            if not env_value: continue # not set in an environment file, ignore
 
-        env_value = os.environ.get(f"MATBENCH_{flag.upper()}")
-        if not env_value: continue # not set, ignore.
         kwargs[flag] = env_value # override the function arg with the environment variable value
 
 
@@ -83,32 +96,14 @@ def update_kwargs_with_benchmark_file(kwargs, benchmark_desc_file):
         logging.warning(f"unexpected flag found in the benchmark file: {key} = '{value}'")
 
 
-def update_kwargs_with_workload(kwargs):
-    if "workload" in kwargs and kwargs["workload"]:
-        # workload already set, no need to guess it
-        return
-
-    cwd_dirname = pathlib.Path(os.getcwd()).name
-
-    # try to import `cwd_dirname` as a MatrixBenchmarking workload
-    workload = importlib.util.find_spec(f'matrix_benchmarking.workloads.{cwd_dirname}')
-    if workload:
-        # it worked, so `cwd_dirname` is a directory inside
-        # matrix-benchmarking/matrix_benchmarking/workloads.
-        # Use it a workload plugin.
-        logging.info(f"Using: '{cwd_dirname}' (from the current working directory) as workload plugin")
-        kwargs["workload"] = cwd_dirname
-
-
-def check_mandatory_kwargs(kwargs, mandatory_flags, sensitive = []):
-
-    import sys
+def check_mandatory_kwargs(kwargs, mandatory_flags, sensitive_flags = []):
     command = [f"matbench {sys.argv[1]}"]
     for k, v in sorted(kwargs.items()):
         if v not in mandatory_flags and not v: continue
 
-        value = "<CENSORED>" if k in sensitive else v
+        value = "<OMITTED>" if k in sensitive_flags else v
         command += [f"--{k.replace('_', '-')}='{value}'"]
+
     logging.info("MatrixBenchmarking starting with:\n" + " \\\n\t".join(command))
 
     err = False
@@ -126,7 +121,6 @@ def setup_env_and_kwargs(kwargs):
     # overriding order: env file <- env var <- benchmark file <- cli
     update_env_with_env_files()
     update_kwargs_with_env(kwargs)
-    update_kwargs_with_workload(kwargs)
 
     filters = kwargs.get("filters")
     if isinstance(filters, bool):

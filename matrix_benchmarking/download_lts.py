@@ -1,118 +1,106 @@
-from .upload_lts import login
-
 import logging
 import requests
 import json
 import os
 import pathlib
+import datetime
+import yaml
+
+from opensearchpy import OpenSearch
 
 import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store as store
 
-def main(
-        results_dirname: str = "",
-        filters: str = "",
-    ):
+LTS_ANCHOR_NAME = "source.lts.yaml"
+
+def main(opensearch_host: str = "",
+         opensearch_port: str = "",
+         opensearch_username: str = "",
+         opensearch_password: str = "",
+         opensearch_index: str = "",
+         results_dirname: str = "",
+         filters: list[str] = [],
+         ):
     """
-Download MatrixBenchmark result from Horreum
+Download MatrixBenchmark result from OpenSearch
 
-Download MatrixBenchmark from Long-Term Storage, expects Horreum credentials/configuration to be available either in the enviornment or in an env file.
+Download MatrixBenchmark from Long-Term Storage, expects OpenSearch credentials and configuration to be available either in the enviornment or in an env file.
 
-    results_dirname: The directory to place the downloaded results files. (Mandatory)
+    opensearch_host: hostname of the OpenSearch instance
+    opensearch_port: port of the OpenSearch instance
+    opensearch_username: username of the OpenSearch instance
+    opensearch_password: password of the OpenSearch instance
+    opensearch_index: the OpenSearch index where the LTS payloads are stored (Mandatory)
+
+    results_dirname: The directory to place the downloaded results files.
     filters: If provided, only download the experiments matching the filters. Eg: expe=expe1:expe2,something=true. (Optional.)
     """
-    kwargs = {
-        "horreum_url": None,
-        "keycloak_url": None,
-        "horreum_test": None,
-        "horreum_uname": None,
-        "horreum_passwd": None,
-        **dict(locals())
-    }
+    kwargs = dict(locals()) # capture the function arguments
+
+    optionals_flags = ["filters"]
+    safe_flags = ["filters", "results_dirname", "opensearch_index"]
 
     cli_args.setup_env_and_kwargs(kwargs)
     cli_args.check_mandatory_kwargs(kwargs,
-        ("results_dirname", "horreum_url", "horreum_url", "keycloak_url", "horreum_test", "horreum_uname", "horreum_passwd"),
-        sensitive = ["horreum_url", "keycloak_url", "horreum_test", "horreum_uname", "horreum_passwd"]
-    )
+                                    mandatory_flags=[k for k in kwargs.keys() if k not in optionals_flags],
+                                    sensitive_flags=[k for k in kwargs.keys() if k not in safe_flags])
 
     def run():
-        cli_args.store_kwargs(kwargs, execution_mode="upload-lts")
+        cli_args.store_kwargs(kwargs, execution_mode="download-lts")
 
-        token = login(kwargs.get("keycloak_url"), kwargs.get('horreum_uname'), kwargs.get("horreum_passwd"))
-        horreum_url = kwargs.get('horreum_url')
-        test_id = get_test_id(horreum_url, kwargs.get('horreum_test'), token)
+        client = connect_opensearch_client(kwargs)
 
-        download(kwargs.get('horreum_url'), test_id, token, filters, kwargs.get('results_dirname'))
-    
+        return download(client, kwargs.get("opensearch_index"), kwargs.get("filters"), pathlib.Path(kwargs.get("results_dirname")))
+
     return cli_args.TaskRunner(run)
 
 
-def download(url: str, id: int, token: str, filters: list[str], dest_dir: str):
-    dataset_query = f"{url}/api/dataset/list/{id}"
-    headers = {"Authorization": f"Bearer {token}"}
-    if len(filters) > 0:
-        filter_str = json.dumps(construct_filter_json(filters))
-        logging.debug(filter_str)
-        dataset_query = f"{dataset_query}?filter={requests.utils.quote(filter_str)}"
-    datasets_req = requests.get(dataset_query, headers=headers, verify=False)
+def connect_opensearch_client(kwargs):
+    auth = (kwargs["opensearch_username"], kwargs["opensearch_password"])
 
-    if datasets_req.status_code != 200:
-        raise RuntimeError(f"Could not retrieve datasets: {datasets_req.status_code} {datasets_req.content}")
-    
-    matching_runs = []
-    for dataset in datasets_req.json()['datasets']:
-        run = dataset['runId']
-        if run not in matching_runs:
-            matching_runs.append(dataset['runId'])
+    client = OpenSearch(
+        hosts=[{'host': kwargs["opensearch_host"], 'port': kwargs["opensearch_port"]}],
+        timeout=60,
+        http_compress=True,
+        http_auth=auth,
+        use_ssl=True,
+        verify_certs=False,
+        ssl_assert_hostname=False,
+        ssl_show_warn=False,
+    )
 
-    logging.info(f"Found {len(matching_runs)} matching runs")
+    return client
 
-    for run in matching_runs:
-        req = requests.get(f"{url}/api/run/{run}/data", verify=False)
-        data = req.json()
+def download(client, opensearch_index, filters, results_dirname):
+    lts_dir_anchor = results_dirname / LTS_ANCHOR_NAME
+    if lts_dir_anchor.exists():
+        logging.critical(f"{lts_dir_anchor} already exists, cannot continue.")
+        return 1
 
-        dirname = f"{dest_dir}/expe/from_lts/{run}"
-        pathlib.Path(dirname).mkdir(exist_ok=True, parents=True)
-        
-        with open(f"{dirname}/data.json", 'w') as f:
-            json.dump(data, f)
+    logging.info(f"Querying OpenSearch {opensearch_index} ...")
+    search = client.search(index=opensearch_index)
 
-        write_settings(f"{dirname}/settings", data)
-        with open(f"{dirname}/lts", "w") as f:
-            f.write(' ')
+    logging.info(f"Saving OpenSearch {opensearch_index} results ...")
+    saved = 0
 
-
-def write_settings(fname, data):
-    with open(fname, "w") as settings:
-        for (key, val) in data['metadata']['settings'].items():
-            settings.write(f"{key}={val}\n")
+    with open(lts_dir_anchor, "w") as f:
+        anchor = dict(
+            index=opensearch_index,
+            date=datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+            filters=filters,
+        )
+        yaml.dump(anchor, f, indent=4)
+        print("", file=f) # add EOL
 
 
-def get_test_id(url: str, name: str, token: str) -> int:
-    headers = {
-        'Authorization': f'Bearer {token}'
-    }
-    
-    req = requests.get(f'{url}/api/test/byName/{name}', headers=headers, verify=False)
-    if req.status_code != 200:
-        raise RuntimeError(f"Could not get test id for {name}: {req.status_code} {req.content}")
+    results_dirname.mkdir(exist_ok=True, parents=True)
+    for hit in search["hits"]["hits"]:
+        with open(results_dirname / f"{opensearch_index}_{hit['_id']}.json", "w") as f:
+            entry = hit["_source"]
+            json.dump(entry, f, indent=4)
+            print("", file=f) # add EOL
 
-    return req.json()["id"]
+        saved += 1
 
-
-def construct_filter_json(filters: list[str]) -> dict:
-    output = {}
-    for kv in filters.split(','):
-        key, found, value = kv.partition("=")
-        try:
-            value = int(value)
-        except ValueError:
-            pass
-        try:
-            value = float(value)
-        except ValueError:
-            pass
-        output[key] = value
-    return output
+    logging.info(f"Saved {saved} OpenSearch {opensearch_index} results.")
