@@ -50,7 +50,8 @@ Args:
         workload_store = store.load_workload_store(kwargs)
 
         logging.info(f"Loading results ... ")
-        workload_store.parse_data(lts=True)
+
+        workload_store.parse_data()
         logging.info(f"Loading results ... done. Found {len(common.Matrix.processed_map)} results.")
         if not common.Matrix.processed_map:
             logging.error("Not result found, exiting.")
