@@ -46,7 +46,7 @@ def update_env_with_env_files():
     for env in ".env", ".env.generated", ".env.yaml",".env.json", ".env.generated.json", ".env.generated.yaml":
         env_file = pathlib.Path(env)
         if not env_file.exists(): continue
-        with open(env) as f:
+        with open(env_file) as f:
             if env_file.suffix in (".yaml", ".json"):
                 doc = yaml.safe_load(f) if env_file.suffix == ".yaml" else json.load(f)
                 for k, v in doc.items():
