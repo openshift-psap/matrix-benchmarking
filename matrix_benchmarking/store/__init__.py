@@ -8,7 +8,7 @@ import pathlib
 import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.models as models
-
+import matrix_benchmarking.store.simple as store_simple
 
 def load_workload_store(kwargs):
     workload = kwargs["workload"]
@@ -27,6 +27,12 @@ def load_workload_store(kwargs):
     except ModuleNotFoundError:
         logging.error(f"Could not load '{module}' module :/")
         raise
+
+    for fct_name in ("parse_lts_data", "parse_data"):
+        if hasattr(store_module, fct_name):
+            continue
+
+        setattr(store_module, fct_name, getattr(store_simple, fct_name))
 
     logging.info(f"Loading {module} module ... done.")
 
