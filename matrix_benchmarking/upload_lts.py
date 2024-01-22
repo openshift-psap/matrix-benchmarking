@@ -97,7 +97,7 @@ def upload(client, workload_store, dry_run, opensearch_index):
 def upload_lts_to_opensearch(client, payload_dict, dry_run, opensearch_index):
     logging.info(f"Uploading the LTS document to /{opensearch_index} ...")
 
-    return upload_to_opensearch(client, payload_dict, dry_run, opensearch_index)
+    return upload_to_opensearch(client, payload_dict, payload_dict["metadata"]["test_uuid"], dry_run, opensearch_index)
 
 
 def upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index):
@@ -109,10 +109,10 @@ def upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index):
         kpi_index = f"{opensearch_index}__{kpi_name}"
         logging.info(f"Uploading the KPI to /{kpi_index} ...")
 
-        upload_to_opensearch(client, kpi, dry_run, kpi_index)
+        upload_to_opensearch(client, kpi, kpi["test_uuid"], dry_run, kpi_index)
 
 
-def upload_to_opensearch(client, document, dry_run, index):
+def upload_to_opensearch(client, document, document_id, dry_run, index):
     if dry_run:
         logging.info(f"==> skip upload (dry run)")
         return
@@ -120,7 +120,8 @@ def upload_to_opensearch(client, document, dry_run, index):
     response = client.index(
         index=index,
         body=document,
-        refresh=True
+        refresh=True,
+        id=document_id,
     )
 
     logging.info(f"==> {response['result']}")

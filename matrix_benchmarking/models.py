@@ -6,7 +6,7 @@ from enum import Enum
 import inspect
 import datetime
 
-from pydantic import BaseModel, ConstrainedStr, constr, Extra, Field
+from pydantic import BaseModel, ConstrainedStr, constr, Extra, Field, UUID4
 import pydantic
 
 SEMVER_REGEX="(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?"
@@ -16,6 +16,7 @@ class ExclusiveModel(BaseModel):
 
     class Config:
         extra = Extra.forbid
+
 
 class AllOptional(pydantic.main.ModelMetaclass):
     def __new__(self, name, bases, namespaces, **kwargs):
@@ -29,14 +30,16 @@ class AllOptional(pydantic.main.ModelMetaclass):
         return super().__new__(self, name, bases, namespaces, **kwargs)
 
 
+class Empty(ExclusiveModel):
+    ...
+
+
 class Metadata(ExclusiveModel):
     start: dt.datetime
     end: dt.datetime
     settings: Dict[str, Union[str, int]]
-
-
-class Empty(ExclusiveModel):
-    ...
+    test_uuid: UUID4
+    urls: Optional[List[str]]
 
 
 class PrometheusValue(ExclusiveModel):
@@ -72,7 +75,8 @@ class KPI(ExclusiveModel):
     unit: str
     help: str
     timestamp: datetime.datetime = Field(..., alias="@timestamp")
-    value: Union[float,int]
+    value: Union[float, int, List[float], List[int]]
+    test_uuid: UUID4
 
     def __str__(self):
         labels = {k:v for k, v in self.__dict__.items() if k not in ("unit", "help", "timestamp", "value")}
