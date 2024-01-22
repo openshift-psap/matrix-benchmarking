@@ -159,7 +159,10 @@ def register_custom_build_lts_payloads(fn):
 
 # ---
 
-def parse_lts_data(results_dir):
+def parse_lts_data(results_dir=None):
+    if results_dir is None:
+        results_dir = pathlib.Path(cli_args.kwargs["results_dirname"])
+
     def has_lts_anchor(files):
         return download_lts.LTS_ANCHOR_NAME in files
 
