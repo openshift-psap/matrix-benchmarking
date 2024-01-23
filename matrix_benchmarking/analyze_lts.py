@@ -19,6 +19,7 @@ LTS_ANCHOR_NAME = "source.lts.yaml"
 def main(workload: str = "",
          workload_base_dir: str = "",
          results_dirname: str = "",
+         lts_results_dirname: str = "",
          filters: list[str] = [],
          ):
     """
@@ -35,14 +36,15 @@ Env:
 Args:
     workload: Name of the workload to execute. (Mandatory.)
     workload_base_directory: the directory from where the workload packages should be loaded. (Optional)
-    results_dirname: Name of the directory where the results will be stored. Can be set in the benchmark file. (Mandatory.)
+    results_dirname: Name of the directory where the results are stored. (Mandatory.)
+    lts_results_dirname: Name of the directory where the LTS results are stored. (Mandatory.)
     filters: If provided, analyze only the experiment matching the filters. Eg: expe=expe1:expe2,something=true.
 
     """
     kwargs = dict(locals()) # capture the function arguments
 
     cli_args.setup_env_and_kwargs(kwargs)
-    cli_args.check_mandatory_kwargs(kwargs, ("workload", "results_dirname",))
+    cli_args.check_mandatory_kwargs(kwargs, ("workload", "results_dirname", "lts_results_dirname"))
 
     def run():
         cli_args.store_kwargs(kwargs, execution_mode="analyze-lts")
@@ -52,7 +54,16 @@ Args:
         logging.info(f"Loading results ... ")
 
         workload_store.parse_data()
+        common.Matrix.print_settings_to_log()
         logging.info(f"Loading results ... done. Found {len(common.Matrix.processed_map)} results.")
+        logging.info("")
+        logging.info("--- LTS --- ")
+
+        workload_store.parse_lts_data()
+
+        common.LTS_Matrix.print_settings_to_log()
+        logging.info(f"Loading LTS results ... done. Found {len(common.LTS_Matrix.processed_map)} results.")
+
         if not common.Matrix.processed_map:
             logging.error("Not result found, exiting.")
             return 1
