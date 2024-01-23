@@ -90,6 +90,7 @@ def upload(client, workload_store, dry_run, opensearch_index):
 
         upload_lts_to_opensearch(client, payload_dict, dry_run, opensearch_index)
         upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index)
+        upload_regression_results_to_opensearch(client, payload_dict, dry_run, opensearch_index)
 
     logging.info("All done :)")
 
@@ -110,6 +111,18 @@ def upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index):
         logging.info(f"Uploading the KPI to /{kpi_index} ...")
 
         upload_to_opensearch(client, kpi, kpi["test_uuid"], dry_run, kpi_index)
+
+
+def upload_regression_results_to_opensearch(client, payload_dict, dry_run, opensearch_index):
+    if "regression_results" not in payload_dict.keys():
+        logging.info(f"==> no regression results found in the payload.")
+        return
+
+    logging.info(f"Uploading regression results to opensearch ... (stub)")
+    for idx, regression_result in enumerate(payload_dict["regression_results"]):
+        regression_result_index = f"{opensearch_index}__regression_results_{idx}"
+        logging.info(regression_result)
+        upload_to_opensearch(client, regression_result, payload_dict["metadata"]["test_uuid"], dry_run, regression_result_index)
 
 
 def upload_to_opensearch(client, document, document_id, dry_run, index):
