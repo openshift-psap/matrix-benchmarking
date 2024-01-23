@@ -34,7 +34,7 @@ def invalid_directory(dirname, settings, reason, warn=False):
     logging.info(f"{dirname}: removed ({reason})")
 
 
-def _duplicated_directory(import_key, old_location, new_location):
+def _duplicated_directory(import_key, old_entry, old_location, new_results, new_location):
     logging.warning(f"duplicated results key: {import_key}")
     logging.warning(f"  old: {old_location}")
     logging.warning(f"  new: {new_location}")
@@ -193,10 +193,11 @@ def parse_lts_data(lts_results_dir=None):
             import_settings = lts_payload.metadata.settings.copy()
             import_settings["@timestamp"] = str(lts_payload.metadata.start)
 
-            def _duplicated_entry(import_key, old_location, new_location):
+            def _duplicated_entry(import_key, old_entry, old_location, new_results, new_location):
                 logging.warning(f"duplicated results key: {import_key}")
-                logging.warning(f"  old: {old_location}")
-                logging.warning(f"  new: {new_location}")
+
+                logging.warning(f"  old: {old_location} | {old_entry.results.metadata.test_uuid}")
+                logging.warning(f"  new: {new_location} | {new_results.metadata.test_uuid}")
 
             store.add_to_matrix(import_settings,
                                 filepath,

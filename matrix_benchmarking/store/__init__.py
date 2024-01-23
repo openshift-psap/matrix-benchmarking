@@ -66,12 +66,11 @@ def add_to_matrix(import_settings, location, results, duplicate_handler, matrix=
     import_key = matrix.settings_to_key(import_settings)
 
     if import_key in matrix.import_map:
-        try:
-            old_location = matrix.import_map[import_key].location
-        except AttributeError:
-            _, old_location = matrix.import_map[import_key]
+        old_entry = matrix.import_map[import_key]
 
-        duplicate_handler(import_key, old_location, location)
+        old_location = getattr(old_entry, "location", None)
+
+        duplicate_handler(import_key, old_entry, old_location, results, location)
 
         return
 
