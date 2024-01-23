@@ -59,17 +59,17 @@ def should_be_filtered_out(settings):
     return False
 
 
-def add_to_matrix(import_settings, location, results, duplicate_handler):
+def add_to_matrix(import_settings, location, results, duplicate_handler, matrix=common.Matrix):
     if should_be_filtered_out(import_settings):
         return
 
-    import_key = common.Matrix.settings_to_key(import_settings)
+    import_key = matrix.settings_to_key(import_settings)
 
-    if import_key in common.Matrix.import_map:
+    if import_key in matrix.import_map:
         try:
-            old_location = common.Matrix.import_map[import_key].location
+            old_location = matrix.import_map[import_key].location
         except AttributeError:
-            _, old_location = common.Matrix.import_map[import_key]
+            _, old_location = matrix.import_map[import_key]
 
         duplicate_handler(import_key, old_location, location)
 
@@ -82,36 +82,37 @@ def add_to_matrix(import_settings, location, results, duplicate_handler):
 
     if not processed_settings:
         #logging.info(f"entry '{import_key}' skipped by rewrite_settings()")
-        common.Matrix.import_map[import_key] = True, location
+        matrix.import_map[import_key] = True, location
         return
 
     if should_be_filtered_out(processed_settings):
         return
 
-    processed_key = common.Matrix.settings_to_key(processed_settings)
+    processed_key = matrix.settings_to_key(processed_settings)
 
-    if processed_key in common.Matrix.processed_map:
+    if processed_key in matrix.processed_map:
         logging.warning(f"duplicated processed key: {processed_key}")
         logging.warning(f"duplicated import key:    {import_key}")
-        entry = common.Matrix.processed_map[processed_key]
+        entry = matrix.processed_map[processed_key]
         logging.warning(f"  old: {entry.location}")
         logging.warning(f"  new: {location}")
-        common.Matrix.import_map[import_key] = entry
+        matrix.import_map[import_key] = entry
 
         processed_settings["run"] = (str(processed_settings.get("run")) + "_" +
                                      datetime.datetime.now().strftime("%H%M%S.%f"))
-        processed_key = common.Matrix.settings_to_key(processed_settings)
+        processed_key = matrix.settings_to_key(processed_settings)
         return
 
     entry = common.MatrixEntry(location, results,
-                              processed_key, import_key,
-                              processed_settings, import_settings)
+                               processed_key, import_key,
+                               processed_settings, import_settings,
+                               matrix=matrix)
 
-    gather_rolling_entries(entry)
+    gather_rolling_entries(entry, matrix=matrix)
 
     return entry
 
-def gather_rolling_entries(entry):
+def gather_rolling_entries(entry, matrix=common.Matrix):
     gathered_settings = dict(entry.settings.__dict__)
     gathered_keys = []
     for k in gathered_settings.keys():
@@ -121,16 +122,17 @@ def gather_rolling_entries(entry):
 
     if not gathered_keys: return
 
-    gathered_entry = common.Matrix.get_record(gathered_settings)
+    gathered_entry = matrix.get_record(gathered_settings)
     if not gathered_entry:
-        processed_key = common.Matrix.settings_to_key(gathered_settings)
+        processed_key = matrix.settings_to_key(gathered_settings)
         import_key = None
         import_settings = None
         location = entry.location
         gathered_entry = common.MatrixEntry(
             location, [],
             processed_key, import_key,
-            gathered_settings, import_settings
+            gathered_settings, import_settings,
+            matrix=matrix,
         )
         gathered_entry.is_gathered = True
         gathered_entry.gathered_keys = defaultdict(set)
