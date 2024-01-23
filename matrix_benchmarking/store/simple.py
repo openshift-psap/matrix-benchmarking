@@ -5,6 +5,8 @@ import pathlib
 import yaml
 import json
 
+import pydantic
+
 import matrix_benchmarking.matrix as matrix
 import matrix_benchmarking.common as common
 import matrix_benchmarking.store as store
@@ -159,15 +161,14 @@ def register_custom_build_lts_payloads(fn):
 
 # ---
 
-def parse_lts_data(results_dir=None):
-    if results_dir is None:
-        results_dir = pathlib.Path(cli_args.kwargs["results_dirname"])
+def parse_lts_data(lts_results_dir=None):
+    if lts_results_dir is None:
+        lts_results_dir = pathlib.Path(cli_args.kwargs["lts_results_dirname"])
 
     def has_lts_anchor(files):
         return download_lts.LTS_ANCHOR_NAME in files
 
-    results_directories = []
-    path = os.walk(results_dir, followlinks=True)
+    path = os.walk(lts_results_dir, followlinks=True)
     for _this_dir, directories, files in path:
         this_dir = pathlib.Path(_this_dir)
         if "skip" in files: continue
@@ -183,12 +184,24 @@ def parse_lts_data(results_dir=None):
             with open(filepath) as f:
                 document = json.load(f)
 
-            entry = store.lts_schema.parse_obj(document)
+            try:
+                lts_payload = store.lts_schema.parse_obj(document)
+            except pydantic.error_wrappers.ValidationError as e:
+                logging.error(f"Invalid LTS file: {filepath}\n{e}")
+                continue
 
-            store.add_to_matrix(entry.metadata.settings,
+            import_settings = lts_payload.metadata.settings.copy()
+            import_settings["@timestamp"] = str(lts_payload.metadata.start)
+
+            def _duplicated_entry(import_key, old_location, new_location):
+                logging.warning(f"duplicated results key: {import_key}")
+                logging.warning(f"  old: {old_location}")
+                logging.warning(f"  new: {new_location}")
+
+            store.add_to_matrix(import_settings,
                                 filepath,
-                                entry, None)
-
+                                lts_payload, _duplicated_entry,
+                                matrix=common.LTS_Matrix)
         pass
 # ---
 
