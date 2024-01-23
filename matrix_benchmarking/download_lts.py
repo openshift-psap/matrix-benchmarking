@@ -19,9 +19,11 @@ def main(opensearch_host: str = "",
          opensearch_username: str = "",
          opensearch_password: str = "",
          opensearch_index: str = "",
-         results_dirname: str = "",
+         lts_results_dirname: str = "",
          filters: list[str] = [],
-         max_records: int = 10000, 
+         max_records: int = 10000,
+         force: bool = None,
+         clean: bool = None,
          ):
     """
 Download MatrixBenchmark result from OpenSearch
@@ -35,14 +37,17 @@ Args:
     opensearch_password: password of the OpenSearch instance
     opensearch_index: the OpenSearch index where the LTS payloads are stored (Mandatory)
 
-    results_dirname: The directory to place the downloaded results files.
+    lts_results_dirname: The directory to place the downloaded LTS results files.
     filters: If provided, only download the experiments matching the filters. Eg: {"image_name": "1.2"}. (Optional.)
     max_records: Maximum number of records to retrieve from the OpenSearch instance. 10,000 is the largest number possible without paging (Optional.)
+    force: Ignore the presence of the anchor file before downloading the results (Optional.)
+    clean: Delete all the existing '.json' files in the lts-results-dirname before downloading the results (Optional.)
     """
+
     kwargs = dict(locals()) # capture the function arguments
 
-    optionals_flags = ["filters", "max_records"]
-    safe_flags = ["filters", "results_dirname", "opensearch_index", "max_records"]
+    optionals_flags = ["filters", "max_records", "force", "clean"]
+    safe_flags = ["filters", "lts_results_dirname", "opensearch_index", "max_records", "force", "clean"]
 
     cli_args.update_env_with_env_files()
     cli_args.update_kwargs_with_env(kwargs)
@@ -59,8 +64,10 @@ Args:
             client,
             kwargs.get("opensearch_index"),
             kwargs.get("filters"),
-            pathlib.Path(kwargs.get("results_dirname")),
-            kwargs.get("max_records")
+            pathlib.Path(kwargs.get("lts_results_dirname")),
+            kwargs.get("max_records"),
+            kwargs.get("force"),
+            kwargs.get("clean"),
         )
 
     return cli_args.TaskRunner(run)
@@ -82,11 +89,24 @@ def connect_opensearch_client(kwargs):
 
     return client
 
-def download(client, opensearch_index, filters, results_dirname, max_records):
-    lts_dir_anchor = results_dirname / LTS_ANCHOR_NAME
+def download(client, opensearch_index, filters, lts_results_dirname, max_records, force, clean):
+    lts_dir_anchor = lts_results_dirname / LTS_ANCHOR_NAME
     if lts_dir_anchor.exists():
-        logging.critical(f"{lts_dir_anchor} already exists, cannot continue.")
-        return 1
+        if not force:
+            logging.critical(f"{lts_dir_anchor} already exists, cannot continue.")
+            return 1
+        logging.warning(f"{lts_dir_anchor} already exists, ignoring it as --force flag is set.")
+
+    if clean:
+        cnt = -1
+        for cnt, existing_json_file in enumerate(lts_results_dirname.glob("*.json")):
+            existing_json_file.unlink()
+        if cnt == -1:
+            logging.info("No json to cleanup in the LTS results directory.")
+        else:
+            logging.info(f"Removed {cnt + 1} json file in the LTS results directory.")
+
+    lts_results_dirname.mkdir(exist_ok=True, parents=True)
 
     logging.info(f"Querying OpenSearch {opensearch_index} ...")
 
@@ -110,7 +130,6 @@ def download(client, opensearch_index, filters, results_dirname, max_records):
     )
 
     logging.info(f"Saving OpenSearch {opensearch_index} results ...")
-    saved = 0
 
     with open(lts_dir_anchor, "w") as f:
         anchor = dict(
@@ -121,10 +140,10 @@ def download(client, opensearch_index, filters, results_dirname, max_records):
         yaml.dump(anchor, f, indent=4)
         print("", file=f) # add EOL
 
-
-    results_dirname.mkdir(exist_ok=True, parents=True)
+    saved = 0
+    lts_results_dirname.mkdir(exist_ok=True, parents=True)
     for hit in search["hits"]["hits"]:
-        with open(results_dirname / f"{opensearch_index}_{hit['_id']}.json", "w") as f:
+        with open(lts_results_dirname / f"{opensearch_index}_{hit['_id']}.json", "w") as f:
             entry = hit["_source"]
             json.dump(entry, f, indent=4)
             print("", file=f) # add EOL
