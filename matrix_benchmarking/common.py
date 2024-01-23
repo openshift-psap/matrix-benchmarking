@@ -10,7 +10,9 @@ import matrix_benchmarking
 class MatrixEntry(types.SimpleNamespace):
     def __init__(self, location, results,
                  processed_key, import_key,
-                 processed_settings, import_settings, settings=None,
+                 processed_settings, import_settings,
+                 matrix,
+                 settings=None,
                  stats=None, is_gathered=None):
         self.is_gathered = False
 
@@ -26,10 +28,10 @@ class MatrixEntry(types.SimpleNamespace):
         self.processed_key = processed_key
         self.import_settings = processed_settings
 
-        Matrix.import_map[import_key] = \
-        Matrix.processed_map[processed_key] = self
+        matrix.import_map[import_key] = \
+        matrix.processed_map[processed_key] = self
 
-        [Matrix.settings[k].add(v) for k, v in processed_settings.items()]
+        [matrix.settings[k].add(v) for k, v in processed_settings.items()]
 
     def get_name(self, variables) -> str:
         return ", ".join([f"{key}={self.settings.__dict__[key]}" for key in variables])
@@ -46,60 +48,68 @@ class MatrixEntry(types.SimpleNamespace):
         return hasattr(self.results, 'check_thresholds') and self.results.check_thresholds
 
 
+class MatrixDefinition():
+    def __init__(self, is_lts=False):
+        self.settings = defaultdict(set)
+        self.import_map = {}
+        self.processed_map = {}
+        self.is_lts = is_lts
 
-class Matrix():
-    settings = defaultdict(set)
-    import_map = {}
-    processed_map = {}
-
-    @staticmethod
-    def settings_to_key(settings):
+    def settings_to_key(self, settings):
         return "|".join(f"{k}={settings[k]}" for k in sorted(settings) if k != "stats")
 
-    @staticmethod
-    def all_records(settings=None, setting_lists=None) -> Iterator[MatrixEntry]:
+    def all_records(self, settings=None, setting_lists=None) -> Iterator[MatrixEntry]:
         if settings is None and setting_lists is None:
-            yield from Matrix.processed_map.values()
+            yield from self.processed_map.values()
             return
 
         for settings_values in sorted(itertools.product(*setting_lists)):
             settings.update(dict(settings_values))
-            key = Matrix.settings_to_key(settings)
+            key = self.settings_to_key(settings)
 
             try:
-                yield Matrix.processed_map[key]
+                yield self.processed_map[key]
             except KeyError: # missing experiment, ignore
                 continue
 
-    @staticmethod
-    def get_record(settings):
-        key = Matrix.settings_to_key(settings)
+    def get_record(self, settings):
+        key = self.settings_to_key(settings)
 
-        return Matrix.processed_map.get(key, None)
+        return self.processed_map.get(key, None)
 
-    @staticmethod
-    def count_records(settings, setting_lists):
-        return sum([ 1 for _ in Matrix.all_records(settings, setting_lists)]) # don't use len(list(...)) with a generator, this form is more memory efficient
+    def count_records(self, settings=None, setting_lists=None):
+        if settings is None and setting_lists is None:
+            return len(self.processed_map)
 
-    @staticmethod
-    def has_records(settings, setting_lists):
+        return sum([ 1 for _ in self.all_records(settings, setting_lists)]) # don't use len(list(...)) with a generator, this form is more memory efficient
+
+    def has_records(self, settings, setting_lists):
         try:
-            _first_entry = next(Matrix.all_records(settings, setting_lists)) # raises an exception is the generator is empty
+            _first_entry = next(self.all_records(settings, setting_lists)) # raises an exception is the generator is empty
             return True
         except StopIteration:
             return False
 
-    @staticmethod
-    def print_settings_to_log():
-        if not Matrix.processed_map:
+    def print_settings_to_log(self):
+        if not self.processed_map:
             return False
 
         logging.info("Settings matrix:")
 
-        for key, values in Matrix.settings.items():
+        for key, values in self.settings.items():
             if key == "stats": continue
-            Matrix.settings[key] = sorted(values)
-            logging.info(f"{key:20s}: {', '.join(map(str, Matrix.settings[key]))}")
+            self.settings[key] = sorted(values)
+
+            value_str = ", ".join(map(str, self.settings[key]))
+            if self.is_lts and key == "@timestamp":
+                value_str = f"<{len(self.settings)}x values>"
+
+            logging.info(f"{key:20s}: {value_str}")
+
         logging.info("---")
 
         return True
+
+
+Matrix = MatrixDefinition()
+LTS_Matrix = MatrixDefinition(is_lts=True)
