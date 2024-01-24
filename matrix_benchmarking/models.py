@@ -78,6 +78,12 @@ class KPI(ExclusiveModel):
     value: Union[float, int, List[float], List[int]]
     test_uuid: UUID4
 
+    ci_engine: Optional[str]
+    run_id: Optional[str]
+    test_path: Optional[str]
+
+    urls: Optional[dict[str, str]]
+
     def __str__(self):
         labels = {k:v for k, v in self.__dict__.items() if k not in ("unit", "help", "timestamp", "value")}
         labels_str = ", ".join(f"{k}=\"{v}\"" for k, v in labels.items())
