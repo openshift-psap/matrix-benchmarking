@@ -1,6 +1,8 @@
 import os
 import json
-
+import logging
+import types
+import datetime
 import numpy as np
 from functools import reduce
 from typing import Optional, Callable
@@ -14,7 +16,7 @@ def get_from_path(d, path):
 def dict_part_eq(part, full_dict):
     return reduce(lambda x, y: x and part[y] == full_dict[y], part.keys(), True)
 
-class RegressionStatus:
+class RegressionStatus(types.SimpleNamespace):
     def __init__(
             self,
             status: int,
@@ -35,62 +37,85 @@ class RegressionIndicator:
     """
     def __init__(
             self,
-            new_payloads: list[common.MatrixEntry],
+            new_payload: common.MatrixEntry,
             lts_payloads: list[common.MatrixEntry],
-            x_var_key = lambda x: x.results.metadata.end,
+            x_var = None,
+            x_var_key = lambda x: x.results.metadata.end.astimezone(),
             kpis: Optional[list[str]] = None,
             settings_filter: Optional[dict] = None,
+            combine_funcs: dict = {},
         ):
+        self.new_payload = new_payload
+        self.x_var = x_var
         self.x_var_key = x_var_key
         self.kpis = kpis
+        self.combine_funcs = combine_funcs
         self.settings_filter = settings_filter
+
+        if self.settings_filter and self.x_var:
+            logging.warning("settings_filter and x_var set, only using settings_filter")
+        elif self.x_var:
+            settings = self.new_payload.get_settings()
+            settings.pop(self.x_var)
+            self.settings_filter = settings
 
         if self.settings_filter:
             # Only store payloads that have equivalent (k, v) pairs
             # as the settings_filter
-            self.new_payloads = list(
-                filter(
-                    lambda x: dict_part_eq(self.settings_filter, x),
-                    map(lambda x: x.settings, new_payloads)
-                )
-            )
             self.lts_payloads = list(
                 filter(
-                    lambda x: dict_part_eq(self.settings_filter, x),
-                    map(lambda x: x.settings, lts_payloads)
+                    lambda x: dict_part_eq(self.settings_filter, x.get_settings()),
+                    lts_payloads
                 )
             )
+
+            if not dict_part_eq(self.settings_filter, self.new_payload.get_settings()):
+                self.new_payload = None
+                logging.warning("settings_filter isn't satisfied for the new payload")
         else:
-            self.new_payloads = new_payloads
             self.lts_payloads = lts_payloads
 
-        # Why isn't this working? I suspect gnarly python stuff
-        # self.lts_payloads.sort(key=lambda entry: self.x_var_key(entry))
+        # This isn't strictly necessary for all analysis techniques, but
+        # is useful to have
+        self.lts_payloads.sort(key=lambda entry: self.x_var_key(entry))
 
 
     def analyze(self) -> list[dict]:
 
-        if not self.new_payloads:
-            return [(None, "", RegressionStatus(0, explanation="Not enough new data"))]
-        elif not self.lts_payloads:
-            return [(None, "", RegressionStatus(0, explanation="Not enough LTS data"))]
+        if not self.new_payload:
+            return [{"result": None, "kpi": None, "regression": vars(RegressionStatus(0, explanation="Not enough new data"))}]
+
+        if not self.lts_payloads:
+            return [{"result": None, "kpi": None, "regression": vars(RegressionStatus(0, explanation="Not enough LTS data"))}]
 
         regression_results = []
-        for curr_result in self.new_payloads:
-            print(curr_result)
-            kpis_to_test = vars(curr_result.results.lts.kpis).keys() if not self.kpis else self.kpis
-            for kpi in kpis_to_test:
-                regression_results.append(
-                    {
-                        "result": curr_result,
-                        "kpi": kpi,
-                        "regression": self.regression_test(
-                            vars(curr_result.results.lts.kpis)[kpi].value,
-                            list(map(lambda x: vars(x.results.kpis).value, self.lts_payloads))
+
+        kpis_to_test = vars(self.new_payload.results.lts.kpis).keys() if not self.kpis else self.kpis
+        for kpi in kpis_to_test:
+
+            curr_values = vars(self.new_payload.results.lts.kpis)[kpi].value
+            lts_values = list(map(lambda x: vars(x.results.kpis)[kpi].value, self.lts_payloads))
+
+            if type(vars(self.new_payload.results.lts.kpis)[kpi].value) is list:
+                if kpi in self.combine_funcs:
+                    curr_values = self.combine_funcs[kpi](curr_values)
+                    lts_values = [self.combine_funcs[kpi](v) for v in lts_values]
+                else:
+                    logging.warning(f"Skipping KPI with list of values, consider filtering KPIs or providing a combine_func for {kpi}")
+                    continue
+
+            regression_results.append(
+                {
+                    "result": self.new_payload.get_settings(),
+                    "kpi": kpi,
+                    "regression": vars(
+                        self.regression_test(
+                            curr_values,
+                            lts_values
                         )
-                    }
-                )
-                print(regression_results)
+                    )
+                }
+            )
         return regression_results
 
     def regression_test(self, new_result: float, lts_result: np.array) -> RegressionStatus:
@@ -106,14 +131,14 @@ class ZScoreIndicator(RegressionIndicator):
         super().__init__(*args, **kwargs)
         self.threshold = threshold
 
-    def regression_test(self, new_result, lts_results) -> RegressionStatus:
+    def regression_test(self, new_result: float, lts_results: np.array) -> RegressionStatus:
         """
         Determine if the curr_result is more/less than threshold
         standard deviations away from the previous_results
         """
-        mean = np.mean(prev_results)
-        std = np.std(prev_results)
-        z_score = (curr_result - mean) / std
+        mean = np.mean(lts_results)
+        std = np.std(lts_results)
+        z_score = (new_result - mean) / std
         if abs(z_score) > self.threshold:
             return RegressionStatus(
                 1,
