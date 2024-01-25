@@ -48,8 +48,25 @@ def update_env_with_env_files():
         if not env_file.exists(): continue
         with open(env_file) as f:
             if env_file.suffix in (".yaml", ".json"):
-                doc = yaml.safe_load(f) if env_file.suffix == ".yaml" else json.load(f)
+                try:
+                    doc = yaml.safe_load(f) if env_file.suffix == ".yaml" else json.load(f)
+                except Exception as e:
+                    logging.error(f"Env file {env_file} is not a valid json/yaml file: {e}")
+                    continue
+
+                if not doc:
+                    logging.warning(f"Env file {env_file} is empty")
+                    continue
+
+                if not hasattr(doc, "items"):
+                    logging.warning(f"Env file {env_file} isn't a dictionnary")
+                    continue
+
                 for k, v in doc.items():
+                    if not isinstance(k, str):
+                        logging.warning(f"Env file {env_file} contains a key {k} that isn't a string ({k.__class__.__name__})")
+                        continue
+
                     key = f"MATBENCH_{k.upper()}"
                     cli_environ[key] = str(v)
             else:
