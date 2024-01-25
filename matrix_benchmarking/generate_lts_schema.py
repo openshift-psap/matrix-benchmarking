@@ -6,6 +6,7 @@ import json
 import sys
 import contextlib
 import datetime
+import pathlib
 from typing import List, Union, Any, Optional
 
 from pydantic import BaseModel
@@ -57,10 +58,91 @@ Args:
             logging.error(f"No LTS schema registered for workload '{workload}', cannot export it.")
             sys.exit(1)
 
-        schema_dict = create_opensearch_mapping(schema.schema())
+        schema_dict = schema.schema()
 
-        with smart_open(file) as f:
+        filename = kwargs.get("file")
+
+        with smart_open(filename) as f:
             json.dump(schema_dict, f, indent=4)
             print("", file=f) # add EOL at EOF
 
+        if filename != "-":
+            filepath = pathlib.Path(filename)
+            with smart_open(filepath.parent / "opensearch_mapping.json") as f:
+                json.dump(create_opensearch_mapping(schema_dict), f, indent=4)
+                print("", file=f) # add EOL at EOF
+
     return cli_args.TaskRunner(run)
+
+
+TYPE_MAP = dict(
+    string="text",
+    number="float",
+    integer="long",
+    array="text",
+)
+
+FORMAT_TYPE_MAP = {
+    "date-time": "date",
+}
+
+def create_opensearch_mapping(json_schema):
+    definitions = {}
+
+    os_mapping = {}
+    def process(path, entry, dest):
+        if defs := entry.get("definitions"):
+            for def_name, def_value in defs.items():
+                definitions[f"{path}/definitions/{def_name}"] = def_value
+
+                if def_name == "PrometheusValue":
+                    def_value["properties"]["values"]["index"] = False
+                    def_value["properties"]["values"]["type"] = "text"
+
+        if ref := entry.get("$ref"):
+            entry.pop("$ref")
+            entry |= definitions[ref].copy()
+
+        if ref := entry.get("items", {}).get("$ref"):
+            entry.pop("items")
+            entry |= definitions[ref].copy()
+
+        if path == "#" and "type" in entry:
+            entry.pop("type")
+
+        if path.endswith("values"):
+            dest["index"] = False
+            entry["type"] = "text"
+
+        if path != "#" and "title" in entry and not "type" in entry:
+            entry["type"] = "object"
+            entry["index"] = False
+
+        for k, v in entry.items():
+            if k == "$ref":
+                logging.fata("Found a stray $ref :/")
+                sys.exit(1)
+            elif k == "type":
+                if fmt := entry.get("format"):
+                    v = FORMAT_TYPE_MAP.get(fmt, v)
+
+                dest[k] = TYPE_MAP.get(v, v) # convert or passthrough
+            elif k in (
+                    "additionalProperties", "title", "format", "default", "required", "pattern", "value", # ignore, not supported
+                    "description", "enum",
+
+                    "items", "definitions", # ignore, already processed
+            ):
+                continue # ignore
+            elif isinstance(v, dict):
+                processed_dict = {}
+                if k == "regression_results":
+                    return
+                process(f"{path}/{k}", v, processed_dict)
+                dest[k] = processed_dict
+            else:
+                dest[k] = v
+
+    process("#", json_schema, os_mapping)
+
+    return os_mapping
