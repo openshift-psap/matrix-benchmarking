@@ -132,8 +132,8 @@ class Plot():
                 for metric in self.filter_metrics(entry, self.get_metrics(entry, metric_name)):
                     if not metric: continue
 
-                    x_values = [x for x, y in metric.values]
-                    y_values = [float(y)/self.y_divisor for x, y in metric.values]
+                    x_values = [x for x, y in metric.values.items()]
+                    y_values = [y/self.y_divisor for x, y in metric.values.items()]
 
                     if self.get_legend_name:
                         legend_name, legend_group = self.get_legend_name(metric_name, metric.metric)
