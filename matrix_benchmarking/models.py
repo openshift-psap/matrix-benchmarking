@@ -44,9 +44,9 @@ class Metadata(ExclusiveModel):
 
 class PrometheusValue(ExclusiveModel):
     metric: Dict[str, str]
-    values: List[Tuple[int, str]]
+    values: Dict[int, float]
 
-PrometheusValues = Union[List[PrometheusValue], Empty]
+PrometheusValues = List[PrometheusValue]
 
 PrometheusNamedMetricValues = Dict[str, PrometheusValues]
 
