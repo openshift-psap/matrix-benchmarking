@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Tuple, Dict, Union, Optional
 import datetime as dt
-from enum import Enum
+import enum
 import inspect
 import datetime
 
@@ -30,11 +30,26 @@ class AllOptional(pydantic.main.ModelMetaclass):
         return super().__new__(self, name, bases, namespaces, **kwargs)
 
 
+class PSAPEnum(str, enum.Enum):
+    def _generate_next_value_(name, start, count, last_values):
+        return name.replace('_', ' ')
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class EntryStatus(PSAPEnum):
+    Valid = enum.auto()
+    Invalid = enum.auto()
+
+
 class Empty(ExclusiveModel):
     ...
 
 
 class Metadata(ExclusiveModel):
+    status: EntryStatus = Field(default=EntryStatus.Valid)
+
     start: dt.datetime
     end: dt.datetime
     settings: Dict[str, Union[str, int]]
@@ -55,14 +70,6 @@ class PrometheusMetric(ExclusiveModel):
     data: PrometheusValues
 
 
-class PSAPEnum(str, Enum):
-    def _generate_next_value_(name, start, count, last_values):
-        return name.replace('_', ' ')
-
-    def __str__(self) -> str:
-        return self.value
-
-
 class SemVer(ConstrainedStr):
     regex = f"^{SEMVER_REGEX}$"
 
@@ -77,6 +84,8 @@ class KPI(ExclusiveModel):
     timestamp: datetime.datetime = Field(..., alias="@timestamp")
     value: Union[float, int, List[float], List[int]]
     test_uuid: UUID4
+
+    status: EntryStatus = Field(default=EntryStatus.Valid)
 
     ci_engine: Optional[str]
     run_id: Optional[str]
