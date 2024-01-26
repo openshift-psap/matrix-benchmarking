@@ -38,7 +38,8 @@ Args:
     opensearch_index: the OpenSearch index where the LTS payloads are stored (Mandatory)
 
     lts_results_dirname: The directory to place the downloaded LTS results files.
-    filters: If provided, only download the experiments matching the filters. Eg: {"image_name": "1.2"}. (Optional.)
+    filters: If provided, only download the experiments matching the filters. Eg: {"image_name": "1.2"}. 
+        If the provided value is "*", then we just check to ensure the keys existence (Optional.)
     max_records: Maximum number of records to retrieve from the OpenSearch instance. 10,000 is the largest number possible without paging (Optional.)
     force: Ignore the presence of the anchor file before downloading the results (Optional.)
     clean: Delete all the existing '.json' files in the lts-results-dirname before downloading the results (Optional.)
@@ -121,7 +122,7 @@ def download(client, opensearch_index, filters, lts_results_dirname, max_records
         query["query"] = {
             "bool": {
                 "must": [
-                    {"term": {f"{k}.keyword": v}} for k, v in filters.items()
+                    {"term": {f"{k}.keyword": v}} if v != "*" else {"exists": {"field": k}} for k, v in filters.items()
                 ]
             }
         }
