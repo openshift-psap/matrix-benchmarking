@@ -100,8 +100,8 @@ class Plot():
                 for metric in self.filter_metrics(entry, self.get_metrics(entry, metric_name)):
                     if not metric: continue
 
-                    x_values = [x for x, y in metric.values]
-                    y_values = [float(y)/y_divisor for x, y in metric.values]
+                    x_values = [x for x, y in metric.values.items()]
+                    y_values = [y/y_divisor for x, y in metric.values.items()]
 
                     metric_actual_name = metric.metric.get("__name__", metric_name)
                     legend_name = metric_actual_name

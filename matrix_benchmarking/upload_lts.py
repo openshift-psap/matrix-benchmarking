@@ -9,6 +9,7 @@ import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store as store
 import matrix_benchmarking.download_lts as download_lts
+import matrix_benchmarking.generate_lts_schema as generate_lts_schema
 import matrix_benchmarking.parse as parse
 
 
@@ -73,13 +74,51 @@ Args:
             if not kwargs.get("dry_run") else None
 
         logging.info(f"Uploading to OpenSearch /{kwargs.get('opensearch_index')}...")
+
         return upload(client, workload_store, kwargs.get("dry_run"), kwargs.get("opensearch_index"))
 
     return cli_args.TaskRunner(run)
 
 
+def opensearch_create_index(client, dry_run, opensearch_index):
+    if dry_run:
+        logging.info(f"Check if index '{opensearch_index}' exists or create it.")
+        return
+
+    # Check if the index already exists
+    if client.indices.exists(index=opensearch_index):
+        logging.info(f"Index '{opensearch_index}' already exists.")
+        return
+
+    index_body = {
+        'settings': {
+            'index': {
+                'number_of_shards': 4
+            },
+            'mapping': {
+                'total_fields': {
+                    "limit": 2000,
+                },
+            },
+        },
+    }
+
+    client.indices.create(index=opensearch_index, body=index_body)
+    logging.info(f"Index '{opensearch_index}' created.")
+
+
+def update_mapping(client, workload_store, dry_run, opensearch_index):
+    schema = store.get_lts_schema()
+    mapping = generate_lts_schema.create_opensearch_mapping(schema.schema())
+
+    import pdb;pdb.set_trace()
+    pass
+
+
 def upload(client, workload_store, dry_run, opensearch_index):
     variables = [k for k, v in common.Matrix.settings.items() if len(v) > 1]
+
+    opensearch_create_index(client, dry_run, opensearch_index)
 
     for idx, (payload, start, end) in enumerate(workload_store.build_lts_payloads()):
         key = ",".join(f"{k}={v}" for k, v in payload.metadata.settings.items() if (not variables or k in variables))
@@ -102,15 +141,17 @@ def upload_lts_to_opensearch(client, payload_dict, dry_run, opensearch_index):
 
 
 def upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index):
+
     if "kpis" not in payload_dict.keys():
         logging.info(f"==> no KPI found in the payload.")
         return
 
-    for kpi_name, kpi in payload_dict["kpis"].items():
+    for kpi_name, kpi in payload_dict.get("kpis", {}).items():
         kpi_index = f"{opensearch_index}__{kpi_name}"
         logging.info(f"Uploading the KPI to /{kpi_index} ...")
+        opensearch_create_index(client, dry_run, kpi_index)
 
-        upload_to_opensearch(client, kpi, kpi["test_uuid"], dry_run, kpi_index)
+        upload_to_opensearch(client, kpi, kpi["test_uuid"], True, kpi_index)
 
 
 def upload_regression_results_to_opensearch(client, payload_dict, dry_run, opensearch_index):
@@ -121,8 +162,10 @@ def upload_regression_results_to_opensearch(client, payload_dict, dry_run, opens
     logging.info(f"Uploading regression results to opensearch ... (stub)")
     for idx, regression_result in enumerate(payload_dict["regression_results"]):
         regression_result_index = f"{opensearch_index}__regression_results_{idx}"
+        opensearch_create_index(client, True, regression_result_index)
+
         logging.info(regression_result)
-        upload_to_opensearch(client, regression_result, payload_dict["metadata"]["test_uuid"], dry_run, regression_result_index)
+        upload_to_opensearch(client, regression_result, payload_dict["metadata"]["test_uuid"], True, regression_result_index)
 
 
 def upload_to_opensearch(client, document, document_id, dry_run, index):
