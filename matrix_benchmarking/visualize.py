@@ -9,6 +9,7 @@ import matrix_benchmarking.cli_args as cli_args
 def main(workload: str = "",
          workload_base_dir: str = "",
          results_dirname: str = "",
+         lts_results_dirname: str = "",
          filters: list[str] = [],
          generate: str = ""):
     """
@@ -18,6 +19,7 @@ Env:
     MATBENCH_WORKLOAD
     MATBENCH_WORKLOAD_BASE_DIR
     MATBENCH_RESULTS_DIRNAME
+    MATBENCH_LTS_RESULTS_DIRNAME
     MATBENCH_GENERATE
     MATBENCH_FILTERS
 
@@ -27,6 +29,7 @@ Args:
     workload: Name of the workload to execute. (Mandatory.)
     workload_base_directory: the directory from where the workload packages should be loaded. (Optional)
     results_dirname: Name of the directory where the results will be stored.  (Mandatory.)
+    lts_results_dirname: Name of the directory where the LTS results are stored. (Mandatory.)
     generate: If set, the value is used as query to generates image files instead of running the Web UI.
     filters: If provided, parse only the experiment matching the filters. Eg: expe=expe1:expe2,something=true.
     lts: If 'True', invoke the LTS parser only.
@@ -60,6 +63,14 @@ Args:
         if not common.Matrix.processed_map:
             logging.error("Not result found, exiting.")
             return 1
+        common.Matrix.print_settings_to_log()
+
+        if kwargs.get("lts_results_dirname"):
+            logging.info("--- LTS --- ")
+            workload_store.parse_lts_data()
+            common.LTS_Matrix.print_settings_to_log()
+            logging.info(f"Loading LTS results ... done. Found {len(common.LTS_Matrix.processed_map)} results.")
+
 
         try:
             ui.configure(kwargs, workload_store)
