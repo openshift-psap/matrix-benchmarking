@@ -79,6 +79,8 @@ class RegressionIndicator:
         # is useful to have
         self.lts_payloads.sort(key=lambda entry: self.x_var_key(entry))
 
+    def get_name(self):
+        return "UndefinedRegressionIndicator"
 
     def analyze(self) -> list[dict]:
 
@@ -104,73 +106,15 @@ class RegressionIndicator:
                     logging.warning(f"Skipping KPI with list of values, consider filtering KPIs or providing a combine_func for {kpi}")
                     continue
 
-            regression_results.append(
-                {
-                    "result": self.new_payload.get_settings(),
-                    "kpi": kpi,
-                    "regression": vars(
-                        self.regression_test(
-                            curr_values,
-                            lts_values
-                        )
-                    )
-                }
-            )
+
+            raw_results = self.regression_test(curr_values, lts_values)
+            stats = {
+                "kpi": kpi,
+                "indicator": self.get_name()
+            }
+            regression_results.append({**stats, **raw_results})
+
         return regression_results
 
     def regression_test(self, new_result: float, lts_result: np.array) -> RegressionStatus:
         return RegressionStatus(0, explanation="Default return status")
-
-
-class ZScoreIndicator(RegressionIndicator):
-    """
-    Example regression indicator that uses the Z score as a metric
-    to determine if the recent test was an outlier
-    """
-    def __init__(self, *args, threshold=3, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.threshold = threshold
-
-    def regression_test(self, new_result: float, lts_results: np.array) -> RegressionStatus:
-        """
-        Determine if the curr_result is more/less than threshold
-        standard deviations away from the previous_results
-        """
-        mean = np.mean(lts_results)
-        std = np.std(lts_results)
-        z_score = (new_result - mean) / std
-        if abs(z_score) > self.threshold:
-            return RegressionStatus(
-                1,
-                direction=1 if z_score > 0 else -1,
-                explanation="z-score greater than threshold",
-                details={"threshold": self.threshold, "zscore": z_score}
-            )
-        else:
-            return RegressionStatus(
-                0,
-                explanation="z-score not greater than threshold",
-                details={"threshold": self.threshold, "zscore": z_score}
-            )
-
-class PolynomialRegressionIndicator(RegressionIndicator):
-    """
-    Placeholder for polynomial regression that we could implement
-    somewhere in the pipeline
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def regression_test(self, curr_result, prev_results) -> RegressionStatus:
-        return RegressionStatus(0, explanation="Not implemented")
-
-class HunterWrapperIndicator(RegressionIndicator):
-    """
-    Some straightfoward indicators are implemented above but this also provides what should
-    be a simple way to wrap datastax/Hunter in a regression_test
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def regression_test(self, curr_result, prev_results) -> RegressionStatus:
-        return RegressionStatus(0, explanation="Not implemented")

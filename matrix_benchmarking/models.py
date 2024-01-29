@@ -130,3 +130,11 @@ def getKPIsModel(name, module_name, KPIs, KPImodel):
     model.tostr = tostr
 
     return model
+
+class RegressionResult():
+    kpi: str
+    indicator: str
+    status: int
+    direction: Optional[int]
+    explanation: Optional[str]
+    details: Optional[dict[str, str]]
