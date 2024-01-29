@@ -210,12 +210,6 @@ def build_callbacks(app):
         logging.error("Matrix empty, cannot build its GUI")
         return
 
-    logging.info("---")
-    for key, values in Matrix.settings.items():
-        if key == "stats": continue
-        Matrix.settings[key] = sorted(values, key=plotting.natural_keys)
-        logging.info(f"{key:20s}: {', '.join(map(str, Matrix.settings[key]))}")
-    logging.info("---")
 
     @app.server.route('/matrix/dl')
     def download_graph():
