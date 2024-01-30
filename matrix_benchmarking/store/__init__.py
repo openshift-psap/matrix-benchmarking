@@ -75,8 +75,8 @@ def add_to_matrix(import_settings, location, results, duplicate_handler, matrix=
 
         return
 
-
-    try: processed_settings = _rewrite_settings(dict(import_settings), results)
+    is_lts = matrix != common.Matrix
+    try: processed_settings = _rewrite_settings(dict(import_settings), results, is_lts)
     except Exception as e:
         logging.error(f"failed to rewrite settings for entry at '{location}'")
         raise e
@@ -147,7 +147,7 @@ def gather_rolling_entries(entry, matrix=common.Matrix):
 
 custom_rewrite_settings = None
 
-def _rewrite_settings(import_settings, results):
+def _rewrite_settings(import_settings, results, is_lts):
     if custom_rewrite_settings is None:
         logging.warning("No rewrite_setting function registered.")
         return import_settings
@@ -155,7 +155,7 @@ def _rewrite_settings(import_settings, results):
     if "results" not in inspect.getargspec(custom_rewrite_settings).args:
         return custom_rewrite_settings(import_settings)
 
-    return custom_rewrite_settings(import_settings, results)
+    return custom_rewrite_settings(import_settings, results, is_lts)
 
 
 def register_custom_rewrite_settings(fn):
