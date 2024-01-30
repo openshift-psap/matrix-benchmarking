@@ -121,7 +121,7 @@ def upload(client, workload_store, dry_run, opensearch_index):
     opensearch_create_index(client, dry_run, opensearch_index)
 
     for idx, (payload, start, end) in enumerate(workload_store.build_lts_payloads()):
-        key = ",".join(f"{k}={v}" for k, v in payload.metadata.settings.items() if (not variables or k in variables))
+        key = ",".join(f"{k}={v}" for k, v in dict(payload.metadata.settings).items() if (not variables or k in variables))
         logging.info(f"Uploading payload #{idx} | {key}")
 
         payload_json = json.dumps(payload, default=functools.partial(parse.json_dumper, strict=False))
