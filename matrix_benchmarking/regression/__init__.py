@@ -8,6 +8,7 @@ from functools import reduce
 from typing import Optional, Callable
 
 import matrix_benchmarking.common as common
+import matrix_benchmarking.models as models
 
 def get_from_path(d, path):
     return reduce(dict.get, path.split("."), d)
@@ -28,7 +29,6 @@ class RegressionStatus(types.SimpleNamespace):
         self.direction = direction
         self.explanation = explanation
         self.details = details
-
 
 class RegressionIndicator:
     """
@@ -82,13 +82,17 @@ class RegressionIndicator:
     def get_name(self):
         return "UndefinedRegressionIndicator"
 
-    def analyze(self) -> list[dict]:
+    def analyze(self) -> list[models.RegressionResult]:
 
-        if not self.new_payload:
-            return [{"result": None, "kpi": None, "regression": vars(RegressionStatus(0, explanation="Not enough new data"))}]
-
-        if not self.lts_payloads:
-            return [{"result": None, "kpi": None, "regression": vars(RegressionStatus(0, explanation="Not enough LTS data"))}]
+        if not self.new_payload or not self.lts_payloads:
+            return [
+                models.RegressionResult(
+                    kpi="",
+                    setting="" if not self.x_var else self.x_var,
+                    indicator=self.get_name(),
+                    status=0
+                )
+            ]
 
         regression_results = []
 
@@ -107,12 +111,16 @@ class RegressionIndicator:
                     continue
 
 
-            raw_results = self.regression_test(curr_values, lts_values)
-            stats = {
-                "kpi": kpi,
-                "indicator": self.get_name()
-            }
-            regression_results.append({**stats, **raw_results})
+            raw_results: RegressionStatus = self.regression_test(curr_values, lts_values)
+            result = models.RegressionResult(
+                kpi=kpi,
+                setting="" if not self.x_var else self.x_var,
+                indicator=self.get_name(),
+                direction=raw_results.direction,
+                explanation=raw_results.explanation,
+                details=raw_results.details
+            )
+            regression_results.append(result)
 
         return regression_results
 

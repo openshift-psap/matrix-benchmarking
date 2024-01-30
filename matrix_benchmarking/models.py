@@ -133,8 +133,9 @@ def getKPIsModel(name, module_name, KPIs, KPImodel):
 
 class RegressionResult(ExclusiveModel):
     kpi: str
+    setting: str
     indicator: str
     status: int
-    direction: Optional[int]
-    explanation: Optional[str]
-    details: Optional[dict[str, str]]
+    direction: Optional[int] = Field(default=None)
+    explanation: Optional[str] = Field(default=None)
+    details: Optional[dict[str, str]] = Field(default=None)
