@@ -179,6 +179,7 @@ def parse_lts_data(lts_results_dir=None):
 
         for filename in files:
             if filename == download_lts.LTS_ANCHOR_NAME: continue
+            if filename.startswith("."): continue
 
             filepath = this_dir / filename
             with open(filepath) as f:
