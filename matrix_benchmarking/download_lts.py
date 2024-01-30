@@ -100,6 +100,8 @@ def download(client, opensearch_index, filters, lts_results_dirname, max_records
     if clean:
         cnt = -1
         for cnt, existing_json_file in enumerate(lts_results_dirname.glob("*.json")):
+            if existing_json_file.name.startswith("."): continue
+
             existing_json_file.unlink()
         if cnt == -1:
             logging.info("No json to cleanup in the LTS results directory.")
