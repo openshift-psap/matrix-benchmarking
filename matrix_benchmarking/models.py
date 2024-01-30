@@ -131,7 +131,7 @@ def getKPIsModel(name, module_name, KPIs, KPImodel):
 
     return model
 
-class RegressionResult():
+class RegressionResult(ExclusiveModel):
     kpi: str
     indicator: str
     status: int

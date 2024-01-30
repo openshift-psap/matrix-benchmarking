@@ -1,4 +1,8 @@
-class ZScoreIndicator(RegressionIndicator):
+from matrix_benchmarking import regression
+
+import numpy as np
+
+class ZScoreIndicator(regression.RegressionIndicator):
     """
     Example regression indicator that uses the Z score as a metric
     to determine if the recent test was an outlier
@@ -10,7 +14,7 @@ class ZScoreIndicator(RegressionIndicator):
     def get_name(self):
         return f"ZScoreIndicator(threshold={self.threshold})"
 
-    def regression_test(self, new_result: float, lts_results: np.array) -> RegressionStatus:
+    def regression_test(self, new_result: float, lts_results: np.array) -> regression.RegressionStatus:
         """
         Determine if the curr_result is more/less than threshold
         standard deviations away from the previous_results
@@ -27,4 +31,4 @@ class ZScoreIndicator(RegressionIndicator):
             direction = 1 if z_score > 0 else -1,
             explanation="z-score greater than threshold",
 
-        return RegressionStatus(0, direction=direction, explanation=explanation, details=details)
+        return regression.RegressionStatus(0, direction=direction, explanation=explanation, details=details)
