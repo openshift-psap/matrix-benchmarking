@@ -179,6 +179,7 @@ def parse_lts_data(lts_results_dir=None):
 
         for filename in files:
             if filename == download_lts.LTS_ANCHOR_NAME: continue
+            if filename.startswith("."): continue
 
             filepath = this_dir / filename
             with open(filepath) as f:
@@ -190,7 +191,10 @@ def parse_lts_data(lts_results_dir=None):
                 logging.error(f"Invalid LTS file: {filepath}\n{e}")
                 continue
 
-            import_settings = lts_payload.metadata.settings.copy()
+            lts_settings = lts_payload.metadata.settings # plain dict or model
+
+            import_settings = dict(lts_settings)
+
             import_settings["@timestamp"] = str(lts_payload.metadata.start)
 
             def _duplicated_entry(import_key, old_entry, old_location, new_results, new_location):
