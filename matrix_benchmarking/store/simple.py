@@ -185,6 +185,11 @@ def parse_lts_data(lts_results_dir=None):
             with open(filepath) as f:
                 document = json.load(f)
 
+            # Temporary fix for old payloads in OpenSearch,
+            # I need to clear this up before merge
+            if "regression_results" in document:
+                document.pop("regression_results")
+
             try:
                 lts_payload = store.lts_schema.parse_obj(document)
             except pydantic.error_wrappers.ValidationError as e:
