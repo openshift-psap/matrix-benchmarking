@@ -160,7 +160,7 @@ def upload_regression_results_to_opensearch(client, payload_dict, dry_run, opens
         return
 
     logging.info(f"Uploading regression results to opensearch ... (stub)")
-    for idx, regression_result in enumerate(payload_dict["regression_results"]):
+    for idx, regression_result in enumerate(payload_dict.get("regression_results") or []):
         regression_result_index = f"{opensearch_index}__regression_results_{idx}"
         opensearch_create_index(client, True, regression_result_index)
 
