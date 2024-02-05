@@ -6,6 +6,7 @@ import datetime
 import numpy as np
 from functools import reduce
 from typing import Optional, Callable
+import copy
 
 import matrix_benchmarking.common as common
 import matrix_benchmarking.models as models
@@ -39,11 +40,12 @@ class RegressionIndicator:
             self,
             new_payload: common.MatrixEntry,
             lts_payloads: list[common.MatrixEntry],
-            x_var = None,
-            x_var_key = lambda x: x.results.metadata.end.astimezone(),
+            x_var: str,
+            x_var_key = lambda x: x.metadata.end.astimezone(),
             kpis: Optional[list[str]] = None,
             settings_filter: Optional[dict] = None,
             combine_funcs: dict = {},
+            use_x_var = False # Automatically determine the settings for the x_var
         ):
         self.new_payload = new_payload
         self.x_var = x_var
@@ -51,11 +53,12 @@ class RegressionIndicator:
         self.kpis = kpis
         self.combine_funcs = combine_funcs
         self.settings_filter = settings_filter
+        self.use_x_var = use_x_var
 
         if self.settings_filter and self.x_var:
             logging.warning("settings_filter and x_var set, only using settings_filter")
-        elif self.x_var:
-            settings = self.new_payload.get_settings()
+        elif self.x_var and self.use_x_var:
+            settings = dict(self.new_payload.get_settings())
             settings.pop(self.x_var)
             self.settings_filter = settings
 
@@ -75,20 +78,18 @@ class RegressionIndicator:
         else:
             self.lts_payloads = lts_payloads
 
-        # This isn't strictly necessary for all analysis techniques, but
-        # is useful to have
-        self.lts_payloads.sort(key=lambda entry: self.x_var_key(entry))
 
     def get_name(self):
         return "UndefinedRegressionIndicator"
 
-    def analyze(self) -> list[models.RegressionResult]:
+    def analyze(self) -> list[models.Regression]:
 
         if not self.new_payload or not self.lts_payloads:
+            logging.info("Missing a new payload or lts payloads")
             return [
-                models.RegressionResult(
+                models.Regression(
                     kpi="",
-                    setting="" if not self.x_var else self.x_var,
+                    metric="" if not self.x_var else self.x_var,
                     indicator=self.get_name(),
                     status=0
                 )
@@ -99,28 +100,41 @@ class RegressionIndicator:
         kpis_to_test = vars(self.new_payload.results.lts.kpis).keys() if not self.kpis else self.kpis
         for kpi in kpis_to_test:
 
-            curr_values = vars(self.new_payload.results.lts.kpis)[kpi].value
-            lts_values = list(map(lambda x: vars(x.results.kpis)[kpi].value, self.lts_payloads))
+            curr_values = []
+            if type(self.new_payload.results) is list:
+                for result in self.new_payload.results:
+                    curr_values.append(vars(result.lts.kpis)[kpi].value)
+            else:
+                curr_values.append(vars(self.new_payload.results.lts.kpis)[kpi].value)
 
-            if type(vars(self.new_payload.results.lts.kpis)[kpi].value) is list:
+            lts_values = []
+            for payload in self.lts_payloads:
+                if type(payload.results) is list:
+                    lts_values += list(map(lambda x: vars(x.results.kpis)[kpi].value, payload.results))
+                else:
+                    lts_values.append(vars(payload.results.kpis)[kpi].value)
+
+
+            if any(map(lambda x: type(x) is list, curr_values + lts_values)):
                 if kpi in self.combine_funcs:
-                    curr_values = self.combine_funcs[kpi](curr_values)
+                    curr_values = [self.combine_funcs[kpi](v) for v in curr_values]
                     lts_values = [self.combine_funcs[kpi](v) for v in lts_values]
                 else:
                     logging.warning(f"Skipping KPI with list of values, consider filtering KPIs or providing a combine_func for {kpi}")
                     continue
 
-
-            raw_results: RegressionStatus = self.regression_test(curr_values, lts_values)
-            result = models.RegressionResult(
-                kpi=kpi,
-                setting="" if not self.x_var else self.x_var,
-                indicator=self.get_name(),
-                direction=raw_results.direction,
-                explanation=raw_results.explanation,
-                details=raw_results.details
-            )
-            regression_results.append(result)
+            for curr_value in curr_values:
+                raw_results: RegressionStatus = self.regression_test(curr_value, lts_values)
+                result = models.Regression(
+                    kpi=kpi,
+                    metric="" if not self.x_var else self.x_var,
+                    indicator=self.get_name(),
+                    status=raw_results.status,
+                    direction=raw_results.direction,
+                    explanation=raw_results.explanation,
+                    details=raw_results.details
+                )
+                regression_results.append(result)
 
         return regression_results
 
