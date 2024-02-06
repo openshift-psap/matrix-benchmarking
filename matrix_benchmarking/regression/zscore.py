@@ -26,7 +26,13 @@ class ZScoreIndicator(regression.RegressionIndicator):
         status = 0
         direction = 0
         explanation = "z-score not greater than threshold"
-        details = {"threshold": self.threshold, "zscore": z_score}
+        details = {
+            "new_result": new_result,
+            "threshold": self.threshold,
+            "zscore": z_score,
+            "mean": mean,
+            "stddev": std
+        }
         if abs(z_score) > self.threshold:
             status = 1
             direction = 1 if z_score > 0 else -1
