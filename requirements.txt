@@ -8,4 +8,4 @@ BeautifulSoup4==4.11.*
 prometheus_api_client
 pydantic==1.10.*
 opensearch-py
-git+ssh://git@github.com/datastax-labs/hunter@f5b1f6f5baf94c07c376f72ffdae330a6db3ec1b
+git+https://git@github.com/datastax-labs/hunter@f5b1f6f5baf94c07c376f72ffdae330a6db3ec1b
