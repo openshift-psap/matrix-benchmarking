@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Tuple, Dict, Union, Optional
+from typing import List, Tuple, Dict, Union, Optional, Any
 import datetime as dt
 import enum
 import inspect
@@ -138,4 +138,4 @@ class Regression(ExclusiveModel):
     status: int
     direction: Optional[int] = Field(default=None)
     explanation: Optional[str] = Field(default=None)
-    details: Optional[dict[str, str]] = Field(default=None)
+    details: Optional[dict[str, Any]] = Field(default=None)
