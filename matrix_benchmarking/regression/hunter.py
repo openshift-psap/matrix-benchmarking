@@ -50,7 +50,7 @@ class HunterWrapperIndicator(regression.RegressionIndicator):
 
         if len(change_points) > 0:
             status = 1
-            direction = 1 if change_points[-1].forward_rel_change() > 0 else -1
+            direction = 1 if change_points[-1].stats.forward_rel_change() > 0 else -1
             explanation="A change point was detected"
 
         return regression.RegressionStatus(status, direction=direction, explanation=explanation, details=details)
