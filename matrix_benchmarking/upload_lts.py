@@ -121,14 +121,16 @@ def upload(client, workload_store, dry_run, opensearch_index):
     opensearch_create_index(client, dry_run, opensearch_index)
 
     for idx, (payload, start, end) in enumerate(workload_store.build_lts_payloads()):
-        key = ",".join(f"{k}={v}" for k, v in dict(payload.metadata.settings).items() if (not variables or k in variables))
+        settings_dict = parse.json_dumper(payload.metadata.settings, strict=False)
+
+        key = ",".join(f"{k}={v}" for k, v in settings_dict.items() if (not variables or k in variables))
         logging.info(f"Uploading payload #{idx} | {key}")
 
         payload_json = json.dumps(payload, default=functools.partial(parse.json_dumper, strict=False))
         payload_dict = json.loads(payload_json)
 
-        upload_lts_to_opensearch(client, payload_dict, dry_run, opensearch_index)
         upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index)
+        upload_lts_to_opensearch(client, payload_dict, dry_run, opensearch_index)
         upload_regression_results_to_opensearch(client, payload_dict, dry_run, opensearch_index)
 
     logging.info("All done :)")
@@ -151,7 +153,7 @@ def upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index):
         logging.info(f"Uploading the KPI to /{kpi_index} ...")
         opensearch_create_index(client, dry_run, kpi_index)
 
-        upload_to_opensearch(client, kpi, kpi["test_uuid"], True, kpi_index)
+        upload_to_opensearch(client, kpi, kpi["test_uuid"], dry_run, kpi_index)
 
 
 def upload_regression_results_to_opensearch(client, payload_dict, dry_run, opensearch_index):
