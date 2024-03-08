@@ -153,7 +153,7 @@ def upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index):
         logging.info(f"Uploading the KPI to /{kpi_index} ...")
         opensearch_create_index(client, dry_run, kpi_index)
 
-        upload_to_opensearch(client, kpi, kpi["test_uuid"], True, kpi_index)
+        upload_to_opensearch(client, kpi, kpi["test_uuid"], dry_run, kpi_index)
 
 
 def upload_regression_results_to_opensearch(client, payload_dict, dry_run, opensearch_index):
