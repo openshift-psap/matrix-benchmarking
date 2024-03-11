@@ -11,7 +11,10 @@ def json_dumper(obj, strict=False):
     import datetime
     import pathlib
 
-    if hasattr(obj, "toJSON"):
+    if isinstance(obj, dict):
+        return obj
+
+    elif hasattr(obj, "toJSON"):
         return obj.toJSON()
 
     elif hasattr(obj, "json"):
