@@ -149,7 +149,7 @@ def upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index):
         return
 
     for kpi_name, kpi in payload_dict.get("kpis", {}).items():
-        kpi_index = f"{opensearch_index}__{kpi_name}"
+        kpi_index = f"{opensearch_index}.{kpi_name}"
         logging.info(f"Uploading the KPI to /{kpi_index} ...")
         opensearch_create_index(client, dry_run, kpi_index)
 
