@@ -121,9 +121,13 @@ def upload(client, workload_store, dry_run, opensearch_index):
     opensearch_create_index(client, dry_run, opensearch_index)
 
     for idx, (payload, start, end) in enumerate(workload_store.build_lts_payloads()):
-        settings_dict = parse.json_dumper(payload.metadata.settings, strict=False)
+        try:
+            settings_dict = parse.json_dumper(payload.metadata.settings, strict=False)
+            key = ",".join(f"{k}={v}" for k, v in settings_dict.items() if (not variables or k in variables))
+        except Exception as e:
+            logging.warning(f"Failed to compute the name of the entry: {e}")
+            key = str(payload.metadata.settings)
 
-        key = ",".join(f"{k}={v}" for k, v in settings_dict.items() if (not variables or k in variables))
         logging.info(f"Uploading payload #{idx} | {key}")
 
         payload_json = json.dumps(payload, default=functools.partial(parse.json_dumper, strict=False))
