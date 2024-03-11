@@ -130,7 +130,7 @@ def upload(client, workload_store, dry_run, opensearch_index):
         payload_dict = json.loads(payload_json)
 
         upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index)
-        #upload_lts_to_opensearch(client, payload_dict, dry_run, opensearch_index)
+        upload_lts_to_opensearch(client, payload_dict, dry_run, opensearch_index)
         upload_regression_results_to_opensearch(client, payload_dict, dry_run, opensearch_index)
 
     logging.info("All done :)")
