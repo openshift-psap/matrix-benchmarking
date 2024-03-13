@@ -85,11 +85,6 @@ def opensearch_create_index(client, dry_run, opensearch_index):
         logging.info(f"Check if index '{opensearch_index}' exists or create it. (dry run)")
         return
 
-    # Check if the index already exists
-    if client.indices.exists(index=opensearch_index):
-        logging.info(f"Index '{opensearch_index}' already exists.")
-        return
-
     index_body = {
         'settings': {
             'index': {
@@ -103,6 +98,16 @@ def opensearch_create_index(client, dry_run, opensearch_index):
         },
     }
 
+    # Check if the index already exists
+    if client.indices.exists(index=opensearch_index):
+        del index_body["settings"]["index"]["number_of_shards"] # Can't update non dynamic settings [[index.number_of_shards]] for open indices
+        client.indices.put_settings(index=opensearch_index, body=index_body)
+
+        logging.info(f"Index '{opensearch_index}' updated.")
+        return
+
+
+    # create the index
     client.indices.create(index=opensearch_index, body=index_body)
     logging.info(f"Index '{opensearch_index}' created.")
 
