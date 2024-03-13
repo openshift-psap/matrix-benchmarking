@@ -82,7 +82,7 @@ Args:
 
 def opensearch_create_index(client, dry_run, opensearch_index):
     if dry_run:
-        logging.info(f"Check if index '{opensearch_index}' exists or create it.")
+        logging.info(f"Check if index '{opensearch_index}' exists or create it. (dry run)")
         return
 
     # Check if the index already exists
@@ -115,12 +115,35 @@ def update_mapping(client, workload_store, dry_run, opensearch_index):
     pass
 
 
+def get_kpi_index_name(opensearch_index, kpi_name):
+    return f"{opensearch_index}.{kpi_name}"
+
+
+def create_indexes(client, workload_store, dry_run, opensearch_index, lts_payloads):
+    indexes_to_create = set()
+    indexes_to_create.add(opensearch_index)
+
+    for lts_payload, _, _ in lts_payloads:
+        payload_json = json.dumps(lts_payload, default=functools.partial(parse.json_dumper, strict=False))
+        payload_dict = json.loads(payload_json)
+
+        for kpi_name, kpi in payload_dict.get("kpis", {}).items():
+            kpi_index = get_kpi_index_name(opensearch_index, kpi_name)
+            indexes_to_create.add(kpi_index)
+
+    logging.info(f"Creating/updating {len(indexes_to_create)} indexes ...")
+    for index_name in indexes_to_create:
+        opensearch_create_index(client, dry_run, index_name)
+
+
 def upload(client, workload_store, dry_run, opensearch_index):
     variables = [k for k, v in common.Matrix.settings.items() if len(v) > 1]
 
-    opensearch_create_index(client, dry_run, opensearch_index)
+    lts_payloads = list(workload_store.build_lts_payloads())
 
-    for idx, (payload, start, end) in enumerate(workload_store.build_lts_payloads()):
+    create_indexes(client, workload_store, dry_run, opensearch_index, lts_payloads)
+
+    for idx, (payload, start, end) in enumerate(lts_payloads):
         try:
             settings_dict = parse.json_dumper(payload.metadata.settings, strict=False)
             key = ",".join(f"{k}={v}" for k, v in settings_dict.items() if (not variables or k in variables))
@@ -153,9 +176,8 @@ def upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index):
         return
 
     for kpi_name, kpi in payload_dict.get("kpis", {}).items():
-        kpi_index = f"{opensearch_index}.{kpi_name}"
+        kpi_index = get_kpi_index_name(opensearch_index, kpi_name)
         logging.info(f"Uploading the KPI to /{kpi_index} ...")
-        opensearch_create_index(client, dry_run, kpi_index)
 
         upload_to_opensearch(client, kpi, kpi["test_uuid"], dry_run, kpi_index)
 
