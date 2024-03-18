@@ -95,13 +95,26 @@ Args:
         def download_prefer_cache():
             if hasattr(workload_store, "load_cache"):
                 download(downloading.DownloadModes.CACHE_ONLY)
-                try:
-                    if workload_store.load_cache(dest_dir):
-                        logging.info("Downloading the cache succeeded.")
-                        return # download and reload from cache worked
-                except FileNotFoundError as e:
-                    logging.warning(f"Downloading the cache failed ({e}). Now dowloading the important files.")
-                    pass
+                successes = 0
+                failed = 0
+                for cache_file in dest_dir.glob("**/"+workload_store.CACHE_FILENAME):
+                    try:
+                        logging.info(f"Reloading {cache_file} ...")
+                        if workload_store.load_cache(cache_file.parent):
+                            logging.info(f"Validation the cache of '{cache_file.parent}' succeeded.")
+                            successes += 1
+                    except FileNotFoundError as e:
+                        logging.warning(f"Validation of the cache of '{cache_file.parent}' failed: {e} :/")
+                        failed += 1
+
+                logging.info(f"Downloaded {successes} valid cached directories")
+                if not failed:
+                    # all good, no need to knowload the IMPORTANT files
+                    return
+
+                logging.warning(f"Downloaded {failed} INVALID cached directories")
+
+                logging.info(f"PREFER_CACHE downloading failed. Switching to IMPORTANT mode.")
 
             # download or reload from cache worked failed, try again with the important files
             download(downloading.DownloadModes.IMPORTANT)
