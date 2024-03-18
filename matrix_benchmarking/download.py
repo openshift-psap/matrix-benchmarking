@@ -9,7 +9,7 @@ import matrix_benchmarking.store as store
 import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 from matrix_benchmarking.downloading import DownloadModes
-import matrix_benchmarking.downloading.scrape as scrape
+from matrix_benchmarking.downloading.scrape import ocp_ci as scrape_ocp_ci
 
 def main(url_file: str = "",
          url: str = "",
@@ -83,7 +83,7 @@ Args:
 
         def download(dl_mode):
             logging.info(f"Download {dest_dir} <-- {site}/{base_dir}")
-            scrapper = ScrapOCPCiArtifacts(workload_store, site, base_dir, dest_dir, do_download, dl_mode)
+            scrapper = scrape_ocp_ci.ScrapOCPCiArtifacts(workload_store, site, base_dir, dest_dir, do_download, dl_mode)
             scrapper.scrape()
 
         def download_prefer_cache():
@@ -146,35 +146,3 @@ Args:
         return 0
 
     return cli_args.TaskRunner(run)
-
-
-class ScrapOCPCiArtifacts(scrape.ScrapOCPCiArtifactsBase):
-    def handle_file(self, filepath_rel, local_filename, depth):
-        if local_filename.exists():
-            # file already downloaded, skip it
-            return
-
-        result_filepath_rel = pathlib.Path(*filepath_rel.parts[-(depth+1):])
-
-        mandatory = self.workload_store.is_mandatory_file(result_filepath_rel)
-
-        if (self.cache_found
-            and self.download_only_cache
-            and not mandatory):
-            return # found the cache file, and not a mandatory file, continue.
-
-        cache = self.workload_store.is_cache_file(result_filepath_rel)
-
-        if self.download_mode == DownloadModes.CACHE_ONLY and not cache and not mandatory:
-            logging.info(f"{' '*depth}File: {filepath_rel}: NOT CACHE/MANDATORY")
-            return # file isn't important, do not download it
-
-        important = True if cache or mandatory \
-            else self.workload_store.is_important_file(result_filepath_rel)
-
-        only_important_files = self.download_mode in (DownloadModes.IMPORTANT, DownloadModes.PREFER_CACHE)
-        if only_important_files and not important:
-            logging.info(f"{' '*depth}File: {filepath_rel}: NOT IMPORTANT")
-            return # file isn't important, do not download it
-
-        self.download_file(filepath_rel, local_filename, depth)
