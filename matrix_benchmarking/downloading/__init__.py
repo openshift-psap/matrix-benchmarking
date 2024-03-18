@@ -26,6 +26,12 @@ def get_scrapper_class(url):
         import matrix_benchmarking.downloading.scrape.middleware_ci as middleware_ci_scrapper
         return middleware_ci_scrapper.ScrapMiddlewareCiArtifacts
 
+    if url.scheme == "s3":
+        logging.info("S3 scrapping detected.")
+
+        import matrix_benchmarking.downloading.scrape.s3 as s3_scrapper
+        return s3_scrapper.ScrapS3
+
     raise ValueError(f"Download url '{url}' not supported :/")
 
 
