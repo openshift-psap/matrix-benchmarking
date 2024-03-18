@@ -70,7 +70,6 @@ Args:
 
         settings = an_entry["settings"]
 
-        site = f"{source_url.scheme}://{source_url.host}"
         base_dir = pathlib.Path(source_url.path)
         dest_dir = pathlib.Path(kwargs["results_dirname"]) / destdir
 
@@ -89,7 +88,7 @@ Args:
                 yaml.dump(settings, f, indent=4)
 
         def download(dl_mode):
-            scrapper = scrapper_class(workload_store, site, base_dir, dest_dir, do_download, dl_mode)
+            scrapper = scrapper_class(workload_store, source_url, base_dir, dest_dir, do_download, dl_mode)
             scrapper.scrape()
 
         def download_prefer_cache():

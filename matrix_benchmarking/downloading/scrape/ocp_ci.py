@@ -1,84 +1,36 @@
 import requests
 import pathlib
 import logging
+import urllib3
+urllib3.disable_warnings()
 
 from bs4 import BeautifulSoup
 
 from matrix_benchmarking.downloading import DownloadModes
 import matrix_benchmarking.cli_args as cli_args
+from .. import BaseHttpScapper
 
-# lists
-urls=[]
+class ScrapOCPCiArtifacts(BaseHttpScapper):
 
-class ScrapOCPCiArtifacts():
-    def __init__(self, workload_store, site, base_dir, result_local_dir, do_download, download_mode):
-        self.workload_store = workload_store
-        self.site = site
-        self.base_dir = base_dir
-        self.result_local_dir = result_local_dir
-        self.do_download = do_download
-        self.download_mode = download_mode
-        self.download_only_cache = self.download_mode in (DownloadModes.PREFER_CACHE, DownloadModes.CACHE_ONLY)
-        self.cache_found = False
-
-    def download_file(self, filepath_rel, local_filename, depth):
-        logging.info(f"{' '*depth}File: {filepath_rel}: DOWNLOAD")
-
-        url = f"{self.site}/{self.base_dir}/{filepath_rel}"
-
-        if not self.do_download: return
-
-        local_filename.parent.mkdir(parents=True, exist_ok=True)
-
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            with open(local_filename, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-
-        page_not_found_anchor = str(self.base_dir.relative_to("/gcs") / filepath_rel)
-        with open(local_filename) as f:
-            try:
-                for line in f.readlines():
-                    if page_not_found_anchor not in line: continue
-                    local_filename.unlink()
-
-                    raise requests.exceptions.HTTPError(404, f"Page not found: {filepath_rel}")
-
-            except UnicodeDecodeError:
-                pass # file isn't unicode, it's can't be the 404 page
-
-    def scrape(self, current_href=None, depth=0, found=False):
-        url = f"{self.site}{current_href if current_href else self.base_dir}"
+    def scrape(self, current_href=None, depth=0, test_found=False):
+        url = f"{self.source_url.scheme}://{self.source_url.host}/{current_href if current_href else self.base_dir}"
 
         r = requests.get(url)
         s = BeautifulSoup(r.text,"html.parser")
 
         filenames = [(pathlib.Path(link.attrs['href']).name) for link in s.find_all("a")]
-        if not found and ("exit_code" in filenames or "settings" in filenames):
+        cache_found = False
+
+        if not test_found and ("exit_code" in filenames or "settings" in filenames):
             depth = 0
-            found = True
+            test_found = True
 
-        if found and depth == 0:
-            cache_file = pathlib.Path(self.workload_store.CACHE_FILENAME)
-            try:
-                self.handle_file(cache_file, self.result_local_dir / cache_file, depth)
-                self.cache_found = True
-                logging.info(f"Cache found :) {cache_file}")
-
-            except requests.exceptions.HTTPError as e:
-                if e.errno != 404: raise e
-                logging.info(f"Cache not found :( {cache_file}")
+        if test_found and depth == 0 and self.workload_store.CACHE_FILENAME in filenames:
+            cache_found = True
 
         for link in s.find_all("a"):
 
             new_href = pathlib.Path(link.attrs['href'])
-
-            new_url = f"{self.site}{new_href}" # relative links not used in this platform
-
-            if new_url in urls:
-                # url already known, ignore
-                continue
 
             img = link.find()
             if img is None and link.text == "gsutil":
@@ -93,48 +45,20 @@ class ScrapOCPCiArtifacts():
             if img_src == "/icons/dir.png":
                 # link to a directory, recurse into it
 
-                if self.cache_found and self.download_only_cache:
+                if cache_found and self.download_only_cache:
                     logging.info(f"{' '*depth}Directory: {new_href.relative_to(self.base_dir)}: SKIP (cache found)")
                     continue
 
                 logging.info(f"{' '*depth}Directory: {new_href.relative_to(self.base_dir)}")
-                self.scrape(new_href, depth=depth+1, found=found)
+                self.scrape(new_href, depth=depth+1, test_found=test_found)
 
             elif img_src == "/icons/file.png":
                 # link to a file, defer to the child class to decide what to do with it
                 rel_path = new_href.relative_to(self.base_dir)
                 local_filename = self.result_local_dir / rel_path
 
-                self.handle_file(rel_path, local_filename, depth)
+                if test_found or rel_path.name.startswith("settings"):
+                    self.handle_file(rel_path, local_filename, depth)
             else:
-                continue
-
-    def handle_file(self, filepath_rel, local_filename, depth):
-        if local_filename.exists():
-            # file already downloaded, skip it
-            return
-
-        result_filepath_rel = pathlib.Path(*filepath_rel.parts[-(depth+1):])
-
-        mandatory = self.workload_store.is_mandatory_file(result_filepath_rel)
-
-        if (self.cache_found
-            and self.download_only_cache
-            and not mandatory):
-            return # found the cache file, and not a mandatory file, continue.
-
-        cache = self.workload_store.is_cache_file(result_filepath_rel)
-
-        if self.download_mode == DownloadModes.CACHE_ONLY and not cache and not mandatory:
-            logging.info(f"{' '*depth}File: {filepath_rel}: NOT CACHE/MANDATORY")
-            return # file isn't important, do not download it
-
-        important = True if cache or mandatory \
-            else self.workload_store.is_important_file(result_filepath_rel)
-
-        only_important_files = self.download_mode in (DownloadModes.IMPORTANT, DownloadModes.PREFER_CACHE)
-        if only_important_files and not important:
-            logging.info(f"{' '*depth}File: {filepath_rel}: NOT IMPORTANT")
-            return # file isn't important, do not download it
-
-        self.download_file(filepath_rel, local_filename, depth)
+                # ignore
+                pass
