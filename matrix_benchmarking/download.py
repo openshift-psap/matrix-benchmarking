@@ -8,7 +8,7 @@ import yaml
 import matrix_benchmarking.store as store
 import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
-from matrix_benchmarking.downloading import DownloadModes
+import matrix_benchmarking.downloading as downloading
 from matrix_benchmarking.downloading.scrape import ocp_ci as scrape_ocp_ci
 
 def main(url_file: str = "",
@@ -18,7 +18,7 @@ def main(url_file: str = "",
          results_dirname: str = "",
          filters: list[str] = [],
          do_download: bool = False,
-         mode: DownloadModes = None,
+         mode: downloading.DownloadModes = None,
          ):
     """
 Download MatrixBenchmarking results.
@@ -56,7 +56,7 @@ Args:
         if not kwargs["mode"]:
             kwargs["mode"] = 'prefer_cache'
 
-        kwargs["mode"] = DownloadModes(kwargs["mode"])
+        kwargs["mode"] = downloading.DownloadModes(kwargs["mode"])
     except ValueError:
         logging.error(f"Invalid download mode: {kwargs['mode']}")
         return 1
@@ -66,29 +66,35 @@ Args:
 
     def download_an_entry(an_entry, workload_store):
         destdir = an_entry["dest_dir"]
-        destdir_url = urllib3.util.url.parse_url(an_entry["url"])
+        source_url = urllib3.util.url.parse_url(an_entry["url"])
+
         settings = an_entry["settings"]
 
-        site = f"{destdir_url.scheme}://{destdir_url.host}"
-        base_dir = pathlib.Path(destdir_url.path)
+        site = f"{source_url.scheme}://{source_url.host}"
+        base_dir = pathlib.Path(source_url.path)
         dest_dir = pathlib.Path(kwargs["results_dirname"]) / destdir
+
+        logging.info(f"Downloading an entry ...")
+        logging.info(f"- src url:  {source_url}")
+        logging.info(f"- dest dir: {dest_dir}")
+
+        scrapper_class = downloading.get_scrapper_class(source_url)
 
         if do_download:
             dest_dir.mkdir(parents=True, exist_ok=True)
             with open(dest_dir / "source_url", "w") as f:
-                print(destdir_url, file=f)
+                print(source_url, file=f)
 
             with open(dest_dir / "settings.from_url_file.yaml", "w") as f:
                 yaml.dump(settings, f, indent=4)
 
         def download(dl_mode):
-            logging.info(f"Download {dest_dir} <-- {site}/{base_dir}")
-            scrapper = scrape_ocp_ci.ScrapOCPCiArtifacts(workload_store, site, base_dir, dest_dir, do_download, dl_mode)
+            scrapper = scrapper_class(workload_store, site, base_dir, dest_dir, do_download, dl_mode)
             scrapper.scrape()
 
         def download_prefer_cache():
             if hasattr(workload_store, "load_cache"):
-                download(DownloadModes.CACHE_ONLY)
+                download(downloading.DownloadModes.CACHE_ONLY)
                 try:
                     if workload_store.load_cache(dest_dir):
                         logging.info("Downloading the cache succeeded.")
@@ -98,9 +104,9 @@ Args:
                     pass
 
             # download or reload from cache worked failed, try again with the important files
-            download(DownloadModes.IMPORTANT)
+            download(downloading.DownloadModes.IMPORTANT)
 
-        if do_download and kwargs["mode"] == DownloadModes.PREFER_CACHE:
+        if do_download and kwargs["mode"] == downloading.DownloadModes.PREFER_CACHE:
             download_prefer_cache()
         else:
             download(kwargs["mode"])
