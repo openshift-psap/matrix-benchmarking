@@ -8,8 +8,8 @@ import yaml
 import matrix_benchmarking.store as store
 import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
-from matrix_benchmarking.downloading import DownloadModes
-import matrix_benchmarking.downloading.scrape as scrape
+import matrix_benchmarking.downloading as downloading
+from matrix_benchmarking.downloading.scrape import ocp_ci as scrape_ocp_ci
 
 def main(url_file: str = "",
          url: str = "",
@@ -18,7 +18,7 @@ def main(url_file: str = "",
          results_dirname: str = "",
          filters: list[str] = [],
          do_download: bool = False,
-         mode: DownloadModes = None,
+         mode: downloading.DownloadModes = None,
          ):
     """
 Download MatrixBenchmarking results.
@@ -56,7 +56,7 @@ Args:
         if not kwargs["mode"]:
             kwargs["mode"] = 'prefer_cache'
 
-        kwargs["mode"] = DownloadModes(kwargs["mode"])
+        kwargs["mode"] = downloading.DownloadModes(kwargs["mode"])
     except ValueError:
         logging.error(f"Invalid download mode: {kwargs['mode']}")
         return 1
@@ -66,41 +66,59 @@ Args:
 
     def download_an_entry(an_entry, workload_store):
         destdir = an_entry["dest_dir"]
-        destdir_url = urllib3.util.url.parse_url(an_entry["url"])
+        source_url = urllib3.util.url.parse_url(an_entry["url"])
+
         settings = an_entry["settings"]
 
-        site = f"{destdir_url.scheme}://{destdir_url.host}"
-        base_dir = pathlib.Path(destdir_url.path)
+        base_dir = pathlib.Path(source_url.path)
         dest_dir = pathlib.Path(kwargs["results_dirname"]) / destdir
+
+        logging.info(f"Downloading an entry ...")
+        logging.info(f"- src url:  {source_url}")
+        logging.info(f"- dest dir: {dest_dir}")
+
+        scrapper_class = downloading.get_scrapper_class(source_url)
 
         if do_download:
             dest_dir.mkdir(parents=True, exist_ok=True)
             with open(dest_dir / "source_url", "w") as f:
-                print(destdir_url, file=f)
+                print(source_url, file=f)
 
             with open(dest_dir / "settings.from_url_file.yaml", "w") as f:
                 yaml.dump(settings, f, indent=4)
 
         def download(dl_mode):
-            logging.info(f"Download {dest_dir} <-- {site}/{base_dir}")
-            scrapper = ScrapOCPCiArtifacts(workload_store, site, base_dir, dest_dir, do_download, dl_mode)
+            scrapper = scrapper_class(workload_store, source_url, base_dir, dest_dir, do_download, dl_mode)
             scrapper.scrape()
 
         def download_prefer_cache():
             if hasattr(workload_store, "load_cache"):
-                download(DownloadModes.CACHE_ONLY)
-                try:
-                    if workload_store.load_cache(dest_dir):
-                        logging.info("Downloading the cache succeeded.")
-                        return # download and reload from cache worked
-                except FileNotFoundError as e:
-                    logging.warning(f"Downloading the cache failed ({e}). Now dowloading the important files.")
-                    pass
+                download(downloading.DownloadModes.CACHE_ONLY)
+                successes = 0
+                failed = 0
+                for cache_file in dest_dir.glob("**/"+workload_store.CACHE_FILENAME):
+                    try:
+                        logging.info(f"Reloading {cache_file} ...")
+                        if workload_store.load_cache(cache_file.parent):
+                            logging.info(f"Validation the cache of '{cache_file.parent}' succeeded.")
+                            successes += 1
+                    except FileNotFoundError as e:
+                        logging.warning(f"Validation of the cache of '{cache_file.parent}' failed: {e} :/")
+                        failed += 1
+
+                logging.info(f"Downloaded {successes} valid cached directories")
+                if not failed:
+                    # all good, no need to knowload the IMPORTANT files
+                    return
+
+                logging.warning(f"Downloaded {failed} INVALID cached directories")
+
+                logging.info(f"PREFER_CACHE downloading failed. Switching to IMPORTANT mode.")
 
             # download or reload from cache worked failed, try again with the important files
-            download(DownloadModes.IMPORTANT)
+            download(downloading.DownloadModes.IMPORTANT)
 
-        if do_download and kwargs["mode"] == DownloadModes.PREFER_CACHE:
+        if do_download and kwargs["mode"] == downloading.DownloadModes.PREFER_CACHE:
             download_prefer_cache()
         else:
             download(kwargs["mode"])
@@ -146,35 +164,3 @@ Args:
         return 0
 
     return cli_args.TaskRunner(run)
-
-
-class ScrapOCPCiArtifacts(scrape.ScrapOCPCiArtifactsBase):
-    def handle_file(self, filepath_rel, local_filename, depth):
-        if local_filename.exists():
-            # file already downloaded, skip it
-            return
-
-        result_filepath_rel = pathlib.Path(*filepath_rel.parts[-(depth+1):])
-
-        mandatory = self.workload_store.is_mandatory_file(result_filepath_rel)
-
-        if (self.cache_found
-            and self.download_only_cache
-            and not mandatory):
-            return # found the cache file, and not a mandatory file, continue.
-
-        cache = self.workload_store.is_cache_file(result_filepath_rel)
-
-        if self.download_mode == DownloadModes.CACHE_ONLY and not cache and not mandatory:
-            logging.info(f"{' '*depth}File: {filepath_rel}: NOT CACHE/MANDATORY")
-            return # file isn't important, do not download it
-
-        important = True if cache or mandatory \
-            else self.workload_store.is_important_file(result_filepath_rel)
-
-        only_important_files = self.download_mode in (DownloadModes.IMPORTANT, DownloadModes.PREFER_CACHE)
-        if only_important_files and not important:
-            logging.info(f"{' '*depth}File: {filepath_rel}: NOT IMPORTANT")
-            return # file isn't important, do not download it
-
-        self.download_file(filepath_rel, local_filename, depth)
