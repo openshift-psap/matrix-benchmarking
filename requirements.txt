@@ -8,3 +8,4 @@ BeautifulSoup4==4.11.*
 prometheus_api_client
 pydantic==1.10.*
 opensearch-py
+boto3
