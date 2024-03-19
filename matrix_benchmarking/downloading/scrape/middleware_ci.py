@@ -51,8 +51,7 @@ class ScrapMiddlewareCiArtifacts(BaseHttpScapper):
                 rel_path = new_href.relative_to(self.base_dir)
                 local_filename = self.result_local_dir / rel_path
 
-                if test_found or rel_path.name.startswith("settings"):
-                    self.handle_file(rel_path, local_filename, depth)
+                self.handle_file(rel_path, local_filename, depth)
             else:
                 # ignore
                 pass
