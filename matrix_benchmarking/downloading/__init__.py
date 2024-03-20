@@ -89,7 +89,6 @@ class BaseScapper():
             logging.info(f"{' '*depth}File: {filepath_rel}: NOT IMPORTANT")
             return # file isn't important, do not download it
 
-        logging.info(f"{' '*depth}File: {filepath_rel}: DOWNLOAD")
         self.download_file(filepath_rel, local_filename, depth, handler)
 
 
