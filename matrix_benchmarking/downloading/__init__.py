@@ -53,8 +53,14 @@ class BaseScapper():
         raise NotImplemented()
 
     def is_test_directory(self, filenames):
+        test_dir_filename = getattr(self.workload_store, "TEST_DIR_FILE", None) # optional
+
         for filename in filenames:
-            if filename in ("exit_code", "settings", "settings.yaml"):
+            if test_dir_filename:
+                # don't merge these two ifs, that changes the semantic ...
+                if filename == test_dir_filename:
+                    return True
+            elif filename in ("exit_code", "settings", "settings.yaml"):
                 return True
 
         return False
