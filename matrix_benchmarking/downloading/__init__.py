@@ -52,6 +52,25 @@ class BaseScapper():
     def scrape(self, current_href=None, depth=0, test_found=False):
         raise NotImplemented()
 
+    def is_test_directory(self, filenames):
+        test_dir_filename = getattr(self.workload_store, "TEST_DIR_FILE", None) # optional
+
+        for filename in filenames:
+            if test_dir_filename:
+                # don't merge these two ifs, that changes the semantic ...
+                if filename == test_dir_filename:
+                    return True
+            elif filename in ("exit_code", "settings", "settings.yaml"):
+                return True
+
+        return False
+
+    def has_cache_file(self, filenames, test_found, depth):
+        if test_found and depth != 0:
+            return False
+
+        return self.workload_store.CACHE_FILENAME in filenames
+
     def handle_file(self, filepath_rel, local_filename, depth, handler=None):
         if local_filename.exists():
             # file already downloaded, skip it
@@ -76,7 +95,6 @@ class BaseScapper():
             logging.info(f"{' '*depth}File: {filepath_rel}: NOT IMPORTANT")
             return # file isn't important, do not download it
 
-        logging.info(f"{' '*depth}File: {filepath_rel}: DOWNLOAD")
         self.download_file(filepath_rel, local_filename, depth, handler)
 
 
