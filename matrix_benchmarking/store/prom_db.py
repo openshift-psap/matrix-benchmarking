@@ -136,18 +136,24 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
         nonlocal metrics_values
         import prometheus_api_client.exceptions # lazy loading ...
 
-        res = prom_connect.custom_query(query='up[60y]')
-        if not res:
-            logging.error(f"No 'up' metric available in the database at '{prometheus_tgz}' ...")
+        up_query = prom_connect.custom_query(query='up[60y]')
+        if not up_query:
+            logging.error(f"No 'up' metric available in the database at '{prometheus_tgz}'. Cannot proceed :/")
             return
 
-        start_date = datetime.datetime.fromtimestamp(res[0]["values"][0][0])
-        end_date = datetime.datetime.fromtimestamp(res[0]["values"][-1][0])
+        start_date = datetime.datetime.fromtimestamp(up_query[0]["values"][0][0])
+        end_date = datetime.datetime.fromtimestamp(up_query[0]["values"][-1][0])
+        del up_query # no need to keep it in memory
 
+        duration = end_date - start_date
+        SECOND_PER_STEP = 300
+        MIN_STEP = 5
+        step = max(MIN_STEP, int(duration.total_seconds() / SECOND_PER_STEP))
+        logging.info(f"Prometheus up time is {duration}. Using a step value of {step}.")
         for metric_name, metric_query, metric_file in missing_metrics:
             if "(" in metric_query:
                 try:
-                    values = prom_connect.custom_query_range(query=metric_query, step=5,
+                    values = prom_connect.custom_query_range(query=metric_query, step=step,
                                                              start_time=start_date, end_time=end_date)
                 except prometheus_api_client.exceptions.PrometheusApiClientException as e:
                     logging.warning(f"Fetching {metric_query} raised an exception")

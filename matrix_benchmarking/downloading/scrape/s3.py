@@ -24,8 +24,6 @@ class ScrapS3(BaseScapper):
             raise RuntimeError(f"Something unexpected happened, {local_filename} does not exist :/")
 
     def scrape(self, current_href=None, depth=0, test_found=False, handler=None):
-
-
         if handler is None:
             session = boto3.Session() # use the env/default settings to login into AWS
             handler = boto3.client("s3")
@@ -54,8 +52,7 @@ class ScrapS3(BaseScapper):
             rel_path = new_href.relative_to(self.base_dir)
             local_filename = self.result_local_dir / rel_path
 
-            if test_found or filename.startswith("settings"):
-                self.handle_file(rel_path, local_filename, depth, handler)
+            self.handle_file(rel_path, local_filename, depth, handler)
 
         for dirname in dirnames:
             new_href = (current_href or self.base_dir) / dirname

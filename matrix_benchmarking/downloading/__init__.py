@@ -55,6 +55,7 @@ class BaseScapper():
     def handle_file(self, filepath_rel, local_filename, depth, handler=None):
         if local_filename.exists():
             # file already downloaded, skip it
+            logging.info(f"{' '*depth}File: {filepath_rel}: EXISTS")
             return
 
         result_filepath_rel = pathlib.Path(*filepath_rel.parts[-(depth+1):])
@@ -75,13 +76,12 @@ class BaseScapper():
             logging.info(f"{' '*depth}File: {filepath_rel}: NOT IMPORTANT")
             return # file isn't important, do not download it
 
+        logging.info(f"{' '*depth}File: {filepath_rel}: DOWNLOAD")
         self.download_file(filepath_rel, local_filename, depth, handler)
 
 
 class BaseHttpScapper(BaseScapper):
     def download_file(self, filepath_rel, local_filename, depth, handler):
-        logging.info(f"{' '*depth}File: {filepath_rel}: DOWNLOAD")
-
         url = f"{self.source_url.scheme}://{self.source_url.host}/{self.base_dir}/{filepath_rel}"
 
         if not self.do_download: return
