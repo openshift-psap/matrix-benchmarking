@@ -21,11 +21,12 @@ class ScrapOCPCiArtifacts(BaseHttpScapper):
         filenames = [(pathlib.Path(link.attrs['href']).name) for link in s.find_all("a")]
         cache_found = False
 
-        if not test_found and ("exit_code" in filenames or "settings" in filenames):
+        if not test_found and self.is_test_directory(filenames):
             depth = 0
             test_found = True
+            logging.info(f"Found a test directory at {url}")
 
-        if test_found and depth == 0 and self.workload_store.CACHE_FILENAME in filenames:
+        if self.has_cache_file(filenames, test_found, depth):
             cache_found = True
 
         for link in s.find_all("a"):
