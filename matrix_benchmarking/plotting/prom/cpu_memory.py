@@ -198,12 +198,13 @@ class Plot():
 
                         threshold_status[entry_name][legend_group] = status
 
+        if not data:
+            import pdb;pdb.set_trace()
+            return None, "No metric to plot ..."
+
         if show_test_timestamps:
             tests_timestamp_y_position, plots = get_tests_timestamp_plots(common.Matrix.all_records(settings, setting_lists), y_max)
             data += plots
-
-        if not data:
-            return None, "No data to plot ..."
 
         if as_timeline:
             fig = go.Figure(data=data)
