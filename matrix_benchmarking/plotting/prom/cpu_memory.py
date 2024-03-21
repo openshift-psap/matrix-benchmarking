@@ -199,7 +199,6 @@ class Plot():
                         threshold_status[entry_name][legend_group] = status
 
         if not data:
-            import pdb;pdb.set_trace()
             return None, "No metric to plot ..."
 
         if show_test_timestamps:
