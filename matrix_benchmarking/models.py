@@ -130,3 +130,12 @@ def getKPIsModel(name, module_name, KPIs, KPImodel):
     model.tostr = tostr
 
     return model
+
+class Regression(ExclusiveModel):
+    kpi: str
+    metric: str
+    indicator: str
+    status: int
+    direction: Optional[int] = Field(default=None)
+    explanation: Optional[str] = Field(default=None)
+    details: Optional[dict[str, str]] = Field(default=None)
