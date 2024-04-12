@@ -196,7 +196,7 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
 
     for metric_name, metric_query, metric_file in missing_metrics:
         with open(metric_file, "w") as f:
-            json.dump(metrics_values.get(metric_name, {}), f)
+            json.dump(metrics_values.get(metric_name, []), f)
 
         logging.info(f"Metric {metric_name} fetched and stored.")
         metric_results[metric_name] = _parse_metric_values_from_file(metric_file)
