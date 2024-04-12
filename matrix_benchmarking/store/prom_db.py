@@ -49,7 +49,7 @@ def _extract_metrics_from_prometheus(tsdb_path, process_metrics):
                                      stderr=subprocess.PIPE)
 
         logging.info("Waiting for Prometheus to respond to its API ...")
-        RETRY_COUNT = 60 # 5 minutes
+        RETRY_COUNT = 120 # 10 minutes
         time.sleep(5)
         for i in range(RETRY_COUNT):
             if prom_proc.poll() is not None:
