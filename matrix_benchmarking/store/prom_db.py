@@ -49,7 +49,7 @@ def _extract_metrics_from_prometheus(tsdb_path, process_metrics):
                                      stderr=subprocess.PIPE)
 
         logging.info("Waiting for Prometheus to respond to its API ...")
-        RETRY_COUNT = 60 # 5 minutes
+        RETRY_COUNT = 120 # 10 minutes
         time.sleep(5)
         for i in range(RETRY_COUNT):
             if prom_proc.poll() is not None:
@@ -196,7 +196,7 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
 
     for metric_name, metric_query, metric_file in missing_metrics:
         with open(metric_file, "w") as f:
-            json.dump(metrics_values.get(metric_name, {}), f)
+            json.dump(metrics_values.get(metric_name, []), f)
 
         logging.info(f"Metric {metric_name} fetched and stored.")
         metric_results[metric_name] = _parse_metric_values_from_file(metric_file)
