@@ -1,6 +1,3 @@
-[submodule "ci-dashboard"]
-	path = submodules/ci-dashboard
-	url = https://github.com/openshift-psap/ci-dashboard/
 [submodule "src/workload"]
 	path = src/workload
 	url = https://github.com/openshift-psap/matrix-benchmarking-plugins
