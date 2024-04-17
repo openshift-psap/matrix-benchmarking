@@ -214,6 +214,12 @@ def parse_data(results_dir=None):
     if results_dir is None:
         results_dir = pathlib.Path(cli_args.kwargs["results_dirname"])
 
+    if not results_dir.exists():
+        raise FileNotFoundError(f"Results directory '{results_dir}' does not exist.")
+
+    if not results_dir.is_dir():
+        raise FileNotFoundError(f"Results directory '{results_dir}' is not a directory ...")
+
     global IGNORE_EXIT_CODE
     IGNORE_EXIT_CODE = os.environ.get("MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE", "false") == "true"
 
