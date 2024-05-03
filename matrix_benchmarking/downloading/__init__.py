@@ -55,6 +55,9 @@ class BaseScapper():
     def is_test_directory(self, filenames):
         test_dir_filename = getattr(self.workload_store, "TEST_DIR_FILE", None) # optional
 
+        if "skip" in filenames:
+            return False
+
         for filename in filenames:
             if test_dir_filename:
                 # don't merge these two ifs, that changes the semantic ...
