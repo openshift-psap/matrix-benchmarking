@@ -12,7 +12,7 @@ import matrix_benchmarking.common as common
 def default_get_metrics(entry, metric):
     return entry.results.metrics[metric]
 
-def get_tests_timestamp_plots(entries, y_max):
+def get_tests_timestamp_plots(entries, y_max, variables):
     data = []
     tests_timestamp_y_position = [-y_max*0.25] * 3
 
@@ -27,6 +27,9 @@ def get_tests_timestamp_plots(entries, y_max):
             start = test_timestamp.start + tz_offset; start.replace(tzinfo=None)
             end = test_timestamp.end + tz_offset; end.replace(tzinfo=None)
 
+            settings_text_lst = [str(v) if k.startswith("*") else f"{k}={v}" for k, v in test_timestamp.settings.items() if k in variables]
+            if not settings_text_lst:
+                settings_text_lst = [str(v) if k.startswith("*") else f"{k}={v}" for k, v in test_timestamp.settings.items()]
 
             mid = start + (end-start) / 2
             data.append(
@@ -38,7 +41,7 @@ def get_tests_timestamp_plots(entries, y_max):
                     hovertext="<br>".join(f"{k}={v}" for k, v in test_timestamp.settings.items()),
                     legendgroup="Test timestamps",
                     legendgrouptitle_text="Test timestamps",
-                    text=["", "<br>".join(str(v) if k.startswith("*") else f"{k}={v}" for k, v in test_timestamp.settings.items()) + "<br>",""],
+                    text=["", "<br>".join(settings_text_lst) + "<br>",""],
                     mode='lines+text',
                     textposition="top center",
                     showlegend=False,
@@ -241,7 +244,7 @@ class Plot():
             return None, "No metric to plot ..."
 
         if show_test_timestamps:
-            tests_timestamp_y_position, plots = get_tests_timestamp_plots(common.Matrix.all_records(settings, setting_lists), y_max)
+            tests_timestamp_y_position, plots = get_tests_timestamp_plots(common.Matrix.all_records(settings, setting_lists), y_max, variables)
             data += plots
 
         if as_timeline:
