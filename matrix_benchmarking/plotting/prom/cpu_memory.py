@@ -202,7 +202,7 @@ class Plot():
             return None, "No metric to plot ..."
 
         if show_test_timestamps:
-            tests_timestamp_y_position, plots = get_tests_timestamp_plots(common.Matrix.all_records(settings, setting_lists), y_max)
+            tests_timestamp_y_position, plots = get_tests_timestamp_plots(common.Matrix.all_records(settings, setting_lists), y_max, variables)
             data += plots
 
         if as_timeline:
