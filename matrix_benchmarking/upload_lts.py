@@ -69,6 +69,7 @@ Args:
         logging.info(f"Loading results: done, found {len(common.Matrix.processed_map)} results")
 
         common.Matrix.print_settings_to_log()
+        common.Matrix.uniformize_settings_keys()
 
         client = download_lts.connect_opensearch_client(kwargs) \
             if not kwargs.get("dry_run") else None

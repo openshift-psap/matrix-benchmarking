@@ -93,6 +93,7 @@ Args:
             workload_store.parse_data()
 
         logging.info(f"Loading results: done, found {len(common.Matrix.processed_map)} results")
+        common.Matrix.uniformize_settings_keys()
 
         if kwargs["clean"]:
             if not kwargs["run"]:

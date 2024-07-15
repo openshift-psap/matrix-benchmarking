@@ -63,6 +63,9 @@ Args:
         if not common.Matrix.processed_map:
             logging.error("Not result found, exiting.")
             return 1
+
+        common.Matrix.uniformize_settings_keys()
+
         common.Matrix.print_settings_to_log()
 
         if kwargs.get("lts_results_dirname"):

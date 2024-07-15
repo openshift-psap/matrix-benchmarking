@@ -86,6 +86,7 @@ Args:
         logging.info(f"Loading previous results ... ")
         workload_store.parse_data()
         logging.info(f"Loading previous results: done, found {len(common.Matrix.processed_map)} results")
+        common.Matrix.uniformize_settings_keys()
 
         if dry:
             logging.info("#")

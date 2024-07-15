@@ -55,6 +55,7 @@ Args:
         logging.info(f"Loading results ... ")
 
         workload_store.parse_data()
+        common.Matrix.uniformize_settings_keys()
         common.Matrix.print_settings_to_log()
         logging.info(f"Loading results ... done. Found {len(common.Matrix.processed_map)} results.")
         logging.info("")

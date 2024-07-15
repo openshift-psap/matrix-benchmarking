@@ -6,6 +6,7 @@ import pathlib
 
 import matrix_benchmarking
 
+MISSING_SETTING_VALUE = None
 
 class MatrixEntry(types.SimpleNamespace):
     def __init__(self, location, results,
@@ -34,7 +35,9 @@ class MatrixEntry(types.SimpleNamespace):
         [matrix.settings[k].add(v) for k, v in processed_settings.items()]
 
     def get_name(self, variables) -> str:
-        return ", ".join([f"{key}={self.settings.__dict__[key]}" for key in variables])
+        return ", ".join([f"{key}={self.settings.__dict__[key]}" for key in variables
+                          if self.settings.__dict__[key] is not MISSING_SETTING_VALUE
+                          and len([v for v in Matrix.settings[key] if v is not MISSING_SETTING_VALUE]) > 1])
 
     def get_threshold(self, threshold_value, default: str = None) -> str:
         if hasattr(self.results, 'thresholds'):
@@ -73,12 +76,14 @@ class MatrixDefinition():
         return MatrixKey(settings)
 
     def all_records(self, settings=None, setting_lists=None) -> Iterator[MatrixEntry]:
+
         if settings is None and setting_lists is None:
             yield from self.processed_map.values()
             return
 
-        for settings_values in sorted(itertools.product(*setting_lists)):
+        for settings_values in sorted(itertools.product(*setting_lists), key=lambda x:x[0][0] if x else None):
             settings.update(dict(settings_values))
+
             key = self.settings_to_key(settings)
 
             try:
@@ -112,7 +117,8 @@ class MatrixDefinition():
 
         for key, values in self.settings.items():
             if key == "stats": continue
-            self.settings[key] = sorted(values)
+
+            self.settings[key] = sorted(values, key=lambda x: (x is MISSING_SETTING_VALUE, x))
 
             value_str = ", ".join(map(str, self.settings[key]))
             if self.is_lts and key == "@timestamp":
@@ -124,6 +130,19 @@ class MatrixDefinition():
 
         return True
 
+    def uniformize_settings_keys(self):
+        orig_processed_map = dict(self.processed_map)
+
+        self.processed_map = {}
+        for entry_key, entry in orig_processed_map.items():
+            for settings_key in self.settings.keys():
+                if settings_key in entry_key.settings: continue
+
+                entry_key.settings[settings_key] = MISSING_SETTING_VALUE
+                self.settings[settings_key].add(MISSING_SETTING_VALUE)
+                entry.settings.__dict__[settings_key] = MISSING_SETTING_VALUE
+
+            self.processed_map[entry_key] = entry
 
 Matrix = MatrixDefinition()
 LTS_Matrix = MatrixDefinition(is_lts=True)
