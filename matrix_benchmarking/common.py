@@ -48,6 +48,20 @@ class MatrixEntry(types.SimpleNamespace):
         return hasattr(self.results, 'check_thresholds') and self.results.check_thresholds
 
 
+class MatrixKey(dict):
+    def __init__(self, settings):
+        self.settings = settings
+
+    def __str__(self):
+        return "|".join(f"{k}={self.settings[k]}" for k in sorted(self.settings) if k != "stats")
+
+    def __repr__(self):
+        return str(self)
+
+    def __hash__(self):
+        return hash(str(self))
+
+
 class MatrixDefinition():
     def __init__(self, is_lts=False):
         self.settings = defaultdict(set)
@@ -56,7 +70,7 @@ class MatrixDefinition():
         self.is_lts = is_lts
 
     def settings_to_key(self, settings):
-        return "|".join(f"{k}={settings[k]}" for k in sorted(settings) if k != "stats")
+        return MatrixKey(settings)
 
     def all_records(self, settings=None, setting_lists=None) -> Iterator[MatrixEntry]:
         if settings is None and setting_lists is None:
