@@ -25,7 +25,8 @@ class MatrixEntry(types.SimpleNamespace):
         self.results = results
 
         self.settings.__dict__.update(processed_settings)
-
+        
+        self.import_key = import_key
         self.processed_key = processed_key
         self.import_settings = processed_settings
 
