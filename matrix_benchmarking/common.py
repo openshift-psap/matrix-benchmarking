@@ -32,7 +32,17 @@ class MatrixEntry(types.SimpleNamespace):
         matrix.import_map[import_key] = \
         matrix.processed_map[processed_key] = self
 
-        [matrix.settings[k].add(v) for k, v in processed_settings.items()]
+        keys_to_skip = set()
+        for k, v in processed_settings.items():
+            if not k.__hash__:
+                #logging.warn(f"Key {k} not unhashable (type {k.__class__}). Skipping it.")
+                keys_to_skip.add(k)
+                continue
+            elif not v.__hash__:
+                #logging.warn(f"Value {k}={v} not unhashable (type {k.__class__}). Skipping this key.")
+                keys_to_skip.add(k)
+
+        [matrix.settings[k].add(v) for k, v in processed_settings.items() if k not in keys_to_skip]
 
     def get_name(self, variables) -> str:
         return ", ".join([f"{key}={self.settings.__dict__[key]}" for key in variables
