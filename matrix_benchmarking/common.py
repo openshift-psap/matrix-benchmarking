@@ -92,21 +92,25 @@ class MatrixDefinition():
     def settings_to_key(self, settings):
         return MatrixKey(settings)
 
-    def all_records(self, settings=None, setting_lists=None) -> Iterator[MatrixEntry]:
+    def all_records(self, settings=None, setting_lists=None, gathered=False) -> Iterator[MatrixEntry]:
 
         if settings is None and setting_lists is None:
-            yield from self.processed_map.values()
+            for e in self.processed_map.values():
+                if (gathered and e.is_gathered) or (not gathered and not e.is_gathered):
+                    yield e
             return
 
         for settings_values in sorted(itertools.product(*setting_lists), key=lambda x:x[0][0] if x else None):
             settings.update(dict(settings_values))
 
             key = self.settings_to_key(settings)
-
             try:
-                yield self.processed_map[key]
+                e = self.processed_map[key]
             except KeyError: # missing experiment, ignore
                 continue
+
+            if (gathered and e.is_gathered) or (not gathered and not e.is_gathered):
+                yield e
 
     def get_record(self, settings):
         key = self.settings_to_key(settings)
@@ -115,7 +119,7 @@ class MatrixDefinition():
 
     def count_records(self, settings=None, setting_lists=None):
         if settings is None and setting_lists is None:
-            return len(self.processed_map)
+            return sum(1 for e in self.processed_map.values() if not e.is_gathered)
 
         return sum([ 1 for _ in self.all_records(settings, setting_lists)]) # don't use len(list(...)) with a generator, this form is more memory efficient
 
