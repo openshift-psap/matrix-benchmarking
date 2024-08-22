@@ -92,6 +92,45 @@ class MatrixDefinition():
     def settings_to_key(self, settings):
         return MatrixKey(settings)
 
+    def similar_records(self, _ref_settings, ignore_keys, gathered=False, rewrite_settings=lambda x:x, ignore_lts_meta_keys=True):
+        ref_settings = rewrite_settings(_ref_settings.__dict__)
+
+        i  = 0
+        for entry in self.all_records(gathered=gathered):
+            entry_settings = rewrite_settings(entry.settings.__dict__)
+            skip = False
+            i += 1
+            for k, v in ref_settings.items():
+                if ignore_lts_meta_keys and k in LTS_META_KEYS:
+                    continue
+
+                if k in ignore_keys:
+                    continue
+                if entry_settings.get(k, ...) == v:
+                    continue
+
+                if k not in ("model_name", "accelerator_count", "virtual_users", "runtime"):
+                    print(i, f"ignore because of {k}={v} != {entry.settings.__dict__.get(k, ...)}")
+
+                skip = True
+                break
+
+            if not skip:
+                yield entry
+
+    def filter_records(settings, gathered=False):
+        for entry in self.all_records(gathered=gathered):
+            skip = False
+            for k, v in settings.__dict__.items():
+                if entry.settings.__dict__.get(k, ...) == v:
+                    continue
+
+                skip = True
+                break
+
+            if not skip:
+                yield entry
+
     def all_records(self, settings=None, setting_lists=None, gathered=False) -> Iterator[MatrixEntry]:
 
         if settings is None and setting_lists is None:
