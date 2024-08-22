@@ -7,12 +7,16 @@ import datetime
 import yaml
 import importlib
 import sys
+import math
 
 from opensearchpy import OpenSearch
 
 import matrix_benchmarking.common as common
 import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store as store
+import matrix_benchmarking.analyze.report as analyze_report
+
+logging.getLogger().setLevel(logging.INFO)
 
 LTS_ANCHOR_NAME = "source.lts.yaml"
 
@@ -21,6 +25,7 @@ def main(workload: str = "",
          results_dirname: str = "",
          lts_results_dirname: str = "",
          filters: list[str] = [],
+         report_dest: str = "regression_report.html",
          ):
     """
 Analyze MatrixBenchmark LTS results
@@ -33,15 +38,16 @@ Env:
     MATBENCH_RESULTS_DIRNAME
     MATBENCH_LTS_RESULTS_DIRNAME
     MATBENCH_FILTERS
-
+    MATBENCH_REPORT_DEST
 Args:
     workload: Name of the workload to execute. (Mandatory.)
     workload_base_directory: the directory from where the workload packages should be loaded. (Optional)
     results_dirname: Name of the directory where the results are stored. (Mandatory.)
     lts_results_dirname: Name of the directory where the LTS results are stored. (Mandatory.)
     filters: If provided, analyze only the experiment matching the filters. Eg: expe=expe1:expe2,something=true.
-
+    report_dest: Where to save the regression analyses report
     """
+
     kwargs = dict(locals()) # capture the function arguments
 
     cli_args.setup_env_and_kwargs(kwargs)
@@ -57,14 +63,19 @@ Args:
         workload_store.parse_data()
         common.Matrix.uniformize_settings_keys()
         common.Matrix.print_settings_to_log()
-        logging.info(f"Loading results ... done. Found {len(common.Matrix.processed_map)} results.")
+        logging.info(f"Loading results ... done. Found {common.Matrix.count_records()} results.")
         logging.info("")
         logging.info("--- LTS --- ")
 
         workload_store.parse_lts_data()
 
         common.LTS_Matrix.print_settings_to_log()
-        logging.info(f"Loading LTS results ... done. Found {len(common.LTS_Matrix.processed_map)} results.")
+
+        logging.info(f"Loading LTS results ... done. Found {common.LTS_Matrix.count_records()} results.")
+        if common.LTS_Matrix.count_records() == 0:
+            logging.error("Not LTS result found, exiting.")
+            logging.error(f"Does your LTS directory contains the '{LTS_ANCHOR_NAME}' marker file?")
+            return 1
 
         if not common.Matrix.processed_map:
             logging.error("Not result found, exiting.")
@@ -72,11 +83,12 @@ Args:
 
         workload_analyze = get_workload_analyze_module(workload_store)
 
-        number_of_failures = workload_analyze.run()
+        regression_df = workload_analyze.run()
+        comparison_key = workload_analyze.COMPARISON_KEY
 
-        logging.info(f"Analyses found {number_of_failures} issue{'s' if number_of_failures > 1 else ''}.")
+        failures = analyze_report.generate_and_save_regression_analyse_report(kwargs["report_dest"], regression_df, comparison_key)
 
-        return number_of_failures
+        return failures
 
 
     return cli_args.TaskRunner(run)

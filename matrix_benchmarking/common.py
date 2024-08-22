@@ -64,6 +64,13 @@ class MatrixKey(dict):
     def __hash__(self):
         return hash(str(self))
 
+LTS_META_KEYS = [
+    "kpi_settings_version",
+    "lts_schema_version",
+    "help", "unit", "@timestamp", "value",
+    "run_id", "urls",
+    "test_uuid",
+]
 
 class MatrixDefinition():
     def __init__(self, is_lts=False):
