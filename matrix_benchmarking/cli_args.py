@@ -73,7 +73,7 @@ def update_env_with_env_files():
                 for line in f.readlines():
                     key, found , value = line.strip().partition("=")
                     if not found:
-                        logging.warning("invalid line in {env}: {line.strip()}")
+                        logging.warning(f"invalid line in {env}: {line.strip()}")
                         continue
                     if key in os.environ and os.environ[key]: continue # prefer env to env file
                     cli_environ[key] = value
