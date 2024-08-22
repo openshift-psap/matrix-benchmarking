@@ -181,8 +181,12 @@ class MatrixDefinition():
             self.settings[key] = sorted(values, key=lambda x: (x is MISSING_SETTING_VALUE, x))
 
             value_str = ", ".join(map(str, self.settings[key]))
-            if self.is_lts and key == "@timestamp":
-                value_str = f"<{len(self.settings)}x values>"
+            if self.is_lts:
+                if key == "@timestamp":
+                    value_str = f"<{len(self.settings[key])}x values>"
+
+                if len(value_str) > 1170:
+                    value_str = f"<{len(self.settings[key])} values>"
 
             logging.info(f"{key:20s}: {value_str}")
 
