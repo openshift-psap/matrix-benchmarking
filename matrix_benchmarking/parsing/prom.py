@@ -70,3 +70,14 @@ def all_max(metrics):
 
 def max_max(metrics):
     return max(max_(metrics, filter_all))
+
+# ---
+
+def min_mean(metrics):
+    return min(mean(metrics, filter_all))
+
+def max_mean(metrics):
+    return max(mean(metrics, filter_all))
+
+def mean_mean(metrics):
+    return stats.mean(mean(metrics, filter_all))
