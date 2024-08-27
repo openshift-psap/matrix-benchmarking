@@ -88,28 +88,39 @@ class _Report():
             return self._children_element_to_html(elt)
         elif isinstance(elt, dcc.Graph):
             return self._graph_element_to_html(elt)
+        elif to_html := getattr(elt, "to_html", None):
+            return [to_html()]
         else:
             logging.warning("Unsupported report element: %s", elt.__class__.__name__)
             return [str(elt)]
 
-    def generate(self, content, report_index_f):
-        header = [
-            "<p><i>Click on the image to open the interactive full-size view of the plot.</i><br/>",
-            "<i>In the interactive view, click in the legend to hide a line, double click to see only this line.</i></p>",
-            "<p><a href='reports_index.html'>Back to the reports index.</a></p>"
-            "<hr>",
-        ]
-        html = header + self._element_to_html(content)
+    def generate(self, content, report_index_f, include_header):
+        html = []
+        if include_header:
+            header = [
+                "<p><i>Click on the image to open the interactive full-size view of the plot.</i><br/>",
+                "<i>In the interactive view, click in the legend to hide a line, double click to see only this line.</i></p>",
+                "<p><a href='reports_index.html'>Back to the reports index.</a></p>"
+                "<hr>",
+            ]
+            html += header
+
+        html += self._element_to_html(content)
 
         html_content = "\n".join(html)
 
-        dest = f"report_{self.index:02d}_{self.id_name}.html"
+        if self.index is not None:
+            dest = f"report_{self.index:02d}_{self.id_name}.html"
+        else:
+            dest = self.id_name
+
         print(f"Saving {dest} ...")
         with open(dest, "w") as out_f:
             print(html_content, file=out_f)
 
-        print(f"<li><a href='{dest}'> Report {self.index:02d}: {self.id_name.replace('_', ' ')}</a>",
-              file=report_index_f)
+        if report_index_f is not None:
+            print(f"<li><a href='{dest}'> Report {self.index:02d}: {self.id_name.replace('_', ' ')}</a>",
+                  file=report_index_f)
 
-def generate(idx, id_name, content, report_index_f):
-    _Report(id_name, idx).generate(content, report_index_f)
+def generate(idx, id_name, content, report_index_f, include_header=True):
+    _Report(id_name, idx).generate(content, report_index_f, include_header)

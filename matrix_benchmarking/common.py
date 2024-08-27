@@ -32,7 +32,17 @@ class MatrixEntry(types.SimpleNamespace):
         matrix.import_map[import_key] = \
         matrix.processed_map[processed_key] = self
 
-        [matrix.settings[k].add(v) for k, v in processed_settings.items()]
+        keys_to_skip = set()
+        for k, v in processed_settings.items():
+            if not k.__hash__:
+                #logging.warn(f"Key {k} not unhashable (type {k.__class__}). Skipping it.")
+                keys_to_skip.add(k)
+                continue
+            elif not v.__hash__:
+                #logging.warn(f"Value {k}={v} not unhashable (type {k.__class__}). Skipping this key.")
+                keys_to_skip.add(k)
+
+        [matrix.settings[k].add(v) for k, v in processed_settings.items() if k not in keys_to_skip]
 
     def get_name(self, variables) -> str:
         return ", ".join([f"{key}={self.settings.__dict__[key]}" for key in variables
@@ -64,6 +74,13 @@ class MatrixKey(dict):
     def __hash__(self):
         return hash(str(self))
 
+LTS_META_KEYS = [
+    "kpi_settings_version",
+    "lts_schema_version",
+    "help", "unit", "@timestamp", "value",
+    "run_id", "urls",
+    "test_uuid",
+]
 
 class MatrixDefinition():
     def __init__(self, is_lts=False):
@@ -75,21 +92,64 @@ class MatrixDefinition():
     def settings_to_key(self, settings):
         return MatrixKey(settings)
 
-    def all_records(self, settings=None, setting_lists=None) -> Iterator[MatrixEntry]:
+    def similar_records(self, _ref_settings, ignore_keys, gathered=False, rewrite_settings=lambda x:x, ignore_lts_meta_keys=True):
+        ref_settings = rewrite_settings(_ref_settings.__dict__)
+
+        i  = 0
+        for entry in self.all_records(gathered=gathered):
+            entry_settings = rewrite_settings(entry.settings.__dict__)
+            skip = False
+            i += 1
+            for k, v in ref_settings.items():
+                if ignore_lts_meta_keys and k in LTS_META_KEYS:
+                    continue
+
+                if k in ignore_keys:
+                    continue
+                if entry_settings.get(k, ...) == v:
+                    continue
+
+                if k not in ("model_name", "accelerator_count", "virtual_users", "runtime"):
+                    print(i, f"ignore because of {k}={v} != {entry.settings.__dict__.get(k, ...)}")
+
+                skip = True
+                break
+
+            if not skip:
+                yield entry
+
+    def filter_records(settings, gathered=False):
+        for entry in self.all_records(gathered=gathered):
+            skip = False
+            for k, v in settings.__dict__.items():
+                if entry.settings.__dict__.get(k, ...) == v:
+                    continue
+
+                skip = True
+                break
+
+            if not skip:
+                yield entry
+
+    def all_records(self, settings=None, setting_lists=None, gathered=False) -> Iterator[MatrixEntry]:
 
         if settings is None and setting_lists is None:
-            yield from self.processed_map.values()
+            for e in self.processed_map.values():
+                if (gathered and e.is_gathered) or (not gathered and not e.is_gathered):
+                    yield e
             return
 
         for settings_values in sorted(itertools.product(*setting_lists), key=lambda x:x[0][0] if x else None):
             settings.update(dict(settings_values))
 
             key = self.settings_to_key(settings)
-
             try:
-                yield self.processed_map[key]
+                e = self.processed_map[key]
             except KeyError: # missing experiment, ignore
                 continue
+
+            if (gathered and e.is_gathered) or (not gathered and not e.is_gathered):
+                yield e
 
     def get_record(self, settings):
         key = self.settings_to_key(settings)
@@ -98,7 +158,7 @@ class MatrixDefinition():
 
     def count_records(self, settings=None, setting_lists=None):
         if settings is None and setting_lists is None:
-            return len(self.processed_map)
+            return sum(1 for e in self.processed_map.values() if not e.is_gathered)
 
         return sum([ 1 for _ in self.all_records(settings, setting_lists)]) # don't use len(list(...)) with a generator, this form is more memory efficient
 
@@ -121,8 +181,12 @@ class MatrixDefinition():
             self.settings[key] = sorted(values, key=lambda x: (x is MISSING_SETTING_VALUE, x))
 
             value_str = ", ".join(map(str, self.settings[key]))
-            if self.is_lts and key == "@timestamp":
-                value_str = f"<{len(self.settings)}x values>"
+            if self.is_lts:
+                if key == "@timestamp":
+                    value_str = f"<{len(self.settings[key])}x values>"
+
+                if len(value_str) > 1170:
+                    value_str = f"<{len(self.settings[key])} values>"
 
             logging.info(f"{key:20s}: {value_str}")
 
