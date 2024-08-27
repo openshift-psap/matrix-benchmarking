@@ -84,6 +84,7 @@ class KPI(ExclusiveModel):
     timestamp: datetime.datetime = Field(..., alias="@timestamp")
     value: Union[float, int, List[float], List[int]]
     test_uuid: UUID4
+    lower_better: Optional[bool]
 
     status: EntryStatus = Field(default=EntryStatus.Valid)
 
