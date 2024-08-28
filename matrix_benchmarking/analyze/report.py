@@ -1,6 +1,7 @@
 import logging
 import math
 from collections import defaultdict
+import copy
 
 import pandas as pd
 import plotly.io as pio
@@ -8,6 +9,7 @@ import plotly.express as px
 from dash import html
 
 import matrix_benchmarking.plotting.ui.report as plotting_ui_report
+import matrix_benchmarking.common as common
 
 from . import analyze
 
@@ -62,10 +64,12 @@ STYLE_TABLE = [
     }
 ]
 
+STYLE_HIDE_COLUMN_TITLES = [{'selector': 'thead', 'props': [('display', 'none')]}]
 
 def longestCommonPrefix(strs):
-    if not strs:
+    if not strs or len(strs) == 1:
         return ""
+
     min_s = min(strs)
     max_s = max(strs)
     if not min_s:
@@ -76,7 +80,7 @@ def longestCommonPrefix(strs):
     return min_s[:]
 
 
-def generate_regression_analyse_report(regression_df, comparison_key):
+def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key):
     pio.renderers.default = "notebook"
 
     idx = 0
@@ -88,7 +92,7 @@ def generate_regression_analyse_report(regression_df, comparison_key):
 
     report = []
 
-    report.append(html.H1(f"Summary"))
+    report.append(html.H1(f"Regression Analysis Summary"))
 
     summary_html = [] # will be populated after the loop
     report.append(html.Div(summary_html))
@@ -102,8 +106,11 @@ def generate_regression_analyse_report(regression_df, comparison_key):
         row = dict(zip(regression_df, row_values))
         ref_entry = row["ref"]
         for k, v in ref_entry.results.lts.metadata.settings.__dict__.items():
+            if not v.__hash__: continue
             all_settings[k].add(v)
-    all_settings.pop("kpi_settings_version", None)
+
+    for lts_meta_key in common.LTS_META_KEYS:
+        all_settings.pop(lts_meta_key, None)
 
     for k, v in all_settings.items():
         if len(v) > 1:
@@ -117,7 +124,7 @@ def generate_regression_analyse_report(regression_df, comparison_key):
         ref_entry = row["ref"]
         kpis = ref_entry.results.lts.kpis
 
-        common_prefix = longestCommonPrefix(kpis.keys())
+        common_prefix = longestCommonPrefix(list(kpis.keys()))
         break
 
     improvement_summary_by_kpi = defaultdict(int)
@@ -131,42 +138,45 @@ def generate_regression_analyse_report(regression_df, comparison_key):
         ref_entry = row["ref"]
         kpis = ref_entry.results.lts.kpis
 
-        metadata = ref_entry.results.lts.metadata
+        metadata = copy.copy(ref_entry.results.lts.metadata)
         del metadata.config
         metadata_settings = metadata.settings
+
         del metadata.settings
 
         regression_name = "|".join(f"{k}={metadata_settings.__dict__[k]}" for k in variables)
+        if not regression_name:
+            regression_name = "Unique test"
+
         report.append(html.H1(regression_name))
         entry_regr_results = dict(name=f"{regression_name}")
 
         html_urls = []
-
-        for url_name, url in metadata.urls.items():
+        for url_name, url in metadata_settings.urls.items():
             html_urls.append(html.Li(html.A(url_name, href=url)))
         report.append(html.Ul(html_urls))
-        del metadata.urls
 
-        lts_settings_df = pd.DataFrame(ref_entry.results.lts.metadata.__dict__.items())
+        lts_settings_df = pd.DataFrame(metadata.__dict__.items())
         lts_settings_html = lts_settings_df.style\
                                    .hide(axis="index")\
-                                   .set_table_styles(table_styles=STYLE_TABLE +
-                                                     [{'selector': 'thead', 'props': [('display', 'none')]}]) # hide the columns titles
+                                   .set_table_styles(table_styles=STYLE_TABLE + STYLE_HIDE_COLUMN_TITLES)
+
         report.append(html.H3("Settings"))
         report.append(lts_settings_html)
 
         kpi_settings_df = pd.DataFrame(metadata_settings.__dict__.items())
         kpi_settings_html = kpi_settings_df.style\
                                    .hide(axis="index")\
-                                   .set_table_styles(table_styles=STYLE_TABLE +
-                                                     [{'selector': 'thead', 'props': [('display', 'none')]}]) # hide the columns titles
+
+
         report.append(html.H3("Labels"))
         report.append(kpi_settings_html)
 
         improvement_summary_by_entry = 0
         degradation_summary_by_entry = 0
         for kpi in kpis:
-            if "itl" not in kpi: continue
+            if kpi_filter and kpi_filter not in kpi:
+                continue
 
             ref_kpi = ref_entry.results.lts.kpis[kpi]
             if isinstance(ref_kpi.value, list): continue
@@ -178,6 +188,7 @@ def generate_regression_analyse_report(regression_df, comparison_key):
 
             comparison_data.append({comparison_key: f"{ref_name} (ref)", "value": ref_kpi.value})
             historical_values = []
+
             for comparison_key_value in sorted(row.keys()):
                 if comparison_key_value == "ref": continue
 
@@ -218,6 +229,7 @@ def generate_regression_analyse_report(regression_df, comparison_key):
 
             report.append(comparison_df_html)
             lower_better = getattr(ref_kpi, "lower_better", None)
+
             if lower_better is None:
                 msg = f"KPI '{kpi}' does not define the 'lower_better' property :/ "
                 if msg not in warnings_already_shown:
@@ -301,8 +313,6 @@ def generate_regression_analyse_report(regression_df, comparison_key):
             total_points += 1
             if not regr_result["improved"] and regr_result["rating"] == 4:
                 failures += 1
-
-        print(f"{improvement_summary_by_entry / (len(entry_regr_results) - 1):.2f}")
 
         entry_regr_results["overall improvement"] = f"{improvement_summary_by_entry / (len(entry_regr_results) - 1):.2f}" if improvement_summary_by_entry else "nan"
         entry_regr_results["overall degradation"] = f"{degradation_summary_by_entry / (len(entry_regr_results) - 1):.2f}" if degradation_summary_by_entry else "nan"
@@ -390,8 +400,8 @@ def generate_regression_analyse_report(regression_df, comparison_key):
         overall_degradation_total += degrade_value
         kpi_overall_degradation_data[k.replace(common_prefix, "")] = f"{degrade_value:.2f}"
 
-    overall_improvement_rating = overall_improvement_total / len(improvement_summary_by_kpi)
-    overall_degradation_rating = overall_degradation_total / len(degradation_summary_by_kpi)
+    overall_improvement_rating = overall_improvement_total / len(improvement_summary_by_kpi) if improvement_summary_by_kpi else 0
+    overall_degradation_rating = overall_degradation_total / len(degradation_summary_by_kpi) if degradation_summary_by_kpi else 0
 
     kpi_overall_degradation_data["overall degradation"] = f"{overall_degradation_rating:.2f}"
     kpi_overall_improvement_data["overall improvement"] = f"{overall_improvement_rating:.2f}"
@@ -412,13 +422,13 @@ def generate_regression_analyse_report(regression_df, comparison_key):
     return html.Span(report), failures
 
 
-def generate_and_save_regression_analyse_report(dest, regression_df, comparison_key):
-    report, failures = generate_regression_analyse_report(regression_df, comparison_key)
+def generate_and_save_regression_analyse_report(dest, regression_df, kpi_filter, comparison_key):
+    report, failures = generate_regression_analyse_report(regression_df, kpi_filter, comparison_key)
 
     if dest is None:
         logging.warning("Skipping report generation.")
         return failures
 
-    plotting_ui_report.generate(None, dest, report, None)
+    plotting_ui_report.generate(None, dest, report, None, include_header=False)
 
     return failures

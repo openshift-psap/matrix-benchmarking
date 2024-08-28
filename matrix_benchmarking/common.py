@@ -78,7 +78,7 @@ LTS_META_KEYS = [
     "kpi_settings_version",
     "lts_schema_version",
     "help", "unit", "@timestamp", "value",
-    "run_id", "urls",
+    "run_id", "urls", "test_path",
     "test_uuid",
 ]
 
@@ -93,11 +93,11 @@ class MatrixDefinition():
         return MatrixKey(settings)
 
     def similar_records(self, _ref_settings, ignore_keys, gathered=False, rewrite_settings=lambda x:x, ignore_lts_meta_keys=True):
-        ref_settings = rewrite_settings(_ref_settings.__dict__)
+        ref_settings = rewrite_settings(dict(_ref_settings.__dict__))
 
         i  = 0
         for entry in self.all_records(gathered=gathered):
-            entry_settings = rewrite_settings(entry.settings.__dict__)
+            entry_settings = rewrite_settings(dict(entry.settings.__dict__))
             skip = False
             i += 1
             for k, v in ref_settings.items():
@@ -108,9 +108,6 @@ class MatrixDefinition():
                     continue
                 if entry_settings.get(k, ...) == v:
                     continue
-
-                if k not in ("model_name", "accelerator_count", "virtual_users", "runtime"):
-                    print(i, f"ignore because of {k}={v} != {entry.settings.__dict__.get(k, ...)}")
 
                 skip = True
                 break

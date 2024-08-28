@@ -26,6 +26,7 @@ def main(workload: str = "",
          lts_results_dirname: str = "",
          filters: list[str] = [],
          report_dest: str = "regression_report.html",
+         kpi_filter: str = "",
          ):
     """
 Analyze MatrixBenchmark LTS results
@@ -46,6 +47,7 @@ Args:
     lts_results_dirname: Name of the directory where the LTS results are stored. (Mandatory.)
     filters: If provided, analyze only the experiment matching the filters. Eg: expe=expe1:expe2,something=true.
     report_dest: Where to save the regression analyses report
+    kpi_filter: Filter (substring) that must be part of the KPI name to include it in the regression analyses
     """
 
     kwargs = dict(locals()) # capture the function arguments
@@ -86,7 +88,7 @@ Args:
         regression_df = workload_analyze.run()
         comparison_key = workload_analyze.COMPARISON_KEY
 
-        failures = analyze_report.generate_and_save_regression_analyse_report(kwargs["report_dest"], regression_df, comparison_key)
+        failures = analyze_report.generate_and_save_regression_analyse_report(kwargs["report_dest"], regression_df, kwargs["kpi_filter"], comparison_key)
 
         return failures
 
