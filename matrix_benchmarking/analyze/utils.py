@@ -42,7 +42,7 @@ def get_std_dev_measurements(deviation, current_mean, previous_data, lower_bette
     previous_data_stddev = get_measure_of_distribution(previous_data)
 
     below = current_mean <= previous_data_mean
-    improved = below and lower_better
+    improved = (below and lower_better) or (not below and not lower_better)
 
     if deviation == 1:
         std_lower_bound = previous_data_mean - (previous_data_stddev * deviation)
