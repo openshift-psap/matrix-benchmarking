@@ -33,16 +33,13 @@ def get_measure_of_distribution(data):
     return statistics.stdev(data)
 
 
-def get_std_dev_measurements(deviation, current_mean, previous_data, lower_better):
+def get_std_dev_measurements(deviation, current_mean, previous_data):
     '''
     Returns standard deviation bounds
     '''
 
     previous_data_mean = get_measure_of_mean(previous_data)
     previous_data_stddev = get_measure_of_distribution(previous_data)
-
-    below = current_mean <= previous_data_mean
-    improved = (below and lower_better) or (not below and not lower_better)
 
     if deviation == 1:
         std_lower_bound = previous_data_mean - (previous_data_stddev * deviation)
@@ -76,7 +73,7 @@ def get_std_dev_measurements(deviation, current_mean, previous_data, lower_bette
     pct = 0 if len(previous_data) <= 1 \
         else (number_of_observation / len(previous_data)) * 100
 
-    return pct, bound_verify, improved
+    return pct, bound_verify
 
 
 def get_percentage_change(mean, previous_data):

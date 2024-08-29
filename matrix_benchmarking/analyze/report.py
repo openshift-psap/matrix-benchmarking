@@ -2,8 +2,10 @@ import logging
 import math
 from collections import defaultdict
 import copy
+from packaging.version import Version
 
 import pandas as pd
+import plotly
 import plotly.io as pio
 import plotly.express as px
 from dash import html
@@ -11,28 +13,43 @@ from dash import html
 import matrix_benchmarking.plotting.ui.report as plotting_ui_report
 import matrix_benchmarking.common as common
 
-from . import analyze
-
-IMPROVED_COLORS_BY_RATING = dict(zip(analyze.IMPROVED_EVALUATION.keys(), ["#CFFDBC", "#77c71a", "#abd216", "#f0f200"]))
-IMPROVED_COLORS_BY_EVAL = dict(zip(analyze.IMPROVED_EVALUATION.values(), IMPROVED_COLORS_BY_RATING.values()))
-
-DEGRADED_COLORS_BY_RATING = dict(zip(analyze.DEGRADED_EVALUATION.keys(), ["#CFFDBC", "#a5c90f", "#ffb366", "#ff8829"]))
-DEGRADED_COLORS_BY_EVAL = dict(zip(analyze.DEGRADED_EVALUATION.keys(), DEGRADED_COLORS_BY_RATING.values()))
-
 COLOR_OVERALL_NAMES = "#F5F5DC" # beige
 
-COLOR_OVERVIEW_VARIABLE = "#ADD8E6" # Light Blue
-COLOR_OVERVIEW_FIX = "#ccf0a2" # Light green
+from . import analyze
 
-COLOR_STDEV_BOUND = "#32CD32" # Lime Green
-COLOR_STDEV_NOT_BOUND = "#FF5733" # Red brick
-COLOR_STDEV_NONE = "lightgreen"
-
-COLOR_STDEV_IMPROVED = "#32CD32"
-COLOR_STDEV_DEGRADED = "#FF5733"
+COLOR_IMPROVED = "#32CD32"
+COLOR_DEGRADED = "#FF5733"
+COLOR_IMPROVED_NONE = "#ADD8E6"
 
 COLOR_NAN = "white; color: white"
 COLOR_DEFAULT = "#CFFDBC"
+
+def is_nan(entry):
+    return isinstance(entry, float) and math.isnan(entry)
+
+def get_rating_color(rating, improved=True):
+    if is_nan(rating):
+        return COLOR_NAN
+
+    rating_max = analyze.RATING_MAX
+    rating_ratio = rating / rating_max
+
+    GREEN = "#00FF80"
+    WHITE = "#FFFFFF"
+    RED = "#FF6666"
+    # see also plotly.colors.sequential.Inferno_r and others
+    if improved:
+        color_scale = [WHITE, GREEN]
+    else:
+        color_scale = [WHITE, RED]
+
+    color = plotly.colors.sample_colorscale(
+        color_scale, samplepoints=rating_ratio)[0]
+
+    return color
+
+COLOR_OVERVIEW_VARIABLE = "#ADD8E6" # Light Blue
+COLOR_OVERVIEW_FIX = "#ccf0a2" # Light green
 
 # Declare properties to style the Table
 STYLE_TABLE = [
@@ -66,6 +83,14 @@ STYLE_TABLE = [
 
 STYLE_HIDE_COLUMN_TITLES = [{'selector': 'thead', 'props': [('display', 'none')]}]
 
+
+class OvervallResult():
+    def __init__(self, rating, evaluation, improved):
+        self.rating = rating
+        self.evaluation = evaluation
+        self.improved = improved
+
+
 def longestCommonPrefix(strs):
     if not strs or len(strs) == 1:
         return ""
@@ -80,13 +105,15 @@ def longestCommonPrefix(strs):
     return min_s[:]
 
 
-def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key):
+def generate_regression_analyse_report(regression_df, kpi_filter, comparison_keys, ignored_keys):
     pio.renderers.default = "notebook"
 
     idx = 0
     total_points = 0
     warnings_already_shown = []
     failures = 0
+    no_history = 0
+
     improvement_summary_by_all = 0
     degradation_summary_by_all = 0
 
@@ -98,33 +125,51 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
     report.append(html.Div(summary_html))
     all_regr_results = []
 
+    all_lts_settings = defaultdict(set)
     all_settings = defaultdict(set)
     variables = []
     fix_settings = []
+    lts_variables = []
+    lts_fix_settings = []
 
     for row_values in regression_df.values:
         row = dict(zip(regression_df, row_values))
-        ref_entry = row["ref"]
-        for k, v in ref_entry.results.lts.metadata.settings.__dict__.items():
-            if not v.__hash__: continue
-            all_settings[k].add(v)
+
+        for row_key, entry in zip(regression_df, row_values):
+            if is_nan(entry): continue
+            if row_key == "ref": continue
+
+            dest_all_settings = all_settings if row_key == row["ref"] else all_lts_settings
+            try:
+                entry_settings = entry.results.lts.metadata.settings if row_key == row["ref"] \
+                    else entry.results[0].results.metadata.settings
+            except:
+                import pdb;pdb.set_trace()
+                pass
+
+            for k, v in entry_settings.__dict__.items():
+                if not v.__hash__: continue
+                if k in ignored_keys: continue
+                dest_all_settings[k].add(v)
 
     for lts_meta_key in common.LTS_META_KEYS:
         all_settings.pop(lts_meta_key, None)
+        all_lts_settings.pop(lts_meta_key, None)
 
     for k, v in all_settings.items():
-        if len(v) > 1:
-            variables.append(k)
-        else:
-            fix_settings.append(k)
+        (variables if len(v) > 1 else fix_settings).append(k)
 
+    variables.sort()
+
+    for k, v in all_lts_settings.items():
+        (lts_variables if len(v) > 1 else lts_fix_settings).append(k)
 
     for row_values in regression_df.values:
         row = dict(zip(regression_df, row_values))
-        ref_entry = row["ref"]
+        ref_entry = row[row["ref"]]
         kpis = ref_entry.results.lts.kpis
 
-        common_prefix = longestCommonPrefix(list(kpis.keys()))
+        kpis_common_prefix = longestCommonPrefix(list(kpis.keys()))
         break
 
     improvement_summary_by_kpi = defaultdict(int)
@@ -135,45 +180,37 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
         logging.info(f"Processing entry # {idx} ...")
 
         row = dict(zip(regression_df, row_values))
-        ref_entry = row["ref"]
+
+        ref_entry = row[row["ref"]]
         kpis = ref_entry.results.lts.kpis
 
         metadata = copy.copy(ref_entry.results.lts.metadata)
-        del metadata.config
-        metadata_settings = metadata.settings
-
-        del metadata.settings
+        metadata_settings = copy.copy(metadata.__dict__.pop("settings"))
 
         regression_name = "|".join(f"{k}={metadata_settings.__dict__[k]}" for k in variables)
         if not regression_name:
             regression_name = "Unique test"
 
         report.append(html.H1(regression_name))
-        entry_regr_results = dict(name=f"{regression_name}")
 
-        html_urls = []
-        for url_name, url in metadata_settings.urls.items():
-            html_urls.append(html.Li(html.A(url_name, href=url)))
-        report.append(html.Ul(html_urls))
+        # entry header
 
-        lts_settings_df = pd.DataFrame(metadata.__dict__.items())
-        lts_settings_html = lts_settings_df.style\
-                                   .hide(axis="index")\
-                                   .set_table_styles(table_styles=STYLE_TABLE + STYLE_HIDE_COLUMN_TITLES)
+        report += _generate_entry_header(metadata_settings, metadata)
 
-        report.append(html.H3("Settings"))
-        report.append(lts_settings_html)
+        if len([... for c in row.values() if not is_nan(c)]) == 1:
+            report.append(html.P(html.B("No historical records ...")))
+            no_history += 1
+            continue
 
-        kpi_settings_df = pd.DataFrame(metadata_settings.__dict__.items())
-        kpi_settings_html = kpi_settings_df.style\
-                                   .hide(axis="index")\
-
-
-        report.append(html.H3("Labels"))
-        report.append(kpi_settings_html)
+        entry_regr_results = dict()
+        for var in variables:
+            entry_regr_results[var] = metadata_settings.__dict__[var]
+        if not variables:
+            entry_regr_results["name"] = regression_name
 
         improvement_summary_by_entry = 0
         degradation_summary_by_entry = 0
+
         for kpi in kpis:
             if kpi_filter and kpi_filter not in kpi:
                 continue
@@ -182,23 +219,33 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
             if isinstance(ref_kpi.value, list): continue
             report.append(html.H2(f" KPI {kpi}"))
 
-            ref_name = getattr(ref_kpi, comparison_key)
+            ref_name = row["ref"]
 
             comparison_data = []
 
-            comparison_data.append({comparison_key: f"{ref_name} (ref)", "value": ref_kpi.value})
+            ref_line = dict()
+            for k in comparison_keys:
+                ref_line[k] = ref_kpi.__dict__.get(k)
+
+            # keep this vvv below ^^^ to preserve the order in the rendered table
+            ref_line["value"] = ref_kpi.value
+            ref_line["ref"] = "*"
+            comparison_data.append(ref_line)
+
             historical_values = []
 
             for comparison_key_value in sorted(row.keys()):
                 if comparison_key_value == "ref": continue
 
                 comparison_gathered_entries = row[comparison_key_value]
-                if isinstance(comparison_gathered_entries, float) and math.isnan(comparison_gathered_entries):
+                if is_nan(comparison_gathered_entries):
+                    continue
+                if comparison_key_value == row["ref"]:
                     continue
 
                 entry = comparison_gathered_entries.results[0]
 
-                entry_name = getattr(entry.results.metadata.settings, comparison_key)
+                entry_name = {k: entry.results.metadata.settings.__dict__[k] for k in comparison_keys}
 
                 records_count = len(comparison_gathered_entries.results)
                 if records_count != 1:
@@ -208,26 +255,14 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
                         logging.warning(msg)
 
                 kpi_value = entry.results.kpis.__dict__[kpi].value
-
-                comparison_data.append({comparison_key: entry_name, "value": kpi_value})
+                history_line = dict(ref="", value=kpi_value)
+                comparison_data.append(history_line | entry_name)
                 historical_values.append(kpi_value)
 
-            comparison_df = pd.DataFrame(comparison_data)
+            # Comparison table
 
-            from distutils.version import LooseVersion
+            report.append(_generate_comparison_table(comparison_data, comparison_keys, ref_kpi.unit))
 
-            comparison_df["__sort_index__"] = comparison_df[comparison_key].apply(LooseVersion)
-            comparison_df = comparison_df.sort_values(by=["__sort_index__"]).drop("__sort_index__", axis=1)
-
-            comparison_format = dict(
-                value="{:.2f} "+ref_kpi.unit,
-            )
-            comparison_df_html = comparison_df.style\
-                                              .format(comparison_format)\
-                                              .hide(axis="index")\
-                                              .set_table_styles(table_styles=STYLE_TABLE)
-
-            report.append(comparison_df_html)
             lower_better = getattr(ref_kpi, "lower_better", None)
 
             if lower_better is None:
@@ -236,71 +271,38 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
                     logging.warning(msg)
                     warnings_already_shown.append(msg)
 
-            regr_result = analyze.do_regression_analyze(ref_kpi.value, historical_values, lower_better=lower_better)
-            if regr_result["improved"]:
-                improvement_summary_by_entry += regr_result["rating"]
-                improvement_summary_by_kpi[kpi] += regr_result["rating"]
-                improvement_summary_by_all += regr_result["rating"]
+            regr_result = analyze.do_regression_analyze(ref_kpi.value, historical_values, lower_better=lower_better, kpi_unit=ref_kpi.unit)
+
+            if regr_result.improved:
+                improvement_summary_by_entry += regr_result.rating
+                improvement_summary_by_kpi[kpi] += regr_result.rating
+                improvement_summary_by_all += regr_result.rating
             else:
-                degradation_summary_by_entry += regr_result["rating"]
-                degradation_summary_by_kpi[kpi] += regr_result["rating"]
-                degradation_summary_by_all += regr_result["rating"]
+                degradation_summary_by_entry += regr_result.rating
+                degradation_summary_by_kpi[kpi] += regr_result.rating
+                degradation_summary_by_all += regr_result.rating
 
-            entry_regr_results[kpi.replace(common_prefix, "")] = "{} • {}".format(regr_result["rating"], regr_result["evaluation"])
+            entry_regr_results[kpi.replace(kpis_common_prefix, "")] = OvervallResult(regr_result.rating, regr_result.evaluation, regr_result.improved)
 
-            regr_df = pd.DataFrame([regr_result])
+            # Evaluation results
 
-            regr_format = dict(
-                current_value="{:.2f} "+ref_kpi.unit,
-                previous_mean="{:.1f} "+ref_kpi.unit,
-                std_dev="{:.1f}",
-                std_dev_1="{:.1f} %",
-                std_dev_2="{:.1f} %",
-                std_dev_3="{:.1f} %",
-                change="{:.1f} %",
-                delta="{:.1f}"
-            )
+            report.append(html.H3("Evaluation results"))
+            report.append(_generate_evaluation_results(regr_result))
 
-            def conditional_format(row):
-                fmt = []
-                for key, value in zip(row.keys(), row.values):
-                    style = ""
-                    rating_colors = IMPROVED_COLORS_BY_RATING if row["improved"] else DEGRADED_COLORS_BY_RATING
-                    evaluation = analyze.IMPROVED_EVALUATION if row["improved"] else analyze.DEGRADED_EVALUATION
-                    if key in ["std_dev_1_bound", "std_dev_2_bound", "std_dev_3_bound"]:
-                        if value is True:
-                            style = f"background: {COLOR_STDEV_BOUND}"  # green
-                        elif value is False:
-                            style = f"background: {COLOR_STDEV_NOT_BOUND}"  # red
-                        elif value is None:
-                            style = f"background: {COLOR_STDEV_NONE}"
+            # Details
 
-                    if key == "improved":
-                        style = f"background: {COLOR_STDEV_IMPROVED}" if value \
-                            else f"background: {COLOR_STDEV_DEGRADED}"
-
-                    if key == "rating":
-                        color = rating_colors[row["rating"]]
-                        style = f"background: {color}"
-
-                    if key == "evaluation":
-                        color = rating_colors[row["rating"]]
-                        style = f"background: {color}"
-
-                    fmt.append(style)
-
-                return fmt
-
-            regr_df_html = regr_df.style\
-                                  .apply(conditional_format, axis = 1)\
-                                  .format(regr_format)\
-                                  .hide(axis="index")\
-                                  .set_table_styles(table_styles=STYLE_TABLE)
+            report.append(html.H3("Details"))
+            regr_df_html = pd.DataFrame([regr_result.details]).style\
+                                                              .apply(regr_result.details_conditional_fmt, axis = 1)\
+                                                              .format(regr_result.details_fmt)\
+                                                              .hide(axis="index")\
+                                                              .set_table_styles(table_styles=STYLE_TABLE)
 
             report.append(regr_df_html)
 
             INCLUDE_FIG = False
             if INCLUDE_FIG:
+                # deprecated. Needs to be rewritten with multiple comparison_keys
                 fig = px.line(df, x=comparison_key, y="value",
                               markers=True,
                               title=f"{ref_kpi.help} (in {ref_kpi.unit})",
@@ -311,59 +313,178 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
                 report.append(html.Div([fig], style=dict(height="525px", width="100%")))
 
             total_points += 1
-            if not regr_result["improved"] and regr_result["rating"] == 4:
+            if not regr_result.improved and regr_result.rating == 4:
                 failures += 1
 
-        entry_regr_results["overall improvement"] = f"{improvement_summary_by_entry / (len(entry_regr_results) - 1):.2f}" if improvement_summary_by_entry else "nan"
-        entry_regr_results["overall degradation"] = f"{degradation_summary_by_entry / (len(entry_regr_results) - 1):.2f}" if degradation_summary_by_entry else "nan"
+        entry_regr_results["overall improvement"] = OvervallResult(improvement_summary_by_entry / len(entry_regr_results), None, True) if entry_regr_results else None
+        entry_regr_results["overall degradation"] = OvervallResult(degradation_summary_by_entry / len(entry_regr_results), None, False) if entry_regr_results else None
         all_regr_results.append(entry_regr_results)
 
-        def all_regr_results_conditional_format(row):
-            fmt = []
-
-            def overall_row(degraded):
-                rating_colors = (DEGRADED_COLORS_BY_RATING if degraded else IMPROVED_COLORS_BY_RATING)
-
-                overall_fmt = [f"background: {COLOR_OVERALL_NAMES}"]
-                for _rating in row.values[1:]:
-                    if math.isnan(float(_rating)):
-                        color = COLOR_NAN
-                    else:
-                        color = rating_colors.get(int(float(_rating)), COLOR_DEFAULT)
-                    overall_fmt.append(f"background: {color}")
-
-
-                overall_fmt[-1 if degraded else -2] += "; border: 3px solid black;"
-                overall_fmt[-2 if degraded else -1] += "; color: white;"
-                return overall_fmt
-
-            for key, value in zip(row.keys(), row.values):
-                if row["name"] == "overall degradation":
-                    return overall_row(degraded=True)
-                if row["name"] == "overall improvement":
-                    return overall_row(degraded=False)
-
-                if key == "name":
-                    style = f"background: {COLOR_OVERALL_NAMES}"
-                elif key == "overall degradation":
-                    color = DEGRADED_COLORS_BY_RATING.get(int(float(value)), COLOR_DEFAULT)  if value != "nan" else COLOR_NAN
-                    style = f"background: {color}"
-                elif key == "overall improvement":
-                    color = IMPROVED_COLORS_BY_RATING.get(int(float(value)), COLOR_DEFAULT) if value != "nan" else COLOR_NAN
-                    style = f"background: {color}"
-                else:
-                    rating = int(value.split()[0])
-                    degraded = value.split()[-1] in analyze.DEGRADED_EVALUATION.values()
-                    color = (DEGRADED_COLORS_BY_RATING if degraded else IMPROVED_COLORS_BY_RATING)[rating]
-                    style = f"background: {color}"
-
-                fmt.append(style)
-
-            return fmt
-
+    # Configuration overview
 
     summary_html.append(html.H2("Configuration overview"))
+    summary_html.append(_generate_configuration_overview(all_settings, variables))
 
+    # LTS overview
+    summary_html.append(html.H2("Historical records overview"))
+    summary_html.append(_generate_lts_overview(all_lts_settings, lts_variables))
+
+    # Results overview
+
+    summary_html.append(html.H2("Results overview"))
+    summary_html.append(_generate_results_overview(all_regr_results, variables, improvement_summary_by_kpi, degradation_summary_by_kpi, kpis_common_prefix))
+
+    # Summary
+
+    summary = f"Performed {total_points} regression analyses over {idx} entries. {failures} didn't pass."
+    if no_history:
+        summary += f" {no_history} didn't have historical records"
+
+    logging.info(summary)
+    summary_html.append(html.P(html.B(summary)))
+
+    return html.Span(report), failures
+
+
+def generate_and_save_regression_analyse_report(dest, regression_df, kpi_filter, comparison_key, ignored_keys):
+    report, failures = generate_regression_analyse_report(regression_df, kpi_filter, comparison_key, ignored_keys)
+
+    if dest is None:
+        logging.warning("Skipping report generation.")
+        return failures
+
+    plotting_ui_report.generate(None, dest, report, None, include_header=False)
+
+    return failures
+
+
+def _generate_entry_header(metadata_settings, metadata):
+    header = []
+
+    # --- URLs ---
+
+    if hasattr(metadata_settings, "urls") or hasattr(metadata, "urls"):
+        urls = metadata_settings.urls if hasattr(metadata_settings, "urls") else metadata.urls
+        html_urls = []
+        for url_name, url in urls.items():
+            html_urls.append(html.Li(html.A(url_name, href=url)))
+        header.append(html.Ul(html_urls))
+
+
+    # --- LTS Metadata ---
+
+    header.append(html.H3("Settings"))
+
+    metadata.__dict__.pop("urls", None)
+    metadata.__dict__.pop("test_path", None)
+    metadata.__dict__.pop("run_id", None)
+    metadata.__dict__.pop("config", None)
+
+    lts_metadata_df = pd.DataFrame(metadata.__dict__.items())
+    lts_metadata_html = lts_metadata_df.style\
+                               .hide(axis="index")\
+                               .set_table_styles(table_styles=STYLE_TABLE + STYLE_HIDE_COLUMN_TITLES)
+
+    header.append(lts_metadata_html)
+
+    # --- KPI Labels/Settings ---
+
+    header.append(html.H3("Labels"))
+
+    metadata_settings.__dict__.pop("urls", None)
+    metadata_settings.__dict__.pop("test_path", None)
+    metadata_settings.__dict__.pop("run_id", None)
+
+    kpi_settings_df = pd.DataFrame(metadata_settings.__dict__.items())
+
+    kpi_settings_html = kpi_settings_df.style\
+                               .hide(axis="index")\
+                               .set_table_styles(table_styles=STYLE_TABLE + STYLE_HIDE_COLUMN_TITLES)
+
+    header.append(kpi_settings_html)
+
+    return header
+
+def _generate_comparison_table(comparison_data, comparison_keys, kpi_unit):
+    comparison_df = pd.DataFrame(comparison_data)
+
+    def create_sort_index(_row):
+        sort_index = []
+
+        for comparison_key in comparison_keys:
+            sort_index += [_row[comparison_key]]
+
+        return Version("+".join(sort_index))
+
+    comparison_df["__sort_index"] = comparison_df.apply(create_sort_index, axis=1)
+
+    comparison_df = comparison_df.sort_values("__sort_index").drop("__sort_index", axis=1)
+
+    comparison_format = dict(value="{:.2f} "+kpi_unit,)
+
+    comparison_df_html = comparison_df.style\
+                                      .format(comparison_format)\
+                                      .hide(axis="index")\
+                                      .set_table_styles(table_styles=STYLE_TABLE)
+
+    return comparison_df_html
+
+
+def _generate_evaluation_results(regr_result):
+    def regr_results_evaluation_fmt(row):
+        fmt = []
+        for key, value in zip(row.keys(), row.values):
+            if key == "improved":
+                color = (COLOR_IMPROVED if value else COLOR_DEGRADED) \
+                    if value is not None \
+                       else COLOR_IMPROVED_NONE
+
+            if key in ("rating", "evaluation"):
+                color = row.rating_color
+
+            style = f"background: {color}"
+            fmt.append(style)
+
+        return fmt
+
+    rating_color = get_rating_color(regr_result.rating, regr_result.improved)
+    regr_df_html = pd.DataFrame([dict(
+        improved=regr_result.improved,
+        rating=regr_result.rating,
+        rating_color=rating_color,
+        evaluation=regr_result.evaluation,
+    )]).style\
+                     .apply(regr_results_evaluation_fmt, axis=1)\
+                     .hide(["rating_color"], axis=1)\
+                     .hide(axis="index")\
+                     .set_table_styles(table_styles=STYLE_TABLE)
+
+    return regr_df_html
+
+
+def _generate_lts_overview(all_lts_settings, lts_variables):
+    lts_config_overview_data = []
+    for k, v in all_lts_settings.items():
+        val = ", ".join(map(str, sorted(v)))
+        lts_config_overview_data.append(dict(name=k, value=val))
+
+    def lts_config_overview_conditional_format(row):
+        color = COLOR_OVERVIEW_VARIABLE if row["name"] in lts_variables \
+            else COLOR_OVERVIEW_FIX
+
+        return [f"background: {color}"] * len(row)
+
+    lts_config_overview_df = pd.DataFrame(lts_config_overview_data)
+    lts_config_overview_df_html = lts_config_overview_df\
+        .style\
+        .apply(lts_config_overview_conditional_format, axis = 1)\
+        .hide(axis="index")\
+        .set_table_styles(table_styles=STYLE_TABLE)
+
+    return lts_config_overview_df_html
+
+
+def _generate_configuration_overview(all_settings, variables):
     config_overview_data = []
     for k, v in all_settings.items():
         val = ", ".join(map(str, sorted(v)))
@@ -381,54 +502,112 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
         .apply(config_overview_conditional_format, axis = 1)\
         .hide(axis="index")\
         .set_table_styles(table_styles=STYLE_TABLE)
-    summary_html.append(config_overview_df_html)
 
-    summary_html.append(html.H2("Results overview"))
+    return config_overview_df_html
 
-    kpi_overall_degradation_data = dict(name="overall degradation")
-    kpi_overall_improvement_data = dict(name="overall improvement")
+
+def _generate_results_overview(all_regr_results, variables, improvement_summary_by_kpi, degradation_summary_by_kpi, kpis_common_prefix):
+    entry_count = len(all_regr_results)
+    first_column_name = variables[0] if variables else "name"
+    kpi_overall_degradation_data = {first_column_name: "overall degradation"} | {k:"" for k in variables[1:]}
+    kpi_overall_improvement_data = {first_column_name: "overall improvement"} | {k:"" for k in variables[1:]}
     overall_improvement_total = 0
     overall_degradation_total = 0
 
+    kpi_names = set()
+
     for k, improve in improvement_summary_by_kpi.items():
-        improve_value = improve/idx
+        kpi_name = k.replace(kpis_common_prefix, "")
+        improve_value = improve/entry_count
         overall_improvement_total += improve_value
-        kpi_overall_improvement_data[k.replace(common_prefix, "")] = f"{improve_value:.2f}"
+        kpi_overall_improvement_data[kpi_name] = OvervallResult(improve_value, None, True)
+        kpi_names.add(kpi_name)
 
     for k, degrade in degradation_summary_by_kpi.items():
-        degrade_value = degrade/idx
+        kpi_name = k.replace(kpis_common_prefix, "")
+        degrade_value = degrade/entry_count
         overall_degradation_total += degrade_value
-        kpi_overall_degradation_data[k.replace(common_prefix, "")] = f"{degrade_value:.2f}"
+        kpi_overall_degradation_data[kpi_name] = OvervallResult(degrade_value, None, False)
+        kpi_names.add(kpi_name)
 
     overall_improvement_rating = overall_improvement_total / len(improvement_summary_by_kpi) if improvement_summary_by_kpi else 0
     overall_degradation_rating = overall_degradation_total / len(degradation_summary_by_kpi) if degradation_summary_by_kpi else 0
 
-    kpi_overall_degradation_data["overall degradation"] = f"{overall_degradation_rating:.2f}"
-    kpi_overall_improvement_data["overall improvement"] = f"{overall_improvement_rating:.2f}"
+    kpi_overall_degradation_data["overall degradation"] = OvervallResult(overall_degradation_rating, None, False)
+    kpi_overall_improvement_data["overall improvement"] = OvervallResult(overall_improvement_rating, None, True)
 
     all_regr_results_df = pd.DataFrame(all_regr_results + [kpi_overall_degradation_data, kpi_overall_improvement_data])
 
+    def fmt(value):
+        if is_nan(value):
+            return ""
+
+        rating_str = f"{value.rating:.2f}" if isinstance(value.rating, float) \
+            else str(value.rating)
+
+        if value.evaluation is None:
+            return rating_str
+
+        return f"{rating_str} • {value.evaluation}"
+
+    overview_fmt = {k: fmt for k in kpi_names | set(["overall improvement", "overall degradation"])}
+
     all_regr_results_df_html = all_regr_results_df\
         .style\
-        .apply(all_regr_results_conditional_format, axis = 1)\
+        .apply(get_all_regr_results_conditional_format(first_column_name, variables), axis = 1)\
+        .format(overview_fmt)\
         .hide(axis="index")\
         .set_table_styles(table_styles=STYLE_TABLE)
-    summary_html.append(all_regr_results_df_html)
 
-    summary = f"Performed {total_points} regression analyses over {idx} entries. {failures} didn't pass."
-    logging.info(summary)
-    summary_html.append(html.P(html.B(summary)))
-
-    return html.Span(report), failures
+    return all_regr_results_df_html
 
 
-def generate_and_save_regression_analyse_report(dest, regression_df, kpi_filter, comparison_key):
-    report, failures = generate_regression_analyse_report(regression_df, kpi_filter, comparison_key)
+def get_all_regr_results_conditional_format(first_column_name, variables):
+    def all_regr_results_conditional_format(row):
+        fmt = []
 
-    if dest is None:
-        logging.warning("Skipping report generation.")
-        return failures
+        def overall_row(improved):
+            names_length = len(variables) or 1
 
-    plotting_ui_report.generate(None, dest, report, None, include_header=False)
+            overall_fmt = [f"background: {COLOR_OVERALL_NAMES}; font-weight: bold;"] * names_length
+            for overall_value in row.values[names_length:]:
+                color = get_rating_color(overall_value.rating, improved) \
+                    if not is_nan(overall_value) else COLOR_NAN
 
-    return failures
+                overall_fmt.append(f"background: {color}")
+
+            overall_fmt[-1 if improved else -2] += "; border: 3px solid black;"
+            overall_fmt[-2 if improved else -1] += "; color: white;"
+
+            return overall_fmt
+
+
+        for key, value in zip(row.keys(), row.values):
+            if row[first_column_name] == "overall degradation":
+                return overall_row(improved=True)
+            if row[first_column_name] == "overall improvement":
+                return overall_row(improved=False)
+
+            if key in variables or key == "name":
+                style = f"background: {COLOR_OVERALL_NAMES}"
+            elif key == "overall degradation":
+                color = get_rating_color(value.rating, value.improved)
+                style = f"background: {color}"
+
+            elif key == "overall improvement":
+                color = get_rating_color(value.rating, value.improved)
+
+                style = f"background: {color}"
+            else:
+                # KPI result
+                if is_nan(value):
+                    style = "background: red"
+                else:
+                    color = get_rating_color(value.rating,  value.improved)
+                    style = f"background: {color}"
+
+            fmt.append(style)
+
+        return fmt
+
+    return all_regr_results_conditional_format
