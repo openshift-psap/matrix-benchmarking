@@ -1,3 +1,4 @@
+
 import logging
 import math
 from collections import defaultdict
@@ -15,7 +16,7 @@ import matrix_benchmarking.common as common
 
 COLOR_OVERALL_NAMES = "#F5F5DC" # beige
 
-from . import analyze
+import matrix_benchmarking.analyze as analyze
 
 COLOR_IMPROVED = "#32CD32"
 COLOR_DEGRADED = "#FF5733"
@@ -31,12 +32,19 @@ def get_rating_color(rating, improved=True):
     if is_nan(rating):
         return COLOR_NAN
 
-    rating_max = analyze.RATING_MAX
-    rating_ratio = rating / rating_max
-
     GREEN = "#00FF80"
     WHITE = "#FFFFFF"
     RED = "#FF6666"
+
+    DARK_GREEN = "#06402b"
+    DARK_RED = "#8B0000"
+
+    if rating is None:
+        return WHITE
+
+    if rating >= 1:
+        return DARK_GREEN if improved else DARK_RED
+
     # see also plotly.colors.sequential.Inferno_r and others
     if improved:
         color_scale = [WHITE, GREEN]
@@ -44,7 +52,7 @@ def get_rating_color(rating, improved=True):
         color_scale = [WHITE, RED]
 
     color = plotly.colors.sample_colorscale(
-        color_scale, samplepoints=rating_ratio)[0]
+        color_scale, samplepoints=[rating])[0]
 
     return color
 
@@ -90,7 +98,6 @@ class OvervallResult():
         self.evaluation = evaluation
         self.improved = improved
 
-
 def longestCommonPrefix(strs):
     if not strs or len(strs) == 1:
         return ""
@@ -112,6 +119,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
     total_points = 0
     warnings_already_shown = []
     failures = 0
+    not_analyzed = 0
     no_history = 0
 
     improvement_summary_by_all = 0
@@ -140,12 +148,9 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
             if row_key == "ref": continue
 
             dest_all_settings = all_settings if row_key == row["ref"] else all_lts_settings
-            try:
-                entry_settings = entry.results.lts.metadata.settings if row_key == row["ref"] \
-                    else entry.results[0].results.metadata.settings
-            except:
-                import pdb;pdb.set_trace()
-                pass
+
+            entry_settings = entry.results.lts.metadata.settings if row_key == row["ref"] \
+                else entry.results[0].results.metadata.settings
 
             for k, v in entry_settings.__dict__.items():
                 if not v.__hash__: continue
@@ -273,14 +278,17 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
 
             regr_result = analyze.do_regression_analyze(ref_kpi.value, historical_values, lower_better=lower_better, kpi_unit=ref_kpi.unit)
 
-            if regr_result.improved:
-                improvement_summary_by_entry += regr_result.rating
-                improvement_summary_by_kpi[kpi] += regr_result.rating
-                improvement_summary_by_all += regr_result.rating
-            else:
-                degradation_summary_by_entry += regr_result.rating
-                degradation_summary_by_kpi[kpi] += regr_result.rating
-                degradation_summary_by_all += regr_result.rating
+            validate_regression_result(regr_result)
+
+            if regr_result.rating is not None:
+                if regr_result.improved:
+                    improvement_summary_by_entry += regr_result.rating
+                    improvement_summary_by_kpi[kpi] += regr_result.rating
+                    improvement_summary_by_all += regr_result.rating
+                else:
+                    degradation_summary_by_entry += regr_result.rating
+                    degradation_summary_by_kpi[kpi] += regr_result.rating
+                    degradation_summary_by_all += regr_result.rating
 
             entry_regr_results[kpi.replace(kpis_common_prefix, "")] = OvervallResult(regr_result.rating, regr_result.evaluation, regr_result.improved)
 
@@ -292,7 +300,8 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
             # Details
 
             report.append(html.H3("Details"))
-            regr_df_html = pd.DataFrame([regr_result.details]).style\
+            details_data = [regr_result.details] if isinstance(regr_result.details, dict) else regr_result.details
+            regr_df_html = pd.DataFrame(details_data).style\
                                                               .apply(regr_result.details_conditional_fmt, axis = 1)\
                                                               .format(regr_result.details_fmt)\
                                                               .hide(axis="index")\
@@ -313,8 +322,10 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
                 report.append(html.Div([fig], style=dict(height="525px", width="100%")))
 
             total_points += 1
-            if not regr_result.improved and regr_result.rating == 4:
+            if regr_result.accepted is False:
                 failures += 1
+            elif regr_result.accepted is None:
+                not_analyzed += 1
 
         entry_regr_results["overall improvement"] = OvervallResult(improvement_summary_by_entry / len(entry_regr_results), None, True) if entry_regr_results else None
         entry_regr_results["overall degradation"] = OvervallResult(degradation_summary_by_entry / len(entry_regr_results), None, False) if entry_regr_results else None
@@ -338,7 +349,9 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
 
     summary = f"Performed {total_points} regression analyses over {idx} entries. {failures} didn't pass."
     if no_history:
-        summary += f" {no_history} didn't have historical records"
+        summary += f" {no_history} didn't have historical records."
+    if not_analyzed:
+        summary += f" {not_analyzed} couldn't be analyzed. "
 
     logging.info(summary)
     summary_html.append(html.P(html.B(summary)))
@@ -431,10 +444,20 @@ def _generate_comparison_table(comparison_data, comparison_keys, kpi_unit):
 
 
 def _generate_evaluation_results(regr_result):
-    def regr_results_evaluation_fmt(row):
+    def rating_fmt(value):
+        if value is None:
+            return "---"
+
+        return f"{value*100:.0f}%"
+
+    regr_results_evaluation_fmt = dict(
+        rating = rating_fmt
+    )
+
+    def regr_results_evaluation_style(row):
         fmt = []
         for key, value in zip(row.keys(), row.values):
-            if key == "improved":
+            if key in ("improved", "accepted"):
                 color = (COLOR_IMPROVED if value else COLOR_DEGRADED) \
                     if value is not None \
                        else COLOR_IMPROVED_NONE
@@ -453,8 +476,10 @@ def _generate_evaluation_results(regr_result):
         rating=regr_result.rating,
         rating_color=rating_color,
         evaluation=regr_result.evaluation,
+        accepted=regr_result.accepted,
     )]).style\
-                     .apply(regr_results_evaluation_fmt, axis=1)\
+                     .format(regr_results_evaluation_fmt)\
+                     .apply(regr_results_evaluation_style, axis=1)\
                      .hide(["rating_color"], axis=1)\
                      .hide(axis="index")\
                      .set_table_styles(table_styles=STYLE_TABLE)
@@ -542,8 +567,11 @@ def _generate_results_overview(all_regr_results, variables, improvement_summary_
         if is_nan(value):
             return ""
 
-        rating_str = f"{value.rating:.2f}" if isinstance(value.rating, float) \
+        rating_str = f"{100*value.rating:.0f}%" if isinstance(value.rating, float) \
             else str(value.rating)
+
+        if value.rating is None:
+            return value.evaluation
 
         if value.evaluation is None:
             return rating_str
@@ -611,3 +639,24 @@ def get_all_regr_results_conditional_format(first_column_name, variables):
         return fmt
 
     return all_regr_results_conditional_format
+
+
+def validate_regression_result(regr_result):
+    if regr_result is None:
+        raise ValueError("The regr_result is None ...")
+
+    if regr_result.accepted is None:
+        return
+
+    if "inf" in str(regr_result.rating):
+        raise ValueError(f"The regr_result rating shouldn't be infinite ...")
+
+    if regr_result.rating < 0:
+        raise ValueError(f"The regr_result rating ({regr_result.rating:.2f}) should not be negative")
+
+    range_0_1 = (0 <= regr_result.rating < 1)
+    if not ((regr_result.accepted and range_0_1)
+            or (not regr_result.accepted and not range_0_1)):
+
+        if not regr_result.improved:
+            raise ValueError(f"The regr_result rating ({regr_result.rating:.2f}) should be between 0 and 1 only when the value is accepted ({regr_result.accepted})...")

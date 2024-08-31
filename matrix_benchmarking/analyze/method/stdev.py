@@ -1,6 +1,99 @@
 from collections import defaultdict
 import statistics
 
+from matrix_benchmarking.analyze import RegressionStatus
+
+IMPROVED_EVALUATION = {1: "in-line +", 2: "improved", 3:"improved +", 4: "improved++"}
+DEGRADED_EVALUATION = {1: "in-line -", 2: "degraded", 3:"degraded +", 4: "degraded++"}
+
+COLOR_STDEV_BOUND = "#32CD32" # Lime Green
+COLOR_STDEV_NOT_BOUND = "#FF5733" # Red brick
+COLOR_STDEV_NONE = "lightgreen"
+
+########
+
+MAX_STDEV = 4
+
+########
+
+def do_regression_analyze(current_value, historical_values, lower_better, kpi_unit):
+    # Lets define schema for the dataFrame
+    details = dict(
+        current_value = current_value,
+        previous_mean = get_measure_of_mean(historical_values),
+        std_dev = get_measure_of_distribution(historical_values),
+        change = get_percentage_change(current_value, historical_values),
+        delta = get_delta(current_value, historical_values),
+    )
+
+    below = current_value < details["previous_mean"]
+
+    improved = (below and lower_better) or (not below and not lower_better) \
+        if lower_better is not None else None
+
+    found_in_stdev = MAX_STDEV
+    for deviation in range(MAX_STDEV):
+        dev_dist, dev_bound = get_std_dev_measurements(deviation, current_value, historical_values)
+        details[f"std_dev_{deviation}"] = dev_dist
+        if found_in_stdev != MAX_STDEV:
+            details[f"std_dev_{deviation}_bound"] = None
+            continue
+
+        details[f"std_dev_{deviation}_bound"] = dev_bound
+        if dev_bound:
+            found_in_stdev = dev_bound
+
+    evaluation = (IMPROVED_EVALUATION if improved else DEGRADED_EVALUATION)[found_in_stdev]
+    rating = found_in_stdev / MAX_STDEV
+
+    return RegressionStatus(
+        rating = rating,
+        accepted = (not improved and rating == 4),
+        details = details,
+        details_fmt = __get_details_fmt(kpi_unit),
+        details_conditional_fmt = __get_details_conditional_fmt,
+        improved = improved,
+        evaluation = evaluation,
+    )
+
+######
+######
+######
+
+def __get_details_fmt(kpi_unit):
+    return dict(
+        current_value="{:.2f} "+kpi_unit,
+        previous_mean="{:.2f} "+kpi_unit,
+        std_dev="{:.1f}",
+        std_dev_1="{:.1f} %",
+        std_dev_2="{:.1f} %",
+        std_dev_3="{:.1f} %",
+        change="{:.1f} %",
+        delta="{:.1f}"
+    )
+
+
+def __get_details_conditional_fmt(row):
+    fmt = []
+    for key, value in zip(row.keys(), row.values):
+        style = ""
+
+        if key in ["std_dev_1_bound", "std_dev_2_bound", "std_dev_3_bound"]:
+            if value is True:
+                style = f"background: {COLOR_STDEV_BOUND}"  # green
+            elif value is False:
+                style = f"background: {COLOR_STDEV_NOT_BOUND}"  # red
+            elif value is None:
+                style = f"background: {COLOR_STDEV_NONE}"
+
+        fmt.append(style)
+
+    return fmt
+
+
+#######################
+#######################
+#######################
 
 # Calculate sample/population mean
 
