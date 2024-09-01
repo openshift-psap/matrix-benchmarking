@@ -3,8 +3,8 @@ import statistics
 
 from matrix_benchmarking.analyze import RegressionStatus
 
-IMPROVED_EVALUATION = {1: "in-line +", 2: "improved", 3:"improved +", 4: "improved++"}
-DEGRADED_EVALUATION = {1: "in-line -", 2: "degraded", 3:"degraded +", 4: "degraded++"}
+IMPROVED_EVALUATION = {0: "very close+", 1: "in-line +", 2: "improved", 3:"improved +", 4: "improved++"}
+DEGRADED_EVALUATION = {0: "very close-", 1: "in-line -", 2: "degraded", 3:"degraded +", 4: "degraded++"}
 
 COLOR_STDEV_BOUND = "#32CD32" # Lime Green
 COLOR_STDEV_NOT_BOUND = "#FF5733" # Red brick
@@ -17,7 +17,6 @@ MAX_STDEV = 4
 ########
 
 def do_regression_analyze(current_value, historical_values, lower_better, kpi_unit):
-    # Lets define schema for the dataFrame
     details = dict(
         current_value = current_value,
         previous_mean = get_measure_of_mean(historical_values),
@@ -32,7 +31,7 @@ def do_regression_analyze(current_value, historical_values, lower_better, kpi_un
         if lower_better is not None else None
 
     found_in_stdev = MAX_STDEV
-    for deviation in range(MAX_STDEV):
+    for deviation in range(1, MAX_STDEV):
         dev_dist, dev_bound = get_std_dev_measurements(deviation, current_value, historical_values)
         details[f"std_dev_{deviation}"] = dev_dist
         if found_in_stdev != MAX_STDEV:
@@ -41,14 +40,15 @@ def do_regression_analyze(current_value, historical_values, lower_better, kpi_un
 
         details[f"std_dev_{deviation}_bound"] = dev_bound
         if dev_bound:
-            found_in_stdev = dev_bound
+            found_in_stdev = deviation
 
     evaluation = (IMPROVED_EVALUATION if improved else DEGRADED_EVALUATION)[found_in_stdev]
     rating = found_in_stdev / MAX_STDEV
+    accepted = (improved or found_in_stdev < MAX_STDEV)
 
     return RegressionStatus(
         rating = rating,
-        accepted = (not improved and rating == 4),
+        accepted = accepted,
         details = details,
         details_fmt = __get_details_fmt(kpi_unit),
         details_conditional_fmt = __get_details_conditional_fmt,
