@@ -25,6 +25,6 @@ class RegressionStatus(types.SimpleNamespace):
         self.details_fmt = details_fmt
         self.details_conditional_fmt = details_conditional_fmt
 
-from .method import zscore \
+from .method import hunter \
     as analyze_method
 do_regression_analyze = analyze_method.do_regression_analyze
