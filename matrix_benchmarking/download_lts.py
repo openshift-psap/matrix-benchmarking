@@ -1,11 +1,12 @@
 import logging
 import requests
 import json
-import os
+import os, sys
 import pathlib
 import datetime
 import yaml
 
+import opensearchpy
 from opensearchpy import OpenSearch
 
 import matrix_benchmarking.common as common
@@ -126,10 +127,11 @@ def download(client, opensearch_index, filters, lts_results_dirname, max_records
             }
         }
 
-    search = client.search(
-        body=query,
-        index=opensearch_index
-    )
+    try:
+        search = client.search(body=query, index=opensearch_index)
+    except opensearchpy.exceptions.NotFoundError:
+        logging.fatal(f"Fatal: Index '{opensearch_index}' does not exist, cannot proceed.")
+        sys.exit(123) # No medium found
 
     logging.info(f"Saving OpenSearch {opensearch_index} results ...")
 
