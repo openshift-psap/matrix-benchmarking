@@ -76,7 +76,7 @@ Args:
         logging.info(f"Loading LTS results ... done. Found {common.LTS_Matrix.count_records()} results.")
         if common.LTS_Matrix.count_records() == 0:
             logging.error("Not LTS result found, exiting.")
-            logging.error(f"Does your LTS directory contains the '{LTS_ANCHOR_NAME}' marker file?")
+            logging.error(f"Does your LTS directory contain the '{LTS_ANCHOR_NAME}' marker file?")
             return 1
 
         if not common.Matrix.processed_map:
