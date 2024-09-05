@@ -24,6 +24,7 @@ def main(
         opensearch_index: str = "",
         filters: list[str] = [],
         dry_run: bool = False,
+        upload_by_kpi: bool = False,
     ):
     """
 Upload MatrixBenchmark LTS payloads to OpenSearch
@@ -44,11 +45,12 @@ Args:
 
     filters: If provided, parse and upload only the experiment matching the filters. Eg: expe=expe1:expe2,something=true. (Optional.)
     dry_run: If provided, only parse results and not upload results to horreum. (Optional.)
+    upload_by_kpi: If enabled, upload the KPIs in a dedicated index (<opensearch_index>.<kpi_name>)
     """
 
     kwargs = dict(locals()) # capture the function arguments
 
-    optionals_flags = ["filters", "workload_base_dir", "dry_run"]
+    optionals_flags = ["filters", "workload_base_dir", "dry_run", "upload_by_kpi"]
     safe_flags = ["results_dirname", "workload", "opensearch_index"] + optionals_flags
 
     cli_args.setup_env_and_kwargs(kwargs)
@@ -76,7 +78,7 @@ Args:
 
         logging.info(f"Uploading to OpenSearch /{kwargs.get('opensearch_index')}...")
 
-        return upload(client, workload_store, kwargs.get("dry_run"), kwargs.get("opensearch_index"))
+        return upload(client, workload_store, kwargs.get("dry_run"), kwargs.get("opensearch_index"), kwargs.get("upload_by_kpi"))
 
     return cli_args.TaskRunner(run)
 
@@ -125,29 +127,30 @@ def get_kpi_index_name(opensearch_index, kpi_name):
     return f"{opensearch_index}.{kpi_name}"
 
 
-def create_indexes(client, workload_store, dry_run, opensearch_index, lts_payloads):
+def create_indexes(client, workload_store, dry_run, opensearch_index, lts_payloads, upload_by_kpi):
     indexes_to_create = set()
     indexes_to_create.add(opensearch_index)
 
-    for lts_payload, _, _ in lts_payloads:
-        payload_json = json.dumps(lts_payload, default=functools.partial(parse.json_dumper, strict=False))
-        payload_dict = json.loads(payload_json)
+    if upload_by_kpi:
+        for lts_payload, _, _ in lts_payloads:
+            payload_json = json.dumps(lts_payload, default=functools.partial(parse.json_dumper, strict=False))
+            payload_dict = json.loads(payload_json)
 
-        for kpi_name, kpi in payload_dict.get("kpis", {}).items():
-            kpi_index = get_kpi_index_name(opensearch_index, kpi_name)
-            indexes_to_create.add(kpi_index)
+            for kpi_name, kpi in payload_dict.get("kpis", {}).items():
+                kpi_index = get_kpi_index_name(opensearch_index, kpi_name)
+                indexes_to_create.add(kpi_index)
 
     logging.info(f"Creating/updating {len(indexes_to_create)} indexes ...")
     for index_name in indexes_to_create:
         opensearch_create_index(client, dry_run, index_name)
 
 
-def upload(client, workload_store, dry_run, opensearch_index):
+def upload(client, workload_store, dry_run, opensearch_index, upload_by_kpi):
     variables = [k for k, v in common.Matrix.settings.items() if len(v) > 1]
 
     lts_payloads = list(workload_store.build_lts_payloads())
 
-    create_indexes(client, workload_store, dry_run, opensearch_index, lts_payloads)
+    create_indexes(client, workload_store, dry_run, opensearch_index, lts_payloads, upload_by_kpi)
 
     for idx, (payload, start, end) in enumerate(lts_payloads):
         try:
@@ -162,7 +165,8 @@ def upload(client, workload_store, dry_run, opensearch_index):
         payload_json = json.dumps(payload, default=functools.partial(parse.json_dumper, strict=False))
         payload_dict = json.loads(payload_json)
 
-        upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index)
+        if upload_by_kpi:
+            upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index)
         upload_lts_to_opensearch(client, payload_dict, dry_run, opensearch_index)
         upload_regression_results_to_opensearch(client, payload_dict, dry_run, opensearch_index)
 
