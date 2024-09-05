@@ -16,6 +16,9 @@ import matrix_benchmarking.common as common
 
 import matrix_benchmarking.analyze as analyze
 
+# if false, skip the entries without regression in the report
+INCLUDE_ALL_THE_ENTRIES = True
+
 COLOR_OVERVIEW_NAMES = "#F5F5DC" # beige
 
 COLOR_IMPROVED = "#32CD32"
@@ -214,7 +217,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
         if not variables:
             entry_regr_results["name"] = regression_name
 
-        include_in_report = False
+        include_this_entry_in_report = False
 
         for kpi in kpis:
             if kpi_filter and kpi_filter not in kpi:
@@ -294,8 +297,13 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
                 significant_performance_increase += 1
                 include_this_kpi_in_report = True
 
+
             if include_this_kpi_in_report:
-                include_in_report = True
+                include_this_entry_in_report = True
+
+            if INCLUDE_ALL_THE_ENTRIES:
+                include_this_entry_in_report = True
+                include_this_kpi_in_report = True
 
             if not include_this_kpi_in_report: continue
 
@@ -322,7 +330,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
                                                           kpi, ref_kpi, kpis_common_prefix))
 
 
-        if not include_in_report: continue
+        if not include_this_entry_in_report: continue
 
         report += entry_report
         all_regr_results_data.append(entry_regr_results)
