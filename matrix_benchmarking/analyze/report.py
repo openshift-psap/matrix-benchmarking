@@ -18,6 +18,8 @@ import matrix_benchmarking.analyze as analyze
 
 # if false, skip the entries without regression in the report
 INCLUDE_ALL_THE_ENTRIES = True
+# if false, do not include the regression plots (~4.5MB per plot)
+INCLUDE_REGRESSION_PLOT = False
 
 COLOR_OVERVIEW_NAMES = "#F5F5DC" # beige
 
@@ -325,9 +327,9 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
             entry_report.append(_generate_details_table(regr_result))
 
             # Plot
-
-            entry_report.append(_generate_comparison_plot(comparison_df, comparison_keys,
-                                                          kpi, ref_kpi, kpis_common_prefix))
+            if INCLUDE_REGRESSION_PLOT:
+                entry_report.append(_generate_comparison_plot(comparison_df, comparison_keys,
+                                                              kpi, ref_kpi, kpis_common_prefix))
 
 
         if not include_this_entry_in_report: continue
