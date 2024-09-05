@@ -3,7 +3,7 @@ import logging
 import math
 from collections import defaultdict
 import copy
-from packaging.version import Version
+from packaging.version import Version, InvalidVersion
 
 import pandas as pd
 import plotly
@@ -411,13 +411,21 @@ def _generate_entry_header(metadata_settings, metadata):
 def _generate_sorted_pd_table(comparison_data, comparison_keys):
     comparison_df = pd.DataFrame(comparison_data)
 
+    def to_version(value):
+        try:
+            return Version(str(value))
+        except InvalidVersion:
+            pass
+
+        return Version(f"1+{value}")
+
     def create_sort_index(_row):
         sort_index = []
 
         for comparison_key in comparison_keys:
-            sort_index += [_row[comparison_key]]
+            sort_index += [to_version(_row[comparison_key])]
 
-        return Version("+".join(sort_index))
+        return sort_index
 
     comparison_df["__sort_index"] = comparison_df.apply(create_sort_index, axis=1)
 
@@ -523,12 +531,11 @@ def _generate_configuration_overview(all_settings, variables):
     return config_overview_df_html
 
 
-def _generate_results_overview(all_regr_results, variables, kpis_common_prefix):
-    entry_count = len(all_regr_results)
+def _generate_results_overview(all_regr_results_data, variables, kpis_common_prefix):
+    entry_count = len(all_regr_results_data)
     first_column_name = variables[0] if variables else "name"
 
-    all_regr_results_df = pd.DataFrame(all_regr_results)
-
+    all_regr_results_df = _generate_sorted_pd_table(all_regr_results_data, variables)
     def fmt(value):
         if is_nan(value):
             return ""
