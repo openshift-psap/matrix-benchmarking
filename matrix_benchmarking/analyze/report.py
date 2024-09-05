@@ -18,6 +18,8 @@ import matrix_benchmarking.analyze as analyze
 
 # if false, skip the entries without regression in the report
 INCLUDE_ALL_THE_ENTRIES = True
+# if false, skip the KPIs without regression in the report
+INCLUDE_ALL_THE_KPIS = True
 # if false, do not include the regression plots (~4.5MB per plot)
 INCLUDE_REGRESSION_PLOT = False
 
@@ -564,14 +566,15 @@ def _generate_results_overview(all_regr_results_data, variables, kpis_common_pre
     overview_fmt = {k: fmt for k in kpi_names}
 
     kpis_to_hide = []
-    for kpi_name in kpi_names:
-        has_regression = False
-        for kpi_value in all_regr_results_df[kpi_name].values:
-            if kpi_value.rating != 0:
-                has_regression = True
-                break
-        if not has_regression:
-            kpis_to_hide.append(kpi_name)
+    if not INCLUDE_ALL_THE_KPIS:
+        for kpi_name in kpi_names:
+            has_regression = False
+            for kpi_value in all_regr_results_df[kpi_name].values:
+                if kpi_value.rating != 0:
+                    has_regression = True
+                    break
+            if not has_regression:
+                kpis_to_hide.append(kpi_name)
 
     all_regr_results_df_html = all_regr_results_df\
         .style\
