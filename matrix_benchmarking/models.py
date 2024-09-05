@@ -116,6 +116,32 @@ def IgnoredForRegression(fct):
     return fct
 
 
+def LowerBetter(fct):
+    mod = inspect.getmodule(fct)
+
+    name = fct.__name__
+
+    if name not in mod.KPIs:
+        raise KeyError(f"@IgnoredForRegression should come before @KPIMetadata() for {name}")
+
+    mod.KPIs[name]["lower_better"] = True
+
+    return fct
+
+
+def HigherBetter(fct):
+    mod = inspect.getmodule(fct)
+
+    name = fct.__name__
+
+    if name not in mod.KPIs:
+        raise KeyError(f"@IgnoredForRegression should come before @KPIMetadata() for {name}")
+
+    mod.KPIs[name]["lower_better"] = False
+
+    return fct
+
+
 def KPIMetadata(**kwargs):
     def decorator(fct):
         mod = inspect.getmodule(fct)
