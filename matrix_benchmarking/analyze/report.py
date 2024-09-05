@@ -32,24 +32,21 @@ def get_rating_color(rating, improved=True):
     if is_nan(rating):
         return COLOR_NAN
 
-    GREEN = "#00FF80"
-    WHITE = "#FFFFFF"
-    RED = "#FF6666"
-
-    DARK_GREEN = "#109010"
-    DARK_RED = "#ed0000"
+    OVERVIEW_IMPROVED = "#61c45a"
+    OVERVIEW_REGRESSED = "#ff7f00"
+    OVERVIEW_STABLE = "#e8fedd"
 
     if rating is None:
-        return WHITE
+        return OVERVIEW_STABLE
 
     if rating >= 1:
-        return DARK_GREEN if improved else DARK_RED
+        return OVERVIEW_IMPROVED if improved else OVERVIEW_REGRESSED
 
     # see also plotly.colors.sequential.Inferno_r and others
     if improved:
-        color_scale = [WHITE, GREEN]
+        color_scale = [OVERVIEW_STABLE, OVERVIEW_IMPROVED]
     else:
-        color_scale = [WHITE, RED]
+        color_scale = [OVERVIEW_STABLE, OVERVIEW_REGRESSED]
 
     color = plotly.colors.sample_colorscale(
         color_scale, samplepoints=[rating])[0]
@@ -93,10 +90,11 @@ STYLE_HIDE_COLUMN_TITLES = [{'selector': 'thead', 'props': [('display', 'none')]
 
 
 class OvervallResult():
-    def __init__(self, rating, description, improved):
+    def __init__(self, rating, description, improved, current_value_str):
         self.rating = rating
         self.description = description
         self.improved = improved
+        self.current_value_str = current_value_str
 
 def longestCommonPrefix(strs):
     if not strs or len(strs) == 1:
@@ -199,7 +197,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
             regression_name = "Unique test"
 
         entry_report = []
-        entry_report.append(html.H1(regression_name))
+        entry_report.append(html.H1(["Entry #", idx, " – ", regression_name]))
 
         # entry header
 
@@ -210,7 +208,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
             no_history += 1
             continue
 
-        entry_regr_results = dict()
+        entry_regr_results = dict(entry_id=idx)
         for var in variables:
             entry_regr_results[var] = metadata_settings.__dict__[var]
         if not variables:
@@ -283,7 +281,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
 
             validate_regression_result(regr_result)
 
-            entry_regr_results[kpi.replace(kpis_common_prefix, "")] = OvervallResult(regr_result.rating, regr_result.description, regr_result.improved)
+            entry_regr_results[kpi.replace(kpis_common_prefix, "")] = OvervallResult(regr_result.rating, regr_result.description, regr_result.improved, current_value_str=f"{ref_kpi.value:.0f} {ref_kpi.unit}")
 
             include_this_kpi_in_report = False
             total_points += 1
@@ -305,7 +303,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
 
             # KPI header
 
-            entry_report.append(html.H2(f" KPI {kpi}"))
+            entry_report.append(html.H2(f"Entry #{idx} KPI {kpi}"))
             entry_report.append(_generate_comparison_table(comparison_df, ref_kpi.unit))
 
             # Evaluation results
@@ -550,18 +548,9 @@ def _generate_results_overview(all_regr_results_data, variables, kpis_common_pre
         if is_nan(value):
             return ""
 
-        rating_str = f"{100*value.rating:.0f}%" if isinstance(value.rating, float) \
-            else str(value.rating)
+        return value.current_value_str
 
-        if value.rating is None:
-            return value.description
-
-        if value.description is None:
-            return rating_str
-
-        return f"{rating_str} • {value.description}"
-
-    kpi_names = set(all_regr_results_df.keys()[max([1, len(variables)]):]) # come back here!
+    kpi_names = set(all_regr_results_df.keys()[max([2, len(variables)+1]):])
     overview_fmt = {k: fmt for k in kpi_names}
 
     kpis_to_hide = []
@@ -591,7 +580,7 @@ def get_all_regr_results_conditional_format(first_column_name, variables):
 
         for key, value in zip(row.keys(), row.values):
 
-            if key in variables or key == "name":
+            if key in variables or key in ("name", "entry_id"):
                 style = f"background: {COLOR_OVERVIEW_NAMES}"
             else:
                 # KPI result
