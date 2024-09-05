@@ -581,14 +581,14 @@ def get_all_regr_results_conditional_format(first_column_name, variables):
         for key, value in zip(row.keys(), row.values):
 
             if key in variables or key in ("name", "entry_id"):
-                style = f"background: {COLOR_OVERVIEW_NAMES}"
+                style = f"background: {COLOR_OVERVIEW_NAMES}; text-align: center;"
             else:
                 # KPI result
                 if is_nan(value):
                     style = "background: red"
                 else:
                     color = get_rating_color(value.rating,  value.improved)
-                    style = f"background: {color}"
+                    style = f"background: {color}; text-align: right;"
 
             fmt.append(style)
 
