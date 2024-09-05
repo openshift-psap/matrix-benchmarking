@@ -112,7 +112,7 @@ def longestCommonPrefix(strs):
     return min_s[:]
 
 
-def generate_regression_analyse_report(regression_df, kpi_filter, comparison_keys, ignored_keys):
+def generate_regression_analyse_report(regression_df, kpi_filter, comparison_keys, ignored_keys, sorting_keys):
     pio.renderers.default = "notebook"
 
     idx = 0
@@ -162,6 +162,13 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
         (variables if len(v) > 1 else fix_settings).append(k)
 
     variables.sort()
+    # take the sorting keys in the reversed order,
+    # so that sorting_keys[0] ends up in variables[0], etc
+    for key in sorting_keys[::-1]:
+        if key not in variables: continue
+        # move the key first
+        variables.remove(key)
+        variables.insert(0, key)
 
     for k, v in all_lts_settings.items():
         (lts_variables if len(v) > 1 else lts_fix_settings).append(k)
@@ -349,8 +356,8 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
     return html.Span(report), failures
 
 
-def generate_and_save_regression_analyse_report(dest, regression_df, kpi_filter, comparison_key, ignored_keys):
-    report, failures = generate_regression_analyse_report(regression_df, kpi_filter, comparison_key, ignored_keys)
+def generate_and_save_regression_analyse_report(dest, regression_df, kpi_filter, comparison_key, ignored_keys, sorting_keys):
+    report, failures = generate_regression_analyse_report(regression_df, kpi_filter, comparison_key, ignored_keys, sorting_keys)
 
     if dest is None:
         logging.warning("Skipping report generation.")

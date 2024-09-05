@@ -85,9 +85,9 @@ Args:
 
         workload_analyze = get_workload_analyze_module(workload_store)
 
-        regression_df, comparison_keys, ignored_keys = workload_analyze.prepare()
+        regression_df, comparison_keys, ignored_keys, sorting_keys = workload_analyze.prepare()
 
-        failures = analyze_report.generate_and_save_regression_analyse_report(kwargs["report_dest"], regression_df, kwargs["kpi_filter"], comparison_keys, ignored_keys)
+        failures = analyze_report.generate_and_save_regression_analyse_report(kwargs["report_dest"], regression_df, kwargs["kpi_filter"], comparison_keys, ignored_keys, sorting_keys)
 
         logging.info(f"The regression analyze finished with code {failures}.")
 
