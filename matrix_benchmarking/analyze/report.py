@@ -128,7 +128,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
 
     summary_html = [] # will be populated after the loop
     report.append(html.Div(summary_html))
-    all_regr_results = []
+    all_regr_results_data = []
 
     all_lts_settings = defaultdict(set)
     all_settings = defaultdict(set)
@@ -324,7 +324,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
         if not include_in_report: continue
 
         report += entry_report
-        all_regr_results.append(entry_regr_results)
+        all_regr_results_data.append(entry_regr_results)
 
     # Configuration overview
 
@@ -338,7 +338,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
     # Results overview
 
     summary_html.append(html.H2("Results overview"))
-    summary_html.append(_generate_results_overview(all_regr_results, variables,  kpis_common_prefix))
+    summary_html.append(_generate_results_overview(all_regr_results_data, variables,  kpis_common_prefix))
 
     # Summary
 
