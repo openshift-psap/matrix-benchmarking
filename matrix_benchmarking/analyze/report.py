@@ -93,9 +93,9 @@ STYLE_HIDE_COLUMN_TITLES = [{'selector': 'thead', 'props': [('display', 'none')]
 
 
 class OvervallResult():
-    def __init__(self, rating, evaluation, improved):
+    def __init__(self, rating, description, improved):
         self.rating = rating
-        self.evaluation = evaluation
+        self.description = description
         self.improved = improved
 
 def longestCommonPrefix(strs):
@@ -283,7 +283,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
 
             validate_regression_result(regr_result)
 
-            entry_regr_results[kpi.replace(kpis_common_prefix, "")] = OvervallResult(regr_result.rating, regr_result.evaluation, regr_result.improved)
+            entry_regr_results[kpi.replace(kpis_common_prefix, "")] = OvervallResult(regr_result.rating, regr_result.description, regr_result.improved)
 
             include_this_kpi_in_report = False
             total_points += 1
@@ -472,7 +472,7 @@ def _generate_evaluation_results(regr_result):
                     if value is not None \
                        else COLOR_IMPROVED_NONE
 
-            if key in ("rating", "evaluation"):
+            if key in ("rating", "description"):
                 color = row.rating_color
 
             style = f"background: {color}"
@@ -485,7 +485,7 @@ def _generate_evaluation_results(regr_result):
         improved=regr_result.improved,
         rating=regr_result.rating,
         rating_color=rating_color,
-        evaluation=regr_result.evaluation,
+        description=regr_result.description,
         accepted=regr_result.accepted,
     )]).style\
                      .format(regr_results_evaluation_fmt)\
@@ -554,12 +554,12 @@ def _generate_results_overview(all_regr_results_data, variables, kpis_common_pre
             else str(value.rating)
 
         if value.rating is None:
-            return value.evaluation
+            return value.description
 
-        if value.evaluation is None:
+        if value.description is None:
             return rating_str
 
-        return f"{rating_str} • {value.evaluation}"
+        return f"{rating_str} • {value.description}"
 
     kpi_names = set(all_regr_results_df.keys()[max([1, len(variables)]):]) # come back here!
     overview_fmt = {k: fmt for k in kpi_names}

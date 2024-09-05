@@ -28,13 +28,13 @@ def do_regression_analyze(current_value, historical_values, lower_better, kpi_un
     improved = True if z_score > 0 else False
     if len(historical_values) == 1:
         accepted = None
-        evaluation = "Not enough historical values"
+        description = "Not enough historical values"
     elif abs(z_score) < THRESHOLD:
         accepted = True
-        evaluation = "z-score lower than threshold"
+        description = "z-score lower than threshold"
     else:
         accepted = False
-        evaluation = "z-score greater than threshold"
+        description = "z-score greater than threshold"
 
     rating = abs(z_score / THRESHOLD)
 
@@ -46,7 +46,7 @@ def do_regression_analyze(current_value, historical_values, lower_better, kpi_un
         accepted = accepted,
         details = details,
         improved = improved,
-        evaluation = evaluation,
+        description = description,
         # a function to format the content of the details cells
         details_fmt = __get_details_fmt(kpi_unit),
         # a function to style the details cells

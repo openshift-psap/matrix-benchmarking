@@ -26,14 +26,14 @@ def do_regression_analyze(current_value, historical_values, lower_better, kpi_un
     rating = 0.2
 
     # human readable text describing the rating
-    evaluation = "good" if improved else "bad"
+    description = "good" if improved else "bad"
 
     return RegressionStatus(
         rating = rating,
         accepted = accepted,
         details = details,
         improved = improved,
-        evaluation = evaluation,
+        description = description,
         # a function to format the content of the details cells
         details_fmt = __get_details_fmt(kpi_unit),
         # a function to style the details cells

@@ -38,16 +38,16 @@ def do_regression_analyze(current_value, historical_values, lower_better, kpi_un
         # if the current value is alone in its statistical group:
         if change_points[-1].index == len(historical_values):
             accepted = False
-            evaluation = "Jump" if improved else "Regression"
+            description = "Jump" if improved else "Regression"
             rating = 1
         else:
             accepted = True
-            evaluation = f"Inline ({len(change_points)} historical)"
+            description = f"Inline ({len(change_points)} historical)"
             rating = 0
 
     else:
         accepted = True
-        evaluation = "Inline"
+        description = "Inline"
         rating = 0
         improved = None
 
@@ -56,7 +56,7 @@ def do_regression_analyze(current_value, historical_values, lower_better, kpi_un
         accepted = accepted,
         details = details,
         improved = improved,
-        evaluation = evaluation,
+        description = description,
         # a function to format the content of the details cells
         details_fmt = __get_details_fmt(kpi_unit),
         # a function to style the details cells
