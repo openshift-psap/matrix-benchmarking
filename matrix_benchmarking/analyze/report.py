@@ -225,6 +225,9 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
             ref_kpi = ref_entry.results.lts.kpis[kpi]
             if isinstance(ref_kpi.value, list): continue
 
+            if ref_kpi.ignored_for_regression:
+                continue
+
             ref_name = row["ref"]
 
             comparison_data = []
