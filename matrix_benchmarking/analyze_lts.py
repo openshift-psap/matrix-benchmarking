@@ -76,7 +76,7 @@ Args:
         logging.info(f"Loading LTS results ... done. Found {common.LTS_Matrix.count_records()} results.")
         if common.LTS_Matrix.count_records() == 0:
             logging.error("Not LTS result found, exiting.")
-            logging.error(f"Does your LTS directory contains the '{LTS_ANCHOR_NAME}' marker file?")
+            logging.error(f"Does your LTS directory contain the '{LTS_ANCHOR_NAME}' marker file?")
             return 1
 
         if not common.Matrix.processed_map:
@@ -85,9 +85,9 @@ Args:
 
         workload_analyze = get_workload_analyze_module(workload_store)
 
-        regression_df, comparison_keys, ignored_keys = workload_analyze.prepare()
+        regression_df, comparison_keys, ignored_keys, sorting_keys = workload_analyze.prepare()
 
-        failures = analyze_report.generate_and_save_regression_analyse_report(kwargs["report_dest"], regression_df, kwargs["kpi_filter"], comparison_keys, ignored_keys)
+        failures = analyze_report.generate_and_save_regression_analyse_report(kwargs["report_dest"], regression_df, kwargs["kpi_filter"], comparison_keys, ignored_keys, sorting_keys)
 
         logging.info(f"The regression analyze finished with code {failures}.")
 

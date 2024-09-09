@@ -85,6 +85,7 @@ class KPI(ExclusiveModel):
     value: Union[float, int, List[float], List[int]]
     test_uuid: UUID4
     lower_better: Optional[bool]
+    ignored_for_regression: Optional[bool] = Field(exclude=True)
 
     status: EntryStatus = Field(default=EntryStatus.Valid)
 
@@ -101,6 +102,46 @@ class KPI(ExclusiveModel):
         return f"""# HELP {self.help}, in {self.unit}
 __NAME__{{{labels_str}}} {self.value} {self.unit}"""
 
+
+def IgnoredForRegression(fct):
+    mod = inspect.getmodule(fct)
+
+    name = fct.__name__
+
+    if name not in mod.KPIs:
+        raise KeyError(f"@IgnoredForRegression should come before @KPIMetadata() for {name}")
+
+    mod.KPIs[name]["ignored_for_regression"] = True
+
+    return fct
+
+
+def LowerBetter(fct):
+    mod = inspect.getmodule(fct)
+
+    name = fct.__name__
+
+    if name not in mod.KPIs:
+        raise KeyError(f"@IgnoredForRegression should come before @KPIMetadata() for {name}")
+
+    mod.KPIs[name]["lower_better"] = True
+
+    return fct
+
+
+def HigherBetter(fct):
+    mod = inspect.getmodule(fct)
+
+    name = fct.__name__
+
+    if name not in mod.KPIs:
+        raise KeyError(f"@IgnoredForRegression should come before @KPIMetadata() for {name}")
+
+    mod.KPIs[name]["lower_better"] = False
+
+    return fct
+
+
 def KPIMetadata(**kwargs):
     def decorator(fct):
         mod = inspect.getmodule(fct)
@@ -111,6 +152,7 @@ def KPIMetadata(**kwargs):
 
         mod.KPIs[name] = kwargs.copy()
         mod.KPIs[name]["__func__"] = fct
+        mod.KPIs[name]["ignored_for_regression"] = False
 
         return fct
 

@@ -3,8 +3,8 @@ import statistics
 
 from matrix_benchmarking.analyze import RegressionStatus
 
-IMPROVED_EVALUATION = {0: "very close+", 1: "in-line +", 2: "improved", 3:"improved +", 4: "improved++"}
-DEGRADED_EVALUATION = {0: "very close-", 1: "in-line -", 2: "degraded", 3:"degraded +", 4: "degraded++"}
+IMPROVED_DESCRIPTION = {0: "very close+", 1: "in-line +", 2: "improved", 3:"improved +", 4: "improved++"}
+DEGRADED_DESCRIPTION = {0: "very close-", 1: "in-line -", 2: "degraded", 3:"degraded +", 4: "degraded++"}
 
 COLOR_STDEV_BOUND = "#32CD32" # Lime Green
 COLOR_STDEV_NOT_BOUND = "#FF5733" # Red brick
@@ -42,7 +42,7 @@ def do_regression_analyze(current_value, historical_values, lower_better, kpi_un
         if dev_bound:
             found_in_stdev = deviation
 
-    evaluation = (IMPROVED_EVALUATION if improved else DEGRADED_EVALUATION)[found_in_stdev]
+    description = (IMPROVED_DESCRIPTION if improved else DEGRADED_DESCRIPTION)[found_in_stdev]
     rating = found_in_stdev / MAX_STDEV
     accepted = (improved or found_in_stdev < MAX_STDEV)
 
@@ -53,7 +53,7 @@ def do_regression_analyze(current_value, historical_values, lower_better, kpi_un
         details_fmt = __get_details_fmt(kpi_unit),
         details_conditional_fmt = __get_details_conditional_fmt,
         improved = improved,
-        evaluation = evaluation,
+        description = description,
     )
 
 ######

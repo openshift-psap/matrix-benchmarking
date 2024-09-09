@@ -10,7 +10,7 @@ class RegressionStatus(types.SimpleNamespace):
             rating: int,
             rating_color: Optional[str] = None,
             improved: Optional[int] = None,
-            evaluation: Optional[str] = None,
+            description: Optional[str] = None,
             details: Optional[dict] = None,
             details_fmt: Optional[dict] = None,
             details_conditional_fmt: Optional[Callable] = None,
@@ -18,7 +18,7 @@ class RegressionStatus(types.SimpleNamespace):
         self.rating = rating
         self.rating_color = rating_color
         self.improved = improved
-        self.evaluation = evaluation
+        self.description = description
         self.accepted = accepted
 
         self.details = details
