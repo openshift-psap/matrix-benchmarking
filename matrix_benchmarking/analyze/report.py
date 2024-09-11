@@ -288,7 +288,22 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
 
             validate_regression_result(regr_result)
 
-            entry_regr_results[kpi.replace(kpis_common_prefix, "")] = OvervallResult(regr_result.rating, regr_result.description, regr_result.improved, current_value_str=f"{ref_kpi.value:.0f} {ref_kpi.unit}")
+            if ref_kpi.full_format:
+                current_value_str = ref_kpi.full_format(ref_kpi)
+            elif ref_kpi.format:
+                if ref_kpi.divisor:
+                    current_value_str = ref_kpi.format.format(ref_kpi.value / ref_kpi.divisor) + f" {ref_kpi.divisor_unit}"
+                else:
+                    current_value_str = ref_kpi.format.format(ref_kpi.value) + f" {ref_kpi.unit}"
+            else:
+                current_value_str = f"{ref_kpi.value:.0f} {ref_kpi.unit}"
+
+            entry_regr_results[kpi.replace(kpis_common_prefix, "")] = \
+                OvervallResult(
+                    regr_result.rating,
+                    regr_result.description,
+                    regr_result.improved,
+                    current_value_str=current_value_str)
 
             include_this_kpi_in_report = False
             total_points += 1
