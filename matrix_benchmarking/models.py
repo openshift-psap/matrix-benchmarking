@@ -85,7 +85,6 @@ class KPI(ExclusiveModel):
     value: Union[float, int, List[float], List[int]]
     test_uuid: UUID4
     lower_better: Optional[bool]
-    ignored_for_regression: Optional[bool] = Field(exclude=True)
 
     status: EntryStatus = Field(default=EntryStatus.Valid)
 
@@ -94,6 +93,14 @@ class KPI(ExclusiveModel):
     test_path: Optional[str]
 
     urls: Optional[dict[str, str]]
+
+    #
+    ignored_for_regression: Optional[bool] = Field(exclude=True)
+    format: Optional[str] = Field(exclude=True)
+    full_format: Optional[str] = Field(exclude=True)
+    divisor: Optional[float] = Field(exclude=True)
+    divisor_unit: Optional[str] = Field(exclude=True)
+    #
 
     def __str__(self):
         labels = {k:v for k, v in self.__dict__.items() if k not in ("unit", "help", "timestamp", "value")}
@@ -122,7 +129,10 @@ def LowerBetter(fct):
     name = fct.__name__
 
     if name not in mod.KPIs:
-        raise KeyError(f"@IgnoredForRegression should come before @KPIMetadata() for {name}")
+        raise KeyError(f"@LowerBetter should come before @KPIMetadata() for {name}")
+
+    if mod.KPIs[name].get("lower_better") is not None:
+        raise KeyError(f"@LowerBetter should not be used with @HigherBetter for {name}")
 
     mod.KPIs[name]["lower_better"] = True
 
@@ -135,14 +145,91 @@ def HigherBetter(fct):
     name = fct.__name__
 
     if name not in mod.KPIs:
-        raise KeyError(f"@IgnoredForRegression should come before @KPIMetadata() for {name}")
+        raise KeyError(f"@HigherBetter should come before @KPIMetadata() for {name}")
+
+    if mod.KPIs[name].get("lower_better") is not None:
+        raise KeyError(f"@HigherBetter should not be used with @LowerBetter for {name}")
 
     mod.KPIs[name]["lower_better"] = False
 
     return fct
 
+#
+# Receives a divisor to apply to the value before formatting it
+# 100, "MB"
+#
+def FormatDivisor(divisor: float, unit: str, format:str = None):
+    def decorator(fct):
+        mod = inspect.getmodule(fct)
 
-def KPIMetadata(**kwargs):
+        name = fct.__name__
+
+        if name not in mod.KPIs:
+            raise KeyError(f"@FormatDivisor should come before @KPIMetadata() for {name}")
+
+        if format:
+            if mod.KPIs[name].get("format") is not None:
+                raise KeyError(f"@FormatDivisor(fmt) should not be used with @Format for {name}")
+            mod.KPIs[name]["format"] = format
+        else:
+            if mod.KPIs[name].get("format") is None:
+                raise KeyError(f"@FormatDivisor should be used with @Format for {name}")
+
+        mod.KPIs[name]["divisor"] = divisor
+        mod.KPIs[name]["divisor_unit"] = unit
+
+        return fct
+
+    return decorator
+
+#
+# Receives a format string as parameter
+# eg: "{.2f}"
+#
+def Format(format: str):
+    def decorator(fct):
+        mod = inspect.getmodule(fct)
+
+        name = fct.__name__
+
+        if name not in mod.KPIs:
+            raise KeyError(f"@Format should come before @KPIMetadata() for {name}")
+
+        if mod.KPIs[name].get("full_format"):
+            raise KeyError(f"@Format should not be used with @FullFormat for {name}")
+
+        mod.KPIs[name]["format"] = format
+
+        return fct
+
+    return decorator
+
+#
+# Receives a KPI as parameter
+# eg:
+def FullFormat(format_fct):
+    def decorator(fct):
+        mod = inspect.getmodule(fct)
+
+        name = fct.__name__
+        if callable(format_fct) and mylambda.__name__ == "<lambda>":
+            raise KeyError(f"@FullFormat does not work with Lambda for {name}")
+
+        if name not in mod.KPIs:
+            raise KeyError(f"@FullFormat should come before @KPIMetadata() for {name}")
+
+        if mod.KPIs[name].get("format"):
+            raise KeyError(f"@FullFormat should not be used with @Format for {name}")
+
+        mod.KPIs[name]["full_format"] = format_fct
+
+        return fct
+
+    return decorator
+
+
+def KPIMetadata(help, unit):
+
     def decorator(fct):
         mod = inspect.getmodule(fct)
 
@@ -150,10 +237,13 @@ def KPIMetadata(**kwargs):
         if name in mod.KPIs:
             raise KeyError(f"Key {name} already exists in module {fct.__module__}.")
 
-        mod.KPIs[name] = kwargs.copy()
+        mod.KPIs[name] = dict(help=help, unit=unit)
         mod.KPIs[name]["__func__"] = fct
         mod.KPIs[name]["ignored_for_regression"] = False
-
+        mod.KPIs[name]["format"] = None
+        mod.KPIs[name]["full_format"] = None
+        mod.KPIs[name]["divisor"] = None
+        mod.KPIs[name]["divisor_unit"] = None
         return fct
 
     return decorator
