@@ -331,6 +331,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
             # KPI header
 
             entry_report.append(html.H2(f"Entry #{idx} KPI {kpi}"))
+            entry_report.append(html.P(html.I(f"{ref_kpi.help} (in {ref_kpi.unit}).")))
             entry_report.append(_generate_comparison_table(comparison_df, ref_kpi.unit))
 
             # Evaluation results
