@@ -208,12 +208,13 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
 
         # entry header
 
-        entry_report += _generate_entry_header(metadata_settings, metadata)
-
-        if len([... for c in row.values() if not is_nan(c)]) == 1:
-            report.append(html.P(html.B("No historical records ...")))
+        has_history = True
+        if len([... for c in row.values() if not is_nan(c)]) == 2:
+            entry_report.append(html.P(html.B("No historical records ...")))
             no_history += 1
-            continue
+            has_history = False
+
+        entry_report += _generate_entry_header(metadata_settings, metadata)
 
         entry_regr_results = dict(entry_id=idx)
         for var in variables:
@@ -306,15 +307,16 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
                     current_value_str=current_value_str)
 
             include_this_kpi_in_report = False
-            total_points += 1
-            if regr_result.accepted is False:
-                failures += 1
-                include_this_kpi_in_report = True
-            elif regr_result.accepted is None:
-                not_analyzed += 1
-            elif regr_result.improved and regr_result.rating > 1:
-                significant_performance_increase += 1
-                include_this_kpi_in_report = True
+            if has_history:
+                total_points += 1
+                if regr_result.accepted is False:
+                    failures += 1
+                    include_this_kpi_in_report = True
+                elif regr_result.accepted is None:
+                    not_analyzed += 1
+                elif regr_result.improved and regr_result.rating > 1:
+                    significant_performance_increase += 1
+                    include_this_kpi_in_report = True
 
 
             if include_this_kpi_in_report:
@@ -334,6 +336,10 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
             entry_report.append(html.P(html.I(f"{ref_kpi.help} (in {ref_kpi.unit}).")))
             entry_report.append(_generate_comparison_table(comparison_df, ref_kpi.unit))
 
+            if not has_history:
+                entry_report.append(html.P(html.B("No historical records ...")))
+                continue
+
             # Evaluation results
 
             entry_report.append(html.H3("Evaluation results"))
@@ -348,7 +354,6 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
             if INCLUDE_REGRESSION_PLOT:
                 entry_report.append(_generate_comparison_plot(comparison_df, comparison_keys,
                                                               kpi, ref_kpi, kpis_common_prefix))
-
 
         if not include_this_entry_in_report: continue
 
@@ -367,17 +372,19 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
     # Results overview
 
     summary_html.append(html.H2("Results overview"))
-    summary_html.append(_generate_results_overview(all_regr_results_data, variables,  kpis_common_prefix))
+
+    kpi_names = set(list(all_regr_results_data[0].keys())[max([2, len(variables)+1]):])
+    summary_html.append(_generate_results_overview(all_regr_results_data, variables, kpi_names, kpis_common_prefix))
 
     # Summary
 
-    summary = f"Performed {total_points} regression analyses over {idx} entries. {failures} didn't pass."
+    summary = f"Performed {total_points} KPI regression analyses over {idx} entries x {len(kpi_names)} KPIs. {failures} KPIs didn't pass."
     if no_history:
-        summary += f" {no_history} didn't have historical records."
+        summary += f" {no_history} entries didn't have historical records."
     if not_analyzed:
-        summary += f" {not_analyzed} couldn't be analyzed. "
+        summary += f" {not_analyzed} entries couldn't be analyzed (check the logs for an explanation). "
     if significant_performance_increase:
-        summary += f" {significant_performance_increase} significant performance increases. "
+        summary += f" {significant_performance_increase} KPIs had a significant performance increase. "
 
     logging.info(summary)
     summary_html.append(html.P(html.B(summary)))
@@ -571,7 +578,7 @@ def _generate_configuration_overview(all_settings, variables):
     return config_overview_df_html
 
 
-def _generate_results_overview(all_regr_results_data, variables, kpis_common_prefix):
+def _generate_results_overview(all_regr_results_data, variables, kpi_names, kpis_common_prefix):
     entry_count = len(all_regr_results_data)
     first_column_name = variables[0] if variables else "name"
 
@@ -582,7 +589,6 @@ def _generate_results_overview(all_regr_results_data, variables, kpis_common_pre
 
         return value.current_value_str
 
-    kpi_names = set(all_regr_results_df.keys()[max([2, len(variables)+1]):])
     overview_fmt = {k: fmt for k in kpi_names}
 
     kpis_to_hide = []
