@@ -213,7 +213,7 @@ def upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index):
 
 
 def upload_regression_results_to_opensearch(client, payload_dict, dry_run, opensearch_index):
-    if "regression_results" not in payload_dict.keys():
+    if not payload_dict.get("regression_results"):
         logging.info(f"==> no regression results found in the payload.")
         return
 
