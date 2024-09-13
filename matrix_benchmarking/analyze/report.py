@@ -155,7 +155,10 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
                 else entry.results[0].results.metadata.settings
 
             for k, v in entry_settings.__dict__.items():
-                if not v.__hash__: continue
+                if isinstance(v, list):
+                    v = str(v)
+                if not v.__hash__:
+                    continue
                 if k in ignored_keys: continue
                 dest_all_settings[k].add(v)
 
