@@ -181,6 +181,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
     for k, v in all_lts_settings.items():
         (lts_variables if len(v) > 1 else lts_fix_settings).append(k)
 
+    kpis_common_prefix = ""
     for row_values in regression_df.values:
         row = dict(zip(regression_df, row_values))
         ref_entry = row[row["ref"]]
@@ -370,13 +371,17 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
 
     # LTS overview
     summary_html.append(html.H2("Historical records overview"))
-    summary_html.append(_generate_lts_overview(all_lts_settings, lts_variables))
+    if no_history:
+        summary_html.append(html.P("No historical records ..."))
+    else:
+        summary_html.append(_generate_lts_overview(all_lts_settings, lts_variables))
 
     # Results overview
 
     summary_html.append(html.H2("Results overview"))
+    kpi_names = set(list(all_regr_results_data[0].keys())[max([2, len(variables)+1]):]) \
+        if all_regr_results_data else set()
 
-    kpi_names = set(list(all_regr_results_data[0].keys())[max([2, len(variables)+1]):])
     summary_html.append(_generate_results_overview(all_regr_results_data, variables, kpi_names, kpis_common_prefix))
 
     # Summary
