@@ -101,7 +101,8 @@ Args:
         except Exception as e:
             with open(store_dir / "FAILURE", 'a') as f:
                 print(str(e), file=f)
-                print(traceback.format_exc(), file=e)
+                import traceback
+                print(traceback.format_exc(), file=f)
             raise e
 
         return failures
@@ -117,8 +118,8 @@ def get_workload_analyze_module(workload_store):
 
     try:
         analyze_module = importlib.import_module(module)
-    except ModuleNotFoundError:
-        logging.critical(f"Module {module} does not exist :/")
+    except ModuleNotFoundError as e:
+        logging.critical(f"Module {module} does not exist :/ ({e})")
         sys.exit(1)
 
     logging.info(f"Loading {module} module ... done.")
