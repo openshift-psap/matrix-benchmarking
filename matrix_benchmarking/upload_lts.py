@@ -111,7 +111,7 @@ def opensearch_create_index(client, dry_run, opensearch_index):
             },
             'mapping': {
                 'total_fields': {
-                    "limit": 2000,
+                    "limit": 4000,
                 },
             },
         },
