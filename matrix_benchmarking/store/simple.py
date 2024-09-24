@@ -4,6 +4,7 @@ import logging
 import pathlib
 import yaml
 import json
+import types
 
 import pydantic
 
@@ -160,6 +161,27 @@ def register_custom_build_lts_payloads(fn):
     custom_build_lts_payloads = fn
 
 # ---
+# Borrowed from:
+# https://dev.to/taqkarim/extending-simplenamespace-for-nested-dictionaries-58e8
+
+# Similar to SimpleNamespace, but RecursiveNamespace.map_entry recursively creates namespaces from nested dicts
+class RecursiveNamespace(types.SimpleNamespace):
+
+    @staticmethod
+    def map_entry(entry):
+        if isinstance(entry, dict):
+            return RecursiveNamespace(**entry)
+
+        return entry
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        for key, val in kwargs.items():
+            if type(val) == dict:
+                setattr(self, key, RecursiveNamespace(**val))
+            elif type(val) == list:
+                setattr(self, key, list(map(self.map_entry, val)))
+
 
 def parse_lts_data(lts_results_dir=None):
     if lts_results_dir is None:
@@ -185,15 +207,11 @@ def parse_lts_data(lts_results_dir=None):
             with open(filepath) as f:
                 document = json.load(f)
 
-            try:
-                lts_payload = store.lts_schema.parse_obj(document)
-            except pydantic.error_wrappers.ValidationError as e:
-                logging.error(f"Invalid LTS file: {filepath}\n{e}")
-                continue
+            lts_payload = RecursiveNamespace.map_entry(document)
 
-            lts_settings = lts_payload.metadata.settings # plain dict or model
+            lts_settings = lts_payload.metadata.settings
 
-            import_settings = dict(lts_settings)
+            import_settings = dict(lts_settings.__dict__)
 
             import_settings["@timestamp"] = str(lts_payload.metadata.start)
 

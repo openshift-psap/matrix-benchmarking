@@ -89,13 +89,29 @@ def opensearch_create_index(client, dry_run, opensearch_index):
         return
 
     index_body = {
+        "mappings": {
+            "properties": {
+                "metadata": {
+                    "type": "flat_object"
+                },
+                "kpis": {
+                    "type": "flat_object"
+                },
+                "results": {
+                    "type": "flat_object"
+                },
+                "regression_results": {
+                    "type": "flat_object"
+                }
+            },
+        },
         'settings': {
             'index': {
                 'number_of_shards': 4
             },
             'mapping': {
                 'total_fields': {
-                    "limit": 2000,
+                    "limit": 4000,
                 },
             },
         },
@@ -104,9 +120,13 @@ def opensearch_create_index(client, dry_run, opensearch_index):
     # Check if the index already exists
     if client.indices.exists(index=opensearch_index):
         del index_body["settings"]["index"]["number_of_shards"] # Can't update non dynamic settings [[index.number_of_shards]] for open indices
-        client.indices.put_settings(index=opensearch_index, body=index_body)
+        try:
+            client.indices.put_settings(index=opensearch_index, body=index_body)
+        except Exception as e:
+            logging.warn(f"Index '{opensearch_index}' could not be updated: {e}")
+        else:
+            logging.info(f"Index '{opensearch_index}' updated.")
 
-        logging.info(f"Index '{opensearch_index}' updated.")
         return
 
 
@@ -193,7 +213,7 @@ def upload_kpis_to_opensearch(client, payload_dict, dry_run, opensearch_index):
 
 
 def upload_regression_results_to_opensearch(client, payload_dict, dry_run, opensearch_index):
-    if "regression_results" not in payload_dict.keys():
+    if not payload_dict.get("regression_results"):
         logging.info(f"==> no regression results found in the payload.")
         return
 

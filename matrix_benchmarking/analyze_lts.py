@@ -57,6 +57,8 @@ Args:
 
     def run():
         cli_args.store_kwargs(kwargs, execution_mode="analyze-lts")
+        store_dir = pathlib.Path(kwargs["report_dest"]).parent
+        store_dir.mkdir(parents=True, exist_ok=True)
 
         workload_store = store.load_workload_store(kwargs)
 
@@ -65,6 +67,12 @@ Args:
         workload_store.parse_data()
         common.Matrix.uniformize_settings_keys()
         common.Matrix.print_settings_to_log()
+
+        if not common.Matrix.processed_map:
+            logging.error("Not result found.")
+            (store_dir / "NO_RESULTS_FOUND").touch()
+            return 1
+
         logging.info(f"Loading results ... done. Found {common.Matrix.count_records()} results.")
         logging.info("")
         logging.info("--- LTS --- ")
@@ -76,20 +84,26 @@ Args:
         logging.info(f"Loading LTS results ... done. Found {common.LTS_Matrix.count_records()} results.")
         if common.LTS_Matrix.count_records() == 0:
             logging.error("Not LTS result found, exiting.")
-            logging.error(f"Does your LTS directory contain the '{LTS_ANCHOR_NAME}' marker file?")
-            return 1
-
-        if not common.Matrix.processed_map:
-            logging.error("Not result found, exiting.")
-            return 1
+            (store_dir / "NO_HISTORICAL_RESULTS").touch()
 
         workload_analyze = get_workload_analyze_module(workload_store)
 
         regression_df, comparison_keys, ignored_keys, sorting_keys = workload_analyze.prepare()
 
-        failures = analyze_report.generate_and_save_regression_analyse_report(kwargs["report_dest"], regression_df, kwargs["kpi_filter"], comparison_keys, ignored_keys, sorting_keys)
+        try:
+            failures = analyze_report.generate_and_save_regression_analyse_report(
+                kwargs["report_dest"],
+                regression_df, kwargs["kpi_filter"],
+                comparison_keys, ignored_keys, sorting_keys,
+            )
 
-        logging.info(f"The regression analyze finished with code {failures}.")
+            logging.info(f"The regression analyze finished with code {failures}.")
+        except Exception as e:
+            with open(store_dir / "FAILURE", 'a') as f:
+                print(str(e), file=f)
+                import traceback
+                print(traceback.format_exc(), file=f)
+            raise e
 
         return failures
 
@@ -104,8 +118,8 @@ def get_workload_analyze_module(workload_store):
 
     try:
         analyze_module = importlib.import_module(module)
-    except ModuleNotFoundError:
-        logging.critical(f"Module {module} does not exist :/")
+    except ModuleNotFoundError as e:
+        logging.critical(f"Module {module} does not exist :/ ({e})")
         sys.exit(1)
 
     logging.info(f"Loading {module} module ... done.")
