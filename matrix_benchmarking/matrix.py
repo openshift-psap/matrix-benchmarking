@@ -143,7 +143,7 @@ EXEC_DIR="$(realpath "$2")"
                     k, v = kv.split("=")
                     settings[k.strip()] = v.strip()
 
-            key = common.Matrix.settings_to_key(settings)
+            key = common.Matrix.settings_to_key(settings | dict(expe=context.expe))
 
             if key in common.Matrix.processed_map or key in common.Matrix.import_map:
                 logging.info(f"experiment {tracker.expe_cnt.current_idx}/{tracker.expe_cnt.total} already recorded, skipping.")
