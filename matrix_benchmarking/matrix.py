@@ -143,7 +143,7 @@ EXEC_DIR="$(realpath "$2")"
                     k, v = kv.split("=")
                     settings[k.strip()] = v.strip()
 
-            key = common.Matrix.settings_to_key(settings)
+            key = common.Matrix.settings_to_key(settings | dict(expe=context.expe))
 
             if key in common.Matrix.processed_map or key in common.Matrix.import_map:
                 logging.info(f"experiment {tracker.expe_cnt.current_idx}/{tracker.expe_cnt.total} already recorded, skipping.")
@@ -156,7 +156,7 @@ EXEC_DIR="$(realpath "$2")"
                 continue
 
             try:
-                bench_common_path = path_tpl.format(**settings, settings=settings)
+                bench_common_path = path_tpl.format(**settings, settings=settings).replace("/", "_")
             except KeyError as e:
                 logging.error(f"cannot apply the path template '{path_tpl}': key '{e.args[0]}' missing from {settings}")
                 tracker.expe_cnt.errors += 1

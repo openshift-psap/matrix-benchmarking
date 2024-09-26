@@ -275,7 +275,7 @@ def parse_data(results_dir=None):
 
         relative = this_dir.relative_to(results_dir)
         try:
-            expe_name = relative.parents[-1].name
+            expe_name = relative.parents[0].name
         except Exception:
             expe_name = "expe"
 
