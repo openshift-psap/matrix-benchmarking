@@ -300,6 +300,8 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
                     current_value_str = ref_kpi.format.format(ref_kpi.value / ref_kpi.divisor) + f" {ref_kpi.divisor_unit}"
                 else:
                     current_value_str = ref_kpi.format.format(ref_kpi.value) + f" {ref_kpi.unit}"
+            elif ref_kpi.value is None:
+                current_value_str = f"<none> {ref_kpi.unit}"
             else:
                 current_value_str = f"{ref_kpi.value:.0f} {ref_kpi.unit}"
 
