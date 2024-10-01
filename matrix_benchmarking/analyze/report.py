@@ -104,11 +104,15 @@ class OvervallResult():
         self.current_value_str = current_value_str
 
 def longestCommonPrefix(strs):
+    if not all(isinstance(item, str) for item in strs):
+        return None
+
     if not strs or len(strs) == 1:
         return ""
 
     min_s = min(strs)
     max_s = max(strs)
+
     if not min_s:
         return ""
     for i in range(len(min_s)):
@@ -334,7 +338,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
 
             if not include_this_kpi_in_report: continue
 
-            comparison_df = _generate_sorted_pd_table(comparison_data, comparison_keys)
+            comparison_df = _generate_sorted_pd_table(comparison_data, comparison_keys).sort_values(by="ref")
 
             # KPI header
 
@@ -464,6 +468,11 @@ def _generate_entry_header(metadata_settings, metadata):
 def _generate_sorted_pd_table(comparison_data, comparison_keys):
     comparison_df = pd.DataFrame(comparison_data)
 
+    common_prefixes = {}
+
+    for comparison_key in comparison_keys:
+        common_prefixes[comparison_key] = longestCommonPrefix(list(comparison_df[comparison_key].values))
+
     def to_version(value):
         try:
             return Version(str(value))
@@ -480,7 +489,12 @@ def _generate_sorted_pd_table(comparison_data, comparison_keys):
         sort_index = []
 
         for comparison_key in comparison_keys:
-            sort_index += [to_version(_row[comparison_key])]
+            common_prefix = common_prefixes[comparison_key]
+            value = _row[comparison_key]
+            if common_prefix:
+                value = value.removeprefix(common_prefix)
+
+            sort_index += [to_version(value)]
 
         return sort_index
 
