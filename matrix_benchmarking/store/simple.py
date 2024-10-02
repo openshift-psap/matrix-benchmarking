@@ -67,8 +67,8 @@ def parse_old_settings(filename):
     return settings
 
 
-def parse_settings(dirname, expe):
-    import_settings = {"expe": expe}
+def parse_settings(dirname):
+    import_settings = {}
 
     # search for settings[.*] in dirname and all of its parent directories.
     # start in the top-most parent, so that each subdirectory overrides its parents.
@@ -86,8 +86,8 @@ def parse_settings(dirname, expe):
     return import_settings
 
 
-def _parse_directory(results_dir, expe, dirname):
-    import_settings = parse_settings(dirname, expe)
+def _parse_directory(results_dir, dirname):
+    import_settings = parse_settings(dirname)
 
     if store.should_be_filtered_out(import_settings):
         return
@@ -274,10 +274,6 @@ def parse_data(results_dir=None):
             continue
 
         relative = this_dir.relative_to(results_dir)
-        try:
-            expe_name = relative.parents[0].name
-        except Exception:
-            expe_name = "expe"
 
         results_directories.append(this_dir)
-        _parse_directory(results_dir, expe_name, this_dir)
+        _parse_directory(results_dir, this_dir)
