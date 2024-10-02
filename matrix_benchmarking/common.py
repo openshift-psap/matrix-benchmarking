@@ -130,7 +130,7 @@ class MatrixDefinition():
 
     def all_records(self, settings=None, setting_lists=None, gathered=False) -> Iterator[MatrixEntry]:
 
-        if settings is None and setting_lists is None:
+        if not setting_lists:
             for e in self.processed_map.values():
                 if (gathered and e.is_gathered) or (not gathered and not e.is_gathered):
                     yield e
