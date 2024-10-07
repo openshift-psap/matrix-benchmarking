@@ -14,8 +14,6 @@ import matrix_benchmarking.store as store
 import matrix_benchmarking.cli_args as cli_args
 from matrix_benchmarking import download_lts
 
-IGNORE_EXIT_CODE = None
-
 def invalid_directory(dirname, settings, reason, warn=False):
     run_flag = cli_args.kwargs.get("run")
     clean_flag = cli_args.kwargs.get("clean")
@@ -92,27 +90,22 @@ def _parse_directory(results_dir, dirname):
     if store.should_be_filtered_out(import_settings):
         return
 
-    if not IGNORE_EXIT_CODE:
-        try:
-            with open(dirname / "exit_code") as f:
-                content = f.read().strip()
-                if not content:
-                    logging.info(f"{dirname}: exit_code is empty, skipping ...")
-                    return
+    exit_code = -1
+    try:
+        with open(dirname / "exit_code") as f:
+            content = f.read().strip()
+            if not content:
+                logging.info(f"{dirname}: exit_code is empty, skipping ...")
+                return
 
-            exit_code = int(content)
-        except FileNotFoundError as e:
-            invalid_directory(dirname, import_settings, "exit_code not found")
-            return
+        exit_code = int(content)
+    except FileNotFoundError as e:
+        invalid_directory(dirname, import_settings, "exit_code not found")
+        return
 
-        except Exception as e:
-            logging.info(f"{dirname}: exit_code cannot be read/parsed, skipping ... ({e})")
-            return
-
-        if exit_code != 0:
-            logging.debug(f"{dirname}: exit_code == {exit_code}, skipping ...")
-            invalid_directory(dirname, import_settings, "exit code != 0")
-            return
+    except Exception as e:
+        logging.info(f"{dirname}: exit_code cannot be read/parsed, skipping ... ({e})")
+        return
 
     def add_to_matrix(results, extra_settings=None):
         if extra_settings:
@@ -123,11 +116,11 @@ def _parse_directory(results_dir, dirname):
 
         store.add_to_matrix(entry_import_settings,
                             pathlib.Path(dirname),
-                            results,
+                            results, exit_code,
                             _duplicated_directory)
 
     try:
-        extra_settings__results = _parse_results(add_to_matrix, dirname, import_settings)
+        extra_settings__results = _parse_results(add_to_matrix, dirname, import_settings, exit_code)
     except Exception as e:
         logging.error(f"Failed to parse {dirname} ...")
         logging.info(f"       {e.__class__.__name__}: {e}")
@@ -140,11 +133,11 @@ def _parse_directory(results_dir, dirname):
 custom_parse_results = None
 custom_build_lts_payloads = None
 
-def _parse_results(add_to_matrix, dirname, import_settings):
+def _parse_results(add_to_matrix, dirname, import_settings, exit_code):
     if custom_parse_results is None:
         raise RuntimeError("simple store: No data parser registered :/")
 
-    return custom_parse_results(add_to_matrix, dirname, import_settings)
+    return custom_parse_results(add_to_matrix, dirname, import_settings, exit_code)
 
 def build_lts_payloads():
     if custom_build_lts_payloads is None:
@@ -214,6 +207,7 @@ def parse_lts_data(lts_results_dir=None):
             import_settings = dict(lts_settings.__dict__)
 
             import_settings["@timestamp"] = str(lts_payload.metadata.start)
+            exit_code = lts_payload.metadata.get("exit_code")
 
             def _duplicated_entry(import_key, old_entry, old_location, new_results, new_location):
                 logging.warning(f"duplicated results key: {import_key}")
@@ -221,9 +215,9 @@ def parse_lts_data(lts_results_dir=None):
                 logging.warning(f"  old: {old_location} | {old_entry.results.metadata.test_uuid}")
                 logging.warning(f"  new: {new_location} | {new_results.metadata.test_uuid}")
 
-            store.add_to_matrix(import_settings,
-                                filepath,
-                                lts_payload, _duplicated_entry,
+            store.add_to_matrix(import_settings, filepath,
+                                lts_payload, exit_code,
+                                _duplicated_entry,
                                 matrix=common.LTS_Matrix)
         pass
 # ---
@@ -237,12 +231,6 @@ def parse_data(results_dir=None):
 
     if not results_dir.is_dir():
         raise FileNotFoundError(f"Results directory '{results_dir}' is not a directory ...")
-
-    global IGNORE_EXIT_CODE
-    IGNORE_EXIT_CODE = os.environ.get("MATBENCH_SIMPLE_STORE_IGNORE_EXIT_CODE", "false") == "true"
-
-    if IGNORE_EXIT_CODE:
-        logging.info("simple store: ignoring exit code.")
 
     def has_settings(files):
         if "settings" in files:

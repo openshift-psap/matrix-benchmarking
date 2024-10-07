@@ -9,7 +9,7 @@ import matrix_benchmarking
 MISSING_SETTING_VALUE = None
 
 class MatrixEntry(types.SimpleNamespace):
-    def __init__(self, location, results,
+    def __init__(self, location, results, exit_code,
                  processed_key, import_key,
                  processed_settings, import_settings,
                  matrix,
@@ -23,6 +23,7 @@ class MatrixEntry(types.SimpleNamespace):
 
         self.location = location
         self.results = results
+        self.exit_code = exit_code
 
         self.settings.__dict__.update(processed_settings)
 
@@ -79,7 +80,7 @@ LTS_META_KEYS = [
     "lts_schema_version",
     "help", "unit", "@timestamp", "value",
     "run_id", "urls", "test_path",
-    "test_uuid",
+    "test_uuid", "exit_code",
 ]
 
 class MatrixDefinition():

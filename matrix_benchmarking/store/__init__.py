@@ -60,7 +60,7 @@ def should_be_filtered_out(settings):
     return False
 
 
-def add_to_matrix(import_settings, location, results, duplicate_handler, matrix=common.Matrix):
+def add_to_matrix(import_settings, location, results, exit_code, duplicate_handler, matrix=common.Matrix):
     if should_be_filtered_out(import_settings):
         return
 
@@ -104,7 +104,7 @@ def add_to_matrix(import_settings, location, results, duplicate_handler, matrix=
         processed_key = matrix.settings_to_key(processed_settings)
         return
 
-    entry = common.MatrixEntry(location, results,
+    entry = common.MatrixEntry(location, results, exit_code,
                                processed_key, import_key,
                                processed_settings, import_settings,
                                matrix=matrix)
@@ -130,7 +130,7 @@ def gather_rolling_entries(entry, matrix=common.Matrix):
         import_settings = None
         location = entry.location
         gathered_entry = common.MatrixEntry(
-            location, [],
+            location, [], None,
             processed_key, import_key,
             gathered_settings, import_settings,
             matrix=matrix,
