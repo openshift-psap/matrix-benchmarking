@@ -55,6 +55,7 @@ class Metadata(ExclusiveModel):
     settings: Dict[str, Union[str, int]]
     test_uuid: UUID4
     urls: Optional[List[str]]
+    exit_code: Optional[int]
 
 
 class PrometheusValue(ExclusiveModel):
