@@ -377,9 +377,11 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
 
     # LTS overview
     summary_html.append(html.H2("Historical records overview"))
-    if no_history:
-        summary_html.append(html.P("No historical records ..."))
-    else:
+
+    if no_history > 0:
+        summary_html.append(html.P(f"No historical records for {no_history} entrie{'s' if no_history > 1 else ''} ..."))
+
+    if all_lts_settings:
         summary_html.append(_generate_lts_overview(all_lts_settings, lts_variables))
 
     # Results overview

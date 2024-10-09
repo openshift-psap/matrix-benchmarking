@@ -207,7 +207,8 @@ def parse_lts_data(lts_results_dir=None):
             import_settings = dict(lts_settings.__dict__)
 
             import_settings["@timestamp"] = str(lts_payload.metadata.start)
-            exit_code = lts_payload.metadata.get("exit_code")
+
+            exit_code = getattr(lts_payload.metadata, "exit_code", None)
 
             def _duplicated_entry(import_key, old_entry, old_location, new_results, new_location):
                 logging.warning(f"duplicated results key: {import_key}")
