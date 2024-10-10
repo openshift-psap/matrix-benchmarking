@@ -1,5 +1,6 @@
-from hunter import analysis
 import numpy as np
+
+from hunter import analysis
 
 from matrix_benchmarking.analyze import RegressionStatus
 

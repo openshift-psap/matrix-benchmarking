@@ -16,8 +16,6 @@ import matrix_benchmarking.cli_args as cli_args
 import matrix_benchmarking.store as store
 import matrix_benchmarking.analyze.report as analyze_report
 
-logging.getLogger().setLevel(logging.INFO)
-
 LTS_ANCHOR_NAME = "source.lts.yaml"
 
 def main(workload: str = "",
