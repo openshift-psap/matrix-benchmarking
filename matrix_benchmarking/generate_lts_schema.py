@@ -120,7 +120,7 @@ def create_opensearch_mapping(json_schema):
 
         for k, v in entry.items():
             if k == "$ref":
-                logging.fata("Found a stray $ref :/")
+                logging.fatal("Found a stray $ref :/")
                 sys.exit(1)
             elif k == "type":
                 if fmt := entry.get("format"):

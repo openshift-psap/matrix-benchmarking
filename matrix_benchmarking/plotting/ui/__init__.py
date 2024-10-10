@@ -252,7 +252,7 @@ def build_callbacks(app):
 
         if value.startswith("_"):
             if value[1:] not in data:
-                logging.waring(f"tried to remove '{value[1:]}' but it's not in '{', '.join(data)}'")
+                logging.warning(f"tried to remove '{value[1:]}' but it's not in '{', '.join(data)}'")
                 return dash.no_update, dash.no_update, dash.no_update
             data.remove(value[1:])
         else:
