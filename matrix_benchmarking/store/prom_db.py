@@ -172,14 +172,15 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
                     prev_ts = None
                     has_skipped = False
                     for ts, val in current_values["values"]:
-                        prev_ts = ts
                         if val == prev_val:
                             has_skipped = True
+                            prev_ts = ts
                             continue
                         if has_skipped:
                             current_metric_values["values"].append([prev_ts, prev_val])
                             has_skipped = False
                         current_metric_values["values"].append([ts, val])
+                        prev_ts = ts
                         prev_val = val
                     if prev_val is not None and has_skipped:
                         # add the last value if the list wasn't empty
