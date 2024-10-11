@@ -38,7 +38,6 @@ class Plot():
         self.container_name = container_name
         self.is_memory = is_memory
         self.is_cluster = is_cluster
-        self.threshold_key = f"{y_title.replace(' ', '_').replace(':', '').lower()}"
 
         if skip_nodes is not None:
             self.skip_nodes = skip_nodes
@@ -52,7 +51,6 @@ class Plot():
         return "nothing"
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
         cfg__as_timeline = cfg.get("as_timeline", False)
 
         fig = go.Figure()
@@ -77,18 +75,8 @@ class Plot():
         data = []
         data_rq = []
         data_lm = []
-        data_threshold = []
 
-        threshold_status = defaultdict(dict)
-        threshold_passes = defaultdict(int)
         for entry in common.Matrix.all_records(settings, setting_lists):
-            threshold_value = entry.get_threshold(self.threshold_key, None) if self.threshold_key else None
-
-            check_thresholds = entry.check_thresholds()
-
-            if cfg__check_all_thresholds:
-                check_thresholds = True
-
             entry_name = entry.get_name(variables)
 
             sort_index = entry.get_settings()[ordered_vars[0]] if len(variables) == 1 \
@@ -110,8 +98,6 @@ class Plot():
                     if "_sum_" in metric_name:
                         legend_group = None
                         legend_name = "sum(all)"
-                        if check_thresholds:
-                            continue
                     else:
                         legend_group = metric.metric.get("pod", "<no podname>") + "/" + metric.metric.get("container", self.container_name) \
                             if not self.is_cluster else None
@@ -155,24 +141,7 @@ class Plot():
                                        legendgrouptitle_text=legend_group,
                                        **opts))
 
-                        if not is_req_or_lim and check_thresholds:
-                            data.append(
-                                go.Scatter(x=[x_values[0], x_values[-1]], y=[threshold_value, threshold_value],
-                                           name="threshold",
-                                           hoverlabel= {'namelength' :-1},
-                                           showlegend=True,
-                                           line_color="red",
-                                           marker=dict(color='red', size=15, symbol="triangle-down"),
-                                           legendgroup=legend_group,
-                                           legendgrouptitle_text=legend_group))
-
                     else:
-                        if threshold_value:
-                            data_threshold.append(dict(Version=entry_name,
-                                                       SortIndex=sort_index,
-                                                       Value=threshold_value,
-                                                       Metric=legend_name))
-
                         if is_req_or_lim:
                             lst = data_lm if "limits" in legend_name else data_rq
 
@@ -187,16 +156,6 @@ class Plot():
                                                  SortIndex=sort_index,
                                                  Metric=legend_name,
                                                  Value=y_value))
-
-
-                    if not is_req_or_lim and threshold_value and check_thresholds:
-                        if max(y_values) > float(threshold_value):
-                            status = f"FAIL: {max(y_values):.2f} > threshold={threshold_value}"
-                        else:
-                            status = f"PASS: {max(y_values):.2f} <= threshold={threshold_value}"
-                            threshold_passes[entry_name] += 1
-
-                        threshold_status[entry_name][legend_group] = status
 
         if not data:
             return None, "No metric to plot ..."
@@ -230,28 +189,6 @@ class Plot():
                 fig.add_scatter(name="Limit",
                                 x=df_lm['Version'], y=df_lm['Value'], mode='lines',
                                 line=dict(color='red', width=5, dash='dot'))
-            if data_threshold:
-                df_threshold = pd.DataFrame(data_threshold).sort_values(by=["SortIndex"])
-                fig.add_scatter(name="Threshold",
-                                x=df_threshold['Version'], y=df_threshold['Value'], mode='lines+markers',
-                                marker=dict(color='red', size=15, symbol="triangle-down"),
-                                line=dict(color='brown', width=5, dash='dot'))
 
         msg = []
-        if threshold_status:
-            msg.append(html.H3(self.y_title))
-
-        for entry_name, status in threshold_status.items():
-            total_count = len(status)
-            pass_count = threshold_passes[entry_name]
-            success = pass_count == total_count
-
-            msg += [html.B(entry_name), ": ", html.B("PASSED" if success else "FAILED"), f" ({pass_count}/{total_count} success{'es' if pass_count > 1 else ''})"]
-            details = []
-            for legend_name, entry_status in status.items():
-                entry_details = html.Ul(html.Li(entry_status))
-                details.append(html.Li([legend_name, entry_details]))
-
-            msg.append(html.Ul(details))
-
         return fig, msg

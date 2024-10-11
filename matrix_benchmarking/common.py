@@ -50,16 +50,8 @@ class MatrixEntry(types.SimpleNamespace):
                           if self.settings.__dict__[key] is not MISSING_SETTING_VALUE
                           and len([v for v in Matrix.settings[key] if v is not MISSING_SETTING_VALUE]) > 1])
 
-    def get_threshold(self, threshold_value, default: str = None) -> str:
-        if hasattr(self.results, 'thresholds'):
-            return self.results.thresholds.get(threshold_value, default)
-        return default
-
     def get_settings(self) -> dict:
         return self.settings.__dict__
-
-    def check_thresholds(self) -> bool:
-        return hasattr(self.results, 'check_thresholds') and self.results.check_thresholds
 
 
 class MatrixKey(dict):
