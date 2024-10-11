@@ -114,7 +114,7 @@ class _Report():
         else:
             dest = self.id_name
 
-        print(f"Saving {dest} ...")
+        logging.info(f"Saving {dest} ...")
         with open(dest, "w") as out_f:
             print(html_content, file=out_f)
 
