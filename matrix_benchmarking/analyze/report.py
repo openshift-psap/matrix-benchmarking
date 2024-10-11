@@ -253,6 +253,10 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
             # keep this vvv below ^^^ to preserve the order in the rendered table
             ref_line["value"] = ref_kpi.value
             ref_line["ref"] = "*"
+
+            if formatted_value := format_kpi_value(ref_kpi, want_raw_value=False):
+                ref_line["formatted value"] = formatted_value
+
             comparison_data.append(ref_line)
 
             historical_values = []
@@ -277,10 +281,17 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
                         warnings_already_shown.append(msg)
                         logging.warning(msg)
 
-                kpi_value = entry.results.kpis.__dict__[kpi].value
-                history_line = dict(ref="", value=kpi_value)
+                kpi_entry = entry.results.kpis.__dict__[kpi]
+                history_line = dict(
+                    ref="",
+                    value=kpi_entry.value,
+                )
+
+                if formatted_value := format_kpi_value(kpi_entry, want_raw_value=False, fmt_kpi=ref_kpi):
+                    history_line["formatted value"] = formatted_value
+
                 comparison_data.append(history_line | entry_name)
-                historical_values.append(kpi_value)
+                historical_values.append(kpi_entry.value)
 
 
             # Comparison table
@@ -297,17 +308,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
 
             validate_regression_result(regr_result)
 
-            if ref_kpi.value is None:
-                current_value_str = f"<none> {ref_kpi.unit}"
-            elif ref_kpi.full_format:
-                current_value_str = ref_kpi.full_format(ref_kpi)
-            elif ref_kpi.format:
-                if ref_kpi.divisor:
-                    current_value_str = ref_kpi.format.format(ref_kpi.value / ref_kpi.divisor) + f" {ref_kpi.divisor_unit}"
-                else:
-                    current_value_str = ref_kpi.format.format(ref_kpi.value) + f" {ref_kpi.unit}"
-            else:
-                current_value_str = f"{ref_kpi.value:.0f} {ref_kpi.unit}"
+            current_value_str = format_kpi_value(ref_kpi)
 
             entry_regr_results[kpi.replace(kpis_common_prefix, "")] = \
                 OvervallResult(
@@ -645,7 +646,7 @@ def get_all_regr_results_conditional_format(first_column_name, variables):
 
         for key, value in zip(row.keys(), row.values):
 
-            if key in variables or key in ("name", "entry_id"):
+            if key in variables or key in ("name", "entry_id", "uuid"):
                 style = f"background: {COLOR_OVERVIEW_NAMES}; text-align: center;"
             else:
                 # KPI result
@@ -732,3 +733,25 @@ def _generate_comparison_plot(_comparison_df, comparison_keys, kpi_name, ref_kpi
     # not using dcc.Graph() here, so this will follow another path than plots in plotting reports.
     # here, fig.to_html() will be called.
     return html.Div([fig], style=dict(height="525px", width="100%"))
+
+
+def format_kpi_value(kpi, want_raw_value=True, fmt_kpi=None):
+    if fmt_kpi is None:
+        fmt_kpi = kpi
+
+    if not want_raw_value and not fmt_kpi.divisor:
+        return None
+
+    if kpi.value is None:
+        return f"<none> {kpi.unit}"
+
+    elif fmt_kpi.full_format:
+        return kpi.full_format(kpi)
+
+    elif fmt_kpi.format:
+        if fmt_kpi.divisor:
+            return fmt_kpi.format.format(kpi.value / fmt_kpi.divisor) + f" {fmt_kpi.divisor_unit}"
+        else:
+            return fmt_kpi.format.format(kpi.value) + f" {fmt_kpi.unit}"
+    else:
+        return f"{kpi.value:.0f} {kpi.unit}"

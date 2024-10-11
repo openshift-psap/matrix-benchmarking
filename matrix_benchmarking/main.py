@@ -3,6 +3,8 @@
 import sys, os
 import logging
 
+logging.basicConfig(format="%(levelname)s | %(message)s", level=logging.INFO)
+
 try:
     import fire
 except ModuleNotFoundError:
@@ -18,8 +20,6 @@ import matrix_benchmarking.download_lts
 import matrix_benchmarking.generate_lts_schema
 import matrix_benchmarking.analyze_lts
 
-logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"),
-                    format="%(levelname)s | %(message)s",)
 
 class MatrixBenchmarking:
     """

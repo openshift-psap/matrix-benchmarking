@@ -79,8 +79,12 @@ LTS_META_KEYS = [
     "kpi_settings_version",
     "lts_schema_version",
     "help", "unit", "@timestamp", "value",
-    "run_id", "urls", "test_path",
+    "run_id", "urls", "test_path", "ci_engine",
     "test_uuid", "exit_code",
+
+    "format", "full_format",
+    "ignored_for_regression", "divisor", "divisor_unit",
+    "lower_better",
 ]
 
 class MatrixDefinition():
