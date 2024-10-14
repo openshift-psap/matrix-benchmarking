@@ -1,9 +1,9 @@
-
 import logging
 import math
 from collections import defaultdict
 import copy
 from packaging.version import Version, InvalidVersion
+import yaml
 
 import pandas as pd
 import plotly
@@ -406,17 +406,40 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
     logging.info(summary)
     summary_html.append(html.P(html.B(summary)))
 
-    return html.Span(report), failures
+    yaml_summary = dict(
+        total_points=total_points,
+        entries_count=idx,
+        kpis_count=len(kpi_names),
+        failures=failures,
+        no_history=no_history,
+        not_analyzed=not_analyzed,
+        significant_performance_increase=significant_performance_increase,
+        message=summary,
+    )
+
+    return html.Span(report), failures, yaml_summary
 
 
-def generate_and_save_regression_analyse_report(dest, regression_df, kpi_filter, comparison_key, ignored_keys, sorting_keys):
-    report, failures = generate_regression_analyse_report(regression_df, kpi_filter, comparison_key, ignored_keys, sorting_keys)
+def generate_and_save_regression_analyse_report(
+        report_dest, yaml_dest,
+        regression_df,
+        kpi_filter,
+        comparison_key, ignored_keys, sorting_keys,
+):
+    report, failures, yaml_summary = generate_regression_analyse_report(regression_df, kpi_filter, comparison_key, ignored_keys, sorting_keys)
 
-    if dest is None:
+    if yaml_dest:
+        logging.info(f"Saving the YAML summary into {yaml_dest} ...")
+        with open (yaml_dest, "w") as f:
+            yaml.dump(yaml_summary, f)
+            #print("", file=f)
+
+    if report_dest is None:
         logging.warning("Skipping report generation.")
         return failures
 
-    plotting_ui_report.generate(None, dest, report, None, include_header=False)
+    logging.info(f"Saving the HTML report into {report_dest} ...")
+    plotting_ui_report.generate(None, report_dest, report, None, include_header=False)
 
     return failures
 
