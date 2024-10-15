@@ -24,6 +24,7 @@ def main(workload: str = "",
          lts_results_dirname: str = "",
          filters: list[str] = [],
          report_dest: str = "regression_report.html",
+         summary_yaml_dest: str = "regression_summary.yaml",
          kpi_filter: str = "",
          ):
     """
@@ -46,6 +47,7 @@ Args:
     filters: If provided, analyze only the experiment matching the filters. Eg: expe=expe1:expe2,something=true.
     report_dest: Where to save the regression analyses report
     kpi_filter: Filter (substring) that must be part of the KPI name to include it in the regression analyses
+    summary_yaml_dest: Where to save the YAML summary of the regression analyses
     """
 
     kwargs = dict(locals()) # capture the function arguments
@@ -90,7 +92,7 @@ Args:
 
         try:
             failures = analyze_report.generate_and_save_regression_analyse_report(
-                kwargs["report_dest"],
+                kwargs["report_dest"], kwargs["summary_yaml_dest"],
                 regression_df, kwargs["kpi_filter"],
                 comparison_keys, ignored_keys, sorting_keys,
             )
