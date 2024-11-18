@@ -1,7 +1,7 @@
 pandas
 dash
 plotly
-kaleido
+kaleido==0.2.1 # version 0.4.1 crashes, it seems to require a browser (relies on choreographer)
 fire
 pyyaml
 BeautifulSoup4==4.11.*
