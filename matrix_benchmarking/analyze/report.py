@@ -504,7 +504,7 @@ def _generate_sorted_pd_table(comparison_data, comparison_keys):
             return Version(str(value))
         except InvalidVersion:
             pass
-        safe_value = "1+" + value.replace("/", ".").replace(":", ".")
+        safe_value = "1+" + str(value).replace("/", ".").replace(":", ".")
         try:
             return Version(safe_value)
         except InvalidVersion:
