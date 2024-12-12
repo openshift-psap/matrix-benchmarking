@@ -504,11 +504,11 @@ def _generate_sorted_pd_table(comparison_data, comparison_keys):
             return Version(str(value))
         except InvalidVersion:
             pass
-        safe_value = "1+" + str(value).replace("/", ".").replace(":", ".")
+        safe_value = "1+" + str(value).replace("/", ".").replace(":", ".").replace(", ", "-")
         try:
             return Version(safe_value)
         except InvalidVersion:
-            logging.warning(f"Cannot parse '{value}' as a version :/")
+            logging.warning(f"Cannot parse '{value}' as a version :/ ({safe_value})")
             return Version("1.0") # ordering will be wrong
 
     def create_sort_index(_row):
