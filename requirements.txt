@@ -9,4 +9,4 @@ prometheus_api_client
 pydantic==1.10.*
 opensearch-py
 boto3
-git+https://git@github.com/datastax-labs/hunter@d2b76e85d2d4947642cce5a9c48fabba54677a2e
+git+https://git@github.com/openshift-psap/hunter@b7ef087a0279554a529e440951f3d6096f9eacf3 # stream-10
