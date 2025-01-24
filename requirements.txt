@@ -8,6 +8,6 @@ BeautifulSoup4==4.11.*
 prometheus_api_client
 pydantic==1.10.*
 opensearch-py
-boto3
+boto3==1.35.59 # required by awscli-1.36.0 in project/topsail, as the latest version has issues uploading artifacts to MinIO S3.
 pandas
 git+https://git@github.com/openshift-psap/hunter@b7ef087a0279554a529e440951f3d6096f9eacf3 # stream-10
