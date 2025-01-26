@@ -23,7 +23,8 @@ INCLUDE_ALL_THE_KPIS = True
 # if false, do not include the regression plots (~4.5MB per plot)
 INCLUDE_REGRESSION_PLOT = False
 
-COLOR_OVERVIEW_NAMES = "#F5F5DC" # beige
+COLOR_OVERVIEW_NAME_META = "#F5F5DC" # beige
+COLOR_OVERVIEW_NAME_VAR = "#ADD8E6" # light green
 
 COLOR_IMPROVED = "#32CD32"
 COLOR_DEGRADED = "#FF5733"
@@ -102,6 +103,7 @@ class OvervallResult():
         self.description = description
         self.improved = improved
         self.current_value_str = current_value_str
+
 
 def longestCommonPrefix(strs):
     if not all(isinstance(item, str) for item in strs):
@@ -225,6 +227,8 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
         entry_report += _generate_entry_header(metadata_settings, metadata)
 
         entry_regr_results = dict(entry_id=idx)
+        metadata_column_count = len(entry_regr_results)
+
         for var in variables:
             entry_regr_results[var] = metadata_settings.__dict__[var]
         if not variables:
@@ -388,7 +392,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
     # Results overview
 
     summary_html.append(html.H2("Results overview"))
-    kpi_names = set(list(all_regr_results_data[0].keys())[max([2, len(variables)+1]):]) \
+    kpi_names = set(list(all_regr_results_data[0].keys())[max([metadata_column_count, len(variables)+1]):]) \
         if all_regr_results_data else set()
 
     summary_html.append(_generate_results_overview(all_regr_results_data, variables, kpi_names, kpis_common_prefix))
@@ -491,7 +495,7 @@ def _generate_entry_header(metadata_settings, metadata):
 
     return header
 
-def _generate_sorted_pd_table(comparison_data, comparison_keys):
+def _generate_sorted_pd_table(comparison_data, comparison_keys, warn=True):
     comparison_df = pd.DataFrame(comparison_data)
 
     common_prefixes = {}
@@ -508,7 +512,8 @@ def _generate_sorted_pd_table(comparison_data, comparison_keys):
         try:
             return Version(safe_value)
         except InvalidVersion:
-            logging.warning(f"Cannot parse '{value}' as a version :/ ({safe_value})")
+            if warn:
+                logging.warning(f"Cannot parse '{value}' as a version :/ ({safe_value})")
             return Version("1.0") # ordering will be wrong
 
     def create_sort_index(_row):
@@ -608,8 +613,15 @@ def _generate_lts_overview(all_lts_settings, lts_variables):
 
 def _generate_configuration_overview(all_settings, variables):
     config_overview_data = []
+
     for k, v in all_settings.items():
-        val = ", ".join(map(str, sorted(v)))
+        try:
+            sorted_values = sorted(v)
+        except TypeError:
+            # eg: '<' not supported between instances of 'NoneType' and 'bool'
+            sorted_values = sorted(map(str, v))
+
+        val = ", ".join(map(str, sorted_values))
         config_overview_data.append(dict(name=k, value=val))
 
     def config_overview_conditional_format(row):
@@ -628,14 +640,15 @@ def _generate_configuration_overview(all_settings, variables):
     return config_overview_df_html
 
 
-def _generate_results_overview(all_regr_results_data, variables, kpi_names, kpis_common_prefix):
-    entry_count = len(all_regr_results_data)
-    first_column_name = variables[0] if variables else "name"
+def _generate_results_overview(all_regr_results_data, variables, kpi_names, kpis_common_prefix, warn=True):
+    all_regr_results_df = _generate_sorted_pd_table(all_regr_results_data, variables, warn=warn)
 
-    all_regr_results_df = _generate_sorted_pd_table(all_regr_results_data, variables)
     def fmt(value):
         if is_nan(value):
             return ""
+
+        if isinstance(value, int) or isinstance(value, str):
+            return value
 
         return value.current_value_str
 
@@ -654,7 +667,7 @@ def _generate_results_overview(all_regr_results_data, variables, kpi_names, kpis
 
     all_regr_results_df_html = all_regr_results_df\
         .style\
-        .apply(get_all_regr_results_conditional_format(first_column_name, variables), axis = 1)\
+        .apply(get_all_regr_results_conditional_format(variables), axis = 1)\
         .format(overview_fmt)\
         .hide(axis="index")\
         .hide(kpis_to_hide, axis=1)\
@@ -663,21 +676,20 @@ def _generate_results_overview(all_regr_results_data, variables, kpi_names, kpis
     return all_regr_results_df_html
 
 
-def get_all_regr_results_conditional_format(first_column_name, variables):
+def get_all_regr_results_conditional_format(variables):
     def all_regr_results_conditional_format(row):
         fmt = []
 
         for key, value in zip(row.keys(), row.values):
-
-            if key in variables or key in ("name", "entry_id", "uuid"):
-                style = f"background: {COLOR_OVERVIEW_NAMES}; text-align: center;"
+            if isinstance(value, OvervallResult):
+                color = get_rating_color(value.rating,  value.improved)
+                style = f"background: {color}; text-align: right;"
+            elif key in variables:
+                style = f"background: {COLOR_OVERVIEW_NAME_VAR}; text-align: center;"
+            elif is_nan(value):
+                style = "background: red"
             else:
-                # KPI result
-                if is_nan(value):
-                    style = "background: red"
-                else:
-                    color = get_rating_color(value.rating,  value.improved)
-                    style = f"background: {color}; text-align: right;"
+                style = f"background: {COLOR_OVERVIEW_NAME_META}; text-align: center;"
 
             fmt.append(style)
 
@@ -762,19 +774,31 @@ def format_kpi_value(kpi, want_raw_value=True, fmt_kpi=None):
     if fmt_kpi is None:
         fmt_kpi = kpi
 
+    kpi_is_list = isinstance(kpi.value, list)
+
     if not want_raw_value and not fmt_kpi.divisor:
         return None
 
     if kpi.value is None:
-        return f"<none> {kpi.unit}"
+        return f"--- {kpi.unit}"
 
     elif fmt_kpi.full_format:
         return kpi.full_format(kpi)
 
     elif fmt_kpi.format:
+        kpi_value = kpi.value
         if fmt_kpi.divisor:
-            return fmt_kpi.format.format(kpi.value / fmt_kpi.divisor) + f" {fmt_kpi.divisor_unit}"
+            if kpi_is_list:
+                kpi_value = [(v / fmt_kpi.divisor) for v in kpi_value]
+            else:
+                kpi_value = kpi.value / fmt_kpi.divisor
+
+        if kpi_is_list:
+            return ", ".join([fmt_kpi.format.format(v) for v in kpi_value]) + f" {fmt_kpi.divisor_unit}"
         else:
-            return fmt_kpi.format.format(kpi.value) + f" {fmt_kpi.unit}"
+            return fmt_kpi.format.format(kpi_value) + f" {fmt_kpi.divisor_unit}"
     else:
-        return f"{kpi.value:.0f} {kpi.unit}"
+        if kpi_is_list:
+            return ", ".join([f"{v:.0f}" for v in kpi.value]) + f" {fmt_kpi.divisor_unit}"
+        else:
+            return f"{kpi.value:.0f} {kpi.unit}"
