@@ -152,7 +152,7 @@ def _rewrite_settings(import_settings, results, is_lts):
         logging.warning("No rewrite_setting function registered.")
         return import_settings
 
-    if "results" not in inspect.getargspec(custom_rewrite_settings).args:
+    if "results" not in inspect.signature(custom_rewrite_settings).parameters:
         return custom_rewrite_settings(import_settings)
 
     return custom_rewrite_settings(import_settings, results, is_lts)
