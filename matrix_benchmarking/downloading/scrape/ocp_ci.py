@@ -38,7 +38,13 @@ class ScrapOCPCiArtifacts(BaseHttpScapper):
                 # link to download gsutil, ignore
                 continue
 
-            img_src = link.find("img")["src"]
+            img = link.find("img")
+            if not img:
+                # link without an image, so not a file/directory. Ignore.
+                # (must be a link to `gsutil` or `gcloud storage`)
+                continue
+
+            img_src = img["src"]
             if img_src == "/icons/back.png":
                 # link going to the parent directory, ignore
                 continue
