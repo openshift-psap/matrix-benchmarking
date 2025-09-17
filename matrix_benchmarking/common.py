@@ -112,10 +112,10 @@ class MatrixDefinition():
             if not skip:
                 yield entry
 
-    def filter_records(settings, gathered=False):
+    def filter_records(self, settings, gathered=False):
         for entry in self.all_records(gathered=gathered):
             skip = False
-            for k, v in settings.__dict__.items():
+            for k, v in settings.items():
                 if entry.settings.__dict__.get(k, ...) == v:
                     continue
 
