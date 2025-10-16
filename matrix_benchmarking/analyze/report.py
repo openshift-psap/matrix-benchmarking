@@ -285,7 +285,11 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
                         warnings_already_shown.append(msg)
                         logging.warning(msg)
 
-                kpi_entry = entry.results.kpis.__dict__[kpi]
+                kpi_entry = entry.results.kpis.__dict__.get(kpi, None)
+                # ignore the the KPI isn't part of the current entry
+                if kpi_entry is None:
+                    continue
+
                 history_line = dict(
                     ref="",
                     value=kpi_entry.value,
