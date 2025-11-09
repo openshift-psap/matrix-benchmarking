@@ -133,6 +133,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
     not_analyzed = 0
     no_history = 0
     significant_performance_increase = 0
+    significant_performance_decrease = 0
 
     report = []
     report.append(html.H1(f"Regression Analysis Summary"))
@@ -328,15 +329,17 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
             include_this_kpi_in_report = False
             if has_history:
                 total_points += 1
-                if regr_result.accepted is False:
-                    failures += 1
+
+                if regr_result.improved and regr_result.rating >= 1:
                     include_this_kpi_in_report = True
+                    failures += 1
+                    significant_performance_increase += 1
+                elif regr_result.accepted is False:
+                    include_this_kpi_in_report = True
+                    failures += 1
+                    significant_performance_decrease += 1
                 elif regr_result.accepted is None:
                     not_analyzed += 1
-                elif regr_result.improved and regr_result.rating > 1:
-                    significant_performance_increase += 1
-                    include_this_kpi_in_report = True
-
 
             if include_this_kpi_in_report:
                 include_this_entry_in_report = True
@@ -408,6 +411,8 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
         summary += f" {no_history} entries didn't have historical records."
     if not_analyzed:
         summary += f" {not_analyzed} entries couldn't be analyzed (check the logs for an explanation). "
+    if significant_performance_decrease:
+        summary += f" {significant_performance_increase} KPIs had a significant performance decrease. "
     if significant_performance_increase:
         summary += f" {significant_performance_increase} KPIs had a significant performance increase. "
 
@@ -422,6 +427,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
         no_history=no_history,
         not_analyzed=not_analyzed,
         significant_performance_increase=significant_performance_increase,
+        significant_performance_decrease=significant_performance_decrease,
         message=summary,
     )
 
