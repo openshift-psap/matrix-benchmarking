@@ -354,6 +354,7 @@ def generate_regression_analyse_report(regression_df, kpi_filter, comparison_key
 
             # KPI header
 
+            comparison_df = comparison_df.sort_values(comparison_keys).reset_index(drop=True)
             entry_report.append(html.H2(f"Entry #{idx} KPI {kpi}"))
             entry_report.append(html.P(html.I(f"{ref_kpi.help} (in {ref_kpi.unit}).")))
             entry_report.append(_generate_comparison_table(comparison_df, ref_kpi.unit))
@@ -549,7 +550,6 @@ def _generate_comparison_table(comparison_df, kpi_unit):
 
     comparison_df_html = comparison_df.style\
                                       .format(comparison_format)\
-                                      .hide(axis="index")\
                                       .set_table_styles(table_styles=STYLE_TABLE)
 
     return comparison_df_html
