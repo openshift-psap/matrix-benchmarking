@@ -141,8 +141,17 @@ def extract_metrics(prometheus_tgz, metrics, dirname):
             logging.error(f"No 'up' metric available in the database at '{prometheus_tgz}'. Cannot proceed :/")
             return
 
-        start_date = datetime.datetime.fromtimestamp(up_query[0]["values"][0][0])
-        end_date = datetime.datetime.fromtimestamp(up_query[0]["values"][-1][0])
+        all_start_times = []
+        all_end_times = []
+
+        for target in up_query:
+            if not target["values"]: continue
+            all_start_times.append(target["values"][0][0])
+            all_end_times.append(target["values"][-1][0])
+
+        start_date = datetime.datetime.fromtimestamp(min(all_start_times))
+        end_date = datetime.datetime.fromtimestamp(max(all_end_times))
+
         del up_query # no need to keep it in memory
 
         duration = end_date - start_date
